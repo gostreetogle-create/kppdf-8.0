@@ -25,6 +25,7 @@ export class ContractItem {
 const ContractItemSchema = SchemaFactory.createForClass(ContractItem);
 
 export type ContractStatus = 'draft' | 'sent' | 'signed' | 'active' | 'completed' | 'cancelled' | 'expired';
+export type ContractAttachmentStatus = 'none' | 'file_attached' | 'generated';
 export type ContractDocument = HydratedDocument<Contract>;
 
 @Schema({ collection: 'contracts', timestamps: true })
@@ -53,6 +54,21 @@ export class Contract {
     index: true,
   })
   status!: ContractStatus;
+
+  /** File/document state is separate from the contract lifecycle status. */
+  @Prop({
+    type: String,
+    enum: ['none', 'file_attached', 'generated'],
+    default: 'none',
+    index: true,
+  })
+  contractStatus!: ContractAttachmentStatus;
+
+  @Prop({ type: String })
+  attachmentFileId?: string;
+
+  @Prop({ type: String })
+  attachmentUrl?: string;
 
   @Prop({ type: [ContractItemSchema], default: [] })
   items!: ContractItem[];
