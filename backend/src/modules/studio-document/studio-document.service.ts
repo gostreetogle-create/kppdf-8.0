@@ -27,6 +27,16 @@ import { SaveAsTemplateDto } from './dto/save-as-template.dto';
 import { CreateTemplateBlockDto } from '../template-block/dto/create-template-block.dto';
 import { UpdateTemplateBlockLayoutsDto } from '../template-block/dto/update-layouts.dto';
 import { TemplateBlockDocument } from '../template-block/template-block.schema';
+import { StudioDataResolverService } from './studio-data-resolver';
+
+const LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
+  'quotation-items',
+  'order-items',
+  'catalog-products',
+  'catalog-modules',
+  'catalog-parts',
+  'catalog-materials',
+]);
 
 export const STUDIO_DOCUMENT_REVISION_CONFLICT = 'STUDIO_DOCUMENT_REVISION_CONFLICT';
 
@@ -44,6 +54,7 @@ export class StudioDocumentService {
     private readonly orgModel: Model<OrganizationDocument>,
     private readonly templateService: DocumentTemplateService,
     private readonly blockService: TemplateBlockService,
+    private readonly dataResolver: StudioDataResolverService,
   ) {}
 
   /**
@@ -280,7 +291,51 @@ export class StudioDocumentService {
       dataSets.push(nextEntry);
     }
     doc.dataSets = dataSets;
-    return this.bumpRevision(doc, userId);
+    const saved = await this.bumpRevision(doc, userId);
+    return this.hydrateLiveDataSetRows(saved, trimmedKey);
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-S28 — after putDataSet upsert, live-read rows for the
+   * updated entry (canvas liveRows) if its source is quotation/order/catalog.
+   * Does not persist the hydrated rows (draft stays as FE sent it); the
+   * finalize/PDF snapshot bake path (bakeSnapshot) is untouched.
+   */
+  private async hydrateLiveDataSetRows(
+    doc: StudioDocumentDocument,
+    key: string,
+  ): Promise<StudioDocumentDocument> {
+    const entries = doc.dataSets ?? [];
+    const idx = entries.findIndex(
+      (entry) => String((entry as { key?: unknown }).key ?? '') === key,
+    );
+    if (idx < 0) return doc;
+    const sourceType = (entries[idx] as { source?: { type?: unknown } }).source
+      ?.type;
+    if (
+      typeof sourceType !== 'string' ||
+      !LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)
+    ) {
+      return doc;
+    }
+
+    const blocks = await this.blockService.findAllByStudioDocument(
+      String(doc._id),
+    );
+    const resolved = await this.dataResolver.resolveDataSets(
+      doc,
+      blocks,
+      true,
+    );
+    const resolvedEntry = resolved.find(
+      (entry) => String((entry as { key?: unknown }).key ?? '') === key,
+    );
+    if (resolvedEntry) {
+      const nextDataSets = [...entries];
+      nextDataSets[idx] = resolvedEntry;
+      doc.dataSets = nextDataSets;
+    }
+    return doc;
   }
 
   /**
