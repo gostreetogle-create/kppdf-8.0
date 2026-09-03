@@ -1,6 +1,6 @@
 # WAVE — NX Sales canon S30→S39 (continuous chain)
 
-Status: **IN PROGRESS @ S33** · S30–S32 DONE · Doc Studio S16–S26 DONE
+Status: **IN PROGRESS @ S34** · S30–S33 DONE · Doc Studio S16–S26 DONE
 
 > Resume: `tasks/PROMPT-FREEBUFF-SALES-CANON-RESUME.md`
 > Roadmap: `docs/architecture/nx-sales-canon-roadmap.md`
@@ -22,7 +22,7 @@ Status: **IN PROGRESS @ S33** · S30–S32 DONE · Doc Studio S16–S26 DONE
 | 1 | [x] S30 CURRENCY-RUB | `tasks/_archive/2026-09/TZ-NX-SALES-S30-CURRENCY-RUB.done.md` | `e7c824e7` |
 | 2 | [x] S31 ORDER-PAID | `tasks/_archive/2026-09/TZ-NX-SALES-S31-ORDER-PAID.done.md` | `2a7d4a58` |
 | 3 | [x] S32 SITES-ENSURE | `tasks/_archive/2026-09/TZ-NX-SALES-S32-SITES-ENSURE.done.md` | `28d8950a` |
-| 4 | [ ] S33 PI-ORDERS-CRUD | | |
+| 4 | [x] S33 PI-ORDERS-CRUD | `tasks/_archive/2026-09/TZ-NX-SALES-S33-PI-ORDERS-CRUD.done.md` | pending handoff SHA |
 | 5 | [ ] S34 ORDERS-LIST | | |
 | 6 | [ ] S35 ORDER-DETAIL | | |
 | 7 | [ ] S36 ORDER-CREATE | | |
@@ -39,7 +39,8 @@ Status: **IN PROGRESS @ S33** · S30–S32 DONE · Doc Studio S16–S26 DONE
 - S30 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S30-CURRENCY-RUB.done.md` · commit `e7c824e7`
 - S31 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S31-ORDER-PAID.done.md` · commit `2a7d4a58` · focused tests/typecheck/lint PASS
 - S32 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S32-SITES-ENSURE.done.md` · commit `28d8950a`.
-- S33 is the next unchecked chain row.
+- S33 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S33-PI-ORDERS-CRUD.done.md` · handoff SHA pending after commit.
+- S34 is the next unchecked chain row.
 
 ## Запреты волны
 
