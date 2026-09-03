@@ -28,7 +28,7 @@ Status: **DONE** · S30–S39 DONE · Doc Studio S16–S26 DONE
 | 7 | [x] S36 ORDER-CREATE | `tasks/_archive/2026-09/TZ-NX-SALES-S36-ORDER-CREATE.done.md` | `b48ef6b3` |
 | 8 | [x] S37 QUOTATION-CONVERT | `tasks/_archive/2026-09/TZ-NX-SALES-S37-QUOTATION-CONVERT.done.md` | `8065eeeb` |
 | 9 | [x] S38 STUB-KP-HIDE | `tasks/_archive/2026-09/TZ-NX-SALES-S38-STUB-KP-HIDE.done.md` | `a6d768ea` |
-| 10 | [x] S39 OPERATOR-DOCS | `tasks/_archive/2026-09/TZ-NX-SALES-S39-OPERATOR-DOCS.done.md` | _push_ |
+| 10 | [x] S39 OPERATOR-DOCS | `tasks/_archive/2026-09/TZ-NX-SALES-S39-OPERATOR-DOCS.done.md` | `a0306c2a` |
 
 ## Closeout
 

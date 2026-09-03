@@ -15,6 +15,6 @@
 | S36 | ORDER-CREATE | **DONE** `b48ef6b3` |
 | S37 | QUOTATION-CONVERT | **DONE** `8065eeeb` |
 | S38 | STUB-KP-HIDE | **DONE** `a6d768ea` |
-| S39 | OPERATOR-DOCS | **DONE** _push_ |
+| S39 | OPERATOR-DOCS | **DONE** `a0306c2a` |
 
 **Правило:** один Freebuff, последовательно. Волна закрыта — архивы и WAVE checklist в `docs/agent-checklists/WAVE-NX-SALES-CANON.md`.
