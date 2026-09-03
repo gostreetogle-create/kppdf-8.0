@@ -2,52 +2,46 @@
 
 **Статус:** READY TO ISSUE · 2026-09-03  
 **Аудит:** `docs/audits/2026-09-03-docstudio-honesty-audit.md`  
+**Operator bar (за что отвечаю):** `docs/architecture/nx-doc-studio-operator-bar.md`  
 **Волны:** `docs/agent-checklists/WAVE-DOCSTUDIO-FINISH-S27.md`
 
-## Как выдавать завтра
+## Как выдавать
 
-1. PO: «дай промпт» → Cursor копирует **следующий** файл из `prompts/PROMPT-NN-*.md` целиком в чат Freebuff.  
-2. PO: «выполнено» → Cursor сверяет archive/SHA → выдаёт **следующий** PROMPT.  
-3. **Не** выдавать два PROMPT параллельно (все на `kppdf-web` / studio).  
-4. Между волнами A→B→C — пауза только если build красный или PO остановил.
+PO: «дай промпт» → следующий `prompts/PROMPT-NN-*.md`.  
+PO: «выполнено» → следующий. **Не** параллелить studio TZ.
 
-## Очередь (11 TZ, 3 короткие волны)
+## Очередь (13 TZ)
 
-### Волна A — данные и запись (обязательный стержень)
+### Волна A — стержень данных
 
 | # | ID | PROMPT | TZ |
 |---|-----|--------|-----|
-| 01 | S27 | `prompts/PROMPT-01-S27.md` | `../TZ-NX-DOCSTUDIO-S27-DATA-VITRINA-RESTORE.md` |
-| 02 | S28 | `prompts/PROMPT-02-S28.md` | `../TZ-NX-DOCSTUDIO-S28-PUT-DATASET-HYDRATE.md` |
-| 03 | S29 | `prompts/PROMPT-03-S29.md` | `../TZ-NX-DOCSTUDIO-S29-FE-LIVEROWS.md` |
-| 04 | S30 | `prompts/PROMPT-04-S30.md` | `../TZ-NX-DOCSTUDIO-S30-SAVE-HONEST.md` |
+| 01 | S27 | `PROMPT-01-S27.md` | VITRINA |
+| 02 | S28 | `PROMPT-02-S28.md` | HYDRATE BE |
+| 03 | S29 | `PROMPT-03-S29.md` | FE LIVEROWS |
+| 04 | S30 | `PROMPT-04-S30.md` | SAVE HONEST |
 
-### Волна B — просмотр и сценарии менеджера
-
-| # | ID | PROMPT | TZ |
-|---|-----|--------|-----|
-| 05 | S31 | `prompts/PROMPT-05-S31.md` | `../TZ-NX-DOCSTUDIO-S31-SERVER-PREVIEW.md` |
-| 06 | S32 | `prompts/PROMPT-06-S32.md` | `../TZ-NX-DOCSTUDIO-S32-DOC-RENAME.md` |
-| 07 | S33 | `prompts/PROMPT-07-S33.md` | `../TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH.md` |
-| 08 | S34 | `prompts/PROMPT-08-S34.md` | `../TZ-NX-DOCSTUDIO-S34-FORMULA-DEDUP.md` |
-
-### Волна C — гигиена и правда docs
+### Волна B — просмотр и сценарии
 
 | # | ID | PROMPT | TZ |
 |---|-----|--------|-----|
-| 09 | S35 | `prompts/PROMPT-09-S35.md` | `../TZ-NX-DOCSTUDIO-S35-ORPHAN-PURGE.md` |
-| 10 | S36 | `prompts/PROMPT-10-S36.md` | `../TZ-NX-DOCSTUDIO-S36-DOCS-TRUTH.md` |
-| 11 | S37 | `prompts/PROMPT-11-S37.md` | `../TZ-NX-DOCSTUDIO-S37-OPERATOR-SMOKE.md` |
+| 05 | S31 | `PROMPT-05-S31.md` | SERVER PREVIEW |
+| 06 | S32 | `PROMPT-06-S32.md` | RENAME |
+| 07 | S33 | `PROMPT-07-S33.md` | НОВОЕ КП |
+| 08 | S34 | `PROMPT-08-S34.md` | FORMULA DEDUP |
 
-## Уже известно (не спорить с фактами)
+### Волна C — гигиена + полнота «любой документ»
 
-- Витрина UI отсутствует; showcase orphan  
-- `saveDocument` = fake toast  
-- `putDataSet` без hydrate  
-- `fetchPreview` есть, **не вызывается**; `refreshPreviewIfActive` пустой; Preview = canvas readOnly  
-- Два select «Формула» с одним `data-test`  
-- Orphans: `studio-shell.page.ts`, `studio-table-editor.component.ts`
+| # | ID | PROMPT | TZ |
+|---|-----|--------|-----|
+| 09 | S35 | `PROMPT-09-S35.md` | ORPHAN PURGE |
+| 10 | S38 | `PROMPT-12-S38.md` | UNSAVED GUARD |
+| 11 | S39 | `PROMPT-13-S39.md` | CREATE DOCTYPE |
+| 12 | S36 | `PROMPT-10-S36.md` | DOCS TRUTH |
+| 13 | S37 | `PROMPT-11-S37.md` | OPERATOR SMOKE |
+
+> Порядок C: orphans → guard → doctype → docs → **smoke последним** (после всех фич).
 
 ## Следующий к выдаче
 
-**PROMPT-01** (S27), пока PO не сказал иначе.
+**PROMPT-01** (S27).

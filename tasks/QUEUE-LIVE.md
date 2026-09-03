@@ -2,7 +2,7 @@
 
 | Slot | Волна | Статус |
 |------|-------|--------|
-| **#1** | Doc Studio FINISH S27–S37 | **READY** (не claimed) — pack `tasks/_ready/docstudio-finish/` |
+| **#1** | Doc Studio FINISH S27–S39 | **READY** — `tasks/_ready/docstudio-finish/` (13 TZ, operator-bar) |
 | **#2** | — | **free** |
 
 ## NEXT (по команде PO)

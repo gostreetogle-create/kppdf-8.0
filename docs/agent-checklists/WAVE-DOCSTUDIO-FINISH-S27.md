@@ -25,17 +25,20 @@ Audit: `docs/audits/2026-09-03-docstudio-honesty-audit.md`
 | 07 | [ ] S33 CREATE-KP-PATH | |
 | 08 | [ ] S34 FORMULA-DEDUP | |
 
-## Волна C — гигиена
+## Волна C — гигиена + любой документ
 
 | # | TZ | Status |
 |---|-----|--------|
 | 09 | [ ] S35 ORPHAN-PURGE | |
-| 10 | [ ] S36 DOCS-TRUTH | |
-| 11 | [ ] S37 OPERATOR-SMOKE | |
+| 10 | [ ] S38 UNSAVED-GUARD | уход без потери |
+| 11 | [ ] S39 CREATE-DOCTYPE | тип при создании |
+| 12 | [ ] S36 DOCS-TRUTH | |
+| 13 | [ ] S37 OPERATOR-SMOKE | **последний** |
 
 ## Closeout
 
-- [ ] все 11 archived  
+- [ ] все 13 archived  
 - [ ] `_active/` пуст  
+- [ ] operator-bar выполнен  
 - [ ] roadmap FINISH DONE  
-- [ ] QUEUE/_NOW updated  
+- [ ] QUEUE/_NOW updated 

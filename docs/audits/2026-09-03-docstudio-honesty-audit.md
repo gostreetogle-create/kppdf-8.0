@@ -28,6 +28,15 @@
 
 Editor = толстый orchestrator (ok для ERP), панели в отдельных файлах. Каша: мёртвые компоненты, dual rails, dual formula, docs≠code. Не рефакторить «ради модульности» сверх S35 — сначала рабочий контур A→B.
 
-## Pack
+## Operator bar (обязательство Cursor)
 
-`tasks/_ready/docstudio-finish/INDEX.md` — следующий PROMPT-01.
+См. `docs/architecture/nx-doc-studio-operator-bar.md`.  
+Добавлено после самопроверки «создать любой документ»:
+
+| # | Дыра | TZ |
+|---|------|-----|
+| 12 | Нет guard ухода / «К списку» | S38 |
+| 13 | Create без обязательного DocType (не только КП) | S39 |
+
+Итого pack: **S27–S39** (13 TZ). Smoke S37 — **после** S38/S39.
+

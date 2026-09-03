@@ -72,9 +72,10 @@ flowchart LR
 | S25 | REGISTRIES-CATEGORY-UI | DONE elsewhere |
 | S26 | OPERATOR-DOCS-V3 | FALSE docs → S36 |
 
-## FINISH S27–S37 (READY)
+## FINISH S27–S39 (READY)
 
-См. pack `tasks/_ready/docstudio-finish/`. Стержень: витрина → hydrate → liveRows → Save → Preview → KP path → hygiene.
+Pack `tasks/_ready/docstudio-finish/`.  
+Operator completeness: `docs/architecture/nx-doc-studio-operator-bar.md` (S27–S39; smoke S37 last).
 
 ## PARK
 

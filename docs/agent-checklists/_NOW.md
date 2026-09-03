@@ -10,9 +10,10 @@ updated_at: 2026-09-03T23:45:00+03:00
 
 ## NEXT
 
-1. Волна A: S27→S30 (витрина, hydrate, liveRows, Save)  
-2. Волна B: S31→S34 (Preview, rename, Новое КП, formula)  
-3. Волна C: S35→S37 (orphans, docs, smoke)
+1. A: S27→S30  
+2. B: S31→S34  
+3. C: S35 → S38 → S39 → S36 → S37 smoke  
+Operator bar: `docs/architecture/nx-doc-studio-operator-bar.md`
 
 ## DONE
 
