@@ -118,7 +118,7 @@ const DEVICE_TTL_OPTIONS = [
       }
       .field__input {
         width: 100%;
-        padding: 8px 10px;
+        padding: var(--space-2) calc(var(--space-2) + var(--space-1) / 2);
         font-size: 13px;
         color: var(--color-ink);
         background: var(--color-paper);

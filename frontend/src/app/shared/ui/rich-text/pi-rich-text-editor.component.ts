@@ -233,7 +233,7 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
         flex-wrap: wrap;
         align-items: center;
         gap: 5px;
-        padding: 6px 8px;
+        padding: calc(var(--space-2) - var(--space-1) / 2) var(--space-2);
         background: linear-gradient(
           to bottom,
           oklch(var(--color-paper-2)),
@@ -243,7 +243,7 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
         user-select: none;
       }
       .pi-rte--compact .pi-rte-toolbar {
-        padding: 4px 6px;
+        padding: var(--space-1) calc(var(--space-2) - var(--space-1) / 2);
         gap: 4px;
       }
 
@@ -251,7 +251,7 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
         display: flex;
         align-items: center;
         gap: 1px;
-        padding: 2px;
+        padding: calc(var(--space-1) / 2);
         background: oklch(var(--color-paper));
         border: 1px solid oklch(var(--color-rule));
         border-radius: 5px;
@@ -261,7 +261,7 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
         width: 1px;
         height: 18px;
         background: oklch(var(--color-rule));
-        margin: 0 2px;
+        margin: 0 calc(var(--space-1) / 2);
         flex-shrink: 0;
       }
 
@@ -271,7 +271,7 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
         justify-content: center;
         min-width: 26px;
         height: 24px;
-        padding: 0 6px;
+        padding: 0 calc(var(--space-2) - var(--space-1) / 2);
         font-size: 11px;
         font-weight: 600;
         font-family: inherit;
@@ -318,7 +318,7 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
-        padding: 12px 14px;
+        padding: var(--space-3) calc(var(--space-3) + var(--space-1) / 2);
         min-height: 52px;
         font-size: 14px;
         line-height: 1.6;
@@ -328,12 +328,12 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
         background: oklch(var(--color-paper));
       }
       .pi-rte-editor--compact {
-        padding: 10px 12px;
+        padding: calc(var(--space-2) + var(--space-1) / 2) var(--space-3);
         min-height: 38px;
         font-size: 13px;
       }
       .pi-rte-editor p {
-        margin: 0 0 6px;
+        margin: 0 0 calc(var(--space-2) - var(--space-1) / 2);
       }
       .pi-rte-editor p:last-child {
         margin-bottom: 0;
@@ -349,8 +349,8 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
       }
       :host ::ng-deep .substitution-token {
         display: inline-block;
-        padding: 1px 6px;
-        margin: 0 1px;
+        padding: calc(var(--space-1) / 4) calc(var(--space-2) - var(--space-1) / 2);
+        margin: 0 calc(var(--space-1) / 4);
         font-family: ui-monospace, monospace;
         font-size: 11px;
         font-weight: 600;

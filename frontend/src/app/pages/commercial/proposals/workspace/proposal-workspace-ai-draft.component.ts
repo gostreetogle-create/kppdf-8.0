@@ -108,7 +108,7 @@ interface ImportTodoListResponse {
       margin: 0;
       font-size: 0.75rem;
       line-height: 1.4;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
     }
     .kp-ws-ai-draft__actions {
       display: flex;
@@ -118,7 +118,7 @@ interface ImportTodoListResponse {
     }
     .kp-ws-ai-draft__manual {
       font-size: 0.75rem;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       text-decoration: none;
       border-bottom: 1px dashed var(--color-rule);
     }
@@ -131,7 +131,7 @@ interface ImportTodoListResponse {
       gap: 0.35rem;
       align-self: flex-start;
       font-size: 0.75rem;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       text-decoration: none;
     }
     .kp-ws-ai-draft__badge:hover {

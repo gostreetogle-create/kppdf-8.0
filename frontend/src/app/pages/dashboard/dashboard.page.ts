@@ -116,7 +116,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
     .cdk-drag-preview {
       box-sizing: border-box;
       opacity: 1 !important;
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       border: 1px solid var(--color-rule, #e5e5e5);
       border-radius: 2px;
       box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.22);

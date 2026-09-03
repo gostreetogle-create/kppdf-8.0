@@ -378,12 +378,12 @@ const SECTION_TO_GROUP: Record<string, string> = {
         display: flex;
         flex-direction: column;
         gap: 18px;
-        padding: 4px 0;
+        padding: var(--space-1) 0;
       }
 
       .role-form__banner {
         margin: 0;
-        padding: 10px 12px;
+        padding: calc(var(--space-2) + var(--space-1) / 2) var(--space-3);
         font-size: 13px;
         line-height: 1.45;
         color: var(--color-ink);
@@ -424,7 +424,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
 
       .field__input {
         width: 100%;
-        padding: 8px 10px;
+        padding: var(--space-2) calc(var(--space-2) + var(--space-1) / 2);
         font-size: 13px;
         color: var(--color-ink);
         background: var(--color-paper);
@@ -484,7 +484,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
       }
 
       .role-form__logic-hint {
-        margin: 6px 0 0;
+        margin: calc(var(--space-2) - var(--space-1) / 2) 0 0;
         max-width: 52rem;
         font-size: 12px;
         line-height: 1.45;
@@ -497,7 +497,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
         gap: 0;
         max-height: min(42vh, 420px);
         overflow-y: auto;
-        padding-right: 4px;
+        padding-right: var(--space-1);
         border-top: 1px solid var(--color-rule);
       }
 
@@ -505,7 +505,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
         border: none;
         border-bottom: 1px solid var(--color-rule);
         border-radius: 0;
-        padding: 14px 4px 16px;
+        padding: calc(var(--space-3) + var(--space-1) / 2) var(--space-1) var(--space-4);
         margin: 0;
       }
 
@@ -521,7 +521,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
         font-weight: 600;
         letter-spacing: 0.04em;
         color: var(--color-ink);
-        padding: 0 2px 4px;
+        padding: 0 calc(var(--space-1) / 2) var(--space-1);
       }
 
       .role-form__select-all {
@@ -544,7 +544,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px 12px;
-        margin-top: 10px;
+        margin-top: calc(var(--space-2) + var(--space-1) / 2);
       }
 
       @media (min-width: 1100px) {
@@ -563,7 +563,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
         display: flex;
         align-items: flex-start;
         gap: 8px;
-        padding: 8px 8px;
+        padding: var(--space-2);
         border: 1px solid var(--color-rule);
         border-radius: 3px;
         cursor: pointer;
@@ -580,7 +580,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
       }
 
       .role-form__checkbox {
-        margin-top: 2px;
+        margin-top: calc(var(--space-1) / 2);
         width: 14px;
         height: 14px;
         accent-color: var(--color-sunrise-warm);

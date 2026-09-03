@@ -54,7 +54,7 @@ export interface TreeDropEvent<T> {
       gap: 0.5rem;
       align-items: center;
       padding: 0.625rem 0.75rem;
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       border: 1px solid var(--color-rule, #e5e5e5);
       box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.2);
       border-radius: 2px;
@@ -64,7 +64,7 @@ export interface TreeDropEvent<T> {
       position: relative;
       min-height: 2.75rem;
       opacity: 1;
-      background: color-mix(in oklch, var(--color-gold, #c4a35a) 18%, transparent);
+      background: color-mix(in oklch, var(--color-gold) 18%, transparent);
       border: 1px dashed var(--color-gold, #c4a35a);
       border-radius: 2px;
     }
