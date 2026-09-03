@@ -11,7 +11,7 @@ Order: S33 → S39 · current S33
 
 ## DONE this slice
 
-- S30 `e7c824e7` · S31 `2a7d4a58` · S32 archived (SHA pending handoff)
+- S30 `e7c824e7` · S31 `2a7d4a58` · S32 `28d8950a`
 - Doc Studio S15–S26
 
 ## PARK
