@@ -43,6 +43,18 @@ const CONTACT_SECTION_HEAD: Record<string, { title: string; hint: string }> = {
 
 const CONTACT_SOURCE_ORDER = ['organization', 'counterparty', 'payer', 'supplier'] as const;
 
+/**
+ * Sources with a registry descriptor but no ID binder in the «Данные» panel
+ * yet — inserting their tokens would resolve to nothing on Preview. TZ-NX-
+ * DOCSTUDIO-S40: show disabled with a hint instead of a silently-empty token.
+ */
+const UNBOUND_SOURCE_HINTS: Record<string, string> = {
+  invoice: 'Нужна привязка сущности (в очереди)',
+  'work-type': 'Нужна привязка сущности (в очереди)',
+  product: 'Строки таблицы — витрина в Данные; одиночный токен — позже',
+  material: 'Строки таблицы — витрина в Данные; одиночный токен — позже',
+};
+
 const TABLE_AGGREGATE_FIELDS: readonly RegistryDataField[] = [
   { key: 'subtotal', label: 'Итого (subtotal)', type: 'currency' },
   { key: 'vat', label: 'НДС', type: 'currency' },
@@ -102,6 +114,10 @@ const TABLE_SOURCE: RegistryDataSource = {
                       type="button"
                       class="dfpd-source-row"
                       [class.is-selected]="selectedSource()?.key === src.key"
+                      [class.is-disabled]="isDisabled(src.key)"
+                      [disabled]="isDisabled(src.key)"
+                      [attr.aria-disabled]="isDisabled(src.key) ? 'true' : null"
+                      [title]="disabledHint(src.key) ?? ''"
                       (click)="pickSource(src)"
                     >
                       <span class="dfpd-source-name">{{ src.label }}</span>
@@ -112,6 +128,9 @@ const TABLE_SOURCE: RegistryDataSource = {
                         <span class="dfpd-arrow" aria-hidden="true">→</span>
                       </span>
                     </button>
+                    @if (disabledHint(src.key); as hint) {
+                      <p class="dfpd-source-disabled-hint" data-test="studio-data-source-disabled-hint">{{ hint }}</p>
+                    }
                   }
                 </div>
               </section>
@@ -286,6 +305,23 @@ const TABLE_SOURCE: RegistryDataSource = {
         background: color-mix(in oklch, var(--color-sunrise-warm) 10%, transparent);
         border-left: 3px solid var(--color-sunrise-warm);
       }
+      .dfpd-source-row.is-disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+      .dfpd-source-row.is-disabled:hover {
+        background: var(--color-paper);
+      }
+      .dfpd-source-disabled-hint {
+        margin: 0;
+        padding: 4px 16px 8px;
+        font-size: 11px;
+        line-height: 1.35;
+        color: var(--color-muted-foreground-strong);
+        background: var(--color-paper);
+        border-inline: 1px solid var(--color-rule);
+        border-bottom: 1px solid var(--color-rule);
+      }
       .dfpd-source-name {
         font-size: 14px;
         font-weight: 600;
@@ -459,8 +495,17 @@ export class StudioDataFieldPickerDialogComponent {
     }> = [];
 
     const contacts = map.get('contacts') ?? [];
+    const counterpartySrc = contacts.find((s) => s.key === 'counterparty');
     for (const key of CONTACT_SOURCE_ORDER) {
-      const src = contacts.find((s) => s.key === key) ?? (key === 'payer' || key === 'supplier' ? contacts.find((s) => s.key === 'counterparty') : undefined);
+      // Плательщик/Поставщик реюзают поля «Клиент», но со своим `key`
+      // (не 'counterparty') — иначе token()/confirmInsert не отличит их
+      // друг от друга и вставит {{counterparty.*}} вместо {{anchor.payer.*}}.
+      const src =
+        key === 'payer' || key === 'supplier'
+          ? counterpartySrc
+            ? { ...counterpartySrc, key, label: CONTACT_SECTION_HEAD[key].title }
+            : undefined
+          : contacts.find((s) => s.key === key);
       if (!src) continue;
       const section = CONTACT_SECTION_HEAD[key];
       result.push({
@@ -514,6 +559,7 @@ export class StudioDataFieldPickerDialogComponent {
   }
 
   protected pickSource(src: RegistryDataSource): void {
+    if (this.isDisabled(src.key)) return;
     this.selectedSource.set(src);
     this.pendingField.set(null);
   }
@@ -529,10 +575,18 @@ export class StudioDataFieldPickerDialogComponent {
     const field = this.pendingField();
     if (!src || !field) return;
     this.ref.close({
-      source: src.key,
+      source: this.anchorSource(src.key),
       sourceLabel: src.label,
       field,
     });
+  }
+
+  protected isDisabled(key: string): boolean {
+    return key in UNBOUND_SOURCE_HINTS;
+  }
+
+  protected disabledHint(key: string): string | undefined {
+    return UNBOUND_SOURCE_HINTS[key];
   }
 
   protected onCancel(): void {
@@ -540,8 +594,11 @@ export class StudioDataFieldPickerDialogComponent {
   }
 
   protected token(source: string, key: string): string {
-    const anchorSource = ['payer', 'supplier'].includes(source) ? `anchor.${source}` : source;
-    return `{{${anchorSource}.${key}}}`;
+    return `{{${this.anchorSource(source)}.${key}}}`;
+  }
+
+  private anchorSource(source: string): string {
+    return ['payer', 'supplier'].includes(source) ? `anchor.${source}` : source;
   }
 
   protected fieldDisplayLabel(src: RegistryDataSource, field: RegistryDataField): string {

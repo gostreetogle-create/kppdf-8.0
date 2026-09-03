@@ -1,6 +1,6 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T23:40:00+03:00
+updated_at: 2026-09-04T01:22:00+03:00
 
 ## ACTIVE / LIVE
 
@@ -15,7 +15,7 @@ Cursor = integrator (не product code). После merge обоих → S29 seq
 
 1. A: S27→S30  
 2. B: S31→S34  
-3. C: S35 → S38 → S39 → **S40 flex** → S36 → S37 smoke  
+3. C: S35 → S38 → S39 → S40 flex ✅ (2026-09-03, worktree `claude/docstudio-s40`, ждёт merge) → **S36** → S37 smoke  
 Operator bar + flexible binding: `docs/architecture/nx-doc-studio-operator-bar.md`
 
 ## DONE

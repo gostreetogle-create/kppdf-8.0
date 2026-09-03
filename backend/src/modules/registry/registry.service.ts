@@ -12,7 +12,7 @@ import { ProductSchema } from '../product/product.schema';
  *   to the registry automatically surfaces it in the picker, without
  *   redeploying frontend.
  * - Future extensibility (TZ-87): migrate to a Mongo-admin-managed
- *   registry IF the 7 sources grow to 15+; for MVP 7 entries hardcoded
+ *   registry IF the 8 sources grow to 15+; for MVP 8 entries hardcoded
  *   are cleaner than CRUD overhead.
  */
 export interface DataSourceDescriptor {
@@ -220,6 +220,21 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'date', label: 'Дата', type: 'date' },
       { key: 'validUntil', label: 'Действительно до', type: 'date' },
       { key: 'total', label: 'Итого', type: 'currency' },
+      { key: 'notes', label: 'Примечания', type: 'text' },
+    ],
+  },
+  {
+    key: 'order',
+    label: 'Заказ',
+    group: 'contacts',
+    fields: [
+      { key: 'number', label: 'Номер заказа', type: 'text' },
+      { key: 'date', label: 'Дата заказа', type: 'date' },
+      { key: 'plannedDate', label: 'Плановая дата', type: 'date' },
+      { key: 'status', label: 'Статус', type: 'text' },
+      { key: 'total', label: 'Сумма заказа', type: 'currency' },
+      { key: 'priority', label: 'Приоритет', type: 'text' },
+      { key: 'deliveryAddress', label: 'Адрес доставки', type: 'text' },
       { key: 'notes', label: 'Примечания', type: 'text' },
     ],
   },

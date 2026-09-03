@@ -26,6 +26,18 @@ describe('RegistryService.getDataSources', () => {
       ]),
     );
   });
+
+  it('exposes an order source with number/date/status/total fields', () => {
+    const { sources } = service.getDataSources();
+    const order = sources.find((s) => s.key === 'order');
+    const fieldKeys = order?.fields.map((f) => f.key) ?? [];
+
+    expect(order?.label).toBe('Заказ');
+    expect(fieldKeys).toEqual(
+      expect.arrayContaining(['number', 'date', 'status', 'total']),
+    );
+    expect(order?.fields.find((f) => f.key === 'total')?.type).toBe('currency');
+  });
 });
 
 describe('buildFieldsFromSchema', () => {
