@@ -1,14 +1,14 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T22:00:00+03:00
+updated_at: 2026-09-03T23:20:00+03:00
 
 ## ACTIVE / LIVE
 
-Слоты **свободны**. Очередь пуста (READY TZ нет). `DEPLOY-READY.md` = **READY** на `99a040e4` (см. `PRE-DEPLOY-2026-09-03.md`). Корневые spent TZ/prompts убраны в `_archive/2026-09/{sources-spent,prompts-spent,waves-spent}/`.
+Слоты **свободны**. Очередь пуста. NX local verification **PASS** (`docs/audits/2026-09-03-nx-verification.md`) на tip `94dd7625` — `:4201` + BE health + build + smoke proposals/orders/studio/registries/KP Family. `DEPLOY-READY.md` stamped (см. `PRE-DEPLOY-2026-09-03.md`); **deploy только по явной команде PO**.
 
 ## NEXT (готово к выдаче)
 
-Пусто. Можно: «сделай деплой по документации» (warm, без wipe) / ждать новую TZ-очередь от PO.
+Пусто. Опции: деплой warm без wipe / новая TZ-очередь / PARK punch-list (contracts UI и т.д.).
 
 ## DONE
 
