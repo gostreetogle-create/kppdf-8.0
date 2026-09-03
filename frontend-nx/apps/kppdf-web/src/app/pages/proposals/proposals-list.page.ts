@@ -74,7 +74,7 @@ const STATUS_LABELS: Record<string, string> = {
               </div>
               <div class="flex flex-col items-end gap-1">
                 <div class="flex items-center gap-2">
-                  @if (row.status === 'accepted') {
+                  @if (row.status === 'accepted' && (row.familyRole ?? 'solo') !== 'variant') {
                     <button
                       class="pi-button pi-button-primary"
                       type="button"
@@ -364,6 +364,8 @@ export class ProposalsListPage implements OnInit {
   }
 
   async convertToOrder(quotation: Quotation): Promise<void> {
+    // S47 — variants are not convertible: only the master/solo row may become an order.
+    if ((quotation.familyRole ?? 'solo') === 'variant') return;
     if (quotation.status !== 'accepted' || this.convertingId() !== null) return;
     this.convertingId.set(quotation._id);
     const result = await firstValueFrom(this.quotationsApi.convertToOrder(quotation._id));

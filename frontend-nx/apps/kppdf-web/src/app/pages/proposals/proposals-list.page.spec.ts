@@ -963,3 +963,88 @@ describe('ProposalsListPage — variant in studio (TZ-NX-KP-FAMILY-S46-VARIANT-S
     expect(router.navigate).toHaveBeenCalledWith(['/studio', 'doc-var-b']);
   });
 });
+
+describe('ProposalsListPage — convert guard (TZ-NX-KP-FAMILY-S47-CONVERT-GUARD-UX)', () => {
+  let fixture: ComponentFixture<ProposalsListPage>;
+  let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock };
+  let studioApi: { list: jest.Mock };
+  let organizationsApi: { list: jest.Mock };
+  let toast: { error: jest.Mock };
+  let router: { navigate: jest.Mock };
+
+  const rows: Quotation[] = [
+    { _id: 'q-master', number: 'KP-010', status: 'accepted', familyRole: 'master' },
+    { _id: 'q-var', number: 'KP-011', status: 'accepted', familyRole: 'variant' },
+    { _id: 'q-draft', number: 'KP-012', status: 'draft' },
+  ];
+
+  async function setup(): Promise<void> {
+    quotationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: rows })),
+      convertToOrder: jest.fn(),
+    };
+    studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    organizationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+    };
+    toast = { error: jest.fn() };
+
+    await TestBed.configureTestingModule({
+      imports: [ProposalsListPage],
+      providers: [
+        provideRouter([]),
+        { provide: PiQuotationsService, useValue: quotationsApi },
+        { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiToastService, useValue: toast },
+      ],
+    }).compileComponents();
+
+    router = { navigate: jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true) };
+    fixture = TestBed.createComponent(ProposalsListPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('renders «В заказ» only on the accepted master row — never on a variant row', async () => {
+    await setup();
+
+    const convertButtons = fixture.nativeElement.querySelectorAll('[data-test="proposal-convert-order"]');
+    expect(convertButtons.length).toBe(1);
+    expect(convertButtons[0].closest('[data-test="proposal-row"]').textContent).toContain('KP-010');
+    // Variant rows never surface as convert targets (hidden from the flat list entirely).
+    const renderedNumbers = Array.from(fixture.nativeElement.querySelectorAll('[data-test="proposal-row"]')).map(
+      (r) => (r as HTMLElement).textContent ?? '',
+    );
+    expect(renderedNumbers.some((t) => t.includes('KP-011'))).toBe(false);
+  });
+
+  it('guards convertToOrder against a variant row even if invoked directly', async () => {
+    await setup();
+
+    await fixture.componentInstance.convertToOrder(rows[1]); // accepted variant KP-011
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(quotationsApi.convertToOrder).not.toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('still converts an accepted master row', async () => {
+    await setup();
+    quotationsApi.convertToOrder.mockReturnValue(of({ ok: true, data: { orderId: 'order-1' } }));
+
+    const convert = fixture.nativeElement.querySelector('[data-test="proposal-convert-order"]') as HTMLButtonElement;
+    convert.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(quotationsApi.convertToOrder).toHaveBeenCalledWith('q-master');
+    expect(router.navigate).toHaveBeenCalledWith(['/orders', 'order-1']);
+  });
+});
