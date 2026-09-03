@@ -5,10 +5,11 @@ import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
-import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
+import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
 import { findKpDocType } from './studio-kp-doc-type';
 import { pickResumeStudioDocument, rememberStudioDocument } from './studio-session';
 import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogData } from './studio-template-picker-dialog.component';
+import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData, type StudioCreateDoctypeResult } from './studio-create-doctype-dialog.component';
 
 @Component({
   selector: 'pi-studio-list-page',
@@ -155,8 +156,30 @@ export class StudioListPage implements OnInit {
     });
   }
 
+  /** «Создать документ» — требует явный выбор типа, чтобы Save-as-template и токены/КП-lifecycle не ломались по смыслу. */
   create(): void {
-    this.createDocument();
+    void firstValueFrom(this.docTypesApi.list()).then((result) => {
+      if (!result.ok) {
+        this.toast.error(String(result.error));
+        return;
+      }
+      if (result.data.length === 0) {
+        this.toast.error('Нет доступных типов документов');
+        return;
+      }
+      this.openCreateDoctypeDialog(result.data);
+    });
+  }
+
+  private openCreateDoctypeDialog(docTypes: readonly DocType[]): void {
+    const ref = this.dialog.open<StudioCreateDoctypeResult | undefined, StudioCreateDoctypeDialogData>(
+      StudioCreateDoctypeDialogComponent,
+      { data: { docTypes, defaultName: this.buildDefaultName('Документ') } },
+    );
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      this.createDocument(result.name, result.docTypeId);
+    });
   }
 
   /** «Новое КП» — pre-selects the КП doc type so Шаблон/Данные and the quotation link are ready without an extra step. */
@@ -167,15 +190,17 @@ export class StudioListPage implements OnInit {
         this.toast.error('Тип документа «КП» не найден');
         return;
       }
-      this.createDocument(kpDocType._id);
+      this.createDocument(this.buildDefaultName('КП'), kpDocType._id);
     });
   }
 
-  private createDocument(docTypeId?: string): void {
-    const prefix = docTypeId ? 'КП' : 'Документ';
+  private buildDefaultName(prefix: string): string {
     const date = new Date().toLocaleDateString('ru-RU');
     const sameDay = this.documents().filter((d) => d.name.startsWith(`${prefix} ${date}`)).length;
-    const name = sameDay === 0 ? `${prefix} ${date}` : `${prefix} ${date} (${sameDay + 1})`;
+    return sameDay === 0 ? `${prefix} ${date}` : `${prefix} ${date} (${sameDay + 1})`;
+  }
+
+  private createDocument(name: string, docTypeId: string): void {
     void firstValueFrom(this.service.create({ name, orientation: 'portrait', pageSize: 'A4', docTypeId })).then((result) => {
       if (result.ok) {
         rememberStudioDocument(result.data._id);
