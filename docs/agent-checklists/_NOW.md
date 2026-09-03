@@ -1,21 +1,23 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T23:20:00+03:00
+updated_at: 2026-09-03T23:45:00+03:00
 
 ## ACTIVE / LIVE
 
-Слоты **свободны**. Очередь пуста. NX local verification **PASS** (`docs/audits/2026-09-03-nx-verification.md`) на tip `94dd7625` — `:4201` + BE health + build + smoke proposals/orders/studio/registries/KP Family. `DEPLOY-READY.md` stamped (см. `PRE-DEPLOY-2026-09-03.md`); **deploy только по явной команде PO**.
+Слоты свободны. Подготовлен pack **Doc Studio FINISH S27–S37** (не claimed).  
+Индекс: `tasks/_ready/docstudio-finish/INDEX.md`.  
+Завтра: PO просит промпт → Cursor даёт `PROMPT-01` … по цепочке.
 
-## NEXT (готово к выдаче)
+## NEXT
 
-Пусто. Опции: деплой warm без wipe / новая TZ-очередь / PARK punch-list (contracts UI и т.д.).
+1. Волна A: S27→S30 (витрина, hydrate, liveRows, Save)  
+2. Волна B: S31→S34 (Preview, rename, Новое КП, formula)  
+3. Волна C: S35→S37 (orphans, docs, smoke)
 
 ## DONE
 
-Sales S30–S39 · Contract C1–C5 · KP Family S40–S48 · QA Q1–Q4b · ARCH imports · lint slice-2 · lint:ui-tokens slice-3 (35/35, 0 errors) · Auth RBAC · nested i18n · catalog BOM-in-tree · DocStudio S7–S26
+Sales / KP Family / QA / Contract / registries categories · Doc Studio S16–S24* (см. honesty audit)
 
-## PARK (не очередь — punch-list)
+## PARK
 
-- NX `/contracts` UI · авто-резерв · statusOverride · Invoice · полный page crawl  
-- CRM: Counterparty.roles[], capability-флаги поверх страниц  
-См. `tasks/_backlog/crm-canon-2026-08-30/CRM-CANON-DECISIONS-BACKLOG.md`
+NX `/contracts` · Invoice · statusOverride · авто-резерв · desk-vitrina MASTER-CORE  

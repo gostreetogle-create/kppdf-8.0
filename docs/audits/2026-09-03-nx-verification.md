@@ -44,6 +44,13 @@ From `_NOW.md` + KP Family roadmap:
 - авто-резерв · `statusOverride` · Invoice · guest KP · полный page crawl  
 - CRM backlog (e.g. `Counterparty.roles[]`) — not NX wave closeout blockers  
 
+## Regression found after PO ask (витрина)
+
+- **В планах:** Doc Studio S9 CATALOG-VITRINA + S15 DATA-VITRINA-UNIFIED (в «Данные»); MASTER-CORE §1.4#4 — *отдельная* полная «Витрина КП | A4» после ORDERS-302 (ещё не очередь).
+- **На экране 2026-09-03:** `/studio` → «Данные» = только Клиент/КП/Заказ; сетки товаров **нет**. `pi-studio-showcase-panel` orphan; rail «Витрина» снят.
+- **Почему «нету»:** S15 закрыли как DONE в архиве, UI витрины при merge/rail cleanup не доехал / отвалился. Логика `catalogSelections` в editor ещё есть.
+- **TZ:** `tasks/_ready/TZ-NX-DOCSTUDIO-S27-DATA-VITRINA-RESTORE.md` 
+
 ## Operator note
 
 Acceptance surface = **NX `:4201`**. Legacy `:4200` is archive per `docs/architecture/MASTER-CORE.md`, not the final product UI.

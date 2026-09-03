@@ -1,8 +1,9 @@
 # Doc Studio — дорожная карта v2 (PO decisions 2026-09-02)
 
 > **SoT:** этот файл + `docs/pages/document-studio.page.md`  
-> **Очередь:** `tasks/WAVE-DOCSTUDIO-S16-S25.md`  
-> **S15–S26 DONE** · wave closeout S26
+> **Очередь FINISH:** `tasks/_ready/docstudio-finish/INDEX.md` · `WAVE-DOCSTUDIO-FINISH-S27.md`  
+> **S16–S26 (частично DONE на бумаге)** · **S15 vitrina/preview/save — FALSE/PARTIAL → FINISH S27–S37 READY**  
+> Honesty audit: `docs/audits/2026-09-03-docstudio-honesty-audit.md`
 
 ## Север (PO)
 
@@ -56,23 +57,24 @@ flowchart LR
 - **Новое КП:** пустой документ или из шаблона → витрина → при save создаётся draft Quotation.
 - Синхронизация items: catalog/таблица студии → `Quotation.items` при save и при смене статуса.
 
-## Волны
+## Волны (история S15–S26)
 
-| # | TZ | Суть |
+| # | TZ | Суть / честность 2026-09-03 |
 |---|-----|------|
-| S15 | DATA-VITRINA-UNIFIED | **DONE** |
-| S16 | RAIL-IA-SPLIT | Лево=Данные, право=макет |
-| S17 | RIBBON-PAGES-PANEL | Ribbon чистый + панель «Страницы» |
-| S17A | TABLE-TEMPLATE-COLUMN-LOCK | Колонки read-only при виде из реестра |
-| S18 | SAVE-AS-MENU | Сохранить / Сохранить как → шаблон + overwrite |
-| S19 | STUDIO-DELETE | Удаление документов и шаблонов |
-| S20 | KP-QUOTATION-LIFECYCLE | Draft Quotation, статус, sync, вход из /proposals |
-| S21 | TABLE-AGGREGATE-TOKENS | Итого/НДС в тексте из таблицы |
-| S22 | REGISTRY-VAT-RATE | Ставка НДС в реестре (SoT для формул и таблиц) |
-| S23 | FORMULA-REGISTRY | Реестр формул (сумма, %, НДС от S22) |
-| S24 | FORMULA-TEXT-BINDING | Формула в текстовом блоке |
-| S25 | REGISTRIES-CATEGORY-UI | Категории с заголовками в /registries |
-| S26 | OPERATOR-DOCS-V3 | Closeout |
+| S15 | DATA-VITRINA-UNIFIED | **FALSE_DONE** (UI срезан) → чинится S27–S29 |
+| S16 | RAIL-IA-SPLIT | DONE |
+| S17 | RIBBON-PAGES-PANEL | DONE |
+| S17A | TABLE-TEMPLATE-COLUMN-LOCK | DONE* |
+| S18 | SAVE-AS-MENU | DONE (Save-as); ribbon «Сохранить» fake → S30 |
+| S19 | STUDIO-DELETE | DONE |
+| S20 | KP-QUOTATION-LIFECYCLE | PARTIAL → усиление S33 |
+| S21–S24 | tokens / VAT / formulas | DONE* (S34 dedup UI) |
+| S25 | REGISTRIES-CATEGORY-UI | DONE elsewhere |
+| S26 | OPERATOR-DOCS-V3 | FALSE docs → S36 |
+
+## FINISH S27–S37 (READY)
+
+См. pack `tasks/_ready/docstudio-finish/`. Стержень: витрина → hydrate → liveRows → Save → Preview → KP path → hygiene.
 
 ## PARK
 

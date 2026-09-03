@@ -2,20 +2,19 @@
 
 | Slot | Волна | Статус |
 |------|-------|--------|
-| **#1** | — | **free** |
+| **#1** | Doc Studio FINISH S27–S37 | **READY** (не claimed) — pack `tasks/_ready/docstudio-finish/` |
 | **#2** | — | **free** |
-
-## DONE (сегодня / недавно)
-
-- QA Gates Q1–Q4b
-- Contract C1–C5
-- KP Family S40–S48
-- ARCH cross-page + lint raw-ui slice-2
-- lint:ui-tokens slice-3 (35/35 violations, 0 errors)
-- Auth RBAC ROLE-PERMS · BE nested-i18n · BOM-in-tree (ранее)
 
 ## NEXT (по команде PO)
 
-Очередь пуста — нет выданных READY-TZ.
+Выдача **по одному** PROMPT из `tasks/_ready/docstudio-finish/prompts/`.  
+Первый: `PROMPT-01-S27.md`. Не параллелить с другим studio TZ.
 
-Остальное — PARK / `_backlog/` (не брать списком без PO).
+## DONE (недавно)
+
+- QA / Contract / KP Family / lint slices / Deploy-Ready stamp  
+- Doc Studio S16–S26 на бумаге (honesty: S15/Save/Preview/docs — reopen FINISH)
+
+## PARK
+
+NX `/contracts` · Invoice · auto-reserve · MASTER-CORE desk vitrina после ORDERS-302
