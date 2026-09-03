@@ -93,3 +93,65 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
     expect(router.navigate).not.toHaveBeenCalled();
   });
 });
+
+describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VARIANTS)', () => {
+  let fixture: ComponentFixture<ProposalsListPage>;
+  let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock };
+  let studioApi: { list: jest.Mock };
+  let toast: { error: jest.Mock };
+
+  const familyRows: Quotation[] = [
+    { _id: 'q-master', number: 'KP-010', status: 'sent', familyRole: 'master', familyVersion: 3 },
+    { _id: 'q-variant-a', number: 'KP-011', status: 'draft', familyRole: 'variant', masterId: 'q-master' },
+    { _id: 'q-solo', number: 'KP-012', status: 'draft' },
+  ];
+
+  async function setup(): Promise<void> {
+    quotationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: familyRows })), convertToOrder: jest.fn() };
+    studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    toast = { error: jest.fn() };
+    await TestBed.configureTestingModule({
+      imports: [ProposalsListPage],
+      providers: [
+        provideRouter([]),
+        { provide: PiQuotationsService, useValue: quotationsApi },
+        { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiToastService, useValue: toast },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ProposalsListPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('hides family variants from the flat list but keeps master and solo rows', async () => {
+    await setup();
+
+    const rows = fixture.nativeElement.querySelectorAll('[data-test="proposal-row"]');
+    expect(rows.length).toBe(2);
+    const numbers = Array.from(rows).map((row) => (row as HTMLElement).textContent ?? '');
+    expect(numbers.some((text) => text.includes('KP-011'))).toBe(false);
+    expect(numbers.some((text) => text.includes('KP-010'))).toBe(true);
+    expect(numbers.some((text) => text.includes('KP-012'))).toBe(true);
+  });
+
+  it('renders the «Семья» badge only on the master row', async () => {
+    await setup();
+
+    const rows = fixture.nativeElement.querySelectorAll('[data-test="proposal-row"]');
+    const masterRow = Array.from(rows).find((row) =>
+      ((row as HTMLElement).textContent ?? '').includes('KP-010'),
+    );
+    const soloRow = Array.from(rows).find((row) =>
+      ((row as HTMLElement).textContent ?? '').includes('KP-012'),
+    );
+    expect(masterRow?.querySelector('[data-test="proposal-family-badge"]')).toBeTruthy();
+    expect(soloRow?.querySelector('[data-test="proposal-family-badge"]')).toBeFalsy();
+  });
+});

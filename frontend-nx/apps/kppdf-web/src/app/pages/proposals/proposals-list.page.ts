@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PiQuotationsService, PiStudioDocumentsService, type Quotation, type StudioDocument } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
+import { BadgeComponent } from '@kppdf/ui/badge';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
 
@@ -19,7 +20,7 @@ const STATUS_LABELS: Record<string, string> = {
   selector: 'pi-proposals-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, BadgeComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="proposals-list">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -45,7 +46,12 @@ const STATUS_LABELS: Record<string, string> = {
           @for (row of filtered(); track row._id) {
             <div class="flex items-center justify-between gap-4 px-4 py-3 hairline-bottom" data-test="proposal-row">
               <div>
-                <div class="font-medium">{{ row.number }}</div>
+                <div class="flex items-center gap-2">
+                  <div class="font-medium">{{ row.number }}</div>
+                  @if ((row.familyRole ?? 'solo') === 'master') {
+                    <app-pi-badge variant="outline" data-test="proposal-family-badge">Семья</app-pi-badge>
+                  }
+                </div>
                 <div class="text-xs text-muted-foreground">{{ statusLabel(row.status) }}</div>
               </div>
               <div class="flex items-center gap-2">
@@ -83,7 +89,9 @@ export class ProposalsListPage implements OnInit {
   readonly error = signal('Не удалось загрузить КП.');
   readonly convertingId = signal<string | null>(null);
   readonly filtered = computed(() =>
-    this.rows().filter((row) => row.status !== 'cancelled'),
+    this.rows().filter(
+      (row) => row.status !== 'cancelled' && (row.familyRole ?? 'solo') !== 'variant',
+    ),
   );
 
   ngOnInit(): void {
