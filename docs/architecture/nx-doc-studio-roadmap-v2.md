@@ -2,8 +2,8 @@
 
 > **SoT:** этот файл + `docs/pages/document-studio.page.md`  
 > **Очередь FINISH:** `tasks/_ready/docstudio-finish/INDEX.md` · `WAVE-DOCSTUDIO-FINISH-S27.md`  
-> **S16–S26 (частично DONE на бумаге)** · **S15 vitrina/preview/save — FALSE/PARTIAL → FINISH S27–S37 READY**  
-> Honesty audit: `docs/audits/2026-09-03-docstudio-honesty-audit.md`
+> **FINISH S27–S35, S38–S40 — DONE** (архивы в `tasks/_archive/2026-09/`). S36 (этот файл) — в работе, S37 (operator smoke) — последний, ещё не запущен.  
+> Honesty audit: `docs/audits/2026-09-03-docstudio-honesty-audit.md` (дыры S27–S40 закрыты кодом; S15 `FALSE_DONE` — fixed-by S27–S29)
 
 ## Север (PO)
 
@@ -61,7 +61,7 @@ flowchart LR
 
 | # | TZ | Суть / честность 2026-09-03 |
 |---|-----|------|
-| S15 | DATA-VITRINA-UNIFIED | **FALSE_DONE** (UI срезан) → чинится S27–S29 |
+| S15 | DATA-VITRINA-UNIFIED | **FALSE_DONE** (UI срезан) → **fixed-by S27 (витрина в Данные), S28 (backend hydrate), S29 (FE live rows)** |
 | S16 | RAIL-IA-SPLIT | DONE |
 | S17 | RIBBON-PAGES-PANEL | DONE |
 | S17A | TABLE-TEMPLATE-COLUMN-LOCK | DONE* |
@@ -72,10 +72,11 @@ flowchart LR
 | S25 | REGISTRIES-CATEGORY-UI | DONE elsewhere |
 | S26 | OPERATOR-DOCS-V3 | FALSE docs → S36 |
 
-## FINISH S27–S39 (READY)
+## FINISH S27–S40 — DONE (S37 last, pending)
 
-Pack `tasks/_ready/docstudio-finish/`.  
-Operator completeness: `docs/architecture/nx-doc-studio-operator-bar.md` (S27–S39; smoke S37 last).
+Pack `tasks/_ready/docstudio-finish/`. S27–S35, S38, S39, S40 archived в `tasks/_archive/2026-09/`.
+S36 (docs truth) — эта TZ. S37 (operator smoke) — последний, запускается после S36.
+Operator completeness: `docs/architecture/nx-doc-studio-operator-bar.md` (S27–S40; smoke S37 last).
 
 ## PARK
 

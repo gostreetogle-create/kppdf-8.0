@@ -11,7 +11,7 @@
 
 `pageKey`: `doc-studio` · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
-**Статус волны:** S2–S26 **DONE** (chain S16–S26). Дорожная карта v2: [`../architecture/nx-doc-studio-roadmap-v2.md`](../architecture/nx-doc-studio-roadmap-v2.md).
+**Статус волны:** S2–S26 закрыты на бумаге, но операторский контур (витрина/Save/Preview/live rows) был честно исправлен только FINISH-волной **S27–S35, S38–S40 DONE**; S37 (smoke) — последний, после S36. Дорожная карта v2: [`../architecture/nx-doc-studio-roadmap-v2.md`](../architecture/nx-doc-studio-roadmap-v2.md).
 
 ### КП lifecycle (S20)
 
@@ -52,8 +52,8 @@
 | Зона | Элементы | Назначение |
 |------|----------|------------|
 | **Контекст** | «Студия документов», **+ Страница**, ‹ Стр. N / M ›, **Книжная/Альбомная** | Метка модуля; добавить страницу (`manualPageCount`); навигация по страницам; PATCH `orientation` на документе |
-| **Документ** | Badge имени, «Страниц: N» | `doc.name`, `pageCount()` — только информация |
-| **Действия** | К списку · **Редактор** · **Просмотр** · Шаблон · PDF · В архив | Навигация, режим, вывод |
+| **Документ** | Кликабельное имя документа (`doc.name`), «Страниц: N» | Клик по имени → диалог переименования (`studio-rename`, S32); `pageCount()` — информация |
+| **Действия** | К списку · **Редактор** · **Сохранить** · Сохранить как… · **Просмотр** · PDF · В архив | Навигация, режим, честное сохранение, вывод |
 
 **Ribbon — что работает сейчас**
 
@@ -61,8 +61,9 @@
 |--------|-----------|
 | К списку | `/studio`; если есть несохранённые правки (сдвиг блока/layout debounce, save in-flight или неподтверждённый server patch блока) — диалог «Уйти без сохранения?» (Остаться / Уйти / Сохранить и уйти) перед навигацией (S38) |
 | Редактор | Canvas: drag/resize, правка текста и таблиц на листе |
-| Просмотр | `POST /studio-documents/:id/preview` → iframe с HTML как при печати |
-| Шаблон | Диалог save-as-template (нужен `docTypeId`) |
+| Сохранить | `saveDocument()` форсирует flush отложенных layout-патчей (`flushLayouts`), для КП синхронизирует `Quotation.items` из таблицы, ждёт подтверждения сервера и только после этого показывает toast — не toast без записи (S30) |
+| Сохранить как… | Диалог save-as-template (нужен `docTypeId`) |
+| Просмотр | `POST /studio-documents/:id/preview` → iframe с HTML как при печати (S31) |
 | PDF | `downloadPdf` + сохранение файла |
 | В архив | Confirm → finalize (draft→frozen→final), ERP snapshot строк таблицы |
 
@@ -112,7 +113,7 @@ S16 целевая IA: слева остаётся только «Данные»
 | Механизм | Где настраивается | Синтаксис | Когда подставляются данные |
 |----------|-------------------|-----------|----------------------------|
 | **Текстовые токены** | Свойства → текст → «Поле ERP» | `{{source.field}}`, напр. `{{counterparty.name}}` | **Просмотр / PDF / архив** (серверный рендер). В режиме **Редактор** на листе виден **сырой токен**. |
-| **Строки таблицы из ERP** | Legacy: rail «Таблица» + `putDataSet`. **NX: UI отсутствует** | dataSet `source.type`: `quotation-items` \| `order-items` | **Просмотр / PDF**, если в документе есть dataSet и в **Данные** выбран КП/заказ. Строки live-read до finalize, потом snapshot. |
+| **Строки таблицы из ERP** | Свойства таблицы → селект «Источник строк» (`onTableSourceChange` → `putDataSet`) | dataSet `source.type`: `manual` \| `quotation-items` \| `order-items` \| `catalog-*` | **Редактор** (live rows сразу после выбора, S29) и **Просмотр / PDF**. Строки live-read до finalize, потом snapshot. |
 
 Каталог полей для текстовых токенов: `GET /api/registry/data-sources` → диалог «Постановочные данные» (`studio-data-field-picker-dialog`).
 
@@ -250,9 +251,9 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 | `POST …/pdf` | PDF |
 | `POST …/finalize` | В архив |
 | `POST …/save-as-template` | Шаблон |
-| `POST …/from-template` | **Нет UI на `/studio`** (S8-3) |
-| `POST …/duplicate` | **Нет UI на `/studio`** (S8-3) |
-| `PUT …/data-sets/:key` | **Нет UI** (S8-2) |
+| `POST …/from-template` | «Из шаблона» на `/studio` (S27) |
+| `POST …/duplicate` | «Дублировать» на карточке документа (S27) |
+| `PUT …/data-sets/:key` | Свойства таблицы → «Источник строк» (S28–S29) |
 | `GET registry/data-sources` | picker ERP-полей |
 
 ---
