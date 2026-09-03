@@ -61,6 +61,23 @@ slice-3 (`99a040e4`). 503 non-spec `.ts` files changed since `fd416e40` — full
 suites (not just diff-derived subset) run and green, exceeding the incremental
 spec-coverage check.
 
+## Retarget (2026-09-03T22:20:00+03:00)
+
+`deploy_sha_target` moved from `99a040e4` (gates run above) to tip
+`7eac057cfc43ba49da26ab1758d6b72c8e036798` (== `origin/main`). Commits after
+`99a040e4`:
+
+```text
+15ce535d docs: archive spent TZ/prompts and record deploy smoke
+7eac057c docs(ops): stamp Deploy-Ready on 99a040e4
+```
+
+`git diff --name-only 99a040e4..7eac057c` — docs/tasks only (`docs/agent-checklists/**`,
+`deploy/synology/README.md`, `tasks/**` archive/prompt housekeeping). No
+`frontend/`, `backend/`, or `frontend-nx/` product delta. Product gates
+inherited from `99a040e4`; no product delta — full BE+FE/architecture/nx-build
+re-run not required for this retarget.
+
 ## Agent deploy instructions (for next chat)
 
 1. Stamp READY below → `git pull --ff-only` on `main`

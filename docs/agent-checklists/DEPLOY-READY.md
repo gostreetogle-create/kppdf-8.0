@@ -8,8 +8,8 @@
 
 ```yaml
 status: READY
-deploy_sha_target: 99a040e4d08b0aa3d0639b2474ef3067beeb1f3c
-prepared_at: 2026-09-03T21:55:00+03:00
+deploy_sha_target: 7eac057cfc43ba49da26ab1758d6b72c8e036798
+prepared_at: 2026-09-03T22:20:00+03:00
 prepared_by: claude-executor
 evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-03.md
 debt:
