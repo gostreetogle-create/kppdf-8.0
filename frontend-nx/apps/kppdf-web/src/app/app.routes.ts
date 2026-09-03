@@ -58,7 +58,10 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'orders',
-        loadComponent: () => import('./pages/orders/orders-list.page').then((m) => m.OrdersListPage),
+        children: [
+          { path: '', pathMatch: 'full', loadComponent: () => import('./pages/orders/orders-list.page').then((m) => m.OrdersListPage) },
+          { path: ':id', loadComponent: () => import('./pages/orders/order-detail.page').then((m) => m.OrderDetailPage) },
+        ],
       },
     ],
   },

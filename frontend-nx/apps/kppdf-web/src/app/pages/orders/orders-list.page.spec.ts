@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { of, Subject } from 'rxjs';
 import { PiOrdersService, type Order } from '@kppdf/data-access';
 import type { SilentResult } from '@kppdf/util-http';
@@ -29,7 +30,7 @@ describe('OrdersListPage (TZ-NX-SALES-S34-ORDERS-LIST)', () => {
     service = { list: jest.fn().mockReturnValue(result) };
     await TestBed.configureTestingModule({
       imports: [OrdersListPage],
-      providers: [{ provide: PiOrdersService, useValue: service }],
+      providers: [provideRouter([]), { provide: PiOrdersService, useValue: service }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(OrdersListPage);
@@ -65,7 +66,7 @@ describe('OrdersListPage (TZ-NX-SALES-S34-ORDERS-LIST)', () => {
       .mockReturnValueOnce(of({ ok: true, data: orders } satisfies SilentResult<Order[]>));
     await TestBed.configureTestingModule({
       imports: [OrdersListPage],
-      providers: [{ provide: PiOrdersService, useValue: service }],
+      providers: [provideRouter([]), { provide: PiOrdersService, useValue: service }],
     }).compileComponents();
     fixture = TestBed.createComponent(OrdersListPage);
     fixture.detectChanges();
@@ -90,7 +91,7 @@ describe('OrdersListPage (TZ-NX-SALES-S34-ORDERS-LIST)', () => {
     expect(fixture.nativeElement.textContent).toContain('Заказов пока нет');
   });
 
-  it('renders Russian status, payment, and direct-order markers without a detail link', async () => {
+  it('renders Russian status, payment, and direct-order markers with a detail link per row', async () => {
     await setup(of({ ok: true, data: orders } satisfies SilentResult<Order[]>));
     await settle();
 
@@ -103,6 +104,8 @@ describe('OrdersListPage (TZ-NX-SALES-S34-ORDERS-LIST)', () => {
     expect(rows[1].textContent).toContain('Черновик');
     expect(rows[1].textContent).toContain('Не оплачен');
     expect(rows[1].textContent).toContain('Без КП');
-    expect(fixture.nativeElement.querySelector('a')).toBeNull();
+    const link = rows[0].querySelector('[data-test="orders-row-link"]') as HTMLAnchorElement;
+    expect(link).toBeTruthy();
+    expect(link.getAttribute('href')).toBe('/orders/order-1');
   });
 });

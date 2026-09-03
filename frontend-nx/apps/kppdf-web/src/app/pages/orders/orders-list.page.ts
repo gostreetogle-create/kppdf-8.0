@@ -1,24 +1,16 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { PiOrdersService, type Order, type OrderStatus } from '@kppdf/data-access';
+import { PiOrdersService, type Order } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  draft: 'Черновик',
-  confirmed: 'Подтверждён',
-  in_production: 'В производстве',
-  ready: 'Готов',
-  shipped: 'Отгружен',
-  delivered: 'Доставлен',
-  cancelled: 'Отменён',
-};
+import { orderStatusLabel } from './order-status';
 
 @Component({
   selector: 'pi-orders-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, RouterLink],
   template: `
     <main class="px-panel-inset py-6" data-test="orders-list">
       <div class="mb-6">
@@ -53,15 +45,16 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
           aria-label="Заказы"
           data-test="orders-table"
         >
-          <div class="grid grid-cols-[minmax(0,1.4fr)_minmax(8rem,1fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)] gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
+          <div class="grid grid-cols-[minmax(0,1.4fr)_minmax(8rem,1fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(6rem,0.6fr)] gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
             <span role="columnheader">Номер</span>
             <span role="columnheader">Статус</span>
             <span role="columnheader">Оплата</span>
             <span role="columnheader">КП</span>
+            <span role="columnheader" aria-label="Открыть карточку"></span>
           </div>
           @for (row of rows(); track row._id) {
             <div
-              class="grid grid-cols-[minmax(0,1.4fr)_minmax(8rem,1fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0"
+              class="grid grid-cols-[minmax(0,1.4fr)_minmax(8rem,1fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(6rem,0.6fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0"
               role="row"
               data-test="orders-row"
             >
@@ -69,6 +62,9 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
               <span class="text-sm" role="cell">{{ statusLabel(row.status) }}</span>
               <span class="text-sm" role="cell">{{ row.isPaid ? 'Оплачен' : 'Не оплачен' }}</span>
               <span class="text-sm text-muted-foreground" role="cell">{{ row.quotationId ? 'Есть КП' : 'Без КП' }}</span>
+              <a class="pi-button pi-button-secondary" [routerLink]="['/orders', row._id]" role="cell" data-test="orders-row-link">
+                Карточка
+              </a>
             </div>
           }
         </div>
@@ -100,7 +96,5 @@ export class OrdersListPage implements OnInit {
     });
   }
 
-  statusLabel(status?: OrderStatus): string {
-    return status ? (STATUS_LABELS[status] ?? status) : '—';
-  }
+  protected readonly statusLabel = orderStatusLabel;
 }

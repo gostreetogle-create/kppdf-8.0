@@ -17,7 +17,14 @@
 
 `frontend-nx` exposes the authenticated `/orders` route as a thin, read-only journal backed by `PiOrdersService.list()` and `GET /api/orders`. The list renders the order number, Russian lifecycle status, payment fact (`Оплачен` / `Не оплачен`), and `Без КП` for direct orders without `quotationId`.
 
-The list has explicit loading, retryable API-error, and empty states. S34 intentionally does not add a detail link; `/orders/:id` is owned by S35. The page does not add create/edit actions or lifecycle writes.
+The list has explicit loading, retryable API-error, and empty states. Since S35 each row links to the card via `Карточка` → `/orders/:id`. The page does not add create/edit actions or lifecycle writes.
+
+## NX order detail (S35)
+
+`/orders/:id` (`order-detail.page.ts`) is a thin card backed by `PiOrdersService.getById()` and `GET /api/orders/:id`. It shows the number, a Russian lifecycle status banner, Заказчик/Объект meta when populated, line items (name × qty), the quotation chip, and the payment fact.
+
+- **Оплата:** checkbox `Оплачен` → `PATCH /orders/:id { isPaid }` via `PiOrdersService.update()`. The toggle is optimistic with an explicit revert: on failure a toast appears and the checkbox is re-asserted to the old fact (`isPaid` не врёт). Payment never touches lifecycle status.
+- **КП:** with `quotationId` the card shows the quotation number + `КП в студии` button navigating to `/studio?quotationId=` (proposals pattern, no stub creation). Direct order → plain `Без КП` text, **no** `Создать черновик КП` CTA and no `stub-proposal` call anywhere in the NX page.
 
 ## Order lifecycle hub expand (HUB-302 + HUB-303 + HUB-304)
 
