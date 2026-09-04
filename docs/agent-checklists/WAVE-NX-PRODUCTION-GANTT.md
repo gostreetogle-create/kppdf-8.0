@@ -24,7 +24,7 @@ NX `/production` = привычный план-Гант с legacy (дерево,
 - [x] **G3** Tree + cascade UI — архив `tasks/_archive/2026-09/TZ-NX-GANTT-G3-TREE-CASCADE.done.md`
 - [x] **G4** Zoom/pan/today fixes — архив `tasks/_archive/2026-09/TZ-NX-GANTT-G4-PAN-ZOOM-FIX.done.md`
 - [x] **G5** Write estimate/plannedDate — `tasks/_ready/nx-gantt/TZ-NX-GANTT-G5-WRITE-PATH.md`
-- [ ] **G6** Workers view — `tasks/_ready/nx-gantt/TZ-NX-GANTT-G6-WORKERS-VIEW.md`
+- [x] **G6** Workers view — `tasks/_ready/nx-gantt/TZ-NX-GANTT-G6-WORKERS-VIEW.md`
 - [ ] **G7** Smoke + docs Integrity — `tasks/_ready/nx-gantt/TZ-NX-GANTT-G7-SMOKE-DOCS.md`
 
 ## Closeout
