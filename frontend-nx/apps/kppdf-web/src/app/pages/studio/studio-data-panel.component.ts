@@ -12,7 +12,7 @@ import { StudioDataVitrinaComponent, type StudioCatalogSelections, type StudioSh
   template: `
     <div data-test="studio-data-panel">
       <p class="heading">Данные</p>
-      <pi-studio-data-vitrina [selected]="catalogSelections()" (catalogChange)="catalogChange.emit($event)" />
+      <pi-studio-data-vitrina [selected]="catalogSelections()" [busy]="catalogWriteBusy()" (catalogChange)="catalogChange.emit($event)" />
       @if (selectedAnchors().length > 0 || catalogChips().length > 0) {
         <div class="selected" data-test="studio-selected-anchors">
           <dt class="label">Выбрано</dt>
@@ -194,6 +194,7 @@ export class StudioDataPanelComponent {
   readonly selectedAnchors = input<readonly { key: string; label: string; name: string }[]>([]);
   readonly catalogChips = input<readonly { key: string; label: string; count: number }[]>([]);
   readonly catalogSelections = input<StudioCatalogSelections>({ products: [], modules: [], parts: [], materials: [] });
+  readonly catalogWriteBusy = input(false);
   readonly showKpStatus = input(false);
   readonly quotationStatus = input<QuotationStatus | ''>('');
 

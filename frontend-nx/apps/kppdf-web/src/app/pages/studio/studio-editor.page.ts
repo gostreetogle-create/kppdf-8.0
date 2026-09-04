@@ -61,7 +61,7 @@ import {
   StudioUnsavedChangesDialogComponent,
   type StudioUnsavedChangesChoice,
 } from './studio-unsaved-changes-dialog.component';
-import type { StudioShowcaseKind } from './studio-data-vitrina.component';
+import type { StudioCatalogSelections, StudioShowcaseKind } from './studio-data-vitrina.component';
 import { StudioElementsPanelComponent } from './studio-elements-panel.component';
 import { StudioLayersPanelComponent } from './studio-layers-panel.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
@@ -266,6 +266,7 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
                 [selectedAnchors]="selectedAnchorLabels()"
                 [catalogChips]="catalogChipLabels()"
                 [catalogSelections]="catalogSelections()"
+                [catalogWriteBusy]="catalogWriteBusy()"
                 [contextSaving]="contextSaving()"
                 [contextSaveError]="contextSaveError()"
                 [showKpStatus]="isKpDoc()"
@@ -504,6 +505,11 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly contextSaving = signal(false);
   readonly contextSaveError = signal<string | null>(null);
   readonly catalogSelections = signal<{ products: readonly string[]; modules: readonly string[]; parts: readonly string[]; materials: readonly string[] }>({ products: [], modules: [], parts: [], materials: [] });
+  /** TZ-NX-DOCSTUDIO-S41 — true while the catalog write queue has a PATCH context / putDataSet in flight. */
+  readonly catalogWriteBusy = signal(false);
+  /** TZ-NX-DOCSTUDIO-S41 — serializes vitrina writes so putDataSet always uses the revision from the PATCH it followed, never a stale one raced against it. */
+  private catalogWriteChain: Promise<void> = Promise.resolve();
+  private catalogWritePending = 0;
   readonly blocks = signal<readonly StudioBlock[]>([]);
   readonly selectedId = signal<string | null>(null);
   readonly activeLayerId = signal<string | null>(null);
@@ -1538,12 +1544,49 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   onCatalogSelectionChange(change: { kind: StudioShowcaseKind; ids: readonly string[] }): void {
-    const doc = this.document();
-    if (!doc) return;
+    if (!this.document()) return;
     const next = { ...this.catalogSelections(), [change.kind]: change.ids };
     this.catalogSelections.set(next);
-    this.patchDocumentContext({ ...(doc.context ?? {}), catalogSelections: next });
-    const matchingSource = `catalog-${change.kind}` as 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials';
+
+    // TZ-NX-DOCSTUDIO-S41 — one write queue per document: chain onto the
+    // previous vitrina write instead of firing PATCH context and putDataSet
+    // in parallel against a revision snapshotted at click time. Each step
+    // below reads `this.document()` fresh when it actually runs, i.e. after
+    // every earlier queued write already landed — so it always carries the
+    // revision the *previous* write returned, never a stale one raced
+    // against it. This is what removes the cascade-409 on rapid clicks.
+    this.catalogWritePending += 1;
+    this.catalogWriteBusy.set(true);
+    this.catalogWriteChain = this.catalogWriteChain
+      .then(() => this.commitCatalogSelectionChange(change.kind, next, change.ids.length))
+      .finally(() => {
+        this.catalogWritePending -= 1;
+        if (this.catalogWritePending === 0) this.catalogWriteBusy.set(false);
+      });
+  }
+
+  private async commitCatalogSelectionChange(
+    kind: StudioShowcaseKind,
+    next: StudioCatalogSelections,
+    idsCount: number,
+  ): Promise<void> {
+    const doc = this.document();
+    if (!doc) return;
+    const patchResult = await firstValueFrom(
+      this.documents.update(doc._id, {
+        expectedRevision: doc.revision ?? 1,
+        context: { ...(doc.context ?? {}), catalogSelections: next },
+      }),
+    );
+    if (!patchResult.ok) {
+      this.conflict();
+      return;
+    }
+    this.document.set(patchResult.data);
+    this.refreshPreviewIfActive();
+    void this.syncKpQuotationItems();
+
+    const matchingSource = `catalog-${kind}` as 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials';
     const tables = this.blocks().filter((item) => item.type === 'table');
     const soleTable = tables.length === 1 ? tables[0] : null;
     for (const block of tables) {
@@ -1557,16 +1600,23 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           ? { ...item, settings: { ...(item.settings ?? {}), dataSource: { type: matchingSource } } }
           : item));
       }
-      void firstValueFrom(this.documents.putDataSet(doc._id, `table-${block._id}`, {
-        expectedRevision: this.document()?.revision ?? doc.revision ?? 1,
-        dataSet: { source: { type: source }, rows: [], catalogSelectionCount: change.ids.length },
-      })).then((result) => {
-        if (result.ok) {
-          this.document.set(result.data);
-          this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === `table-${block._id}`) ?? { rows: [] });
-          this.refreshPreviewIfActive();
-        } else this.conflict();
-      });
+      // Always the revision the PATCH above (or an earlier iteration of this
+      // same loop) just returned — never the snapshot from before this queue
+      // entry started running.
+      const currentRevision = this.document()?.revision ?? doc.revision ?? 1;
+      const result = await firstValueFrom(
+        this.documents.putDataSet(doc._id, `table-${block._id}`, {
+          expectedRevision: currentRevision,
+          dataSet: { source: { type: source }, rows: [], catalogSelectionCount: idsCount },
+        }),
+      );
+      if (!result.ok) {
+        this.conflict();
+        return;
+      }
+      this.document.set(result.data);
+      this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === `table-${block._id}`) ?? { rows: [] });
+      this.refreshPreviewIfActive();
     }
   }
 

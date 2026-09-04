@@ -1,28 +1,22 @@
 ﻿# NOW
 
-updated_at: 2026-09-04T19:30:00+03:00
+updated_at: 2026-09-04T22:40:00+03:00
 
 ## ACTIVE / LIVE
 
-**S37B DONE** (`tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-S37B-COUNTERPARTY-TOKEN-PREVIEW.done.md`).
-Полный код-трейс «Поле ERP» → doc.context → substitution bag → Просмотр не нашёл
-дефекта; закрыт пробел покрытия (`studio-text-properties.component.spec.ts`).
-Live browser click-through не выполнен в сессии (нет browser-инструмента; login
-заблокирован security-классификатором). `tasks/_active/` пуст.
-
-**S37 сам ещё не archived DONE** — нужен короткий живой re-check AC2
-(~2 мин, клик через оба шага диалога «Поле ERP» до конца) перед закрытием WAVE.
-
-HEAD: `280cd295` (+ S37B, не запушено — см. GIT-POLICY перед push)
+`tasks/_active/` пуст.  
+S41 DONE (не запушено ещё — commit/push следующим шагом). Claude terminal свободен.
 
 ## NEXT
 
-1. Живой mini-smoke AC2 (2 мин в браузере) → если PASS: archive S37 DONE + WAVE closeout
-2. Commit/push S37B по GIT-POLICY
+1. Commit/push S41 по GIT-POLICY  
+2. Freebuff **IDLE**: нет безопасной параллели (`tasks/_ready/FREEBUFF-PARALLEL-STATUS.md`) — пересмотреть теперь, когда S41 закрыт  
+3. PO выбирает A contracts / B Invoice / C auto-reserve → Cursor пишет TZ+промпт  
+4. Живой AC2 (S37) → archive S37 DONE + WAVE closeout — всё ещё не выполнено, S41 его не закрывал  
 
 ## DONE
 
-Doc Studio FINISH S27–S36 + S38–S40 + S37B on main (см. WAVE)
+Doc Studio FINISH S27–S36 + S38–S40 + S37B + S41
 
 ## PARK
 
