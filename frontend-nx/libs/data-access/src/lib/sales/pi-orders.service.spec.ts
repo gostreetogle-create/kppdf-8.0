@@ -66,4 +66,32 @@ describe('PiOrdersService (TZ-NX-SALES-S33-PI-ORDERS-CRUD)', () => {
     expect(request.request.body).toEqual(payload);
     request.flush({ _id: orderId, number: 'ORD-001', isPaid: false });
   });
+
+  it('patchEstimateDays() PATCHes /orders/:id/estimate-days (TZ-NX-GANTT-G2)', () => {
+    const payload = {
+      orderItemIndex: 0,
+      moduleId: '507f1f77bcf86cd799439020',
+      workTypeId: '507f1f77bcf86cd799439021',
+      days: 3,
+    };
+    service.patchEstimateDays(orderId, payload).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/estimate-days`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual(payload);
+    request.flush({ _id: orderId, number: 'ORD-001' });
+  });
+
+  it('patchEstimateStart() PATCHes /orders/:id/estimate-start (TZ-NX-GANTT-G2)', () => {
+    const payload = {
+      orderItemIndex: 1,
+      moduleId: '507f1f77bcf86cd799439022',
+      workTypeId: '507f1f77bcf86cd799439023',
+      offsetDays: 4,
+    };
+    service.patchEstimateStart(orderId, payload).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/estimate-start`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual(payload);
+    request.flush({ _id: orderId, number: 'ORD-001' });
+  });
 });

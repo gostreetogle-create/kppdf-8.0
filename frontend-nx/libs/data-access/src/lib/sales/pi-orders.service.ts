@@ -11,6 +11,8 @@ import {
 import type {
   CreateOrderPayload,
   Order,
+  PatchEstimateDaysPayload,
+  PatchEstimateStartPayload,
   UpdateOrderPayload,
 } from './order.types';
 
@@ -33,5 +35,26 @@ export class PiOrdersService {
 
   update(id: string, payload: UpdateOrderPayload): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}`, payload);
+  }
+
+  /**
+   * TZ-NX-GANTT-G2 — order-level estimate days override (never the WorkType
+   * catalog). Mirrors legacy OrdersService.patchEstimateDays (TZ-PRODUCTION-309).
+   */
+  patchEstimateDays(
+    id: string,
+    payload: PatchEstimateDaysPayload,
+  ): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/estimate-days`, payload);
+  }
+
+  /**
+   * TZ-NX-GANTT-G2 — per-bar start offset from visualAnchor (TZ-PRODUCTION-316).
+   */
+  patchEstimateStart(
+    id: string,
+    payload: PatchEstimateStartPayload,
+  ): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/estimate-start`, payload);
   }
 }

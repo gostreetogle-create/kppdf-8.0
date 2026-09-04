@@ -38,6 +38,18 @@ export class PiModulesService {
     return silentGet<ProductModule>(this.http, `${this.baseUrl}/modules/${id}`);
   }
 
+  /** Bulk fetch (TZ-NX-GANTT-G2) — GET /modules/bulk?ids=a,b (empty → immediate ok). */
+  getByIds(ids: readonly string[]): Observable<SilentResult<ProductModule[]>> {
+    if (ids.length === 0) {
+      return new Observable((sub) => {
+        sub.next({ ok: true as const, data: [] });
+        sub.complete();
+      });
+    }
+    const params = new HttpParams().set('ids', ids.join(','));
+    return silentGet<ProductModule[]>(this.http, `${this.baseUrl}/modules/bulk`, { params });
+  }
+
   create(payload: CreateProductModulePayload): Observable<SilentResult<ProductModule>> {
     return silentPost<ProductModule>(this.http, `${this.baseUrl}/modules`, payload);
   }

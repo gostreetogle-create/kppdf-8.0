@@ -75,4 +75,40 @@ export interface Order {
   readonly isPaid?: boolean;
   readonly paidAt?: string | null;
   readonly items?: readonly OrderItem[];
+  /** TZ-PRODUCTION-309: order-level Gantt days (catalog WorkType.days is fallback). */
+  readonly estimateDayOverrides?: readonly EstimateDayOverride[] | null;
+  /** TZ-PRODUCTION-316: per-bar start offset from visualAnchor. */
+  readonly estimateStartOffsets?: readonly EstimateStartOffset[] | null;
+}
+
+/** TZ-PRODUCTION-309 composite key for order-level duration override. */
+export interface EstimateDayOverride {
+  readonly orderItemIndex: number;
+  readonly moduleId: string;
+  readonly workTypeId: string;
+  readonly days: number;
+}
+
+/** TZ-PRODUCTION-316 composite key for start offset. */
+export interface EstimateStartOffset {
+  readonly orderItemIndex: number;
+  readonly moduleId: string;
+  readonly workTypeId: string;
+  readonly offsetDays: number;
+}
+
+/** Body for PATCH /orders/:id/estimate-days (positive days upsert; null clears). */
+export interface PatchEstimateDaysPayload {
+  readonly orderItemIndex: number;
+  readonly moduleId: string;
+  readonly workTypeId: string;
+  readonly days: number | null;
+}
+
+/** Body for PATCH /orders/:id/estimate-start (days ≥ 0 from visualAnchor; null clears). */
+export interface PatchEstimateStartPayload {
+  readonly orderItemIndex: number;
+  readonly moduleId: string;
+  readonly workTypeId: string;
+  readonly offsetDays: number | null;
 }

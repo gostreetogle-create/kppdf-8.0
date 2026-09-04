@@ -6,3 +6,5 @@ export * from './pi-composition.service';
 export * from './pi-materials.service';
 export * from './pi-modules.service';
 export * from './pi-products.service';
+export * from './work-type.types';
+export * from './pi-work-types.service';

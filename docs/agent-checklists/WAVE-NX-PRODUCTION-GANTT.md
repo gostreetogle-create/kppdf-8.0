@@ -20,7 +20,7 @@ NX `/production` = привычный план-Гант с legacy (дерево,
 
 - [x] **G0** Audit port matrix — `tasks/_archive/2026-09/TZ-NX-GANTT-G0-PORT-AUDIT.done.md`
 - [x] **G1** Route + shell — `tasks/_archive/2026-09/TZ-NX-GANTT-G1-SHELL-ROUTE.done.md`
-- [ ] **G2** Read facade + bar model — `tasks/_ready/nx-gantt/TZ-NX-GANTT-G2-READ-MODEL.md`
+- [x] **G2** Read facade + bar model — `tasks/_archive/2026-09/TZ-NX-GANTT-G2-READ-MODEL.done.md`
 - [ ] **G3** Tree + cascade UI — `tasks/_ready/nx-gantt/TZ-NX-GANTT-G3-TREE-CASCADE.md`
 - [ ] **G4** Zoom/pan/today fixes — `tasks/_ready/nx-gantt/TZ-NX-GANTT-G4-PAN-ZOOM-FIX.md`
 - [ ] **G5** Write estimate/plannedDate — `tasks/_ready/nx-gantt/TZ-NX-GANTT-G5-WRITE-PATH.md`

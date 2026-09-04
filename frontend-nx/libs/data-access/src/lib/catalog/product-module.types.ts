@@ -9,6 +9,14 @@ export interface ModuleDimensions {
 
 export type ModuleRef = string | Record<string, unknown>;
 
+export interface WorkTypeInModule {
+  /** `workTypeId` may be a string (unpopulated) or full WorkType (populated). */
+  workTypeId: string | { _id: string; name?: string; days?: number | null; accentHue?: number | null };
+  /** Intentionally unused for Gantt duration (lock D of gantt-bar.model). */
+  estimatedHours?: number | null;
+  sortOrder?: number;
+}
+
 export interface ProductModule {
   _id: string;
   name: string;
@@ -17,6 +25,10 @@ export interface ProductModule {
   weight?: number;
   sortOrder?: number;
   photoIds?: ModuleRef[];
+  /** ТZ-PRODUCTION: populated workTypes on detail (backend populates workTypeId). */
+  workTypes?: WorkTypeInModule[];
+  /** Канонический состав модуля (TZ-CATALOG-302/317); dual-read зеркало backend. */
+  composition?: ModuleRef[];
   deletedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;

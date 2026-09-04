@@ -80,4 +80,20 @@ describe('PiModulesService (TZ-NX-REGISTRIES-MODULES-PRODUCTS-READ)', () => {
     expect(req.request.params.has('organizationId')).toBe(false);
     req.flush({ _id: '507f1f77bcf86cd799439012', name: 'Каркас', article: 'MOD-1' });
   });
+
+  it('getByIds() GETs /modules/bulk with ids param (TZ-NX-GANTT-G2)', () => {
+    service.getByIds(['m1', 'm2']).subscribe();
+    const req = httpMock.expectOne((r) => r.url === `${baseUrl}/modules/bulk` && r.method === 'GET');
+    expect(req.request.params.get('ids')).toBe('m1,m2');
+    req.flush([{ _id: 'm1', name: 'Каркас', article: 'MOD-1' }]);
+  });
+
+  it('getByIds() resolves immediately with empty data for empty ids (TZ-NX-GANTT-G2)', () => {
+    let result: { ok: boolean; data?: unknown } | undefined;
+    service.getByIds([]).subscribe((res) => {
+      result = res;
+    });
+    expect(result?.ok).toBe(true);
+    expect(result?.data).toEqual([]);
+  });
 });

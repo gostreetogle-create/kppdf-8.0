@@ -49,6 +49,18 @@ export class PiProductsService {
     return silentGet<ProductDetail>(this.http, `${this.baseUrl}/products/${id}`);
   }
 
+  /** Bulk fetch (TZ-NX-GANTT-G2) — GET /products/bulk?ids=a,b (empty → immediate ok). */
+  getByIds(ids: readonly string[]): Observable<SilentResult<ProductDetail[]>> {
+    if (ids.length === 0) {
+      return new Observable((sub) => {
+        sub.next({ ok: true as const, data: [] });
+        sub.complete();
+      });
+    }
+    const params = new HttpParams().set('ids', ids.join(','));
+    return silentGet<ProductDetail[]>(this.http, `${this.baseUrl}/products/bulk`, { params });
+  }
+
   create(payload: CreateProductPayload): Observable<SilentResult<ProductDetail>> {
     return silentPost<ProductDetail>(this.http, `${this.baseUrl}/products`, payload);
   }

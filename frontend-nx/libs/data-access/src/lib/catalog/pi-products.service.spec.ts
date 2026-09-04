@@ -122,4 +122,20 @@ describe('PiProductsService (TZ-NX-CATALOG-DATA-ACCESS-READ)', () => {
     expect(result?.ok).toBe(true);
     expect(result?.data?.isComplex).toBe(true);
   });
+
+  it('getByIds() GETs /products/bulk with ids param (TZ-NX-GANTT-G2)', () => {
+    service.getByIds(['p1', 'p2']).subscribe();
+    const req = httpMock.expectOne((r) => r.url === `${baseUrl}/products/bulk` && r.method === 'GET');
+    expect(req.request.params.get('ids')).toBe('p1,p2');
+    req.flush([{ _id: 'p1', name: 'Окно', sku: 'W-1', kind: 'good', unit: 'шт' }]);
+  });
+
+  it('getByIds() resolves immediately with empty data for empty ids (TZ-NX-GANTT-G2)', () => {
+    let result: { ok: boolean; data?: unknown } | undefined;
+    service.getByIds([]).subscribe((res) => {
+      result = res;
+    });
+    expect(result?.ok).toBe(true);
+    expect(result?.data).toEqual([]);
+  });
 });
