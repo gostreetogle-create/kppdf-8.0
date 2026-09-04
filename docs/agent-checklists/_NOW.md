@@ -1,34 +1,32 @@
 ﻿# NOW
 
-updated_at: 2026-09-04T23:20:00+03:00
+updated_at: 2026-09-04T23:52:00+03:00
 
 ## ACTIVE / LIVE
 
-Freebuff → **NX Gantt L0** continuous (`PROMPT-FREEBUFF-NX-GANTT-START.md`).  
-Claude → S37 live closeout **done this session** (backend-only diagnostics, no
-`apps/kppdf-web` touched — no conflict with Freebuff's FE Gantt work). Result: S41
-**confirmed PASS live**; S37 AC2 **confirmed FAIL live** with root cause pinpointed
-and a ready hotfix TZ. Claude terminal free.
+**Doc Studio FINISH S27→S37 — WAVE CLOSED.** S37C fixed the root cause
+(`applyTableAggregateTokensToBlocks` now `.toObject()`s before spreading a Mongoose
+Document); S37 re-checked live — 6/6 AC PASS, archived DONE. Claude terminal free.
+
+Freebuff → **NX Gantt L0** continuous, unaffected (backend-only S37C work).
 
 ## NEXT
 
-1. **S37C** (backend-only, no FE conflict) — `tasks/_ready/TZ-NX-DOCSTUDIO-S37C-PREVIEW-BLOCK-LAYOUT-DROP.md`:
-   `applyTableAggregateTokensToBlocks` spreads a raw Mongoose Document without
-   `.toObject()`, dropping `layout` on every text block → Preview/PDF renders blank.
-2. After S37C: re-run S37 AC2 live → archive `TZ-NX-DOCSTUDIO-S37-OPERATOR-SMOKE.done.md` → WAVE closeout.
-3. Freebuff G0→G7 continues in parallel (no conflict — S37C is backend-only).
-4. Gantt L1+ — отдельно по команде PO.
+1. PO: выбрать следующую тему для Claude — A contracts / B Invoice / C auto-reserve,
+   или ждать (см. PARK)
+2. Freebuff Gantt RESUME (G2→G7) продолжается независимо
+3. Gantt L1+ — по команде PO
 
 ## Гигиена окружения
 
-`frontend-nx` dev-server был на суточной стали (не перезапускался с 2026-09-03,
-до S37B/S41) — Vite watch тихо перестал подхватывать изменения. **Перед любым live
-браузерным тестом перезапускай `pnpm start` в `frontend-nx`**, иначе тестируется
-вчерашний код. Подробности: `docs/audits/2026-09-04-docstudio-s37-s41-live-closeout.md`.
+`frontend-nx` dev-server может тихо перестать подхватывать изменения (наблюдалось
+~24h стали 2026-09-03→04). **Перед любым live browser-тестом** проверяй uptime
+процесса на :4201, перезапускай `pnpm start`, если сомневаешься. Подробности:
+`docs/audits/2026-09-04-docstudio-s37-s41-live-closeout.md`.
 
 ## DONE
 
-S27–S36 + S38–S41 + S37B (S41 now live-confirmed; S37 blocked on S37C)
+S27–S40 + S37B + S37C + S41 + **S37 (WAVE closed, 6/6 AC live PASS)**
 
 ## PARK
 

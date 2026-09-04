@@ -70,8 +70,18 @@ export function applyTableAggregateTokensToBlocks(
 ): TemplateBlockDocument[] {
   return blocks.map((block) => {
     if (block.type !== 'text' || typeof block.content !== 'string') return block;
+    // TZ-NX-DOCSTUDIO-S37C: `block` here is frequently a live Mongoose Document
+    // (findAllByStudioDocument doesn't .lean()). Spreading it directly does not
+    // reliably carry nested subdocument paths like `layout` — Mongoose documents
+    // need `.toObject()` first. Without this, the block silently loses its layout
+    // and document-render.service.ts's `Boolean(b.layout)` filter drops it from
+    // Preview/PDF entirely (same guard injectTableContent already applies).
+    const plain =
+      typeof (block as { toObject?: () => Record<string, unknown> }).toObject === 'function'
+        ? (block as { toObject: () => Record<string, unknown> }).toObject()
+        : { ...(block as object) };
     return {
-      ...block,
+      ...plain,
       content: resolveTableAggregateTokens(block.content, blocks, dataSets, vatPercent),
     } as TemplateBlockDocument;
   });

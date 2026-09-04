@@ -110,3 +110,55 @@ export function applyTableAggregateTokensToBlocks(
 
 Archive → `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-S37C-PREVIEW-BLOCK-LAYOUT-DROP.done.md`  
 После DONE → повторный живой AC2 (или мини-версия) → archive `TZ-NX-DOCSTUDIO-S37-OPERATOR-SMOKE.done.md` DONE → WAVE-DOCSTUDIO-FINISH-S27 closeout.
+
+## Claim slot
+- agent_id: claude
+- claimed_at: 2026-09-04T20:42:26Z
+- workspace: D:\kppdf-8.0
+- team_room_claim: unavailable (no CLI in this session)
+
+### Preflight Check Output
+- **Context read:** `tasks/_ready/TZ-NX-DOCSTUDIO-S37C-PREVIEW-BLOCK-LAYOUT-DROP.md`, `docs/audits/2026-09-04-docstudio-s37-s41-live-closeout.md`, `tasks/_ready/docstudio-finish/prompts/PROMPT-17-S37C-PREVIEW-LAYOUT.md`
+- **Key Constraints:** backend-only (conflict key: `studio-table-tokens.ts`); do not touch frontend-nx (Freebuff's Gantt G2 active there); do not touch `injectTableContent`
+- **Planned Deliverable:** apply `.toObject()` fix to `applyTableAggregateTokensToBlocks` → regression test reproducing the Mongoose-document-spread bug → gates → live Preview re-check (restart frontend-nx if stale) → archive S37C → archive S37 DONE → WAVE closeout → _NOW/QUEUE → commit/push
+- **Validation Path:** `pnpm test` (new regression test fails on old code / passes on new) + `tsc --noEmit` + `lint` + live browser AC2 confirmation
+
+## Что сделано (см. полный отчёт `docs/agent-checklists/TZ-NX-DOCSTUDIO-S37C-PREVIEW-BLOCK-LAYOUT-DROP.md`)
+
+`applyTableAggregateTokensToBlocks` (`studio-table-tokens.ts`) теперь конвертирует блок
+через `.toObject()` перед spread (тот же паттерн, что уже был в `injectTableContent`).
+Добавлен regression-тест с фикстурой, воспроизводящей реальный Mongoose Document
+(`layout` как getter на прототипе, не own property) — верифицирован падающим на старом
+коде (`git stash`), зелёным на новом. Живой browser re-check: client name
+«АО «Торговая сеть „Формат“»» теперь подставляется в Просмотр вместо пустого листа.
+
+## Gates (факт)
+
+```
+cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit
+→ PASS, exit 0
+
+cd backend && pnpm exec jest src/modules/studio-document src/modules/document-render src/modules/template-block
+→ PASS, 18 suites / 137 tests
+
+cd backend && pnpm lint
+→ PASS, 0 errors (197 pre-existing warnings, none in touched files)
+
+Live browser (headless Chromium): S41 PASS + S37 AC2 PASS — see
+docs/audits/evidence-s37-3/
+```
+
+## Финализация
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-09-04
+closed_by: Claude
+verification:
+  - acceptance criteria: PASS (layout survives Mongoose spread; regression test fails-on-old/passes-on-new; live Preview substitutes name; gates PASS)
+  - typecheck: PASS
+  - tests: PASS (137/137 incl. 2 new)
+  - lint: PASS (0 errors)
+  - checklist: ADDED (`docs/agent-checklists/TZ-NX-DOCSTUDIO-S37C-PREVIEW-BLOCK-LAYOUT-DROP.md`)
+  - progress.md: N/A (bugfix, no architecture change)
+  - status synchronization: PASS
