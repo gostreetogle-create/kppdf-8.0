@@ -1367,7 +1367,7 @@ export function compareOrdersByPlanStart(
 
 export function filterOrdersForRail<
   T extends {
-    status: OrderStatus;
+    status?: OrderStatus;
     isActive?: boolean;
     _id: string;
     number?: string;
@@ -1397,7 +1397,7 @@ export function filterOrdersForRail<
   const filtered = orders.filter((o) => {
     if (opts.selectedOrderId && o._id === opts.selectedOrderId) return true;
     if (opts.activeOnly) {
-      if (!isActiveCommercialOrderStatus(o.status)) return false;
+      if (!isActiveCommercialOrderStatus(o.status ?? 'draft')) return false;
       if (o.isActive === false) return false;
     }
     if (priority && (o.priority ?? 'normal') !== priority) return false;

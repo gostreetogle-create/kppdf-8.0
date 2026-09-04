@@ -1,4 +1,5 @@
 import { inject } from '@angular/core';
+import { ProductionReadFacade } from './pages/production/production-read.facade';
 import { CanMatchFn, Router, Route } from '@angular/router';
 import { AuthService, authGuard, publicOnlyGuard } from '@kppdf/data-access/auth';
 import { capabilityRouteGuard } from '@kppdf/data-access/capabilities';
@@ -59,7 +60,10 @@ export const appRoutes: Route[] = [
       {
         // TZ-NX-GANTT-G1-SHELL-ROUTE — production Gantt L0 shell; capabilities
         // `production:read` already declared in capabilities metadata.
+        // TZ-NX-GANTT-G3 — ProductionReadFacade lives on the route (singleton per
+        // cockpit visit; overridable in tests without touching component wiring).
         path: 'production',
+        providers: [ProductionReadFacade],
         canMatch: [capabilityRouteGuard],
         data: { pageKey: 'production', capabilities: ['production:read'] },
         loadComponent: () => import('./pages/production/production-cockpit.page').then((m) => m.ProductionCockpitPage),
