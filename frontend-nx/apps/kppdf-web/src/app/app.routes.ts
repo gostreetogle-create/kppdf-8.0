@@ -57,6 +57,14 @@ export const appRoutes: Route[] = [
         ],
       },
       {
+        // TZ-NX-GANTT-G1-SHELL-ROUTE — production Gantt L0 shell; capabilities
+        // `production:read` already declared in capabilities metadata.
+        path: 'production',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'production', capabilities: ['production:read'] },
+        loadComponent: () => import('./pages/production/production-cockpit.page').then((m) => m.ProductionCockpitPage),
+      },
+      {
         path: 'orders',
         children: [
           { path: '', pathMatch: 'full', loadComponent: () => import('./pages/orders/orders-list.page').then((m) => m.OrdersListPage) },

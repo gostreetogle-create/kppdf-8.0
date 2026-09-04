@@ -91,12 +91,18 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     expect(header?.querySelector('[data-test="shell-nav-forward"]')).toBeNull();
   });
 
-  it('shows only existing-route header chips (admin, registries, docs, deals) — no dead links', async () => {
+  it('shows only existing-route header chips (admin, registries, docs, deals, production) — no dead links', async () => {
     await setup('/admin/devices');
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(4);
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(5);
     expect(adminQuickNav()).toBeTruthy();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
+    const productionQuickNav = fixture.nativeElement.querySelector('[data-test="shell-quicknav-production"]') as HTMLAnchorElement;
+    expect(productionQuickNav).toBeTruthy();
+    const categories = (
+      fixture.componentInstance as unknown as { navCategories: () => { id: string; entryPath?: string }[] }
+    ).navCategories();
+    expect(categories.find((c) => c.id === 'production')?.entryPath).toBe('/production');
   });
 
   it('shows the Реестры chip (TZ-NX-REGISTRIES-NAV-AND-DEMO-REVIEW)', async () => {
@@ -163,7 +169,7 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     userSig.set({ role: 'user' });
     fixture.detectChanges();
     // `registries` and `docs` deliberately carry no `systemRoles`/`capabilities`.
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(3);
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(4);
     expect(adminQuickNav()).toBeNull();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
