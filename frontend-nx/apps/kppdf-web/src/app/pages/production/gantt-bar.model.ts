@@ -1126,7 +1126,10 @@ export interface OptimisticEstimateDaysCommit {
 }
 
 export function applyOptimisticEstimateDays<
-  TOrder extends { _id: string; estimateDayOverrides?: EstimateDayOverrideRef[] | null },
+  TOrder extends {
+    _id: string;
+    estimateDayOverrides?: readonly EstimateDayOverrideRef[] | null;
+  },
 >(
   bars: readonly GanttBar[],
   orders: readonly TOrder[],
@@ -1244,7 +1247,10 @@ export interface OptimisticStartOffsetCommit {
 }
 
 export function applyOptimisticStartOffset<
-  TOrder extends { _id: string; estimateStartOffsets?: EstimateStartOffsetRef[] | null },
+  TOrder extends {
+    _id: string;
+    estimateStartOffsets?: readonly EstimateStartOffsetRef[] | null;
+  },
 >(
   bars: readonly GanttBar[],
   orders: readonly TOrder[],

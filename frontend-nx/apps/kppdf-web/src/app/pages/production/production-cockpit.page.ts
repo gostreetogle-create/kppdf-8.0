@@ -28,10 +28,12 @@ import {
   AuthService,
   CapabilitiesService,
   PiOrdersService,
+  PiWorkTypesService,
   type Order,
   type OrderPriority,
   type OrderStatus,
 } from '@kppdf/data-access';
+import type { SilentResult } from '@kppdf/util-http';
 import { PiToastService } from '@kppdf/ui/toast';
 import {
   CalendarDays,
@@ -43,6 +45,7 @@ import {
 } from 'lucide-angular';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
+import { promptCatalogDaysChange } from './blocks/order-inspector.component';
 import {
   GanttBarsComponent,
   type GanttCatalogDaysRequest,
@@ -174,11 +177,11 @@ function toDateInput(value: string | undefined | null): string {
             (zoomChange)="ctx.setZoom($event)"
             (groupByChange)="groupBy.set($event)"
             (fit)="onFitHorizon()"
-            (estimateDaysCommit)="onEstimateDaysCommitStub($event)"
+            (estimateDaysCommit)="onEstimateDaysCommit($event)"
             (catalogDaysRequest)="onCatalogDaysRequest($event)"
-            (plannedDateMoveCommit)="onPlannedDateMoveCommitStub($event)"
-            (startOffsetCommit)="onStartOffsetCommitStub($event)"
-            (orderMetaCommit)="onOrderMetaCommitStub($event)"
+            (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
+            (startOffsetCommit)="onStartOffsetCommit($event)"
+            (orderMetaCommit)="onOrderMetaCommit($event)"
           />
         </main>
 
@@ -319,6 +322,7 @@ export class ProductionCockpitPage {
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);
   private readonly ordersApi = inject(PiOrdersService);
+  private readonly workTypesApi = inject(PiWorkTypesService);
   private readonly toast = inject(PiToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -558,29 +562,155 @@ export class ProductionCockpitPage {
     await this.applyFilteredActive();
   }
 
-  /** TZ-PRODUCTION-311 — WorkType catalog days PATCH is a write path → G5. */
-  protected onCatalogDaysRequest(_ev: GanttCatalogDaysRequest): void {
-    /* G5 */
+  /** TZ-PRODUCTION-311 — catalog button in work-detail → WorkType.days (confirm in helper). */
+  protected async onCatalogDaysRequest(ev: GanttCatalogDaysRequest): Promise<void> {
+    if (!this.canEditCatalog()) return;
+    const prompted = promptCatalogDaysChange(ev.currentDays);
+    if (prompted === 'cancel') return;
+    if (prompted === 'invalid') {
+      this.toast.error('Дни: целое число ≥ 1');
+      return;
+    }
+    const res = await firstValueFrom(this.workTypesApi.update(ev.workTypeId, { days: prompted }));
+    if (!res.ok) {
+      this.toast.error('Не удалось обновить норматив дней вида работ');
+      return;
+    }
+    this.toast.success('Норматив дней вида работ обновлён (глобально)');
+    this.facade.clearCaches();
+    await this.reloadOrdersKeepingSelection();
   }
 
-  /**
-   * G5 lands the optimistic write paths; the page already owns the exact legacy
-   * commit shape, so these stubs keep the component tree stable until then.
-   */
-  protected onEstimateDaysCommitStub(_ev: GanttEstimateDaysCommit): void {
-    /* G5 */
+  /** TZ-PRODUCTION-335 — order-meta auto-save: optimistic local bars + silent PATCH. */
+  protected async onOrderMetaCommit(ev: GanttOrderMetaCommit): Promise<void> {
+    if (!this.canEditOrder()) return;
+    const current = this.orders().find((o) => o._id === ev.orderId);
+    if (!current) return;
+    if (isHardFrozenOrderStatus(current.status ?? 'draft')) return;
+    const snapshot = this.beginGanttOptimistic(ev.orderId);
+    if (!snapshot) return;
+    const next = applyOptimisticOrderMeta(this.bars(), this.orders(), ev.orderId, ev);
+    this.bars.set(next.bars);
+    this.orders.set(next.orders);
+    const planned = ev.plannedDate.trim();
+    await this.persistGanttPatch(
+      ev.orderId,
+      snapshot,
+      this.ordersApi.update(ev.orderId, {
+        priority: ev.priority,
+        plannedDate: planned ? new Date(planned + 'T12:00:00').toISOString() : undefined,
+      }),
+    );
   }
 
-  protected onPlannedDateMoveCommitStub(_ev: GanttPlannedDateMoveCommit): void {
-    /* G5 */
+  /** TZ-PRODUCTION-311/333 — right-edge resize → order override; optimistic local bars. */
+  protected async onEstimateDaysCommit(ev: GanttEstimateDaysCommit): Promise<void> {
+    if (!this.canEditCatalog()) return;
+    const days = Math.max(1, Math.floor(ev.days));
+    const snapshot = this.beginGanttOptimistic(ev.orderId);
+    if (!snapshot) return;
+    const next = applyOptimisticEstimateDays(this.bars(), this.orders(), { ...ev, days });
+    this.bars.set(next.bars);
+    this.orders.set(next.orders);
+    await this.persistGanttPatch(
+      ev.orderId,
+      snapshot,
+      this.ordersApi.patchEstimateDays(ev.orderId, {
+        orderItemIndex: ev.orderItemIndex,
+        moduleId: ev.moduleId,
+        workTypeId: ev.workTypeId,
+        days,
+      }),
+    );
   }
 
-  protected onStartOffsetCommitStub(_ev: GanttStartOffsetCommit): void {
-    /* G5 */
+  /** TZ-PRODUCTION-312/333 — summary body-drag → plannedDate; optimistic local bars. */
+  protected async onPlannedDateMoveCommit(ev: GanttPlannedDateMoveCommit): Promise<void> {
+    if (!this.canEditOrder()) return;
+    const deltaDays = Math.trunc(ev.deltaDays);
+    if (deltaDays === 0) return;
+    const order = this.orders().find((o) => o._id === ev.orderId);
+    if (!order) return;
+    if (isHardFrozenOrderStatus(order.status ?? 'draft')) return;
+    const snapshot = this.beginGanttOptimistic(ev.orderId);
+    if (!snapshot) return;
+    const next = applyOptimisticPlannedDateShift(this.bars(), this.orders(), ev.orderId, deltaDays);
+    this.bars.set(next.bars);
+    this.orders.set(next.orders);
+    const { anchor } = resolveVisualAnchor(order, new Date());
+    const newDateOnly = addDays(formatDateOnly(anchor), deltaDays);
+    this.refitRangeAfterShift(this.bars(), ev.orderId);
+    await this.persistGanttPatch(
+      ev.orderId,
+      snapshot,
+      this.ordersApi.update(ev.orderId, {
+        plannedDate: new Date(newDateOnly + 'T12:00:00').toISOString(),
+      }),
+    );
   }
 
-  protected onOrderMetaCommitStub(_ev: GanttOrderMetaCommit): void {
-    /* G5 */
+  /** TZ-PRODUCTION-316/333 — child body-drag → start offset; optimistic local bars. */
+  protected async onStartOffsetCommit(ev: GanttStartOffsetCommit): Promise<void> {
+    if (!this.canEditCatalog()) return;
+    const deltaDays = Math.trunc(ev.deltaDays);
+    if (deltaDays === 0) return;
+    const order = this.orders().find((o) => o._id === ev.orderId);
+    if (!order) return;
+    if (isHardFrozenOrderStatus(order.status ?? 'draft')) return;
+    const snapshot = this.beginGanttOptimistic(ev.orderId);
+    if (!snapshot) return;
+    const { anchor } = resolveVisualAnchor(order, new Date());
+    const newStart = addDays(ev.startDate, deltaDays);
+    const offsetDays = Math.max(0, dayDiffDateOnly(formatDateOnly(anchor), newStart));
+    const next = applyOptimisticStartOffset(this.bars(), this.orders(), ev, offsetDays);
+    this.bars.set(next.bars);
+    this.orders.set(next.orders);
+    this.refitRangeAfterShift(this.bars(), ev.orderId);
+    await this.persistGanttPatch(
+      ev.orderId,
+      snapshot,
+      this.ordersApi.patchEstimateStart(ev.orderId, {
+        orderItemIndex: ev.orderItemIndex,
+        moduleId: ev.moduleId,
+        workTypeId: ev.workTypeId,
+        offsetDays,
+      }),
+    );
+  }
+
+  private beginGanttOptimistic(orderId: string): { bars: GanttBar[]; orders: Order[] } | null {
+    if (this.ganttWriteInFlight.has(orderId)) return null;
+    const snapshot = cloneGanttState(this.bars(), this.orders());
+    this.ganttWriteInFlight.add(orderId);
+    return snapshot;
+  }
+
+  private restoreGanttSnapshot(snapshot: { bars: GanttBar[]; orders: Order[] }): void {
+    this.bars.set(snapshot.bars);
+    this.orders.set(snapshot.orders);
+  }
+
+  /** Silent PATCH after optimistic bars. Revert + error toast on fail; no success toast / reload. */
+  private async persistGanttPatch(
+    orderId: string,
+    snapshot: { bars: GanttBar[]; orders: Order[] },
+    request$: Observable<SilentResult<Order>>,
+  ): Promise<void> {
+    try {
+      const res = await firstValueFrom(request$);
+      if (!res.ok) {
+        this.restoreGanttSnapshot(snapshot);
+        this.toast.error('Заказ не обновлён — изменения отменены');
+        return;
+      }
+      const updated = res.data;
+      this.orders.update((list) => list.map((row) => (row._id === orderId ? updated : row)));
+    } catch {
+      this.restoreGanttSnapshot(snapshot);
+      this.toast.error('Заказ не обновлён — изменения отменены');
+    } finally {
+      this.ganttWriteInFlight.delete(orderId);
+    }
   }
 
   protected async onRefresh(): Promise<void> {

@@ -4,16 +4,17 @@ import { Observable, map } from 'rxjs';
 import {
   API_BASE_URL,
   silentGet,
+  silentPatch,
   type SilentResult,
 } from '@kppdf/util-http';
 import type { WorkType, WorkTypeListParams, WorkTypeListResponse } from './work-type.types';
 
 /**
- * TZ-NX-GANTT-G2 — read-only WorkType client for the production estimate path.
+ * TZ-NX-GANTT-G2/G5 — WorkType client for the production estimate path.
  * Backend `GET /work-types` does not paginate (returns array); `activeOnly`
  * filtering is applied client-side, wrapped in the `{ items, total }` envelope
- * (legacy parity). Write endpoints stay out of scope — catalog days are only
- * edited via the explicit confirm path in G5.
+ * (legacy parity). `update` (G5) patches the catalog — the Gantt confirms
+ * «для ВСЕХ заказов» before calling it (never a silent global edit).
  */
 @Injectable({ providedIn: 'root' })
 export class PiWorkTypesService {
@@ -37,5 +38,10 @@ export class PiWorkTypesService {
 
   getById(id: string): Observable<SilentResult<WorkType>> {
     return silentGet<WorkType>(this.http, `${this.baseUrl}/work-types/${id}`);
+  }
+
+  /** TZ-NX-GANTT-G5 — catalog days PATCH (`PATCH /work-types/:id`), confirm-gated in the page. */
+  update(id: string, payload: { days: number }): Observable<SilentResult<WorkType>> {
+    return silentPatch<WorkType>(this.http, `${this.baseUrl}/work-types/${id}`, payload);
   }
 }
