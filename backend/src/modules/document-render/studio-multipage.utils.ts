@@ -79,7 +79,16 @@ function cloneBlock(
   block: TemplateBlockDocument,
   patch: Partial<TemplateBlockDocument>,
 ): TemplateBlockDocument {
-  return { ...block, ...patch } as TemplateBlockDocument;
+  // TZ-NX-DOCSTUDIO-S42 — `block` here is a hydrated Mongoose Document from
+  // findAllByStudioDocument (no `.lean()`), same as the S37C defect class:
+  // `{...block}` alone does not reliably carry the document's own paths
+  // (constructor.name === 'model'). `.toObject()` first, same pattern as
+  // injectTableContent / applyTableAggregateTokensToBlocks.
+  const plain =
+    typeof (block as { toObject?: () => Record<string, unknown> }).toObject === 'function'
+      ? (block as { toObject: () => Record<string, unknown> }).toObject()
+      : { ...(block as object) };
+  return { ...plain, ...patch } as TemplateBlockDocument;
 }
 
 function backgroundIndexForPage(

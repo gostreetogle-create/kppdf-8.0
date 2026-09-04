@@ -2,18 +2,16 @@
 
 | Slot | Волна | Статус |
 |------|-------|--------|
-| **#1** | Doc Studio FINISH S27→S37 | **CLOSED** — S37C DONE, S37 DONE (6/6 AC live PASS), WAVE closeout done |
-| **#2** | NX Gantt L0 | **G2 code done, closeout pending** → push → G3… |
+| **#1** | Claude S42 | **DONE** — `cloneBlock` fixed + regression test + live sanity |
+| **#2** | Freebuff Gantt L0 | **G3…G7** (FE) — параллель ОК |
 
 ## NEXT
 
-1. Freebuff: `tasks/PROMPT-FREEBUFF-NX-GANTT-RESUME.md` — WAVE[x]+commit/push G2 → G3…G7  
-2. PO: выбрать следующую тему для Claude (Doc Studio FINISH волна закрыта) — A contracts / B Invoice / C auto-reserve, или ждать
-
-WAVE: `docs/agent-checklists/WAVE-DOCSTUDIO-FINISH-S27.md` (closed) · `docs/agent-checklists/WAVE-NX-PRODUCTION-GANTT.md` (in progress)
+1. PO: выбрать следующую тему для Claude (A contracts / B Invoice / C auto-reserve) или ждать
+2. Freebuff: `tasks/PROMPT-FREEBUFF-NX-GANTT-RESUME.md` (G3→G7) продолжается
 
 ## DONE (недавно)
 
-- S37C `.toObject()` fix + regression test + live re-check — `applyTableAggregateTokensToBlocks` no longer drops block layout
-- S37 OPERATOR-SMOKE — 6/6 AC PASS, live-confirmed, WAVE FINISH S27→S37 closed
-- S41 `9f348118` · S37B · FINISH S27–S36+S38–S40
+- S42 — `docs/audits/2026-09-05-mongoose-plain-spread-audit.md`: audit нашёл и
+  исправил `cloneBlock` (multipage table overflow), тот же класс бага что S37C
+- Doc Studio FINISH CLOSED · Gantt G0–G2  
