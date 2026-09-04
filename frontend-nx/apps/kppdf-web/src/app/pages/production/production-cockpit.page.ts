@@ -346,8 +346,9 @@ export class ProductionCockpitPage {
   );
   /** Monotonic command for the Gantt to scroll after a range change. */
   protected readonly scrollRequest = signal<{
-    target: 'today' | 'start';
+    target: 'today' | 'start' | 'bar';
     nonce: number;
+    barId?: string;
   } | null>(null);
   private scrollNonce = 0;
   /** TZ-PRODUCTION-333 — block overlapping drag PATCHes per order (G5 wires the writes). */
@@ -602,8 +603,39 @@ export class ProductionCockpitPage {
     this.requestTimelineScroll('start');
   }
 
-  private requestTimelineScroll(target: 'today' | 'start'): void {
-    this.scrollRequest.set({ target, nonce: ++this.scrollNonce });
+  private requestTimelineScroll(target: 'today' | 'start' | 'bar', barId?: string): void {
+    this.scrollRequest.set(barId ? { target, nonce: ++this.scrollNonce, barId } : { target, nonce: ++this.scrollNonce });
+  }
+
+  /**
+   * TZ-NX-GANTT-G4 — after a plannedDate / startOffset shift the range must be
+   * re-derived from the optimistic bars (start may be earlier than the old range
+   * start) and the moved order's row re-centered, so the viewport never «залипает»
+   * справа. Write-path handlers (G5) call this after applyOptimistic*.
+   */
+  private refitRangeAfterShift(bars: GanttBar[], orderId: string): void {
+    const orderBars = bars.filter((b) => b.orderId === orderId);
+    if (!orderBars.length) return;
+    let start = orderBars[0]!.startDate;
+    for (const b of orderBars) {
+      if (b.startDate < start) start = b.startDate;
+    }
+    const paddedStart = addDays(start, -1);
+    if (paddedStart < this.rangeStart()) {
+      // Earlier than the visible range → widen; fit month density re-anchors scale.
+      this.rangeStart.set(paddedStart);
+      this.ctx.setZoom('month');
+      this.requestTimelineScroll('bar', orderBars[0]!.id);
+      return;
+    }
+    // In-range shift: re-anchor the viewport to the moved row (viewport pan fix).
+    this.requestTimelineScroll('bar', orderBars[0]!.id);
+  }
+
+  /** G4/G5 — recompute range + re-anchor viewport after optimistic shifts. */
+  protected handleBarsAfterShift(bars: GanttBar[], orderId: string): void {
+    this.bars.set(bars);
+    this.refitRangeAfterShift(bars, orderId);
   }
 
   /** Initial load (deep-link aware). Wired from the page spec / bootstrap. */

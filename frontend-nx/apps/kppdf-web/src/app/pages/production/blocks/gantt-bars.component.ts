@@ -1288,8 +1288,13 @@ export class GanttBarsComponent implements AfterViewInit {
   /** production:write (or equivalent) — required for resize handles. */
   readonly canEdit = input(false);
   readonly today = input(formatDateOnly(new Date()));
-  /** Parent command after range changes: scroll marker or range start into view. */
-  readonly scrollRequest = input<{ target: 'today' | 'start'; nonce: number } | null>(null);
+  /** Parent command after range changes: scroll marker, range start, or a bar id into view. */
+  readonly scrollRequest = input<{
+    target: 'today' | 'start' | 'bar';
+    nonce: number;
+    /** G4 — bar id to bring into view (plannedDate/startOffset commit). */
+    barId?: string;
+  } | null>(null);
   /** TZ-PRODUCTION-314 — which orders show product children. */
   readonly expandedOrderIds = input<ReadonlySet<string>>(new Set());
   /** TZ-PRODUCTION-342 — product / module expand keys. */
@@ -1360,6 +1365,7 @@ export class GanttBarsComponent implements AfterViewInit {
       afterNextRender(
         () => {
           if (request.target === 'today') this.scrollToToday();
+          else if (request.target === 'bar') this.scrollToBar(request.barId ?? null);
           else this.scrollToStart();
         },
         { injector: this.injector },
@@ -1650,6 +1656,11 @@ export class GanttBarsComponent implements AfterViewInit {
     this.pulseTodayMarker();
   }
 
+  /** G4 — public re-anchor used by the page after optimistic shift commits. */
+  scrollToBarId(barId: string | null): void {
+    this.scrollToBar(barId);
+  }
+
   /** Reveal the beginning of the fitted bars range. */
   scrollToStart(): void {
     const scroll = this.ganttScroll()?.nativeElement;
@@ -1685,6 +1696,30 @@ export class GanttBarsComponent implements AfterViewInit {
       clearTimeout(this.todayPulseTimer);
       this.todayPulseTimer = null;
     }
+  }
+
+  /**
+   * G4 — after an optimistic plannedDate/startOffset commit, bring the moved bar's
+   * row into the horizontal viewport (clamped by calculateCenteredMarkerScrollLeft
+   * semantics) so the timeline never «залипает» справа от ранних дат.
+   */
+  private scrollToBar(barId: string | null): void {
+    const scroll = this.ganttScroll()?.nativeElement;
+    if (!scroll || !barId) return;
+    const marker = scroll.querySelector<HTMLElement>(`[data-test="gantt-row-${barId}"]`);
+    if (!marker) return;
+    const scrollRect = scroll.getBoundingClientRect();
+    const markerRect = marker.getBoundingClientRect();
+    const left = calculateCenteredMarkerScrollLeft({
+      scrollLeft: scroll.scrollLeft,
+      scrollWidth: scroll.scrollWidth,
+      clientWidth: scroll.clientWidth,
+      scrollLeftEdge: scrollRect.left,
+      markerLeft: markerRect.left,
+      markerWidth: markerRect.width,
+    });
+    if (typeof scroll.scrollTo === 'function') scroll.scrollTo({ left, behavior: 'auto' });
+    else scroll.scrollLeft = left;
   }
 
   private scrollToMarker(marker: HTMLElement | null): void {
