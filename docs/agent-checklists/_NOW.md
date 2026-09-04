@@ -1,27 +1,24 @@
 ﻿# NOW
 
-updated_at: 2026-09-04T01:22:00+03:00
+updated_at: 2026-09-04T10:15:00+03:00
 
 ## ACTIVE / LIVE
 
-**ORCH ON.** Параллель волны A:
-- Claude bg `45afa7d9` → S27 worktree `claude/docstudio-s27`
-- Claude bg `6046410c` → S28 worktree `claude/docstudio-s28`
+**S37 FAIL (AC2).** Evidence: `docs/audits/2026-09-04-docstudio-finish-smoke.md`  
+Hotfix next: `tasks/_ready/TZ-NX-DOCSTUDIO-S37B-COUNTERPARTY-TOKEN-PREVIEW.md`  
+Claim still: `tasks/_active/TZ-NX-DOCSTUDIO-S37-OPERATOR-SMOKE.md` (не DONE).
 
-Board: `docs/agent-checklists/ORCH-DOCSTUDIO-FINISH.md`  
-Cursor = integrator (не product code). После merge обоих → S29 sequential.
+HEAD: `4fd4052c`
 
 ## NEXT
 
-1. A: S27→S30  
-2. B: S31→S34  
-3. C: S35 → S38 → S39 → S40 flex ✅ (2026-09-03, worktree `claude/docstudio-s40`, ждёт merge) → **S36** → S37 smoke  
-Operator bar + flexible binding: `docs/architecture/nx-doc-studio-operator-bar.md`
+1. S37B counterparty token → Preview  
+2. Re-smoke AC2 → archive S37 DONE + WAVE closeout  
 
 ## DONE
 
-Sales / KP Family / QA / Contract / registries categories · Doc Studio S16–S24* (см. honesty audit)
+Doc Studio FINISH S27–S36 + S38–S40 on main (см. WAVE)
 
 ## PARK
 
-NX `/contracts` · Invoice · statusOverride · авто-резерв · desk-vitrina MASTER-CORE  
+NX `/contracts` · Invoice · desk-vitrina MASTER-CORE · merge/Word/Excel-builder  
