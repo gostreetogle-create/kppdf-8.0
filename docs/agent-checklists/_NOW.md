@@ -1,21 +1,17 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T23:10:00+03:00
+updated_at: 2026-09-06T00:20:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Claude:** WAVE-NX-SUPPLY DONE (S0+S1+S2, all gates green, pushed). STOP per PO instruction — awaiting next assignment.
-- **Freebuff:** IDLE (WAVE-NX-WAREHOUSE DONE). Next: TZD-71…73 pairing (`kppdf-web` now free — S1/S2 both closed).
+- **Freebuff:** WAVE-DESKTOP-EXCEL-NX-ALIGN DONE (68–73, all pushed). STOP per PO instruction — awaiting next assignment.
+- **Claude:** IDLE
 
-## DONE
+## DONE (committed + pushed)
 
-- WAVE-NX-WAREHOUSE W1–W4 · SUPPLY-S0 `285a4c2d` · SUPPLY-S1 `9680c441` · Desktop Excel TZD-68…70
-- **TZ-NX-SUPPLY-S2-HUB-CONFIRM DONE** — order hub «Подтвердить материалы» dialog + kit-reserve API client — commit `adef606c`
-
-## NEXT
-
-WAVE-NX-SUPPLY closed. Freebuff `PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`.
+- WAVE-NX-SUPPLY S0–S2 · WAVE-NX-WAREHOUSE W1–W4
+- WAVE-DESKTOP-EXCEL-NX-ALIGN: Excel TZD-68…70 (Claude) · TZD-71 `b064ea86` · TZD-72 `c615ace7`/`8802bcf4` (desktop:admin RBAC) · TZD-73 `db798a08`/`7ca0a6be` (ledger/docs closeout)
 
 ## PARK
 
-- WAVE-NX-CATALOG-PHOTOS · DocStudio S45 · Orders inset · Cutover · `/desk` · G12
+- WAVE-NX-CATALOG-PHOTOS · DocStudio S45 · Orders inset · Cutover · `/desk` · G12 · live browser smoke Desktop/pairing after deploy (PO word required)
