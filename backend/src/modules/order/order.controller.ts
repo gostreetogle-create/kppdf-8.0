@@ -171,8 +171,12 @@ export class OrderController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden — missing production:write' })
   @ApiResponse({ status: 404, description: 'Order or line not found' })
-  patchEstimateDays(@Param('id') id: string, @Body() dto: PatchEstimateDaysDto) {
-    return this.service.patchEstimateDays(id, dto);
+  patchEstimateDays(
+    @Param('id') id: string,
+    @Body() dto: PatchEstimateDaysDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.patchEstimateDays(id, dto, user.organizationId);
   }
 
   @Patch(':id/estimate-start')
@@ -188,8 +192,12 @@ export class OrderController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden — missing production:write' })
   @ApiResponse({ status: 404, description: 'Order or line not found' })
-  patchEstimateStart(@Param('id') id: string, @Body() dto: PatchEstimateStartDto) {
-    return this.service.patchEstimateStart(id, dto);
+  patchEstimateStart(
+    @Param('id') id: string,
+    @Body() dto: PatchEstimateStartDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.patchEstimateStart(id, dto, user.organizationId);
   }
 
   @Patch(':id')

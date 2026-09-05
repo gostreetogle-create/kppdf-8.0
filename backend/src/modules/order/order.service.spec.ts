@@ -1096,6 +1096,47 @@ describe('OrderService — TZ-ORDERS-301', () => {
         }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
+
+    /**
+     * TZ-NX-GANTT-L0-PEER-REVIEW — findByIdRaw is an unscoped Model.findById;
+     * the only prior protection was OrgScopeGuardInterceptor, which filters
+     * the RESPONSE after the handler runs. For a write, doc.save() had
+     * already persisted the mutation by then — a cross-org caller couldn't
+     * see the result but had already changed another organization's order.
+     * These two tests prove the fix rejects BEFORE any mutation.
+     */
+    it('rejects a cross-org caller before saving (org leak)', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderWithItem({ organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchEstimateDays(
+          doc._id.toString(),
+          { orderItemIndex: 0, moduleId: MODULE.toString(), workTypeId: WORK_TYPE.toString(), days: 5 },
+          new Types.ObjectId().toString(), // different org
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.estimateDayOverrides).toHaveLength(0);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderWithItem({ organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateDays(
+        doc._id.toString(),
+        { orderItemIndex: 0, moduleId: MODULE.toString(), workTypeId: WORK_TYPE.toString(), days: 5 },
+        ownerOrgId.toString(),
+      );
+
+      expect(doc.estimateDayOverrides).toHaveLength(1);
+      expect(doc.save).toHaveBeenCalled();
+    });
   });
 
   describe('patchEstimateStart (TZ-PRODUCTION-316)', () => {
@@ -1177,6 +1218,40 @@ describe('OrderService — TZ-ORDERS-301', () => {
           offsetDays: -1,
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    /** TZ-NX-GANTT-L0-PEER-REVIEW — same org-leak class as patchEstimateDays above. */
+    it('rejects a cross-org caller before saving (org leak)', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderWithItem({ organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchEstimateStart(
+          doc._id.toString(),
+          { orderItemIndex: 0, moduleId: MODULE.toString(), workTypeId: WORK_TYPE.toString(), offsetDays: 3 },
+          new Types.ObjectId().toString(), // different org
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.estimateStartOffsets).toHaveLength(0);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderWithItem({ organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateStart(
+        doc._id.toString(),
+        { orderItemIndex: 0, moduleId: MODULE.toString(), workTypeId: WORK_TYPE.toString(), offsetDays: 3 },
+        ownerOrgId.toString(),
+      );
+
+      expect(doc.estimateStartOffsets).toHaveLength(1);
+      expect(doc.save).toHaveBeenCalled();
     });
   });
 

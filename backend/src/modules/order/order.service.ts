@@ -389,6 +389,27 @@ export class OrderService {
     return doc;
   }
 
+  /**
+   * TZ-NX-GANTT-L0-PEER-REVIEW — org-scope check for the two Gantt write
+   * endpoints (estimate-days/estimate-start). `findByIdRaw`/`findById` run
+   * an unscoped `Model.findById`; the only existing protection was
+   * `OrgScopeGuardInterceptor`, which filters the RESPONSE after the
+   * handler runs — for a write, `doc.save()` has already persisted the
+   * mutation by then, so a cross-org caller could not see the result but
+   * had already changed another organization's order. This throws BEFORE
+   * any mutation. Mirrors `ProductService.organizationFilter`'s "no org id
+   * on either side = legacy/system, allow" semantics so bootstrap/system
+   * callers keep working.
+   */
+  private assertOrgAccess(doc: OrderDocument, organizationId?: string | null): void {
+    if (!organizationId) return;
+    const docOrgId = doc.organizationId;
+    if (!docOrgId) return;
+    if (String(docOrgId) !== organizationId) {
+      throw new NotFoundException(`Order ${String(doc._id)} not found`);
+    }
+  }
+
   private async findByIdRaw(id: string): Promise<OrderDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`Order ${id} not found`);
@@ -691,8 +712,13 @@ export class OrderService {
    * Composite key: (orderItemIndex, moduleId, workTypeId).
    * `days: null` removes the override (catalog WorkType.days applies).
    */
-  async patchEstimateDays(id: string, dto: PatchEstimateDaysDto): Promise<OrderDocument> {
+  async patchEstimateDays(
+    id: string,
+    dto: PatchEstimateDaysDto,
+    organizationId?: string | null,
+  ): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
+    this.assertOrgAccess(doc, organizationId);
     if (!Types.ObjectId.isValid(dto.moduleId) || !Types.ObjectId.isValid(dto.workTypeId)) {
       throw new BadRequestException('moduleId and workTypeId must be valid ObjectIds');
     }
@@ -745,8 +771,13 @@ export class OrderService {
    * Composite key: (orderItemIndex, moduleId, workTypeId).
    * `offsetDays: null` removes the override (sequential pack applies).
    */
-  async patchEstimateStart(id: string, dto: PatchEstimateStartDto): Promise<OrderDocument> {
+  async patchEstimateStart(
+    id: string,
+    dto: PatchEstimateStartDto,
+    organizationId?: string | null,
+  ): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
+    this.assertOrgAccess(doc, organizationId);
     if (!Types.ObjectId.isValid(dto.moduleId) || !Types.ObjectId.isValid(dto.workTypeId)) {
       throw new BadRequestException('moduleId and workTypeId must be valid ObjectIds');
     }
