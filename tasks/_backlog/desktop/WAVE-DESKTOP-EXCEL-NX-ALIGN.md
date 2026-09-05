@@ -1,6 +1,6 @@
 # WAVE — Desktop Excel NX-align + NX Desktop download port
 
-> **Статус:** READY (спеки) · **код-claim** — после пустого `tasks/_active/` или явного «параллель ок» PO  
+> **Статус:** 68–70 DONE (Claude, desktop-only) · 71–73 READY для Freebuff (`frontend-nx/**` shell)  
 > **Дата:** 2026-09-05  
 > **Аудиты:** `docs/audits/2026-09-05-desktop-excel-nx-align-audit.md`, `docs/audits/2026-09-05-nx-desktop-download-port-audit.md`  
 > **Нумерация:** TZD-**68…73** (60–67 заняты; TZD-60 DEFERRED NSIS)
@@ -16,9 +16,9 @@
 
 | SIZE | ID | Путь | Conflict (кратко) |
 |------|-----|------|-------------------|
-| L | TZD-68 | `tasks/_ready/desktop/TZD-68-excel-export-with-data.md` | `excel-form-template.ts`, `App.svelte` |
-| L | TZD-69 | `tasks/_ready/desktop/TZD-69-import-targets-nx-align.md` | `import-targets.ts`, `multi-import.ts`, `excel-form-template.ts`, `App.svelte` |
-| S | TZD-70 | `tasks/_ready/desktop/TZD-70-send-ready-ux.md` | `App.svelte` |
+| L | TZD-68 | `tasks/_archive/2026-09/TZD-68.done.md` | **DONE** — export-with-data (material+workType pilot) |
+| L | TZD-69 | `tasks/_archive/2026-09/TZD-69.done.md` | **DONE** — worker target + workType align |
+| S | TZD-70 | `tasks/_archive/2026-09/TZD-70.done.md` | **DONE** — green send-ready UX |
 | S | TZD-71 | `tasks/_ready/desktop/TZD-71-desktop-download-preflight.md` | deploy/meta/docs (+ minimal NX index prep) |
 | L | TZD-72 | `tasks/_ready/desktop/TZD-72-nx-pairing-download-port.md` | `frontend-nx/**` shell + data-access |
 | S | TZD-73 | `tasks/_ready/desktop/TZD-73-smoke-ledger.md` | docs + CAPABILITY-LEDGER |

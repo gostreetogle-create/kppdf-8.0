@@ -4,10 +4,16 @@ import { fieldLabel, IMPORT_TARGETS } from './import-targets';
 import {
   analyzeTables,
   applyTableMapping,
+  evaluateSendReadiness,
   reshapeForTable,
   validateTableRows,
   workerDedupeKeyOf,
 } from './multi-import';
+import type { ValidatedImportRow } from './import-mapping';
+
+function row(status: ValidatedImportRow['status']): ValidatedImportRow {
+  return { rowIndex: 0, values: {}, status, message: '' };
+}
 
 test('every target has columns with Russian labels and unique keys', () => {
   for (const key of Object.keys(IMPORT_TARGETS) as (keyof typeof IMPORT_TARGETS)[]) {
@@ -283,4 +289,58 @@ test('TZ-QA-445G supplyTask: orderId+qty+title → ok_new; missing identity → 
   assert.equal(noIdentity[0].status, 'invalid');
   const badOrder = validateTableRows([{ orderId: 'xx', qty: 1, title: 'X' }], 'supplyTask');
   assert.equal(badOrder[0].status, 'invalid');
+});
+
+// TZD-70: «зелёный UX» commit-readiness — invalid/needs_review anywhere blocks commit.
+test('evaluateSendReadiness: invalid>0 blocks commit even when sendable>0', () => {
+  const readiness = evaluateSendReadiness(
+    [{ validated: [row('ok_new'), row('ok_new'), row('invalid')] }],
+    false,
+  );
+  assert.equal(readiness.sendableCount, 2);
+  assert.equal(readiness.invalidCount, 1);
+  assert.equal(readiness.canCommit, false);
+});
+
+test('evaluateSendReadiness: needs_review anywhere blocks commit, even in a different block', () => {
+  const readiness = evaluateSendReadiness(
+    [
+      { validated: [row('ok_new')] },
+      { validated: [row('needs_review')] },
+    ],
+    false,
+  );
+  assert.equal(readiness.sendableCount, 1);
+  assert.equal(readiness.needsReviewCount, 1);
+  assert.equal(readiness.canCommit, false);
+});
+
+test('evaluateSendReadiness: only ok_* rows → enabled', () => {
+  const readiness = evaluateSendReadiness(
+    [{ validated: [row('ok_new'), row('ok_update')] }],
+    false,
+  );
+  assert.equal(readiness.canCommit, true);
+  assert.equal(readiness.sendableCount, 2);
+});
+
+test('evaluateSendReadiness: duplicate alone does not block commit (already excluded from sendable)', () => {
+  const readiness = evaluateSendReadiness(
+    [{ validated: [row('ok_new'), row('duplicate'), row('duplicate')] }],
+    false,
+  );
+  assert.equal(readiness.sendableCount, 1);
+  assert.equal(readiness.invalidCount, 0);
+  assert.equal(readiness.needsReviewCount, 0);
+  assert.equal(readiness.canCommit, true);
+});
+
+test('evaluateSendReadiness: no sendable rows → disabled even with zero errors', () => {
+  const readiness = evaluateSendReadiness([{ validated: [row('duplicate')] }], false);
+  assert.equal(readiness.canCommit, false);
+});
+
+test('evaluateSendReadiness: busy blocks commit regardless of row statuses', () => {
+  const readiness = evaluateSendReadiness([{ validated: [row('ok_new')] }], true);
+  assert.equal(readiness.canCommit, false);
 });

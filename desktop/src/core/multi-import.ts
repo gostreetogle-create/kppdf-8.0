@@ -187,6 +187,44 @@ function validateWorkerRows(
   });
 }
 
+export interface SendReadinessInput {
+  validated: ValidatedImportRow[];
+}
+
+export interface SendReadiness {
+  /** Строк со статусом ok_new/ok_update — уйдут в send. */
+  sendableCount: number;
+  invalidCount: number;
+  needsReviewCount: number;
+  /**
+   * TZD-70 — «зелёный UX»: commit разрешён только когда есть что отправить
+   * И нет ни одной invalid/needs_review строки где-либо в блоках (не только
+   * в текущем блоке) — оператор не жмёт «Отправить», пока экран не «весь
+   * зелёный». `duplicate` не блокирует: такие строки и так не sendable.
+   * Правило какие статусы уходят в send (ok_new/ok_update) не меняется.
+   */
+  canCommit: boolean;
+}
+
+/** Чистая логика готовности к «Отправить N строк» — TZD-70, тестируется отдельно от Svelte. */
+export function evaluateSendReadiness(
+  blocks: readonly SendReadinessInput[],
+  busy: boolean,
+): SendReadiness {
+  let sendableCount = 0;
+  let invalidCount = 0;
+  let needsReviewCount = 0;
+  for (const block of blocks) {
+    for (const row of block.validated) {
+      if (row.status === 'ok_new' || row.status === 'ok_update') sendableCount += 1;
+      else if (row.status === 'invalid') invalidCount += 1;
+      else if (row.status === 'needs_review') needsReviewCount += 1;
+    }
+  }
+  const canCommit = sendableCount > 0 && invalidCount === 0 && needsReviewCount === 0 && !busy;
+  return { sendableCount, invalidCount, needsReviewCount, canCommit };
+}
+
 /** Enum каталога для типа склада и типа категории (канон Nest DTO). */
 const WAREHOUSE_TYPES = new Set(['main', 'branch', 'transit', 'production', 'other']);
 const CATEGORY_TYPES = new Set(['material', 'product', 'general']);

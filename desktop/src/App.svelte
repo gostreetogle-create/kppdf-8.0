@@ -34,6 +34,7 @@
   import {
     analyzeTables,
     applyTableMapping,
+    evaluateSendReadiness,
     referenceDedupeKeysOf,
     reshapeForTable,
     validateTableRows,
@@ -706,17 +707,12 @@
   let hasDirectWriteBlocks = $derived(
     importBlocks.some((block) => block.targetKey !== 'material'),
   );
-  /** Строк, готовых к отправке (новые/обновления) — для копии кнопки CTA. */
-  let sendableRowsCount = $derived(
-    importBlocks.reduce(
-      (sum, block) =>
-        sum +
-        block.validated.filter((row) => row.status === 'ok_new' || row.status === 'ok_update').length,
-      0,
-    ),
-  );
   let mappingBusy = $state(false);
   let mappingMessage = $state('');
+  /** TZD-70 — «зелёный UX»: чистая логика готовности вынесена в multi-import.ts (тестируется отдельно). */
+  let sendReadiness = $derived(evaluateSendReadiness(importBlocks, mappingBusy));
+  /** Строк, готовых к отправке (новые/обновления) — для копии кнопки CTA. */
+  let sendableRowsCount = $derived(sendReadiness.sendableCount);
   let profileName = $state('');
   let profiles = $state<ImportMappingProfile[]>([]);
   let selectedProfileId = $state('');
@@ -3743,11 +3739,22 @@
               <p class="idempotency-note">
                 Повторная отправка тех же строк не создаст дублей — сверка идёт по артикулу/SKU.
               </p>
+              {#if sendReadiness.canCommit}
+                <p class="send-readiness send-readiness--ok" role="status">
+                  Готово к загрузке: {sendReadiness.sendableCount} строк
+                </p>
+              {:else if sendReadiness.invalidCount > 0 || sendReadiness.needsReviewCount > 0}
+                <p class="send-readiness send-readiness--bad" role="status">
+                  Исправьте ошибки ({sendReadiness.invalidCount}){sendReadiness.needsReviewCount > 0
+                    ? ` / строки на проверку (${sendReadiness.needsReviewCount})`
+                    : ''} — запись недоступна
+                </p>
+              {/if}
               <button
-                class="btn btn--primary"
+                class="btn btn--primary{sendReadiness.canCommit ? ' btn--ready' : ''}"
                 type="button"
                 onclick={sendBlocks}
-                disabled={mappingBusy || sendableRowsCount === 0}
+                disabled={!sendReadiness.canCommit}
               >
                 Отправить {sendableRowsCount} строк в базу ERP
               </button>
@@ -4682,6 +4689,38 @@
     font-size: 0.6875rem;
     color: #444748;
     line-height: 1.35;
+  }
+
+  /* TZD-70 — «зелёный UX»: явный статус готовности к записи над кнопкой «Отправить». */
+  .send-readiness {
+    flex-basis: 100%;
+    margin: 0;
+    padding: 0.35rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .send-readiness--ok {
+    color: #1b6c37;
+    background: #e3f3e8;
+    border: 1px solid #bfe3cb;
+  }
+
+  .send-readiness--bad {
+    color: #ba1a1a;
+    background: #fbe9e9;
+    border: 1px solid #f0c2c2;
+  }
+
+  .btn--ready {
+    background: #1b6c37;
+    border-color: #1b6c37;
+  }
+
+  .btn--ready:hover:not(:disabled) {
+    background: #24893f;
+    border-color: #24893f;
   }
 
   .validation-counts {

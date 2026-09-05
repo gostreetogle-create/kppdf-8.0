@@ -5,19 +5,19 @@ updated_at: 2026-09-05T19:40:00+03:00
 ## ACTIVE / LIVE
 
 - **Freebuff:** IN PROGRESS — W2 warehouse balances · `tasks/_active/TZ-NX-WAREHOUSE-W2-BALANCES.md`
-- **Claude:** IN PROGRESS — **Desktop Excel TZD-70** (∥ W2; only `desktop/**`) · TZD-68/69 DONE
+- **Claude:** IDLE — Desktop Excel wave TZD-68/69/70 all DONE, stopped per prompt (71–73 = Freebuff)
+- **Freebuff:** IN PROGRESS — W2 warehouse balances · `tasks/_active/TZ-NX-WAREHOUSE-W2-BALANCES.md`
 
 ## DONE (эта сессия)
 
 - SUPPLY-S0-KIT-RESERVE-BE `285a4c2d` — verified PASS (Cursor)
 - W1 warehouse shell archived (`d9631c00`)
-- TZD-68 Desktop Excel export-with-data (material+workType pilot) archived
-- TZD-69 Desktop worker target + workType align (department/accentHue) archived
+- WAVE-DESKTOP-EXCEL-NX-ALIGN: TZD-68 (export-with-data), TZD-69 (worker target + workType align), TZD-70 (green send-ready UX) — all archived, desktop-only
 
 ## NEXT
 
 После W2 archive: Claude **S1** supply page (`TZ-NX-SUPPLY-S1-PAGE`) — не параллелить с Freebuff на `kppdf-web`.  
-После TZD-70: `PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md` (71–73).
+Desktop 71–73 (NX pairing/download port, `frontend-nx/**`): Freebuff `PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`, по команде PO.
 
 ## PARK
 
