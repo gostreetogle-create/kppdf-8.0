@@ -2,10 +2,12 @@
 
 Сюда — TZ, готовые к выдаче без дописывания спеки.
 
-## Активный pack (Doc Studio FINISH)
+## Сейчас (2026-09-05)
 
-**Индекс:** [`docstudio-finish/INDEX.md`](./docstudio-finish/INDEX.md)  
-**Промпты по одному:** `docstudio-finish/prompts/PROMPT-01-S27.md` … `PROMPT-11-S37.md`  
-**TZ:** `TZ-NX-DOCSTUDIO-S27-…` … `S37-…` в этой папке `_ready/`.
+Активного pack'а нет — Doc Studio FINISH (S27–S43), NX Gantt L0+polish (G0–G15),
+NX Gantt registries (R1–R3), WAVE-NX-DEALS (D1–D5) и Doc Studio Data IA (D50–D54)
+полностью DONE и архивированы в `tasks/_archive/2026-09/`.
 
-Старт завтра: Cursor отдаёт **PROMPT-01** → Freebuff. После «выполнено» → PROMPT-02.
+Единственная готовая TZ: [`TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE.md`](./TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE.md).
+
+Живая доска: `docs/agent-checklists/_NOW.md`.

@@ -1,10 +1,10 @@
-# TZ inventory — 2026-09-03 cleanup
+# TZ inventory — 2026-09-05 cleanup
 
 ## READY (1)
 
 | TZ | Путь |
 |----|------|
-| UI-tokens slice-3 | `tasks/_ready/TZ-FRONTEND-QA-LINT-UI-TOKENS-SLICE-3.md` |
+| Registries expand — scroll jump + white gap | `tasks/_ready/TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE.md` |
 
 ## LIVE
 
