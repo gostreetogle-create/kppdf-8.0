@@ -651,9 +651,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
             }
           </div>
 
-          <div class="relative flex-1 min-w-0">
+          <div class="gantt-calendar-pane relative flex-1 min-w-0 bg-paper-2">
             <div
-              class="relative h-10 border-b hairline sticky top-0 bg-paper z-10"
+              class="relative h-10 border-b hairline sticky top-0 bg-paper-2 z-10"
               data-test="gantt-scale"
             >
               @for (tick of scaleTicks(); track tick.key) {
@@ -884,6 +884,14 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     .gantt-scroll {
       container-type: inline-size;
       container-name: gantt-scroll;
+    }
+    /* TZ-NX-GANTT-G8 — cool calendar wash separates timeline from label paper. */
+    .gantt-calendar-pane {
+      background: var(--color-paper-2);
+    }
+    :host-context(.dark) .gantt-calendar-pane,
+    :host-context([data-theme='dark']) .gantt-calendar-pane {
+      background: color-mix(in oklch, var(--color-paper-2) 76%, var(--color-ink));
     }
     /* QA-445E — visible ack when scrollLeft cannot move (short range / already centered). */
     .gantt-today-pulse {

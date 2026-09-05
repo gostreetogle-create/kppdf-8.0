@@ -56,6 +56,16 @@ describe('GanttBarsComponent (TZ-NX-GANTT-G4 pan/zoom)', () => {
     expect(GANTT_PX_PER_DAY['month']).toBe(12);
   });
 
+  it('keeps the calendar pane separate from the sticky label pane', async () => {
+    const fixture = await setup([makeBar({})], '2026-09-01', '2026-09-21');
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.querySelector('.gantt-calendar-pane')).toBeTruthy();
+    expect(root.querySelector('.gantt-calendar-pane [data-test="gantt-scale"]')).toBeTruthy();
+    expect(root.querySelector('.gantt-calendar-pane')?.classList.contains('bg-paper-2')).toBe(true);
+    expect(root.querySelector('.sticky.w-52')?.classList.contains('bg-paper')).toBe(true);
+  });
+
   it('renders a shifted bar that starts before rangeStart (negative left is clamped visually, not crashed)', async () => {
     // Order shifted 10 days earlier than rangeStart → left < 0 in px terms.
     const shifted = makeBar({ startDate: '2026-08-20', endDate: '2026-08-22' });

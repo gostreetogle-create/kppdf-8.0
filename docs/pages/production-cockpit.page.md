@@ -1,6 +1,6 @@
 # Страница: Производство / Cockpit (`ProductionCockpitPage`)
 
-**Статус:** `NX PORT DONE` (TZ-NX-GANTT G0–G7, 2026-09-05) — см. [NX-порт](#nx-порт-tz-nx-gantt-g0g7) ниже. Legacy: `STUDIO ESTIMATE PASS`; fact production out of readiness (L1–L6).
+**Статус:** `NX PORT DONE` + **P2 polish DONE** (TZ-NX-GANTT G0–G7, P2, 2026-09-05) — см. [NX-порт](#nx-порт-tz-nx-gantt-g0g7) ниже. Legacy: `STUDIO ESTIMATE PASS`; fact production out of readiness (L1–L6).
 
 **Краткое описание:** `/production` — студия план-оценки Ганта по `WorkType.days`. **Актуальный код (NX):** `frontend-nx/apps/kppdf-web/src/app/pages/production/**`; tools в **shell rails** (`ShellToolRailService`). Секции ниже с путями `frontend/` — исторический legacy-эталон порта (не удалять до отдельного решения PO о delete legacy). Не факт цеха; без ProductionOrder/OrderTask.
 
@@ -13,7 +13,7 @@ app-chrome-rail-left:  ← + Заказы · Фильтры · Обновить
 main: Gantt full width (no local 48px columns)
 app-chrome-rail-right: → + Сегодня
 flyouts: overlay; center width unchanged
-gantt-toolbar: По заказам|По рабочим · День|Месяц|Вместить сроки (в шапке Ганта, не chrome)
+gantt-toolbar: TOC-chips По заказам|По рабочим · День|Месяц|Вместить сроки (в шапке Ганта, не chrome)
 ```
 
 **WAVE-PRODUCTION-GANTT-CASCADE (DONE):** **321** detail под видом работ; **322** meta под summary + kill bottom sheet; **323** один meta + full-width панели.
@@ -81,9 +81,9 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 | `pages/production/production-read.facade.ts` | Чтение через `@kppdf/data-access`: orders + products/modules **bulk** + work-types + workers; retry 429/503; warnings | G2 |
 | `pages/production/gantt-bar.model.ts` | Pure-модель 1:1 (статусы A/C, sequential pack, estimate math, worker-группировка) | G2 |
 | `pages/production/production-cockpit.context.ts` | Локальные UI-сигналы (1:1) | G2 |
-| `pages/production/blocks/gantt-bars.component.ts` | Timeline 1:1: дерево, каскад, drag/resize, zoom; viewport re-anchor после сдвигов (G4) | G3–G6 |
+| `pages/production/blocks/gantt-bars.component.ts` | Timeline 1:1: дерево, каскад, drag/resize, zoom; viewport re-anchor после сдвигов (G4); calendar pane cool `bg-paper-2` wash (P2) | G3–G6 + P2 |
 | `pages/production/blocks/orders-rail.component.ts` | Rail + фильтры (1:1; `o.status` optional-safe) | G3 |
-| `pages/production/blocks/production-scale-controls.component.ts` | Toolbar группировка/масштаб (1:1) | G3 |
+| `pages/production/blocks/production-scale-controls.component.ts` | Toolbar группировка/масштаб как TOC-chips (`aria-pressed`) | G3 + P2 |
 | `pages/production/blocks/order-inspector.component.ts` | `promptCatalogDaysChange` helper | G3/G5 |
 | `libs/data-access`: `sales/order.types.ts` + `pi-orders.service.ts` | `estimateDays/estimateStartOffsets/estimateDayOverrides` + `patchEstimateDays/patchEstimateStart` | G2 |
 | `libs/data-access`: `catalog/work-type.types.ts`, `pi-work-types.service.ts` | WorkTypes read + `update` (catalog days, G5) | G2/G5 |
