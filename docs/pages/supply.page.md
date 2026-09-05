@@ -125,6 +125,18 @@ Query `orderId` **сохраняется** при переключении Бы�
 - `pi-supply-tasks.service.spec.ts` — 8 tests (все методы, HTTP mock)
 - `supply.page.spec.ts` — 9 tests (фильтры, transitions, explode, create, no-mock-UI assertion, router-based filter clear)
 
+## NX — TZ-NX-SUPPLY-S2-HUB-CONFIRM (order hub «Подтвердить материалы»)
+
+S2 не трогает `/supply` саму по себе — это точка входа СО стороны заказа
+(`docs/pages/orders.page.md` § TZ-NX-SUPPLY-S2), которая создаёт
+`SupplyRequest` через S0 kit-reserve (`POST
+/orders/:id/items/:itemIndex/kit-reserve`), а затем даёт deep-link сюда
+(`/supply?orderId=`). `SupplyRequest` остаётся отдельной сущностью от
+`SupplyTask` (реестр S1) — см. архитектурное решение в
+`tasks/_archive/2026-09/TZ-NX-SUPPLY-S1-PAGE.done.md`. NX пока не показывает
+`SupplyRequest` списком на `/supply` — это остаётся gap на будущее (легаси
+«Быстрый заказ» их тоже не показывает как реестр).
+
 ### TZ reference (NX)
 
 | TZ | Что сделано |

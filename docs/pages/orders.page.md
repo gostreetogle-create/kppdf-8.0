@@ -45,7 +45,7 @@ Read-only expand на списке `/orders`:
 | Блок                       | HTTP | Содержание                                                                                                                                                               |
 | -------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Состав заказа**          | 1/line | группа «Заказ»; accordion **свёрнут по умолчанию** (UX-445I); **`app-composition-tree`** forest (`GET /products/:id/tree`) — корни тоже свёрнуты до клика; карандаш → каталог; link «Открыть карточку заказа» → `/orders/:id`; без дубля заказчик/КП/объект |
-| **Снабжение (HUB-303)**    | 1    | lazy `GET /api/supply-tasks?orderId=<Order._id>` → счётчики draft/confirmed/ordered/received + total; empty «Нет задач снабжения»; error inline; link `/supply?orderId=` |
+| **Снабжение (HUB-303)**    | 1    | lazy `GET /api/supply-tasks?orderId=<Order._id>` → счётчики draft/confirmed/ordered/received + total; empty «Нет задач снабжения»; error inline; link `/supply?orderId=`; **TZ-NX-SUPPLY-S2:** кнопка «Подтвердить материалы» → `KitReserveConfirmDialogComponent` (см. ниже) |
 | **Производство (HUB-303)** | 0    | «Оценка в цехе» + `/production?orderId=` (hub). **DESK-416:** tray `mode="desk"` → `from=desk` («На стол»); hub без `from`. `data-test="order-production-link"` не менять.                                                                                                                                 |
 | **Документы (HUB-303)**    | 0    | `/doc-constructor/templates?source=order&sourceId=`                                                                                                                      |
 | **Готовность (HUB-304)**   | 0    | `X из Y` + линии ready/не ready; link «Открыть заказ» → `/orders/:id`; **нет** toggle ready в панели. Формула списка = `count(items.readyForWork===true)` — **не** `OrderItem.status` (тот считает «X из Y» на Комбайне `/design/combine`, TZ-SWEEP-401). Поля не сливать. |
@@ -56,6 +56,29 @@ Read-only expand на списке `/orders`:
 - Write **заказа** из expand запрещён (линии/ready/заказчик). Карандаш состава пишет в **каталог** (live BOM), не в snapshot `Order.items`.
 - Budget: supply=1 + reservations=1 + composition tree per line when accordion open.
 - Service: `ReservationsService` (`pi-reservations.service.ts`) — read-only `list(orderNumber?)`.
+
+### TZ-NX-SUPPLY-S2 — «Подтвердить материалы» (hub-only write, единственное исключение из «write запрещён» выше)
+
+Кнопка в блоке «Снабжение» открывает `KitReserveConfirmDialogComponent`
+(`pages/orders/kit-reserve-confirm-dialog.component.ts`) — единственная
+write-операция из hub tray, целенаправленно допущенная TZ (в отличие от
+линий/ready/заказчика, которые остаются read-only). Диалог:
+
+- Показывает preview комплектации ОДНОЙ позиции заказа (picker, если позиций
+  больше одной) через `PiOrdersService.getKitAvailability(orderId, itemIndex)`
+  → `GET /orders/:id/items/:itemIndex/kit-availability` (backend
+  `KitReserveService`, S0): материал / нужно / есть / статус ok\|short.
+- «Подтвердить» → `PiOrdersService.confirmKitReserve(orderId, itemIndex)` →
+  `POST /orders/:id/items/:itemIndex/kit-reserve`: атомарно резервирует
+  ok-строки, по short-строкам создаёт `SupplyRequest` (**мягкий дефицит —
+  цех не блокируется**), возвращает `{reserved, supplyRequestIds, warnings}`.
+- Результат: toast + summary (сколько зарезервировано / сколько заявок
+  снабжения создано) + список id заявок + deep-link «Открыть снабжение» →
+  `/supply?orderId=` (только если заявки были созданы).
+- После закрытия с непустым результатом tray сразу перезагружает счётчики
+  «Снабжение» и «Склад» (нет F5).
+- **Не делает:** списание OUT со склада (successor TZ, см. S0/S2 scope);
+  автозапуск Гантта.
 
 ## Couplings
 

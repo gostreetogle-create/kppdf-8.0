@@ -1,26 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T22:40:00+03:00
+updated_at: 2026-09-05T23:10:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Claude:** S1 DONE → **S2** hub confirm · `TZ-NX-SUPPLY-S2-HUB-CONFIRM` / WAVE-NX-SUPPLY
-- **Freebuff:** IDLE (WAVE-NX-WAREHOUSE DONE). Next later: TZD-71…73 pairing — **после** S2 (оба `kppdf-web`)
+- **Claude:** WAVE-NX-SUPPLY DONE (S0+S1+S2, all gates green — S2 closed this session, commit pending). STOP per PO instruction — awaiting next assignment.
+- **Freebuff:** IDLE (WAVE-NX-WAREHOUSE DONE). Next: TZD-71…73 pairing (`kppdf-web` now free — S1/S2 both closed).
 
 ## DONE
 
-- WAVE-NX-WAREHOUSE W1…W4: `d9631c00` / `f7b9242a` / `7f90a28d` / `b28bb0a8`
-- Desktop Excel TZD-68…70 · SUPPLY-S0 `285a4c2d`
-- **TZ-NX-SUPPLY-S1-PAGE DONE** — `/supply` NX live registry (no mock quick), gates green, commit pending
+- WAVE-NX-WAREHOUSE W1–W4 · SUPPLY-S0 `285a4c2d` · SUPPLY-S1 `9680c441` · Desktop Excel TZD-68…70
+- **TZ-NX-SUPPLY-S2-HUB-CONFIRM DONE** — order hub «Подтвердить материалы» dialog + kit-reserve API client, gates green, commit pending
 
 ## NEXT
 
-После S1+S2: Freebuff `PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`
+WAVE-NX-SUPPLY closed. Freebuff `PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`.
 
 ## PARK
 
 - WAVE-NX-CATALOG-PHOTOS · DocStudio S45 · Orders inset · Cutover · `/desk` · G12
-
-## NOTE
-
-Один executor на `kppdf-web` за раз — concurrent edits mid-task = риск; не запускать два Freebuff на один `_active`.

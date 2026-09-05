@@ -1,21 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import {
   PiCompositionService,
   PiReservationsService,
   PiSupplyRequestsService,
   type CompositionTreeNode,
+  type KitReserveResult,
   type Order,
 } from '@kppdf/data-access';
+import type { DialogRef } from '@kppdf/ui/dialog';
+import { PiDialogService } from '@kppdf/ui/dialog';
 import { OrderHubTrayComponent } from './order-hub-tray.component';
+import { KitReserveConfirmDialogComponent } from './kit-reserve-confirm-dialog.component';
 
 describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
   let fixture: ComponentFixture<OrderHubTrayComponent>;
   let compositionApi: { getProductTree: jest.Mock };
   let supplyApi: { list: jest.Mock };
   let reservationsApi: { list: jest.Mock };
+  let dialog: { open: jest.Mock };
 
   const order: Order = {
     _id: 'order-1',
@@ -31,6 +37,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     compositionApi = { getProductTree: jest.fn() };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    dialog = { open: jest.fn() };
 
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
@@ -39,6 +46,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
 
@@ -106,6 +114,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     compositionApi = { getProductTree: jest.fn() };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
       providers: [
@@ -113,6 +122,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(OrderHubTrayComponent);
@@ -133,6 +143,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     compositionApi = { getProductTree: jest.fn() };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
       providers: [
@@ -140,6 +151,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(OrderHubTrayComponent);
@@ -158,6 +170,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
       providers: [
@@ -165,6 +178,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(OrderHubTrayComponent);
@@ -214,5 +228,52 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     expect(warehouseLink.getAttribute('href')).toBe('/storage-items');
     expect(shippingLink.getAttribute('href')).toBe('/shipping');
     expect(documentsLink.getAttribute('href')).toBe('/doc-constructor/templates?source=order&sourceId=order-1');
+  });
+
+  it('opens the kit-reserve confirm dialog with the current order', async () => {
+    await setup();
+    const ref = {
+      closed: signal<KitReserveResult | undefined>(undefined),
+    } as unknown as DialogRef<KitReserveResult | undefined>;
+    dialog.open.mockReturnValue(ref);
+
+    (
+      fixture.nativeElement.querySelector('[data-test="order-confirm-materials"]') as HTMLButtonElement
+    ).click();
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      KitReserveConfirmDialogComponent,
+      expect.objectContaining({ data: { order } }),
+    );
+  });
+
+  it('reloads supply and reservation counters after a kit-reserve confirm', async () => {
+    await setup();
+    const closed = signal<KitReserveResult | undefined>(undefined);
+    const ref = {
+      closed,
+      close: (value?: KitReserveResult) => closed.set(value),
+    } as unknown as DialogRef<KitReserveResult | undefined>;
+    dialog.open.mockReturnValue(ref);
+    supplyApi.list.mockClear();
+    reservationsApi.list.mockClear();
+
+    (
+      fixture.nativeElement.querySelector('[data-test="order-confirm-materials"]') as HTMLButtonElement
+    ).click();
+    closed.set({ reserved: [], supplyRequestIds: ['sr1'], warnings: [] });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(supplyApi.list).toHaveBeenCalledTimes(1);
+    expect(reservationsApi.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the confirm-materials button for an order without items', async () => {
+    await setup({ ...order, items: [] });
+    const button = fixture.nativeElement.querySelector(
+      '[data-test="order-confirm-materials"]',
+    ) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
   });
 });

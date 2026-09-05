@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
   OnInit,
   inject,
   input,
@@ -15,11 +16,18 @@ import {
   PiReservationsService,
   PiSupplyRequestsService,
   type CompositionTreeNode,
+  type KitReserveResult,
   type Order,
   type OrderItem,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
+import { PiDialogService } from '@kppdf/ui/dialog';
 import { CompositionTreeComponent, type CompositionTreeSelectEvent } from '../composition/composition-tree.component';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
+import {
+  KitReserveConfirmDialogComponent,
+  type KitReserveConfirmDialogData,
+} from './kit-reserve-confirm-dialog.component';
 import { orderStatusLabel } from './order-status';
 
 type SupplyCounters = { readonly ordered: number; readonly received: number; readonly total: number };
@@ -115,10 +123,19 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
           <section class="min-w-0 flex flex-col gap-1.5" data-test="order-supply-block">
             <div class="flex items-baseline gap-3 flex-wrap">
               <span class="text-xs text-muted-foreground">Снабжение</span>
+              <button
+                type="button"
+                class="min-h-touch px-2 py-1 ml-auto inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                data-test="order-confirm-materials"
+                (click)="openKitReserveConfirm($event)"
+                [disabled]="(order().items?.length ?? 0) === 0"
+              >
+                Подтвердить материалы
+              </button>
               <a
                 routerLink="/supply"
                 [queryParams]="{ orderId: order()._id }"
-                class="min-h-touch px-2 py-1 ml-auto inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                class="min-h-touch px-2 py-1 inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-xs"
                 data-test="order-supply-link"
                 (click)="$event.stopPropagation()"
                 >Снабжение</a
@@ -273,6 +290,8 @@ export class OrderHubTrayComponent implements OnInit {
   private readonly supplyApi = inject(PiSupplyRequestsService);
   private readonly reservationsApi = inject(PiReservationsService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
 
   protected readonly compositionExpanded = signal(false);
   protected readonly compositionLoading = signal(false);
@@ -321,6 +340,25 @@ export class OrderHubTrayComponent implements OnInit {
     if (this.compositionExpanded() && !this.compositionLoaded) {
       this.loadComposition();
     }
+  }
+
+  protected openKitReserveConfirm(event: Event): void {
+    event.stopPropagation();
+    const ref = this.dialog.open<KitReserveResult | undefined, KitReserveConfirmDialogData>(
+      KitReserveConfirmDialogComponent,
+      {
+        data: { order: this.order() },
+        width: 'md',
+        ariaLabel: 'Подтверждение материалов',
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (result) {
+        this.loadSupply();
+        this.loadReservations();
+      }
+    });
   }
 
   private loadComposition(): void {

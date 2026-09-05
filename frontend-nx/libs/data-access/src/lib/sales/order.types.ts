@@ -130,3 +130,33 @@ export interface PatchEstimateWorkerPayload {
   readonly workTypeId: string;
   readonly workerIds: readonly string[];
 }
+
+/** TZ-NX-SUPPLY-S0 — one material line in a kit-availability check. */
+export interface KitAvailabilityLine {
+  readonly materialId: string;
+  readonly materialName: string;
+  readonly needQty: number;
+  readonly availableQty: number;
+  readonly warehouseId: string | null;
+  readonly status: 'ok' | 'short';
+}
+
+/** Response of GET /orders/:id/items/:itemIndex/kit-availability. */
+export interface KitAvailability {
+  readonly orderId: string;
+  readonly orderItemIndex: number;
+  readonly lines: readonly KitAvailabilityLine[];
+  readonly summary: { readonly canReserveAll: boolean };
+}
+
+/** Response of POST /orders/:id/items/:itemIndex/kit-reserve. */
+export interface KitReserveResult {
+  readonly reserved: readonly {
+    readonly materialId: string;
+    readonly warehouseId: string;
+    readonly qty: number;
+    readonly reservationId: string;
+  }[];
+  readonly supplyRequestIds: readonly string[];
+  readonly warnings: readonly string[];
+}

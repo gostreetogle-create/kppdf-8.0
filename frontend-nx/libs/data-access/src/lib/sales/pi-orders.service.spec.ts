@@ -108,4 +108,33 @@ describe('PiOrdersService (TZ-NX-SALES-S33-PI-ORDERS-CRUD)', () => {
     expect(request.request.body).toEqual(payload);
     request.flush({ _id: orderId, number: 'ORD-001' });
   });
+
+  it('getKitAvailability() GETs /orders/:id/items/:itemIndex/kit-availability (TZ-NX-SUPPLY-S2)', () => {
+    service.getKitAvailability(orderId, 0).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/items/0/kit-availability`);
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      orderId,
+      orderItemIndex: 0,
+      lines: [
+        {
+          materialId: '507f1f77bcf86cd799439030',
+          materialName: 'Профиль 40x40',
+          needQty: 10,
+          availableQty: 4,
+          warehouseId: '507f1f77bcf86cd799439031',
+          status: 'short',
+        },
+      ],
+      summary: { canReserveAll: false },
+    });
+  });
+
+  it('confirmKitReserve() POSTs /orders/:id/items/:itemIndex/kit-reserve (TZ-NX-SUPPLY-S2)', () => {
+    service.confirmKitReserve(orderId, 0).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/items/0/kit-reserve`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
+    request.flush({ reserved: [], supplyRequestIds: ['507f1f77bcf86cd799439032'], warnings: ['short'] });
+  });
 });

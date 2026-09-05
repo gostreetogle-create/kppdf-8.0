@@ -10,6 +10,8 @@ import {
 } from '@kppdf/util-http';
 import type {
   CreateOrderPayload,
+  KitAvailability,
+  KitReserveResult,
   Order,
   PatchEstimateDaysPayload,
   PatchEstimateStartPayload,
@@ -65,5 +67,36 @@ export class PiOrdersService {
     payload: PatchEstimateWorkerPayload,
   ): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/estimate-worker`, payload);
+  }
+
+  /**
+   * TZ-NX-SUPPLY-S2 — preview material need/available/status for one order
+   * line, from the S0 `KitReserveService` (dual-read composition, no separate
+   * BOM model).
+   */
+  getKitAvailability(
+    orderId: string,
+    orderItemIndex: number,
+  ): Observable<SilentResult<KitAvailability>> {
+    return silentGet<KitAvailability>(
+      this.http,
+      `${this.baseUrl}/orders/${orderId}/items/${orderItemIndex}/kit-availability`,
+    );
+  }
+
+  /**
+   * TZ-NX-SUPPLY-S2 — confirm: reserve ok-lines atomically, create a
+   * `SupplyRequest` for short lines (soft shortage, never a silent partial
+   * reserve, no OUT stock movement).
+   */
+  confirmKitReserve(
+    orderId: string,
+    orderItemIndex: number,
+  ): Observable<SilentResult<KitReserveResult>> {
+    return silentPost<KitReserveResult>(
+      this.http,
+      `${this.baseUrl}/orders/${orderId}/items/${orderItemIndex}/kit-reserve`,
+      {},
+    );
   }
 }
