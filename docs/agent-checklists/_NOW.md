@@ -1,25 +1,22 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T19:40:00+03:00
+updated_at: 2026-09-05T20:20:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** IN PROGRESS — W2 warehouse balances · `tasks/_active/TZ-NX-WAREHOUSE-W2-BALANCES.md`
-- **Claude:** IDLE — Desktop Excel wave TZD-68/69/70 all DONE, stopped per prompt (71–73 = Freebuff)
-- **Freebuff:** IN PROGRESS — W2 warehouse balances · `tasks/_active/TZ-NX-WAREHOUSE-W2-BALANCES.md`
+- **Freebuff:** W2 archived — moving to W3 (stock-movement create UI) → W4
+- **Claude:** IDLE — Desktop Excel TZD-68…70 DONE (`9764dff4` / `c4a9f872` / `ec3e981b`); next is S1 supply once `kppdf-web` is free of Freebuff's W3/W4
 
-## DONE (эта сессия)
+## DONE
 
-- SUPPLY-S0-KIT-RESERVE-BE `285a4c2d` — verified PASS (Cursor)
-- W1 warehouse shell archived (`d9631c00`)
-- WAVE-DESKTOP-EXCEL-NX-ALIGN: TZD-68 (export-with-data), TZD-69 (worker target + workType align), TZD-70 (green send-ready UX) — all archived, desktop-only
+- TZD-68/69/70 Desktop Excel · SUPPLY-S0 `285a4c2d` · W1 warehouse `d9631c00` · W2 balances (storage-items page/dialogs/client)
 
 ## NEXT
 
-После W2 archive: Claude **S1** supply page (`TZ-NX-SUPPLY-S1-PAGE`) — не параллелить с Freebuff на `kppdf-web`.  
-Desktop 71–73 (NX pairing/download port, `frontend-nx/**`): Freebuff `PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`, по команде PO.
+1. Freebuff: W3 → W4 (warehouse wave)
+2. После W4 archive (или когда `kppdf-web` свободен): Claude **S1** supply (`PROMPT-CLAUDE-NX-SUPPLY.md` / S1 TZ) — не параллелить с Freebuff на `kppdf-web`
+3. После W4: Freebuff **TZD-71…73** pairing (`PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`)
 
 ## PARK
 
-- **WAVE-NX-CATALOG-PHOTOS** (фото NX) — `tasks/_ready/nx-photos/` · `PROMPT-NX-CATALOG-PHOTOS.md` · audit `2026-09-05-catalog-photos-nx-audit.md`  
-- DocStudio S45 · Orders inset · Cutover · `/desk` · G12
+- WAVE-NX-CATALOG-PHOTOS · DocStudio S45 · Orders inset · Cutover · `/desk` · G12

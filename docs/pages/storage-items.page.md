@@ -1,56 +1,103 @@
-# Страница: Остатки на складе (StorageItemsPage)
+# Страница: Остатки на складе (StorageItem)
 
-**Краткое описание:** Текущие остатки по складам. Фильтр по складу и по материалу, pi-table с сортировкой.
+**Legacy route:** `/storage-items` remains the reference until cutover.
+**NX route:** `/storage-items` is the live W2 balances page inside the operational shell.
+**SoT:** `StorageItem.quantity` / `reservedQty`; stock movements remain the ledger source for balance writes.
 
-**NX W2 note:** `/storage-items` is reserved by W1 as a live route with a narrow placeholder. W2 replaces that page in place with the `StorageItem` balances list, preserving the API and `?materialId=` deep-link contract below. The NX shell exposes it under **Склад → Остатки**.
+## NX W2 implementation
 
+| Surface | Path |
+|---------|------|
+| Page | `frontend-nx/apps/kppdf-web/src/app/pages/warehouse/storage-items.page.ts` |
+| Put dialog | `frontend-nx/apps/kppdf-web/src/app/pages/warehouse/storage-put-on-stock-dialog.component.ts` |
+| Adjust dialog | `frontend-nx/apps/kppdf-web/src/app/pages/warehouse/storage-adjust-dialog.component.ts` |
+| Client | `frontend-nx/libs/data-access/src/lib/warehouse/pi-storage-items.service.ts` |
+| Types/helpers | `frontend-nx/libs/data-access/src/lib/warehouse/storage-item.types.ts` |
+| Route/nav | W1-owned `/storage-items` route and **Склад → Остатки** entry |
+
+## Routes and filters
+
+```text
+/storage-items
+/storage-items?materialId=<id>
+/storage-items?warehouseId=<id>&materialId=<id>
 ```
-/storage-items — «KPPDF — Остатки на складе»
-/storage-items?materialId=<id> — фильтр по материалу (переход со страницы материалов, TZ-MATERIALS-308)
+
+- **Склад** — native select populated by `GET /api/warehouses`; changing it reloads `GET /api/storage-items?warehouseId=…`.
+- **Материал** — `materialId` is passed to the server as a read-only deep-link prefilter. The page resolves the label through `GET /api/materials/:id`.
+- **Мало остатков** — client-side filter `quantity <= minQuantity`, including equality. The page intentionally requests the unfiltered list because the current backend `lowStock` expression is strict `<`.
+- The page keeps loading, retryable error, honest empty, and success states. The table has a stable wide layout with horizontal scrolling on narrow viewports.
+
+## Table
+
+The balances table renders these fields for every row:
+
+1. **Продукт / Материал** — populated `productId` or `materialId`, via `storageItemName()`.
+2. **Склад** — populated `warehouseId` / `warehouse`, via `storageItemWarehouseName()`.
+3. **Количество** — `quantity`.
+4. **Резерв** — `reservedQty`.
+5. **Минимум** — `minQuantity`.
+6. **Зона** — read-only `zoneName` when present.
+
+## Write actions
+
+### Поставить на склад
+
+The page action opens a material selector, warehouse selector, quantity, minimum, and optional zone. It uses the existing material endpoint:
+
+```text
+POST /api/materials/:materialId/storage-items
+{ warehouseId, quantity, minQuantity, zoneName? }
 ```
 
-## API endpoints
+The deep-linked material is preselected; if it is outside the first catalog response, the dialog keeps a visible fallback option for that ID.
 
-| Метод | Endpoint | Назначение |
-|-------|----------|-----------|
-| GET | `/api/storage-items` | Список с `?warehouseId=`, `?productId=`, `?materialId=`, `?lowStock=` |
-| GET | `/api/warehouses` | Список складов (для фильтра) |
-| GET | `/api/materials` | Материалы (для подписи фильтра) |
+### Корректировать
 
-Ответ GET storage-items: `{ items: StorageItem[], total: number }` — **envelope** (TZ-MATERIALS-308 выровнял контракт: ранее был голый массив, из-за чего список не рендерился в PiEntityListComponent).
+Each row opens a focused adjustment dialog with a signed `delta` and required reason:
 
-## State (signals)
+```text
+POST /api/storage-items/:id/adjust
+{ delta, reason }
+```
 
-| Сигнал | Тип | Назначение |
-|--------|-----|-----------|
-| `selectedWarehouse` | `Signal<string>` | Фильтр по складу |
-| `materialId` | `Signal<string>` | **TZ-MATERIALS-308** — фильтр по материалу из `?materialId=` (read-only) |
-| `materialName` | `computed` | Подпись «Материал: …» (lookup по /materials) |
-| `listRes` | `HttpResource<StorageItemsListResponse>` | GET /api/storage-items |
-| `warehousesRes` | `HttpResource<Warehouse[]>` | GET /api/warehouses |
-| `listParams` | `computed` | `{ warehouseId?, materialId? }` |
+The UI rejects zero changes, blank reasons, and a negative resulting quantity. On success it merges the returned `StorageItem` into the current list, so a negative adjustment immediately reduces the displayed quantity while preserving populated labels when the API response is sparse.
 
-## Column definitions (6 колонок)
+## API client
 
-`product` (sortable, accessor: `storageItemName(row)` — продукт ИЛИ материал) → `warehouse` (sortable, accessor: warehouse.name) → `zoneName` → `quantity` (numeric, right) → `reservedQty` (numeric, right) → `minQuantity` (numeric, right)
+`PiStorageItemsService` is a thin `SilentResult` client for:
 
-## Особенности
+| Method | Endpoint |
+|--------|----------|
+| `list` | `GET /api/storage-items` with `warehouseId`, `materialId`, `productId`, optional `lowStock` |
+| `createForMaterial` | `POST /api/materials/:materialId/storage-items` |
+| `adjust` | `POST /api/storage-items/:id/adjust` |
 
-- **Filter by warehouse** — `<select>` dropdown с warehouse options
-- **Материал-фильтр** — `?materialId=` из query (переход со страницы материалов) + подпись; количество меняется только в складе (read-only)
-- **Server-side filtering** — `warehouseId` / `materialId` query params → backend фильтрует
-- **Inline error toast** — `effect()` показывает toast при ошибке
-- **pi-table** — с [initialSortKey]="'product'" [initialSortDir]="'asc'"
-- **Accessor pattern** — `storageItemName(row)`: populated `productId`/`materialId` → имя; XOR-позиции
+The client does not add `organizationId`; scope comes from the authenticated API context.
+
+## Verification
+
+Focused NX W2 coverage:
+
+- `frontend-nx/libs/data-access/src/lib/warehouse/pi-storage-items.service.spec.ts`
+- `frontend-nx/apps/kppdf-web/src/app/pages/warehouse/storage-items.page.spec.ts`
+- `frontend-nx/apps/kppdf-web/src/app/pages/warehouse/storage-dialogs.spec.ts`
+
+Covered behavior includes API query/body contracts, `materialId` deep-link loading, warehouse reload, inclusive low-stock filtering, all balance columns, negative adjustment preview/API result, and put-on-stock selection.
+
+## Legacy reference
+
+The legacy page still documents the older `PiGroupWorkspace`/`pi-table` implementation and remains the cutover reference. NX W2 deliberately does not add an inventory dashboard, reservation writes, transfer creation, warehouse types, or zone management. Quantity is never read from `Material.stockQty` as a source of truth.
 
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
-| TZ-115 | silent-http error toast + httpResource migration |
-| TZ-117 | httpResource миграция |
-| **TZ-MATERIALS-308** | **Материал-позиции**: колонка «Продукт/Материал», фильтр `?materialId=`, envelope-контракт |
+| TZ-115 / TZ-117 | Legacy silent HTTP and `httpResource` migrations |
+| TZ-MATERIALS-308 | Material storage positions, `materialId` deep-link, envelope contract |
+| **TZ-NX-WAREHOUSE-W1-SHELL** | NX warehouse route/nav shell |
+| **TZ-NX-WAREHOUSE-W2-BALANCES** | **NX StorageItem balances list, filters, put-on-stock, adjust** |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-02 (TZ-MATERIALS-308)._
+_Обновлено: 2026-09-05 (NX W2)._
