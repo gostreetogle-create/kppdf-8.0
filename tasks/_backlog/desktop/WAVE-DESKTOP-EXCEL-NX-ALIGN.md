@@ -1,6 +1,6 @@
 # WAVE — Desktop Excel NX-align + NX Desktop download port
 
-> **Статус:** 68–70 DONE (Claude, desktop-only) · 71–73 READY для Freebuff (`frontend-nx/**` shell)  
+> **Статус:** WAVE DONE — 68–73 archived, committed, pushed (68–70 Claude desktop-only · 71–73 Freebuff `frontend-nx/**`). Locks в `.mimocode/locks/`.  
 > **Дата:** 2026-09-05  
 > **Аудиты:** `docs/audits/2026-09-05-desktop-excel-nx-align-audit.md`, `docs/audits/2026-09-05-nx-desktop-download-port-audit.md`  
 > **Нумерация:** TZD-**68…73** (60–67 заняты; TZD-60 DEFERRED NSIS)

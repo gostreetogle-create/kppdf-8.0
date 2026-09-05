@@ -39,6 +39,8 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-09-05
 closed_by: freebuff
+commit_sha: `b064ea86` (chore(desktop): TZD-71 — desktop download preflight, NX index meta + deploy mirror)
+lock_file: `.mimocode/locks/TZD-71.lock` (local; ignored by Git)
 verification:
   - acceptance criteria: PASS
   - typecheck: PASS (nx build kppdf-web exit 0)
