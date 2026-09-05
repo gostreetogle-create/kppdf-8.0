@@ -68,6 +68,8 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-registries"]');
   const docsQuickNav = (): HTMLAnchorElement | null =>
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-docs"]');
+  const clientsQuickNav = (): HTMLAnchorElement | null =>
+    fixture.nativeElement.querySelector('[data-test="shell-quicknav-clients"]');
 
   it('uses grid workspace with left rail, main, right rail — no sidebar', async () => {
     await setup('/admin/devices');
@@ -91,12 +93,13 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     expect(header?.querySelector('[data-test="shell-nav-forward"]')).toBeNull();
   });
 
-  it('shows only existing-route header chips (admin, registries, docs, deals, production) — no dead links', async () => {
+  it('shows only existing-route header chips (admin, registries, docs, deals, production, clients) — no dead links', async () => {
     await setup('/admin/devices');
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(5);
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(6);
     expect(adminQuickNav()).toBeTruthy();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
+    expect(clientsQuickNav()).toBeTruthy();
     const productionQuickNav = fixture.nativeElement.querySelector('[data-test="shell-quicknav-production"]') as HTMLAnchorElement;
     expect(productionQuickNav).toBeTruthy();
     const categories = (
@@ -168,11 +171,12 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     await setup('/admin/devices');
     userSig.set({ role: 'user' });
     fixture.detectChanges();
-    // `registries` and `docs` deliberately carry no `systemRoles`/`capabilities`.
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(4);
+    // `registries`, `docs` and `clients` deliberately carry no `systemRoles`/`capabilities`.
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(5);
     expect(adminQuickNav()).toBeNull();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
+    expect(clientsQuickNav()).toBeTruthy();
   });
 
   it('shows Реестры chip for restrictive pages[] ACL (TZ-NX-REGISTRIES-NAV-VISIBILITY-FIX)', async () => {

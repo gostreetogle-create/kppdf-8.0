@@ -42,7 +42,14 @@
 
 `DELETE /api/contracts/:id/attachment` (admin/manager) очищает `attachmentFileId` и `attachmentUrl`, переводит `contractStatus` в `none` и best-effort удаляет прежний `Photo`. Это не удаляет и не меняет сам Contract lifecycle.
 
-**NX UI `/contracts`:** successor / PARK; текущая вертикаль — backend API и legacy реестр.
+## NX thin CRUD (D4, `frontend-nx`, read-only)
+
+`contracts-list.page.ts` + `contract-detail.page.ts` (TZ-NX-DEALS-D4) — тонкий **read-only** список+карточка, не полный legacy реестр выше. `PiContractsService.list()`/`getById()` — только эти два метода; create/update/attach-file/sign/activate **не портированы**: `CreateContractDto` требует `organizationId`+`customerId`+`items[]` заранее (не tHin-form fit), а sign/attach — отдельный юридический workflow вне scope волны.
+
+- Список: Номер · Заказчик (populate `customerId.name`, либо raw id как есть, если сервер вернул строку) · Статус (RU lifecycle) · Сумма · «Карточка» → `/contracts/:id`.
+- Карточка: номер, статус (banner), Заказчик, КП (`proposalId.number` если populate, иначе «Без КП»), позиции (имя×кол-во·сумма), общая сумма. Без кнопок sign/attach/activate/edit — chrome без CTA.
+- Chrome: тот же `PiGroupWorkspaceComponent`/`DEALS_TOC_CHIPS` (D1) — чип «Договоры» больше не `disabled` (был зарезервирован в D1, флаг снят в D4).
+- **known_limitation:** создание/редактирование/подпись/прикрепление файла договора остаются backend-only (нет UI) — оператор пока заводит договоры вне NX (legacy реестр выше или Swagger/API напрямую), пока не появится отдельная TZ на юр.workflow.
 
 ## Dialogs
 

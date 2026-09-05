@@ -4,15 +4,19 @@ import { firstValueFrom } from 'rxjs';
 import { PiOrdersService, type Order } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { PiGroupWorkspaceComponent } from '@kppdf/features';
+import { DEALS_TOC_CHIPS } from '../deals-group-chips';
 import { orderStatusLabel } from './order-status';
+import { OrderHubTrayComponent } from './order-hub-tray.component';
 
 @Component({
   selector: 'pi-orders-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, RouterLink],
+  imports: [PiStatusBannerComponent, RouterLink, PiGroupWorkspaceComponent, OrderHubTrayComponent],
   template: `
-    <main class="px-panel-inset py-6" data-test="orders-list">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="orders" [chips]="[]" activeId="">
+    <main class="py-6" data-test="orders-list">
       <div class="flex items-center justify-between gap-4 mb-6">
         <div>
           <div class="eyebrow">Сделки</div>
@@ -50,40 +54,64 @@ import { orderStatusLabel } from './order-status';
           aria-label="Заказы"
           data-test="orders-table"
         >
-          <div class="grid grid-cols-[minmax(0,1.4fr)_minmax(8rem,1fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(6rem,0.6fr)] gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
+          <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(6rem,0.7fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(6rem,0.6fr)] gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
             <span role="columnheader">Номер</span>
+            <span role="columnheader">Дата</span>
             <span role="columnheader">Статус</span>
             <span role="columnheader">Оплата</span>
             <span role="columnheader">КП</span>
+            <span role="columnheader">Готовность</span>
             <span role="columnheader" aria-label="Открыть карточку"></span>
           </div>
           @for (row of rows(); track row._id) {
             <div
-              class="grid grid-cols-[minmax(0,1.4fr)_minmax(8rem,1fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(6rem,0.6fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0"
+              class="grid grid-cols-[minmax(0,1.2fr)_minmax(6rem,0.7fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(6rem,0.6fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0 cursor-pointer pi-focus-ring"
               role="row"
               data-test="orders-row"
+              tabindex="0"
+              [attr.aria-expanded]="expandedId() === row._id"
+              (click)="toggleExpand(row._id)"
+              (keydown.enter)="toggleExpand(row._id)"
+              (keydown.space)="onRowSpace($event, row._id)"
             >
               <span class="font-medium truncate" role="cell">{{ row.number }}</span>
+              <span class="text-sm text-muted-foreground" role="cell">{{ dateLabel(row.date) }}</span>
               <span class="text-sm" role="cell">{{ statusLabel(row.status) }}</span>
               <span class="text-sm" role="cell">{{ row.isPaid ? 'Оплачен' : 'Не оплачен' }}</span>
               <span class="text-sm text-muted-foreground" role="cell">{{ row.quotationId ? 'Есть КП' : 'Без КП' }}</span>
-              <a class="pi-button pi-button-secondary" [routerLink]="['/orders', row._id]" role="cell" data-test="orders-row-link">
+              <span class="text-sm" role="cell" data-test="orders-row-readiness">{{ readinessLabel(row) }}</span>
+              <a
+                class="pi-button pi-button-secondary"
+                [routerLink]="['/orders', row._id]"
+                role="cell"
+                data-test="orders-row-link"
+                (click)="$event.stopPropagation()"
+              >
                 Карточка
               </a>
             </div>
+            @if (expandedId() === row._id) {
+              <app-order-hub-tray [order]="row" data-test="orders-row-expand" />
+            }
           }
         </div>
       }
     </main>
+    </app-pi-group-workspace>
   `,
 })
 export class OrdersListPage implements OnInit {
   private readonly ordersApi = inject(PiOrdersService);
   private readonly router = inject(Router);
 
+  protected readonly toc = DEALS_TOC_CHIPS;
+
   readonly rows = signal<readonly Order[]>([]);
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal('Не удалось загрузить заказы.');
+
+  /** Single expand (HUB pattern) — opening another row or reloading the list collapses it. */
+  readonly expandedId = signal<string | null>(null);
 
   ngOnInit(): void {
     this.load();
@@ -91,6 +119,7 @@ export class OrdersListPage implements OnInit {
 
   load(): void {
     this.status.set('loading');
+    this.expandedId.set(null);
     void firstValueFrom(this.ordersApi.list()).then((result) => {
       if (!result.ok) {
         this.error.set(extractErrorMessage(result.error));
@@ -103,6 +132,28 @@ export class OrdersListPage implements OnInit {
   }
 
   protected readonly statusLabel = orderStatusLabel;
+
+  toggleExpand(orderId: string): void {
+    this.expandedId.update((current) => (current === orderId ? null : orderId));
+  }
+
+  protected onRowSpace(event: Event, orderId: string): void {
+    event.preventDefault();
+    this.toggleExpand(orderId);
+  }
+
+  protected dateLabel(date?: string): string {
+    if (!date) return '—';
+    const parsed = new Date(date);
+    return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString('ru-RU');
+  }
+
+  protected readinessLabel(order: Order): string {
+    const items = order.items ?? [];
+    if (items.length === 0) return '—';
+    const ready = items.filter((item) => item.readyForWork === true).length;
+    return `${ready} из ${items.length}`;
+  }
 
   create(): void {
     void this.router.navigate(['/orders/create']);

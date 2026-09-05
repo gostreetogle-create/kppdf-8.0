@@ -18,6 +18,8 @@ import { BadgeComponent } from '@kppdf/ui/badge';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
+import { PiGroupWorkspaceComponent } from '@kppdf/features';
+import { DEALS_TOC_CHIPS } from '../deals-group-chips';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { findKpDocType } from '../studio/studio-kp-doc-type';
 import { rememberStudioDocument } from '../studio/studio-session';
@@ -41,12 +43,13 @@ const STATUS_LABELS: Record<string, string> = {
   selector: 'pi-proposals-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, BadgeComponent],
+  imports: [PiStatusBannerComponent, BadgeComponent, PiGroupWorkspaceComponent],
   template: `
-    <main class="px-panel-inset py-6" data-test="proposals-list">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="proposals" [chips]="[]" activeId="">
+    <main class="py-6" data-test="proposals-list">
       <div class="flex items-center justify-between gap-4 mb-6">
         <div>
-          <div class="eyebrow">Коммерция</div>
+          <div class="eyebrow">Сделки</div>
           <h1 class="font-display text-2xl m-0">Коммерческие предложения</h1>
         </div>
         <button class="pi-button pi-button-primary" type="button" data-test="proposals-create" (click)="createInStudio()">
@@ -152,6 +155,7 @@ const STATUS_LABELS: Record<string, string> = {
         </div>
       }
     </main>
+    </app-pi-group-workspace>
   `,
 })
 export class ProposalsListPage implements OnInit {
@@ -164,6 +168,8 @@ export class ProposalsListPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly toast = inject(PiToastService);
+
+  protected readonly toc = DEALS_TOC_CHIPS;
 
   private readonly orgRows = signal<readonly Organization[]>([]);
 

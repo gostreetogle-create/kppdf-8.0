@@ -4,6 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import {
+  AuthService,
   PiDocTypesService,
   PiOrganizationsService,
   PiQuotationsService,
@@ -45,6 +46,7 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
       imports: [ProposalsListPage],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
         { provide: PiDocTypesService, useValue: docTypesApi },
@@ -132,6 +134,7 @@ describe('ProposalsListPage — create in studio (TZ-NX-DOCSTUDIO-S33-CREATE-KP-
       imports: [ProposalsListPage],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
         { provide: PiDocTypesService, useValue: docTypesApi },
@@ -220,6 +223,7 @@ describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VA
       imports: [ProposalsListPage],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
         { provide: PiDocTypesService, useValue: docTypesApi },
@@ -336,6 +340,7 @@ describe('ProposalsListPage — family expand (TZ-NX-KP-FAMILY-S43-EXPAND)', () 
       imports: [ProposalsListPage],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
         { provide: PiDocTypesService, useValue: docTypesApi },
@@ -594,6 +599,7 @@ describe('ProposalsListPage — attach orgs (TZ-NX-KP-FAMILY-S44-ATTACH-ORGS)', 
       imports: [ProposalsListPage],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
         { provide: PiDocTypesService, useValue: docTypesApi },
@@ -804,6 +810,7 @@ describe('ProposalsListPage — sync from master (TZ-NX-KP-FAMILY-S45-SYNC)', ()
       imports: [ProposalsListPage],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
         { provide: PiDocTypesService, useValue: docTypesApi },
@@ -1002,6 +1009,7 @@ describe('ProposalsListPage — variant in studio (TZ-NX-KP-FAMILY-S46-VARIANT-S
       imports: [ProposalsListPage],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
         { provide: PiDocTypesService, useValue: docTypesApi },
@@ -1100,6 +1108,7 @@ describe('ProposalsListPage — convert guard (TZ-NX-KP-FAMILY-S47-CONVERT-GUARD
       imports: [ProposalsListPage],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
         { provide: PiDocTypesService, useValue: docTypesApi },

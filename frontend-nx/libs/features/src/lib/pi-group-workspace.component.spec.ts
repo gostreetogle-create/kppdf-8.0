@@ -42,6 +42,21 @@ class TocHostComponent {
 @Component({
   standalone: true,
   imports: [PiGroupWorkspaceComponent],
+  template: `
+    <app-pi-group-workspace [toc]="toc" tocActiveId="orders" [chips]="[]" activeId="" />
+  `,
+})
+class DisabledTocHostComponent {
+  readonly toc = [
+    { id: 'proposals', label: 'КП', route: '/proposals' },
+    { id: 'contracts', label: 'Договоры', route: '/contracts', disabled: true },
+    { id: 'orders', label: 'Заказы', route: '/orders' },
+  ] as const;
+}
+
+@Component({
+  standalone: true,
+  imports: [PiGroupWorkspaceComponent],
   template: ` <app-pi-group-workspace pathLabel="Сделки" [chips]="chips" activeId="first" /> `,
 })
 class PathLabelHostComponent {
@@ -97,6 +112,7 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
       imports: [
         TestHostComponent,
         TocHostComponent,
+        DisabledTocHostComponent,
         PathLabelHostComponent,
         QueryParamsHostComponent,
         AclHostComponent,
@@ -155,6 +171,23 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
     expect(chips?.querySelector('.group-chip')?.className).toContain('text-xs');
     expect(toc?.className).toContain('pt-0');
     expect(root.querySelector('[data-test="group-path-label"]')).toBeFalsy();
+  });
+
+  it('renders a disabled TOC chip as non-navigating text (TZ-NX-DEALS-D1)', () => {
+    const fixture = TestBed.createComponent(DisabledTocHostComponent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const toc = root.querySelector('[data-test="group-toc"]') as HTMLElement;
+    expect(toc.textContent).toContain('КП');
+    expect(toc.textContent).toContain('Договоры');
+    expect(toc.textContent).toContain('Заказы');
+    const links = Array.from(toc.querySelectorAll('a')).map((a) => a.textContent?.trim());
+    expect(links).toContain('КП');
+    expect(links).toContain('Заказы');
+    expect(links).not.toContain('Договоры');
+    const disabled = toc.querySelector('[aria-disabled="true"]');
+    expect(disabled?.textContent?.trim()).toBe('Договоры');
+    expect(disabled?.tagName).not.toBe('A');
   });
 
   it('keeps projected tools and CTA inside the workspace width', () => {

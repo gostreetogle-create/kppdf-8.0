@@ -43,22 +43,33 @@ import { AuthService, filterByPageAcl } from '@kppdf/data-access';
           data-test="group-toc"
         >
           @for (chip of visibleToc(); track chip.id) {
-            <a
-              [routerLink]="chip.route"
-              [queryParams]="chip.queryParams"
-              class="group-toc-chip inline-flex items-center px-2 py-0.5
-                     text-[11px] leading-4 font-medium tracking-wide rounded-sm
-                     transition-colors pi-focus-ring cursor-pointer no-underline"
-              [class.bg-ink]="tocActiveId() === chip.id"
-              [class.text-paper]="tocActiveId() === chip.id"
-              [class.text-muted-foreground]="tocActiveId() !== chip.id"
-              [class.hover:text-ink]="tocActiveId() !== chip.id"
-              [class.hover:bg-paper-2]="tocActiveId() !== chip.id"
-              [attr.aria-current]="tocActiveId() === chip.id ? 'page' : undefined"
-              (click)="tocClick.emit(chip.id)"
-            >
-              {{ chip.label }}
-            </a>
+            @if (chip.disabled) {
+              <span
+                class="group-toc-chip inline-flex items-center px-2 py-0.5
+                       text-[11px] leading-4 font-medium tracking-wide rounded-sm
+                       text-muted-foreground opacity-50 cursor-not-allowed select-none"
+                aria-disabled="true"
+              >
+                {{ chip.label }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="chip.route"
+                [queryParams]="chip.queryParams"
+                class="group-toc-chip inline-flex items-center px-2 py-0.5
+                       text-[11px] leading-4 font-medium tracking-wide rounded-sm
+                       transition-colors pi-focus-ring cursor-pointer no-underline"
+                [class.bg-ink]="tocActiveId() === chip.id"
+                [class.text-paper]="tocActiveId() === chip.id"
+                [class.text-muted-foreground]="tocActiveId() !== chip.id"
+                [class.hover:text-ink]="tocActiveId() !== chip.id"
+                [class.hover:bg-paper-2]="tocActiveId() !== chip.id"
+                [attr.aria-current]="tocActiveId() === chip.id ? 'page' : undefined"
+                (click)="tocClick.emit(chip.id)"
+              >
+                {{ chip.label }}
+              </a>
+            }
           }
         </nav>
       }
@@ -204,4 +215,6 @@ export interface GroupChip {
   pageKey?: string;
   /** TOC groups spanning several pages — show if any key is granted. */
   anyPageKeys?: readonly string[];
+  /** TOC only: renders as non-navigating text (reserved id, page not shipped yet). */
+  disabled?: boolean;
 }

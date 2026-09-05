@@ -19,6 +19,14 @@
 
 The list has explicit loading, retryable API-error, and empty states. Since S35 each row links to the card via `Карточка` → `/orders/:id`. The page does not add create/edit actions or lifecycle writes.
 
+Columns (D2): Номер · Дата · Статус · Оплата · КП · Готовность (X из Y). Клик по строке (или Enter/Space) раскрывает hub tray под ней (single-expand — открытие другой строки/перезагрузка списка сворачивает предыдущую); клик по «Карточка» не триггерит expand (`stopPropagation`).
+
+## NX order hub tray (D2, `order-hub-tray.component.ts`)
+
+Hub-only порт (без desk-write): confirm/ship/add-line/notebook/cancel-shipment сюда **не** портированы — они остаются в legacy `frontend/` до отдельного `/desk` route (вне этой волны). Группы точно по PO visual lock (см. § Визуальная иерархия expand ниже): **Заказ** (disclosure «Состав заказа» — `pi-composition-tree` per line, `PiCompositionService.getProductTree`, lazy только на первый toggle, кэш после) → **Исполнение** (Снабжение `PiSupplyRequestsService.list({orderId})` + Производство deep-link + Готовность X/Y) → **Логистика** (Склад `PiReservationsService.list({orderId: Order.number})` + Отгрузка deep-link) → **Документы** (deep-link). Budget: supply=1 + reservations=1 http сразу на expand строки (row-lazy, не за отдельным под-тумблером); composition — per line, только по клику на «Состав заказа».
+
+Новый read-only клиент: `PiReservationsService` (`libs/data-access/src/lib/sales/pi-reservations.service.ts`) — `GET /reservations?orderId=` фильтрует по строковому `Reservation.orderId`, который хранит **`Order.number`**, не `_id` (как в legacy).
+
 ## NX order detail (S35)
 
 `/orders/:id` (`order-detail.page.ts`) is a thin card backed by `PiOrdersService.getById()` and `GET /api/orders/:id`. It shows the number, a Russian lifecycle status banner, Заказчик/Объект meta when populated, line items (name × qty), the quotation chip, and the payment fact.

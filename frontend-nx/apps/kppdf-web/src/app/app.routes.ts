@@ -76,6 +76,19 @@ export const appRoutes: Route[] = [
           { path: ':id', loadComponent: () => import('./pages/orders/order-detail.page').then((m) => m.OrderDetailPage) },
         ],
       },
+      {
+        // TZ-NX-DEALS-D3 — thin заказчики CRUD (not the legacy full EAV editor).
+        path: 'counterparties',
+        loadComponent: () => import('./pages/counterparties/counterparties-list.page').then((m) => m.CounterpartiesListPage),
+      },
+      {
+        // TZ-NX-DEALS-D4 — read-only thin list+card (create/sign/attach stay backend-only for now).
+        path: 'contracts',
+        children: [
+          { path: '', pathMatch: 'full', loadComponent: () => import('./pages/contracts/contracts-list.page').then((m) => m.ContractsListPage) },
+          { path: ':id', loadComponent: () => import('./pages/contracts/contract-detail.page').then((m) => m.ContractDetailPage) },
+        ],
+      },
     ],
   },
   { path: 'kit',

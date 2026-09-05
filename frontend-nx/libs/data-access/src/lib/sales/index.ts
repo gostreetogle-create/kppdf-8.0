@@ -6,3 +6,7 @@ export * from './order.types';
 export * from './pi-orders.service';
 export * from './site.types';
 export * from './pi-sites.service';
+export * from './reservation.types';
+export * from './pi-reservations.service';
+export * from './contract.types';
+export * from './pi-contracts.service';
