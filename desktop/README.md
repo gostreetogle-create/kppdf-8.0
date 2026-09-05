@@ -119,13 +119,35 @@ pnpm build           # shell production build
 5. Проверка живости токена: `GET /api/auth/me`.
 6. Смена сервера — вставка нового пакета; старый конфиг перезаписывается.
 
+## Excel Form Studio — 3 кнопки (TZD-68…70)
+
+Вкладка «Импорт» → блок Form Studio (TZD-50/51):
+
+| Кнопка | Что делает | Требования |
+|--------|-----------|------------|
+| **Скачать Excel-форму** | шаблон таблицы (лист «Данные» пустой) | аккаунт не нужен |
+| **Скачать с данными** | та же книга, лист «Данные» заполнен из API | паринг; pilot: материалы, виды работ (TZD-68/69) |
+| Импорт + валидация | файл → сопоставление → валидация строк (типы, обязательные, dedupe, workers/Люди TZD-69) → HITL подтверждение → отправка | паринг |
+
+Дубли отклоняются (reject), «Записать» активна только когда строки готовы (TZD-70).
+Excel-кнопок в веб-реестрах **нет** — массовый Excel живёт только здесь
+(решение WAVE-DESKTOP-EXCEL-NX-ALIGN, см. `docs/pages/registries.page.md`).
+
+## Паринг и скачивание приложения — RBAC на сайте NX (TZD-72)
+
 Ссылка на установщик задаётся `DESKTOP_DOWNLOAD_URL` в `deploy/synology/config.env`;
-`deploy.py` записывает её в runtime `window.__DESKTOP_DOWNLOAD_URL__`. По умолчанию
-используется same-origin
+`deploy.py` записывает её в CSP-safe meta `kppdf-desktop-download-url` в **обе**
+SPA (legacy `frontend/browser/` и NX `frontend-nx/dist/...`, если собран; TZD-71).
+По умолчанию используется same-origin
 `/downloads/kppdf-desktop-setup.zip` (внутри — setup.exe). Локально кнопка идёт на
 `:4200/downloads/…` → proxy на Nest (см. `frontend/proxy.conf.json`); без ZIP в
 `frontend/downloads/` будет 404. Явно пустое `DESKTOP_DOWNLOAD_URL` отключает кнопку до
 публикации файла. Сборочные `.exe`/`.msi`/`.zip` **не** коммитятся.
+
+**RBAC:** на NX-сайте кнопку «Подключить десктоп» и API pairing-keys видит/вызывает
+только `admin` или роль с правом **`desktop:admin`** (выдаётся в `/admin/roles`,
+секция «Desktop»). `GET /api/desktop/compat` остаётся public. Legacy-сайт пока
+показывает кнопку всем залогиненным (известное ограничение, successor — harden legacy).
 
 Установка / обновление / NSIS (остановка MCP перед копированием файлов):  
 **[docs/INSTALL.md](docs/INSTALL.md)**.

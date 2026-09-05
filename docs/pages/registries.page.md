@@ -315,6 +315,15 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 - **TZ-NX-REGISTRIES-WORKERS (2026-09-05)** — API-backed «Люди» registry with typed CRUD, `workTypeIds[]` skill selection, and a Gantt link to `/registries/workers`.
 - **TZ-NX-REGISTRIES-MODULE-WORK-TYPES (2026-09-05)** — module create/edit dialog loads active Work Types and persists `workTypes[]` planning links independently from material composition.
 
+## Массовый Excel = Desktop (TZD-73 pointer)
+
+Здесь **нет** Excel-кнопок и экспорта в файлы — ни в `units`, ни в любом
+другом реестре. Массовые операции с Excel (шаблон / с данными /
+импорт+валидация) — только в **Desktop Form Studio** (TZD-50/51 + 68–70).
+На NX это явное решение волны WAVE-DESKTOP-EXCEL-NX-ALIGN: не плодить
+второй Excel-контур в браузере. Установщик Desktop и паринг — кнопка
+«Подключить десктоп» в AppShell (RBAC `desktop:admin`), см. `desktop/README.md`.
+
 ---
 
-_Обновлено: 2026-09-05 (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE)._
+_Обновлено: 2026-09-05 (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE; TZD-73 Excel pointer)._

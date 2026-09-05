@@ -49,7 +49,8 @@
 | Production cockpit / Gantt | available | Shell/MVP; не бухгалтерия и не fine ACL. |
 | Supply: quick order + registry + shipping | included | TZ-SUPPLY-305..312: `SupplyRequest` → «Заказано» → `SupplyTask` реестр; отгрузка из заказа (dispatch в транзакции). Stand smoke `scripts/smoke/supply-smoke.mjs` 23/23; браузерный проход PO после deploy. |
 | Procurement legacy: PurchaseRequest/PurchaseOrder | available | **LEGACY (TZ-SUPPLY-313, вариант A)**: read-only API + MCP (`kppdf_list/get_purchase_*`), без UI, не расширять; новые закупки — через `SupplyRequest`/`SupplyTask`. Удаление — отдельная волна после развязки MCP (вариант B, successor). |
-| Desktop app + MCP pairing | available | Basic Auth + `X-Access-Token`; version gate — backlog. |
+| Desktop app + MCP pairing | included | TZD-72: NX-сайт — кнопка «Подключить десктоп» + PairingDialog (TTL/issue/copy JSON/скачать/revoke) в AppShell; **RBAC `desktop:admin`**: кнопка и API pairing-keys только у admin/роли с правом; `GET /desktop/compat` public; download URL — meta `kppdf-desktop-download-url`. Basic Auth + `X-Access-Token`; version gate — backlog. |
+| Desktop Excel Form Studio (шаблон / с данными / импорт+валидация) | included | TZD-50/51 + 68–70: «Скачать Excel-форму» (шаблон без аккаунта), «Скачать с данными» (pilot: материалы, виды работ; требует паринг), импорт с валидацией строк + reject дублей; workers (Люди) выравнены с NX. Excel-кнопок в `/registries` **нет** — массовый Excel = Desktop. |
 | Desktop order import (Excel → mutation-journal → Order) | included | TZD-ORDER-IMPORT-01: `Order.source: desktop-import` + journal kinds (`order.create`/`counterparty.create`/`site.create`) + row-level `proposalId` + `kppdf_import_task_finalize_order` MCP tool; backend gates PASS (jest 958/960, desktop 122/122); live desktop→prod smoke — PO after deploy. |
 | MCP photo upload (Photo SoT) | included | TZD-47 HITL 1 file → `POST /api/photos/upload` + optional `Product.photoIds`; CP bind REST отсутствует; bulk → MIG-303. |
 | Fine-grained warehouse ACL (worker = свой склад) | absent | Vision; не импровизировать. |
@@ -71,6 +72,7 @@
 
 | Дата | Что |
 |------|-----|
+| 2026-09-05 | TZD-73: Desktop Excel Form Studio (TZD-50/51+68–70) → included; NX Desktop pairing/download (TZD-71/72) → included с RBAC `desktop:admin`. |
 | 2026-08-22 | TZD-ORDER-IMPORT-01: desktop Excel-импорт заказов через mutation-journal → included. Breadcrumb/TOC unification (TZ-UI-403..406), catalog photo lightbox (TZ-UI-344) — UI-only, capability state не меняют. |
 | 2026-08-20 | TZ-SUPPLY-313: legacy PurchaseRequest/PurchaseOrder → официальный legacy-режим (вариант A); Supply quick order + registry + shipping → included. |
 | 2026-08-17 | TZD-47: MCP photo upload HITL → Photo SoT + optional Product.photoIds. |

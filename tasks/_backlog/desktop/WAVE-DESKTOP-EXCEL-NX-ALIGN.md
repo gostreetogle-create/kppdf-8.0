@@ -27,11 +27,11 @@
 
 ## DoD волны
 
-- [ ] TZD-68…73 archived + locks  
-- [ ] Smoke: шаблон / export-with-data / дубль отклонён / worker create / NX download+pairing  
-- [ ] Ledger: строка Form Studio + NX pairing available  
-- [ ] `registries.page.md`: pointer «массовый Excel = Desktop»  
-- [ ] DOMAIN-MAP Desktop gap закрыт после 72  
+- [x] TZD-68…73 archived + locks (68–70 Claude, 71–73 Freebuff; locks в `.mimocode/locks/`)  
+- [x] Smoke: шаблон / export-with-data / дубль отклонён / worker create / NX download+pairing (unit-level PASS; live browser — PO после deploy, TZD-73 checklist)  
+- [x] Ledger: строка Form Studio + NX pairing included (CAPABILITY-LEDGER)  
+- [x] `registries.page.md`: pointer «массовый Excel = Desktop»  
+- [x] DOMAIN-MAP Desktop gap закрыт после 72 (§1.2 NX = Live TZD-72; §1.4 note)
 
 ## Промпты
 
