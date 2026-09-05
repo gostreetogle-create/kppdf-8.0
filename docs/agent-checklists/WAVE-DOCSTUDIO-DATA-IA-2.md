@@ -13,7 +13,7 @@ agent: Freebuff (sequential S; один `kppdf-web` slot)
 | SIZE | ID | Path | Статус |
 |------|-----|------|--------|
 | S | D55 | `tasks/_ready/doc-studio/TZ-NX-DOCSTUDIO-D55-LINKS-COPY-CLEAR.md` | DONE — archive `97d72e9f` |
-| S | D56 | `tasks/_ready/doc-studio/TZ-NX-DOCSTUDIO-D56-SELECTED-RAIL.md` | DONE — pending closeout SHA |
+| S | D56 | `tasks/_ready/doc-studio/TZ-NX-DOCSTUDIO-D56-SELECTED-RAIL.md` | DONE — implementation `efb647b8` |
 
 ## Правила
 

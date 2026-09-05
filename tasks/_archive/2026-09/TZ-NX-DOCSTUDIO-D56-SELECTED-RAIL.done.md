@@ -6,7 +6,7 @@
 - claimed_at: `2026-09-05T13:07:00+03:00`
 - closed_at: `2026-09-05T13:22:00+03:00`
 - team_room_claim: unavailable (no Team Room CLI installed)
-- commit_sha: pending final closeout commit
+- commit_sha: `efb647b8` (implementation)
 
 ## Result
 
