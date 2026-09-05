@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as XLSX from 'xlsx';
 import { parseExcelWorkbook } from '../importers/excel';
 import {
+  EXPORT_PILOT_TARGET_KEYS,
   FORM_APP,
   FORM_DATA_SHEET,
   FORM_CATEGORIES,
@@ -14,6 +15,7 @@ import {
   formTemplates,
   formTemplatesByCategory,
   identityMappingForForm,
+  isExportPilotTargetKey,
   readFormFingerprint,
   serializeFormWorkbook,
 } from './excel-form-template';
@@ -228,6 +230,86 @@ test('full round-trip: fill a data row into the form and parse it back with fing
   assert.equal(dataSheet!.rows[0]['Артикул *'], 'A-1');
   assert.equal(dataSheet!.rows[0]['Наименование *'], 'Болт М8');
   assert.equal(dataSheet!.rows[0]['Кол-во'], 10);
+});
+
+// TZD-68: export mode — «Скачать с данными» fills the Данные sheet from API rows.
+test('export pilot allowlist: only material + workType for now', () => {
+  assert.deepEqual([...EXPORT_PILOT_TARGET_KEYS], ['material', 'workType']);
+  assert.ok(isExportPilotTargetKey('material'));
+  assert.ok(isExportPilotTargetKey('workType'));
+  assert.ok(!isExportPilotTargetKey('product'));
+});
+
+test('export mode: template behavior (mode omitted) is unchanged — empty skeleton row 2', () => {
+  const wb = buildFormWorkbook('material');
+  const data = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[FORM_DATA_SHEET], {
+    header: 1,
+    raw: true,
+    defval: null,
+  });
+  assert.equal(data.length, 2);
+  assert.ok((data[1] as unknown[]).every((cell) => cell === '' || cell === null));
+  const fp = readFormFingerprint(wb);
+  assert.equal(fp?.mode, 'template');
+});
+
+test('export mode: data rows come from API rows, mapped by column key', () => {
+  const apiRows = [
+    { article: 'A-1', name: 'Лист 2мм', unit: 'шт', notes: 'оцинк.' },
+    { article: 'A-2', name: 'Уголок 25', unit: 'м' },
+  ];
+  const wb = buildFormWorkbook('material', { mode: 'export', rows: apiRows });
+  const data = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[FORM_DATA_SHEET], {
+    header: 1,
+    raw: true,
+    defval: null,
+  });
+  // header + 2 data rows, no empty skeleton row appended.
+  assert.equal(data.length, 3);
+  const template = formTemplateFor('material')!;
+  const articleIdx = template.columns.findIndex((c) => c.key === 'article');
+  const nameIdx = template.columns.findIndex((c) => c.key === 'name');
+  const notesIdx = template.columns.findIndex((c) => c.key === 'notes');
+  assert.equal((data[1] as unknown[])[articleIdx], 'A-1');
+  assert.equal((data[1] as unknown[])[nameIdx], 'Лист 2мм');
+  assert.equal((data[2] as unknown[])[articleIdx], 'A-2');
+  // Missing field on the second row → blank cell, not "undefined".
+  assert.equal((data[2] as unknown[])[notesIdx], '');
+});
+
+test('export mode: empty API result still produces a valid header-only sheet', () => {
+  const wb = buildFormWorkbook('workType', { mode: 'export', rows: [] });
+  const data = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[FORM_DATA_SHEET], {
+    header: 1,
+    raw: true,
+    defval: null,
+  });
+  assert.equal(data.length, 1);
+  const fp = readFormFingerprint(wb);
+  assert.equal(fp?.mode, 'export');
+  assert.equal(fp?.targetKey, 'workType');
+});
+
+test('export mode: rejects a target key outside the pilot allowlist', () => {
+  assert.throws(() => buildFormWorkbook('product', { mode: 'export', rows: [] }), /pilot/i);
+});
+
+test('export mode: file name carries -export suffix; template stays -form', () => {
+  assert.equal(formFileName('material'), 'kppdf-material-form.xlsx');
+  assert.equal(formFileName('material', 'template'), 'kppdf-material-form.xlsx');
+  assert.equal(formFileName('material', 'export'), 'kppdf-material-export.xlsx');
+});
+
+test('export mode: round-trip through the real Excel parser (fingerprint + data)', async () => {
+  const apiRows = [{ name: 'Сварка', hourlyRate: 900, section: 'Цех 1', days: 2 }];
+  const bytes = serializeFormWorkbook('workType', { mode: 'export', rows: apiRows });
+  const preview = await parseExcelWorkbook({ name: formFileName('workType', 'export'), data: bytes });
+  assert.equal(preview.fingerprint?.targetKey, 'workType');
+  assert.equal(preview.fingerprint?.mode, 'export');
+  const dataSheet = preview.sheets.find((s) => s.name === FORM_DATA_SHEET);
+  assert.equal(dataSheet!.rows.length, 1);
+  assert.equal(dataSheet!.rows[0]['Наименование *'], 'Сварка');
+  assert.equal(dataSheet!.rows[0]['Ставка ₽/час *'], 900);
 });
 
 test('renamed header (user edited the form) breaks identity map — unfit stays', () => {

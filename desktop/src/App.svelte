@@ -39,11 +39,13 @@
     validateTableRows,
   } from './core/multi-import';
   import {
+    EXPORT_PILOT_TARGET_KEYS,
     FORM_CATEGORIES,
     formFileName,
     formTemplateFor,
     formTemplatesByCategory,
     identityMappingForForm,
+    isExportPilotTargetKey,
     serializeFormWorkbook,
     type FormCategoryKey,
     type FormFingerprint,
@@ -251,6 +253,8 @@
     pickFile: 'Откроет диалог выбора файла для локального предпросмотра (не Inbox).',
     downloadForm:
       'Скачает готовый .xlsx с каноническими русскими заголовками. Заполните лист «Данные» и загрузите файл в студии импорта — форма распознается сама. Аккаунт для скачивания не нужен.',
+    downloadExport:
+      'Скачает тот же файл, но лист «Данные» уже заполнен текущими строками из справочника сервера. Правьте нужные ячейки и загружайте обратно — форма распознается сама. Нужно подключение (аккаунт).',
     startAi:
       'Запустит встроенный движок llama.cpp. Если модель уже скачана — она загрузится в память.',
     stopAi: 'Остановит встроенный AI-раннер. Скачанная модель останется на диске.',
@@ -726,6 +730,8 @@
   let formMessage = $state('');
   let availableFormTemplates = $derived(formCategory ? formTemplatesByCategory(formCategory) : []);
   let selectedFormTemplate = $derived(formTable ? formTemplateFor(formTable) : undefined);
+  /** TZD-68 — русские подписи pilot-таблиц для disabled-подсказки «Скачать с данными». */
+  let exportPilotLabels = $derived(EXPORT_PILOT_TARGET_KEYS.map((key) => IMPORT_TARGETS[key].label).join(', '));
   /** Отклонённые строки последней отправки — источник отчёта .csv. */
   let rejectionReport = $state<
     | Array<{ table: string; rowIndex: number; name: string; status: string; message: string }>
@@ -2228,6 +2234,62 @@
     }
   }
 
+  /** TZD-68 pilot: только материалы и виды работ — reuse тех же GET, что и dedupe. */
+  async function fetchExportRows(
+    api: ApiClientOptions,
+    targetKey: ImportTargetKey,
+  ): Promise<Record<string, unknown>[]> {
+    if (targetKey === 'workType') {
+      return apiGet<Array<Record<string, unknown>>>(api, '/api/work-types');
+    }
+    if (targetKey === 'material') {
+      const rows: Record<string, unknown>[] = [];
+      const MAX_PAGES = 10;
+      for (let page = 1; page <= MAX_PAGES; page += 1) {
+        const resp = await apiGet<{ items?: Array<Record<string, unknown>>; total?: number }>(
+          api,
+          `/api/materials?limit=100&page=${page}`,
+        );
+        const items = resp.items ?? [];
+        rows.push(...items);
+        const total = resp.total ?? items.length;
+        if (items.length === 0 || page * 100 >= total) break;
+      }
+      return rows;
+    }
+    return [];
+  }
+
+  /** Скачать Excel с данными (TZD-68): та же книга Form Studio, лист «Данные» заполнен из API. */
+  async function downloadExcelExport() {
+    if (!formTable || !isExportPilotTargetKey(formTable)) return;
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) {
+      formMessage = 'Нужно подключение — выгрузка с данными требует паринга.';
+      return;
+    }
+    formBusy = true;
+    formMessage = '';
+    try {
+      const rows = await fetchExportRows(apiFrom(cfg), formTable);
+      const bytes = serializeFormWorkbook(formTable, { mode: 'export', rows });
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const path = await save({
+        defaultPath: formFileName(formTable, 'export'),
+        filters: [{ name: 'Excel-выгрузка', extensions: ['xlsx'] }],
+      });
+      if (!path) return; // пользователь отменил диалог
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
+      await writeFile(path, bytes);
+      formMessage = `Выгрузка «${IMPORT_TARGETS[formTable].label}» сохранена: ${path} (строк: ${rows.length}).`;
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      formMessage = `Не удалось выгрузить данные: ${detail}`;
+    } finally {
+      formBusy = false;
+    }
+  }
+
   const EMPTY_DEDUPE: ReadonlySet<string> = new Set();
 
   /**
@@ -3055,9 +3117,26 @@
           >
             {formBusy ? 'Готовим…' : 'Скачать Excel-форму'}
           </button>
+          <button
+            class="btn"
+            type="button"
+            onclick={downloadExcelExport}
+            disabled={!formTable || formBusy || !isExportPilotTargetKey(formTable) || !connected}
+            onmouseenter={() => showHint(HINTS.downloadExport)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.downloadExport)}
+            onblur={clearHint}
+          >
+            {formBusy ? 'Готовим…' : 'Скачать с данными'}
+          </button>
         </div>
         {#if selectedFormTemplate}
           <p class="hint">{selectedFormTemplate.descriptionRu}</p>
+        {/if}
+        {#if formTable && !isExportPilotTargetKey(formTable)}
+          <p class="hint">«Скачать с данными» пока доступна только для: {exportPilotLabels}.</p>
+        {:else if formTable && !connected}
+          <p class="hint">«Скачать с данными» требует подключения (паринг).</p>
         {/if}
         <ol class="form-studio__steps">
           <li>Скачайте форму нужной таблицы (аккаунт для этого не нужен).</li>

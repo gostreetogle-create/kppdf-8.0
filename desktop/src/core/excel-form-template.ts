@@ -174,9 +174,18 @@ export function formTemplateFor(targetKey: ImportTargetKey): FormTemplate | unde
   return FORM_TEMPLATES.find((template) => template.targetKey === targetKey);
 }
 
-/** Имя файла формы: латиница ключа, стабильное для V1. */
-export function formFileName(targetKey: ImportTargetKey): string {
-  return `kppdf-${targetKey}-form.xlsx`;
+/** TZD-68 — таблицы, для которых уже реализована выгрузка «с данными» (успешор расширит остальные). */
+export const EXPORT_PILOT_TARGET_KEYS: readonly ImportTargetKey[] = ['material', 'workType'];
+
+export function isExportPilotTargetKey(targetKey: ImportTargetKey): boolean {
+  return (EXPORT_PILOT_TARGET_KEYS as readonly string[]).includes(targetKey);
+}
+
+export type FormWorkbookMode = 'template' | 'export';
+
+/** Имя файла формы: латиница ключа, стабильное для V1. `export` — тот же файл с текущими строками SoT. */
+export function formFileName(targetKey: ImportTargetKey, mode: FormWorkbookMode = 'template'): string {
+  return mode === 'export' ? `kppdf-${targetKey}-export.xlsx` : `kppdf-${targetKey}-form.xlsx`;
 }
 
 export interface FormFingerprint {
@@ -186,15 +195,18 @@ export interface FormFingerprint {
   /** Канонические ключи колонок в порядке заголовков листа «Данные». */
   columnKeys: string[];
   app: string;
+  /** TZD-68 — отсутствует у форм, сгенерированных до этого TZ; тогда считать «template». */
+  mode?: FormWorkbookMode;
 }
 
-function buildFingerprintSheet(wb: XLSX.WorkBook, template: FormTemplate): XLSX.WorkSheet {
+function buildFingerprintSheet(wb: XLSX.WorkBook, template: FormTemplate, mode: FormWorkbookMode): XLSX.WorkSheet {
   const payload: Record<string, unknown> = {
     templateVersion: FORM_TEMPLATE_VERSION,
     targetKey: template.targetKey,
     generatedAt: new Date().toISOString(),
     columnKeys: JSON.stringify(template.columns.map((column) => column.key)),
     app: FORM_APP,
+    mode,
   };
   const ws = XLSX.utils.aoa_to_sheet(Object.entries(payload));
   XLSX.utils.book_append_sheet(wb, ws, FORM_SHEET_NAME);
@@ -214,32 +226,63 @@ export function formHeaderRow(template: FormTemplate): string[] {
   );
 }
 
+export interface BuildFormWorkbookOptions {
+  /** `template` (default) — пустой скелет ввода. `export` — лист «Данные» заполняется `rows`. */
+  mode?: FormWorkbookMode;
+  /** При `mode: 'export'` — строки для листа «Данные», по ключам колонок (`ImportTargetColumn.key`). */
+  rows?: readonly Record<string, unknown>[];
+}
+
+/** Значение ячейки для колонки экспорта: `undefined`/`null` → пустая строка, не «undefined». */
+function exportCellValue(row: Record<string, unknown>, columnKey: string): unknown {
+  const value = getPathValue(row, columnKey);
+  return value === undefined || value === null ? '' : value;
+}
+
+/** Поддержка составных ключей колонок (`dimensions.length`) при чтении API-строки. */
+function getPathValue(row: Record<string, unknown>, path: string): unknown {
+  if (!path.includes('.')) return row[path];
+  return path.split('.').reduce<unknown>((acc, segment) => {
+    if (acc && typeof acc === 'object') return (acc as Record<string, unknown>)[segment];
+    return undefined;
+  }, row);
+}
+
 /**
- * Собрать книгу формы: лист «Данные» (строка 1 — заголовки, строка 2 —
- * пустой скелет ввода) + скрытый лист «_kppdf» с fingerprint.
+ * Собрать книгу формы: лист «Данные» (строка 1 — заголовки; `template` —
+ * пустой скелет ввода строкой 2, `export` — строки `options.rows`) +
+ * скрытый лист «_kppdf» с fingerprint.
  */
-export function buildFormWorkbook(targetKey: ImportTargetKey): XLSX.WorkBook {
+export function buildFormWorkbook(targetKey: ImportTargetKey, options?: BuildFormWorkbookOptions): XLSX.WorkBook {
   const template = formTemplateFor(targetKey);
   if (!template) {
     throw new Error(`Нет формы Form Studio для таблицы «${targetKey}» — таблица вне allowlist V1.`);
   }
+  const mode = options?.mode ?? 'template';
+  if (mode === 'export' && !isExportPilotTargetKey(targetKey)) {
+    throw new Error(`Выгрузка с данными для таблицы «${targetKey}» пока не реализована (TZD-68 pilot: материалы, виды работ).`);
+  }
   const wb = XLSX.utils.book_new();
   const header = formHeaderRow(template);
-  // Пустой скелет ввода: ячейки с пустой строкой, чтобы строка 2 существовала
-  // в книге (aoa_to_sheet пропускает полностью пустые строки).
-  const dataWs = XLSX.utils.aoa_to_sheet([header, header.map(() => '')]);
+  const dataRows: unknown[][] =
+    mode === 'export'
+      ? (options?.rows ?? []).map((row) => template.columns.map((column) => exportCellValue(row, column.key)))
+      : // Пустой скелет ввода: ячейки с пустой строкой, чтобы строка 2 существовала
+        // в книге (aoa_to_sheet пропускает полностью пустые строки).
+        [header.map(() => '')];
+  const dataWs = XLSX.utils.aoa_to_sheet([header, ...dataRows]);
   // Ширины колонок по длине заголовка — форма сразу читаемая в Excel.
   dataWs['!cols'] = header.map((column) => ({
     wch: Math.min(32, Math.max(10, column.length + 4)),
   }));
   XLSX.utils.book_append_sheet(wb, dataWs, FORM_DATA_SHEET);
-  buildFingerprintSheet(wb, template);
+  buildFingerprintSheet(wb, template, mode);
   return wb;
 }
 
 /** Сериализовать форму в байты .xlsx для сохранения на диск. */
-export function serializeFormWorkbook(targetKey: ImportTargetKey): Uint8Array {
-  const wb = buildFormWorkbook(targetKey);
+export function serializeFormWorkbook(targetKey: ImportTargetKey, options?: BuildFormWorkbookOptions): Uint8Array {
+  const wb = buildFormWorkbook(targetKey, options);
   const data = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
   return new Uint8Array(data as ArrayBuffer);
 }
@@ -272,12 +315,14 @@ export function readFormFingerprint(workbook: XLSX.WorkBook): FormFingerprint | 
       return null;
     }
     if (columnKeys.length === 0) return null;
+    const mode = record.mode === 'export' ? 'export' : 'template';
     return {
       templateVersion,
       targetKey,
       generatedAt: String(record.generatedAt ?? ''),
       columnKeys,
       app: String(record.app ?? ''),
+      mode,
     };
   } catch {
     return null;
