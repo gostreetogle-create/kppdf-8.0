@@ -5,13 +5,14 @@ updated_at: 2026-09-05T19:40:00+03:00
 ## ACTIVE / LIVE
 
 - **Freebuff:** IN PROGRESS — W2 warehouse balances · `tasks/_active/TZ-NX-WAREHOUSE-W2-BALANCES.md`
-- **Claude:** IN PROGRESS — **Desktop Excel TZD-69** (∥ W2; only `desktop/**`) · TZD-68 DONE
+- **Claude:** IN PROGRESS — **Desktop Excel TZD-70** (∥ W2; only `desktop/**`) · TZD-68/69 DONE
 
 ## DONE (эта сессия)
 
 - SUPPLY-S0-KIT-RESERVE-BE `285a4c2d` — verified PASS (Cursor)
 - W1 warehouse shell archived (`d9631c00`)
 - TZD-68 Desktop Excel export-with-data (material+workType pilot) archived
+- TZD-69 Desktop worker target + workType align (department/accentHue) archived
 
 ## NEXT
 

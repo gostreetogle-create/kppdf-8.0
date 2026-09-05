@@ -37,6 +37,7 @@
     referenceDedupeKeysOf,
     reshapeForTable,
     validateTableRows,
+    workerDedupeKeyOf,
   } from './core/multi-import';
   import {
     EXPORT_PILOT_TARGET_KEYS,
@@ -1259,6 +1260,8 @@
       // TZD-50: перед проверкой строк тянем ключи каталога для дедупликации.
       const hints: string[] = [];
       const existingByTarget: Partial<Record<ImportTargetKey, ReadonlySet<string>>> = {};
+      // TZD-69 — «Люди»: workTypeNames резолвится по имени, нужен список видов работ орг.
+      let workTypeNames: ReadonlySet<string> = EMPTY_DEDUPE;
       const cfg = await loadConfig();
       if (cfg.apiBaseUrl && cfg.apiKey) {
         const targets = [...new Set(importBlocks.map((block) => block.targetKey))];
@@ -1271,6 +1274,10 @@
             );
           }
         }
+        if (targets.includes('worker')) {
+          const workTypes = await apiGet<Array<Record<string, unknown>>>(apiFrom(cfg), '/api/work-types');
+          workTypeNames = new Set(workTypes.map((wt) => String(wt.name ?? '').trim()).filter(Boolean));
+        }
       }
       importBlocks = importBlocks.map((block) => ({
         ...block,
@@ -1278,6 +1285,7 @@
           reshapeForTable(importRows, block.mapping),
           block.targetKey,
           existingByTarget[block.targetKey] ?? EMPTY_DEDUPE,
+          workTypeNames,
         ),
       }));
       importStage = 'rows';
@@ -1436,6 +1444,15 @@
     return Number.isFinite(n) ? n : undefined;
   }
 
+  /** TZD-69 — «Активен» из Excel: РУ/EN да-нет вариантов; нераспознанное → undefined (сервер сам возьмёт default). */
+  function boolOr(value: unknown): boolean | undefined {
+    if (value === undefined || value === null || String(value).trim() === '') return undefined;
+    const v = String(value).trim().toLowerCase();
+    if (['true', '1', 'да', 'yes'].includes(v)) return true;
+    if (['false', '0', 'нет', 'no'].includes(v)) return false;
+    return undefined;
+  }
+
   function dimensionsOr(row: RawRow): { length?: number; width?: number; height?: number; unit?: string } | undefined {
     const length = numberOr(row['dimensions.length']);
     const width = numberOr(row['dimensions.width']);
@@ -1454,6 +1471,16 @@
     const cfg = await loadConfig();
     if (!cfg.apiBaseUrl || !cfg.apiKey) {
       throw new Error('Запись требует подключённого аккаунта.');
+    }
+    // TZD-69 — «Люди»: workTypeNames резолвится в workTypeIds по имени (одна выборка на блок).
+    let workTypeIdByName: Map<string, string> | undefined;
+    if (targetKey === 'worker') {
+      const workTypes = await apiGet<Array<Record<string, unknown>>>(apiFrom(cfg), '/api/work-types');
+      workTypeIdByName = new Map(
+        workTypes
+          .map((wt): [string, string] => [String(wt.name ?? '').trim().toLowerCase(), String(wt._id ?? '')])
+          .filter(([name, id]) => name && id),
+      );
     }
     let created = 0;
     const errors: Array<{ rowName: string; error: string }> = [];
@@ -1536,8 +1563,47 @@
             name,
             hourlyRate,
             section: row.section ? String(row.section) : undefined,
+            department: row.department ? String(row.department) : undefined,
             description: row.description ? String(row.description) : undefined,
             days: numberOr(row.days) !== undefined ? Math.max(1, Math.round(numberOr(row.days)!)) : undefined,
+            accentHue: numberOr(row.accentHue),
+          });
+        } else if (targetKey === 'worker') {
+          const lastName = String(row.lastName ?? '').trim();
+          const firstName = String(row.firstName ?? '').trim();
+          if (!lastName || !firstName) {
+            errors.push({
+              rowName: [lastName, firstName].filter(Boolean).join(' ') || 'без имени',
+              error: 'Человеку нужны фамилия и имя',
+            });
+            continue;
+          }
+          const namesRaw = String(row.workTypeNames ?? '').trim();
+          let workTypeIds: string[] | undefined;
+          if (namesRaw) {
+            const names = namesRaw.split(';').map((n) => n.trim()).filter(Boolean);
+            const unknown = names.filter((n) => !workTypeIdByName?.get(n.toLowerCase()));
+            if (unknown.length > 0) {
+              errors.push({
+                rowName: `${lastName} ${firstName}`,
+                error: `Неизвестный вид работ: ${unknown.join(', ')}`,
+              });
+              continue;
+            }
+            workTypeIds = names.map((n) => workTypeIdByName!.get(n.toLowerCase())!);
+          }
+          await apiPost(apiFrom(cfg), '/api/workers', {
+            lastName,
+            firstName,
+            patronymic: row.patronymic ? String(row.patronymic) : undefined,
+            position: row.position ? String(row.position) : undefined,
+            department: row.department ? String(row.department) : undefined,
+            email: row.email ? String(row.email).trim().toLowerCase() : undefined,
+            phone: row.phone ? String(row.phone) : undefined,
+            grade: row.grade ? String(row.grade) : undefined,
+            ratePerHour: numberOr(row.ratePerHour),
+            isActive: boolOr(row.isActive),
+            workTypeIds,
           });
         } else if (targetKey === 'colorReference') {
           const name = String(row.name ?? '').trim();
@@ -2335,6 +2401,22 @@
         if (key) keys.add(key);
       }
       return { keys, truncated: false };
+    }
+    // TZD-69 — Люди: тот же envelope-пагинатор, что и materials, но dedupe-ключ
+    // общий с валидацией (email иначе ФИО casefold), не article/sku.
+    if (targetKey === 'worker') {
+      const MAX_WORKER_PAGES = 10;
+      for (let page = 1; page <= MAX_WORKER_PAGES; page += 1) {
+        const resp = await apiGet<{ items?: Array<Record<string, unknown>>; total?: number }>(
+          api,
+          `/api/workers?limit=100&page=${page}`,
+        );
+        const items = resp.items ?? [];
+        for (const item of items) keys.add(workerDedupeKeyOf(item));
+        const total = resp.total ?? items.length;
+        if (items.length === 0 || page * 100 >= total) return { keys, truncated: false };
+      }
+      return { keys, truncated: true };
     }
     const path =
       targetKey === 'material' ? '/api/materials' : targetKey === 'product' ? '/api/products' : '/api/counterparties';

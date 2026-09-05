@@ -31,17 +31,18 @@ test('V2+supply allowlist: catalog/counterparties/references/supply (TZ-QA-445G)
   );
   assert.deepEqual(
     formTemplatesByCategory('references').map((t) => t.targetKey),
-    ['warehouse', 'workType', 'colorReference', 'category'],
+    ['warehouse', 'workType', 'colorReference', 'category', 'worker'],
   );
   assert.deepEqual(
     formTemplatesByCategory('supply').map((t) => t.targetKey),
     ['supplyRequest', 'supplyTask'],
   );
-  assert.equal(formTemplates().length, 10);
+  assert.equal(formTemplates().length, 11);
   assert.ok(formTemplateFor('warehouse'));
   assert.ok(formTemplateFor('category'));
   assert.ok(formTemplateFor('supplyRequest'));
   assert.ok(formTemplateFor('supplyTask'));
+  assert.ok(formTemplateFor('worker'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'catalog'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'counterparties'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'references'));
@@ -166,6 +167,35 @@ test('TZ-QA-445G identity mapping: снабжение labels → keys', () => {
   assert.equal(tMap['ID заказа *'], 'orderId');
   assert.equal(tMap['Наименование'], 'title');
   assert.equal(tMap['Кол-во *'], 'qty');
+});
+
+test('TZD-69 round-trip: worker form (Люди) preserves targetKey and column order', async () => {
+  const wb = buildFormWorkbook('worker');
+  const template = formTemplateFor('worker')!;
+  XLSX.utils.sheet_add_aoa(
+    wb.Sheets[FORM_DATA_SHEET],
+    [template.columns.map((_, index) => `test-${index}`)],
+    { origin: 'A2' },
+  );
+  const bytes = new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
+  const preview = await parseExcelWorkbook({ name: formFileName('worker'), data: bytes });
+  assert.ok(preview.fingerprint, 'fingerprint expected for worker');
+  assert.equal(preview.fingerprint!.targetKey, 'worker');
+  assert.deepEqual(preview.fingerprint!.columnKeys, template.columns.map((c) => c.key));
+  assert.ok(!preview.sheets.some((s) => s.name === FORM_SHEET_NAME));
+});
+
+test('TZD-69 identity mapping: worker RU labels → keys', () => {
+  const worker = identityMappingForForm(
+    ['Фамилия *', 'Имя *', 'Email', 'Ставка ₽/час', 'Виды работ'],
+    'worker',
+  );
+  const map = Object.fromEntries(worker.rows.map((r) => [r.header, r.canonical]));
+  assert.equal(map['Фамилия *'], 'lastName');
+  assert.equal(map['Имя *'], 'firstName');
+  assert.equal(map['Email'], 'email');
+  assert.equal(map['Ставка ₽/час'], 'ratePerHour');
+  assert.equal(map['Виды работ'], 'workTypeNames');
 });
 
 test('unknown targetKey in fingerprint → safe ignore (null)', () => {

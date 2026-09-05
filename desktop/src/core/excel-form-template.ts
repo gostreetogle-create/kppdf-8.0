@@ -49,7 +49,7 @@ export const FORM_CATEGORIES: readonly FormCategory[] = [
   {
     key: 'references',
     labelRu: 'Справочники',
-    descriptionRu: 'Склады, виды работ, цвета (RAL) и категории — справочники пишутся сразу после подтверждения.',
+    descriptionRu: 'Склады, виды работ, цвета (RAL), категории и люди — справочники пишутся сразу после подтверждения.',
   },
   {
     key: 'supply',
@@ -141,6 +141,15 @@ const FORM_TEMPLATES: readonly FormTemplate[] = [
       'Категории: наименование, тип (material / product / general), Slug и префикс SKU. Slug и префикс SKU лучше латиницей; префикс — заглавными. Пишется сразу после подтверждения.',
     requiredFields: IMPORT_TARGETS.category.requiredFields,
     columns: IMPORT_TARGETS.category.columns,
+  },
+  {
+    targetKey: 'worker',
+    categoryKey: 'references',
+    labelRu: IMPORT_TARGETS.worker.label,
+    descriptionRu:
+      'Люди: ФИО, контакты, разряд/ставка. Виды работ — именами через «;» (совпадение по названию в вашей организации). Справочник пишется сразу после подтверждения.',
+    requiredFields: IMPORT_TARGETS.worker.requiredFields,
+    columns: IMPORT_TARGETS.worker.columns,
   },
   {
     targetKey: 'supplyRequest',

@@ -35,7 +35,8 @@ export type ImportTargetKey =
   | 'colorReference'
   | 'category'
   | 'supplyRequest'
-  | 'supplyTask';
+  | 'supplyTask'
+  | 'worker';
 
 /** TZD-51 — справочники (пишутся сразу после confirm, без журнала предложений). */
 export const REFERENCE_TARGET_KEYS: readonly ImportTargetKey[] = [
@@ -136,9 +137,33 @@ export const IMPORT_TARGETS = {
     columns: [
       { key: 'name', label: 'Наименование', aliases: ['name', 'наименование', 'название', 'вид работ', 'вид работы', 'работа'] },
       { key: 'hourlyRate', label: 'Ставка ₽/час', aliases: ['hourlyrate', 'ставка', 'ставка ₽/час', 'ставка руб/час', 'ставка в час', 'расценка', 'цена часа', 'руб/час'] },
-      { key: 'section', label: 'Участок', aliases: ['section', 'участок', 'отдел', 'цех'] },
+      { key: 'section', label: 'Участок', aliases: ['section', 'участок', 'цех'] },
+      { key: 'department', label: 'Отдел', aliases: ['department', 'отдел'] },
       { key: 'description', label: 'Описание', aliases: ['description', 'описание'] },
       { key: 'days', label: 'Дни (Gantt)', aliases: ['days', 'дни', 'дней', 'дни (gantt)', 'длительность'] },
+      { key: 'accentHue', label: 'Цвет (hue 0–359)', aliases: ['accenthue', 'hue', 'цвет', 'цвет (hue 0–359)', 'оттенок'] },
+    ],
+  },
+  worker: {
+    key: 'worker',
+    label: 'Люди',
+    requiredFields: ['lastName', 'firstName'],
+    columns: [
+      { key: 'lastName', label: 'Фамилия', aliases: ['lastname', 'фамилия'] },
+      { key: 'firstName', label: 'Имя', aliases: ['firstname', 'имя'] },
+      { key: 'patronymic', label: 'Отчество', aliases: ['patronymic', 'отчество'] },
+      { key: 'position', label: 'Должность', aliases: ['position', 'должность'] },
+      { key: 'department', label: 'Отдел', aliases: ['department', 'отдел', 'участок'] },
+      { key: 'email', label: 'Email', aliases: ['email', 'e-mail', 'почта'] },
+      { key: 'phone', label: 'Телефон', aliases: ['phone', 'телефон'] },
+      { key: 'grade', label: 'Разряд', aliases: ['grade', 'разряд'] },
+      { key: 'ratePerHour', label: 'Ставка ₽/час', aliases: ['rateperhour', 'ставка', 'ставка ₽/час', 'ставка в час', 'руб/час'] },
+      { key: 'isActive', label: 'Активен', aliases: ['isactive', 'активен', 'активный'] },
+      {
+        key: 'workTypeNames',
+        label: 'Виды работ',
+        aliases: ['worktypenames', 'виды работ', 'вид работ', 'навыки', 'специализация'],
+      },
     ],
   },
   colorReference: {
@@ -218,6 +243,7 @@ export const IMPORT_TARGET_ORDER: ImportTargetKey[] = [
   'category',
   'supplyRequest',
   'supplyTask',
+  'worker',
 ];
 
 export function importTarget(key: ImportTargetKey): ImportTargetTable {

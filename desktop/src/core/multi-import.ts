@@ -119,6 +119,74 @@ export function referenceDedupeKeysOf(
   }
 }
 
+/**
+ * TZD-69 — dedupe-ключ человека: email (lower) если непуст; иначе
+ * lastName|firstName|patronymic casefold. Одна и та же функция для строки
+ * файла и записи каталога (обе — плоские `Record<string, unknown>`).
+ */
+export function workerDedupeKeyOf(record: Record<string, unknown>): string {
+  const email = String(record.email ?? '').trim().toLowerCase();
+  if (email) return `email:${email}`;
+  const parts = ['lastName', 'firstName', 'patronymic'].map((key) =>
+    String(record[key] ?? '').trim().toLowerCase(),
+  );
+  return `name:${parts.join('|')}`;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** TZD-69 — валидация строк «Люди»: обязательные ФИО, email/ставка формат, известные виды работ, dedupe. */
+function validateWorkerRows(
+  rows: RawRow[],
+  existingKeys: ReadonlySet<string>,
+  workTypeNames: ReadonlySet<string>,
+): ValidatedImportRow[] {
+  const target = importTarget('worker');
+  const knownNames = new Set([...workTypeNames].map((name) => name.trim().toLowerCase()));
+  const seen = new Map<string, number[]>();
+  rows.forEach((row, index) => {
+    const key = workerDedupeKeyOf(row);
+    const indexes = seen.get(key) ?? [];
+    indexes.push(index);
+    seen.set(key, indexes);
+  });
+
+  return rows.map((values, rowIndex) => {
+    const missing = target.requiredFields.filter((key) => !textValue(values, key));
+    if (missing.length > 0) {
+      return { rowIndex, values, status: 'invalid', message: `Пусто: ${missing.join(', ')}` };
+    }
+    const email = textValue(values, 'email');
+    if (email && !EMAIL_RE.test(email)) {
+      return { rowIndex, values, status: 'invalid', message: 'Email: неверный формат' };
+    }
+    const rawRate = values.ratePerHour;
+    const hasRate = rawRate !== undefined && rawRate !== null && String(rawRate).trim() !== '';
+    if (hasRate) {
+      const rate = numberValue(values, 'ratePerHour');
+      if (rate === undefined || rate < 0) {
+        return { rowIndex, values, status: 'invalid', message: 'Ставка ₽/час должна быть числом от 0' };
+      }
+    }
+    const namesRaw = textValue(values, 'workTypeNames');
+    if (namesRaw) {
+      const names = namesRaw.split(';').map((name) => name.trim()).filter(Boolean);
+      const unknown = names.filter((name) => !knownNames.has(name.toLowerCase()));
+      if (unknown.length > 0) {
+        return { rowIndex, values, status: 'invalid', message: `Неизвестный вид работ: ${unknown.join(', ')}` };
+      }
+    }
+    const key = workerDedupeKeyOf(values);
+    if ((seen.get(key)?.length ?? 0) > 1) {
+      return { rowIndex, values, status: 'duplicate', message: 'Дубликат в файле' };
+    }
+    if (existingKeys.has(key)) {
+      return { rowIndex, values, status: 'duplicate', message: 'Дубликат: уже есть в справочнике' };
+    }
+    return { rowIndex, values, status: 'ok_new', message: 'Новая строка готова' };
+  });
+}
+
 /** Enum каталога для типа склада и типа категории (канон Nest DTO). */
 const WAREHOUSE_TYPES = new Set(['main', 'branch', 'transit', 'production', 'other']);
 const CATEGORY_TYPES = new Set(['material', 'product', 'general']);
@@ -254,7 +322,11 @@ export function validateTableRows(
   rows: RawRow[],
   targetKey: ImportTargetKey,
   existingKeys: ReadonlySet<string> = new Set(),
+  workTypeNames: ReadonlySet<string> = new Set(),
 ): ValidatedImportRow[] {
+  if (targetKey === 'worker') {
+    return validateWorkerRows(rows, existingKeys, workTypeNames);
+  }
   if (isReferenceTargetKey(targetKey)) {
     return validateReferenceRows(rows, targetKey, existingKeys);
   }

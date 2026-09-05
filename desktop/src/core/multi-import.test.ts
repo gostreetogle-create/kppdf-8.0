@@ -6,6 +6,7 @@ import {
   applyTableMapping,
   reshapeForTable,
   validateTableRows,
+  workerDedupeKeyOf,
 } from './multi-import';
 
 test('every target has columns with Russian labels and unique keys', () => {
@@ -147,6 +148,75 @@ test('TZD-51 workType: без ставки → invalid; с ставкой → ok
   assert.equal(ok[0].status, 'ok_new');
   const negative = validateTableRows([{ name: 'Сварка', hourlyRate: -1 }], 'workType');
   assert.equal(negative[0].status, 'invalid');
+});
+
+test('TZD-69 worker: пустая фамилия/имя → invalid', () => {
+  const noFirst = validateTableRows([{ lastName: 'Иванов' }], 'worker');
+  assert.equal(noFirst[0].status, 'invalid');
+  assert.ok(noFirst[0].message.includes('firstName'));
+  const ok = validateTableRows([{ lastName: 'Иванов', firstName: 'Иван' }], 'worker');
+  assert.equal(ok[0].status, 'ok_new');
+});
+
+test('TZD-69 worker: битый email → invalid; дубль email в файле → duplicate', () => {
+  const badEmail = validateTableRows(
+    [{ lastName: 'Иванов', firstName: 'Иван', email: 'not-an-email' }],
+    'worker',
+  );
+  assert.equal(badEmail[0].status, 'invalid');
+  assert.ok(badEmail[0].message.includes('Email'));
+
+  // Same normalized email key on both rows → both flagged duplicate-in-file
+  // (matches every other target's in-file dedupe convention in this module).
+  const dupe = validateTableRows(
+    [
+      { lastName: 'Иванов', firstName: 'Иван', email: 'IVAN@example.com' },
+      { lastName: 'Петров', firstName: 'Пётр', email: 'ivan@example.com' },
+    ],
+    'worker',
+  );
+  assert.equal(dupe[0].status, 'duplicate');
+  assert.equal(dupe[1].status, 'duplicate');
+});
+
+test('TZD-69 worker: дубль каталога по имени (без email) — casefold lastName|firstName|patronymic', () => {
+  const existing = new Set([workerDedupeKeyOf({ lastName: 'Сидоров', firstName: 'Пётр' })]);
+  const result = validateTableRows(
+    [{ lastName: ' Сидоров ', firstName: 'ПЁТР' }],
+    'worker',
+    existing,
+  );
+  assert.equal(result[0].status, 'duplicate');
+  assert.equal(result[0].message, 'Дубликат: уже есть в справочнике');
+});
+
+test('TZD-69 worker: отрицательная ставка → invalid', () => {
+  const bad = validateTableRows(
+    [{ lastName: 'Иванов', firstName: 'Иван', ratePerHour: -5 }],
+    'worker',
+  );
+  assert.equal(bad[0].status, 'invalid');
+  assert.ok(bad[0].message.includes('Ставка'));
+});
+
+test('TZD-69 worker: неизвестный вид работ в workTypeNames → invalid с RU message', () => {
+  const workTypeNames = new Set(['Сварка', 'Покраска']);
+  const bad = validateTableRows(
+    [{ lastName: 'Иванов', firstName: 'Иван', workTypeNames: 'Сварка; Сборка' }],
+    'worker',
+    new Set(),
+    workTypeNames,
+  );
+  assert.equal(bad[0].status, 'invalid');
+  assert.ok(bad[0].message.includes('Сборка'));
+
+  const ok = validateTableRows(
+    [{ lastName: 'Иванов', firstName: 'Иван', workTypeNames: 'сварка ; Покраска' }],
+    'worker',
+    new Set(),
+    workTypeNames,
+  );
+  assert.equal(ok[0].status, 'ok_new');
 });
 
 test('TZD-51 colorReference: плохой hex → invalid; без slug → ok_new (сервер примет по name)', () => {
