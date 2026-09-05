@@ -29,8 +29,6 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
   imports: [FormFieldComponent, SelectComponent, SelectOptionComponent, StudioDataVitrinaComponent],
   template: `
     <div data-test="studio-data-panel">
-      <p class="heading">Данные</p>
-
       <nav class="data-toc" data-test="studio-data-toc" aria-label="Категории данных">
         @for (cat of categories; track cat.key) {
           <button
@@ -107,6 +105,7 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
                   (valueChange)="counterpartyChange.emit($event ?? '')"
                   data-test="studio-counterparty-select"
                 >
+                  <app-pi-select-option value="">— не выбран —</app-pi-select-option>
                   @for (cp of counterparties(); track cp._id) {
                     <app-pi-select-option [value]="cp._id">
                       {{ cp.shortName || cp.name }}
@@ -138,6 +137,7 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
                     (valueChange)="payerChange.emit($event ?? '')"
                     data-test="studio-payer-select"
                   >
+                    <app-pi-select-option value="">— не выбран —</app-pi-select-option>
                     @for (cp of counterparties(); track cp._id) {
                       <app-pi-select-option [value]="cp._id">{{ cp.shortName || cp.name }}</app-pi-select-option>
                     }
@@ -153,17 +153,18 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
           </p>
           <dl class="fields" data-test="studio-data-section-links">
             <div>
-              <app-pi-form-field label="Коммерческое предложение" htmlFor="studio-quotation-select">
+              <app-pi-form-field label="КП" htmlFor="studio-quotation-select">
                 <app-pi-select
                   id="studio-quotation-select"
                   size="sm"
-                  ariaLabel="Коммерческое предложение"
+                  ariaLabel="КП"
                   placeholder="— не выбрано —"
                   [disabled]="contextSaving()"
                   [value]="quotationId() || null"
                   (valueChange)="quotationChange.emit($event ?? '')"
                   data-test="studio-quotation-select"
                 >
+                  <app-pi-select-option value="">— не выбрано —</app-pi-select-option>
                   @for (q of quotations(); track q._id) {
                     <app-pi-select-option [value]="q._id">{{ q.number }}</app-pi-select-option>
                   }
@@ -201,6 +202,7 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
                   (valueChange)="orderChange.emit($event ?? '')"
                   data-test="studio-order-select"
                 >
+                  <app-pi-select-option value="">— не выбран —</app-pi-select-option>
                   @for (o of orders(); track o._id) {
                     <app-pi-select-option [value]="o._id">{{ o.number }}</app-pi-select-option>
                   }
@@ -223,6 +225,7 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
                   (valueChange)="supplierChange.emit($event ?? '')"
                   data-test="studio-supplier-select"
                 >
+                  <app-pi-select-option value="">— не выбран —</app-pi-select-option>
                   @for (cp of counterparties(); track cp._id) {
                     <app-pi-select-option [value]="cp._id">{{ cp.shortName || cp.name }}</app-pi-select-option>
                   }
@@ -247,11 +250,6 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
   `,
   styles: [
     `
-      .heading {
-        margin: 12px 0 0;
-        font-weight: 600;
-        color: var(--color-ink);
-      }
       .data-toc {
         display: flex;
         flex-wrap: wrap;

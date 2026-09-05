@@ -76,6 +76,51 @@ describe('StudioDataPanelComponent', () => {
     expect(el.querySelector('[data-test="studio-quotation-select"]')).toBeFalsy();
   });
 
+  it('uses КП copy, starts every clearable select with an empty option, and emits empty values (TZ-NX-DOCSTUDIO-D55)', () => {
+    const emitted: string[] = [];
+    fixture.componentInstance.quotationChange.subscribe((value) => emitted.push(value));
+    fixture.componentInstance.orderChange.subscribe((value) => emitted.push(value));
+    fixture.componentInstance.counterpartyChange.subscribe((value) => emitted.push(value));
+    fixture.componentInstance.payerChange.subscribe((value) => emitted.push(value));
+    fixture.componentInstance.supplierChange.subscribe((value) => emitted.push(value));
+
+    tocButton('links').click();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const quotationSelect = el.querySelector('[data-test="studio-quotation-select"]') as HTMLElement;
+    const orderSelect = el.querySelector('[data-test="studio-order-select"]') as HTMLElement;
+    expect(quotationSelect.querySelector('app-pi-select-trigger button')?.getAttribute('aria-label')).toBe('КП');
+    expect(quotationSelect.querySelectorAll('app-pi-select-option')[0]?.textContent?.trim()).toBe('— не выбрано —');
+    expect(orderSelect.querySelectorAll('app-pi-select-option')[0]?.textContent?.trim()).toBe('— не выбран —');
+    expect(el.textContent).not.toContain('Коммерческое предложение');
+
+    (quotationSelect.querySelector('app-pi-select-option button') as HTMLButtonElement).click();
+    expect(emitted).toContain('');
+
+    tocButton('whom').click();
+    fixture.detectChanges();
+    const whom = fixture.nativeElement as HTMLElement;
+    expect(whom.querySelector('[data-test="studio-counterparty-select"] app-pi-select-option')?.textContent?.trim()).toBe('— не выбран —');
+    (whom.querySelector('[data-test="studio-counterparty-select"] app-pi-select-option button') as HTMLButtonElement).click();
+    expect(emitted).toContain('');
+
+    (whom.querySelector('[data-test="studio-payer-disclosure-toggle"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(whom.querySelector('[data-test="studio-payer-select"] app-pi-select-option')?.textContent?.trim()).toBe('— не выбран —');
+
+    tocButton('more').click();
+    fixture.detectChanges();
+    const more = fixture.nativeElement as HTMLElement;
+    expect(more.querySelector('[data-test="studio-supplier-select"] app-pi-select-option')?.textContent?.trim()).toBe('— не выбран —');
+  });
+
+  it('does not render the duplicate inner Данные heading (TZ-NX-DOCSTUDIO-D55)', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.heading')).toBeFalsy();
+    expect(el.querySelector('[data-test="studio-data-panel"]')?.textContent).not.toContain('Данные');
+    expect(el.querySelector('.heading')).toBeFalsy();
+  });
+
   it('shows a muted empty state on «Выбрано» when nothing is selected (TZ-NX-DOCSTUDIO-D51)', () => {
     tocButton('selected').click();
     fixture.detectChanges();
