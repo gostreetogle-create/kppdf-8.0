@@ -35,4 +35,4 @@ Removed the obsolete lower `data-test="gantt-legend"` explanatory footer from th
 
 ## Commit
 
-9b3a3c7b
+7e283595

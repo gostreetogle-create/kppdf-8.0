@@ -37,4 +37,4 @@ Master-row expand/collapse now captures the `.shell-main` scrollTop before route
 
 ## Commit
 
-175f1c38
+e1a6451c
