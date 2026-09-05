@@ -34,3 +34,17 @@ AC:
 - [ ] nx build green если index тронут
 
 Финализация: archive 2026-09.
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-09-05
+closed_by: freebuff
+verification:
+  - acceptance criteria: PASS
+  - typecheck: PASS (nx build kppdf-web exit 0)
+  - tests: N/A (docs + deploy hook; python sanity script PASS)
+  - lint: N/A (python, not in lint scope; AST parse PASS)
+  - checklist: ADDED (docs/agent-checklists/TZD-71.md)
+  - progress.md: UPDATED
+  - status synchronization: PASS
+

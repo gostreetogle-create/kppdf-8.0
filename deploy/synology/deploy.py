@@ -335,24 +335,55 @@ def read_desktop_semver(project_root):
     return semver
 
 
+def _desktop_meta_replacement(configured_url):
+    """CSP-safe meta line: absent content attr = app default; content="" = disable."""
+    if configured_url is None:
+        return '<meta name="kppdf-desktop-download-url" />'
+    return (
+        '<meta name="kppdf-desktop-download-url" content='
+        + json.dumps(configured_url)
+        + " />"
+    )
+
+
 def inject_desktop_download_url(project_root, configured_url):
-    """Inject DESKTOP_DOWNLOAD_URL into built SPA via CSP-safe meta (no inline script)."""
+    """Inject DESKTOP_DOWNLOAD_URL into built SPA via CSP-safe meta (no inline script).
+
+    TZD-71: mirrors the injection into the NX build (frontend-nx/dist/apps/kppdf-web)
+    when present — NX artifacts are not shipped by deploy.py yet, so the mirror is
+    optional (warn, not fail). Legacy frontend/browser/index.html stays mandatory.
+    """
     index_path = project_root / "frontend" / "browser" / "index.html"
     if not index_path.exists():
         fail("frontend/browser/index.html not found for desktop download URL injection")
-    html = index_path.read_text(encoding="utf-8")
     meta_name = 'name="kppdf-desktop-download-url"'
-    if meta_name not in html:
-        fail("desktop download URL meta marker not found in built index.html")
-    # Absent content attr = app default; content="" = disable; content="url" = that URL.
-    if configured_url is None:
-        replacement = '<meta name="kppdf-desktop-download-url" />'
+    replacement = _desktop_meta_replacement(configured_url)
+    _inject_meta_into(index_path, meta_name, replacement, configured_url, required=True)
+
+    nx_index = (
+        project_root / "frontend-nx" / "dist" / "apps" / "kppdf-web" / "browser" / "index.html"
+    )
+    if nx_index.exists():
+        _inject_meta_into(nx_index, meta_name, replacement, configured_url, required=False)
     else:
-        replacement = (
-            '<meta name="kppdf-desktop-download-url" content='
-            + json.dumps(configured_url)
-            + " />"
+        warn(
+            "frontend-nx/dist/apps/kppdf-web/browser/index.html not found — NX download meta "
+            "injection skipped (NX not built/deployed by this script yet)"
         )
+
+
+def _inject_meta_into(index_path, meta_name, replacement, configured_url, required):
+    """Replace the marker meta in one built index.html; fail/warn per `required`."""
+    if not index_path.exists():
+        if required:
+            fail(str(index_path) + " not found for desktop download URL injection")
+        return
+    html = index_path.read_text(encoding="utf-8")
+    if meta_name not in html:
+        if required:
+            fail("desktop download URL meta marker not found in built index.html")
+        warn("desktop download URL meta marker not found in " + str(index_path))
+        return
     html2, n = re.subn(
         r'<meta\s+name="kppdf-desktop-download-url"[^>]*/?>',
         replacement,
@@ -360,12 +391,15 @@ def inject_desktop_download_url(project_root, configured_url):
         count=1,
     )
     if n != 1:
-        fail("failed to replace desktop download URL meta in built index.html")
+        if required:
+            fail("failed to replace desktop download URL meta in built index.html")
+        warn("failed to replace desktop download URL meta in " + str(index_path))
+        return
     index_path.write_text(html2, encoding="utf-8")
     ok(
-        "Desktop installer URL injected"
+        "Desktop installer URL injected (" + index_path.name + ")"
         if configured_url is not None
-        else "Desktop installer URL uses default"
+        else "Desktop installer URL uses default (" + index_path.name + ")"
     )
 
 
