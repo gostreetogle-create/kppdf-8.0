@@ -4,7 +4,11 @@ import {
   GanttBarsComponent,
   GANTT_PX_PER_DAY,
 } from './gantt-bars.component';
-import type { GanttBar } from '../gantt-bar.model';
+import {
+  buildWorkerTreeBars,
+  isWorkerSummaryBar,
+  type GanttBar,
+} from '../gantt-bar.model';
 
 /**
  * TZ-NX-GANTT-G4 — zoom/pan/scroll regression:
@@ -85,6 +89,37 @@ describe('GanttBarsComponent (TZ-NX-GANTT-G4 pan/zoom)', () => {
     // Bar row still renders; the page widens the range via refitRangeAfterShift.
     expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(1);
     expect(el.textContent).toContain('Распил');
+  });
+
+  it('renders a shifted bar that ends after rangeEnd (forward range remains renderable)', async () => {
+    // Order shifted beyond the right edge → the page widens rangeEnd via refitRangeAfterShift.
+    const shifted = makeBar({ startDate: '2026-10-01', endDate: '2026-10-03' });
+    const fixture = await setup([shifted], '2026-09-01', '2026-09-21');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('expandedProductIds', new Set(['product:o1:0']));
+    fixture.componentRef.setInput('expandedModuleIds', new Set(['module:o1:0:m1']));
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(1);
+    expect(el.textContent).toContain('Распил');
+  });
+
+  it('worker summary rows are read-only for move and resize', async () => {
+    const workerBar = makeBar({ workerLabel: 'Иванов' });
+    const fixture = await setup([workerBar], '2026-09-01', '2026-09-21');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('canEditOrder', true);
+    fixture.detectChanges();
+
+    const summary = buildWorkerTreeBars([workerBar])[0]!;
+    expect(isWorkerSummaryBar(summary)).toBe(true);
+    const component = fixture.componentInstance as unknown as {
+      canResizeBar(bar: GanttBar): boolean;
+      canMoveBar(bar: GanttBar): boolean;
+    };
+    expect(component.canResizeBar(summary)).toBe(false);
+    expect(component.canMoveBar(summary)).toBe(false);
   });
 
   it('scrollRequest target "bar" re-anchors without errors (viewport pan fix)', async () => {

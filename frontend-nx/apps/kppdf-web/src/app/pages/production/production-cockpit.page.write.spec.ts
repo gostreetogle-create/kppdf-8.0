@@ -133,6 +133,25 @@ describe('ProductionCockpitPage write path (TZ-NX-GANTT-G5)', () => {
     expect(ordersApi.patchEstimateDays).not.toHaveBeenCalled();
   });
 
+  it('forward summary drag widens rangeEnd so the moved bar stays inside the grid', async () => {
+    const fixture = await setup();
+    const instance = fixture.componentInstance as unknown as {
+      rangeEnd(): string;
+      scrollRequest(): { target: string; barId?: string } | null;
+    };
+    const beforeEnd = instance.rangeEnd();
+
+    await page(fixture).onPlannedDateMoveCommit({ orderId: 'o1', deltaDays: 30 });
+
+    expect(instance.rangeEnd() > beforeEnd).toBe(true);
+    expect(instance.rangeEnd() >= '2026-10-05').toBe(true);
+    expect(instance.scrollRequest()?.target).toBe('bar');
+    expect(instance.scrollRequest()?.barId).toBe('o1:0:m1:wt1');
+    expect(ordersApi.update).toHaveBeenCalledWith('o1', {
+      plannedDate: expect.stringMatching(/^2026-10-01T/),
+    });
+  });
+
   it('child body-drag → PATCH estimate-start with clamped offsetDays ≥ 0', async () => {
     const fixture = await setup();
     await page(fixture).onStartOffsetCommit({

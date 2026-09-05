@@ -77,7 +77,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 
 | NX файл | Роль | G |
 |---------|------|---|
-| `pages/production/production-cockpit.page.ts` | Smart shell: bootstrap, chrome tools (`ShellToolRailService`), фильтры, PATCH-оркестрация, range/fit/today + refit после сдвигов | G1→G5 |
+| `pages/production/production-cockpit.page.ts` | Smart shell: bootstrap, chrome tools (`ShellToolRailService`), фильтры, PATCH-оркестрация, range/fit/today + symmetric refit after backward/forward shifts | G1→G5 + P3 |
 | `pages/production/production-read.facade.ts` | Чтение через `@kppdf/data-access`: orders + products/modules **bulk** + work-types + workers; retry 429/503; warnings | G2 |
 | `pages/production/gantt-bar.model.ts` | Pure-модель 1:1 (статусы A/C, sequential pack, estimate math, worker-группировка) | G2 |
 | `pages/production/production-cockpit.context.ts` | Локальные UI-сигналы (1:1) | G2 |
@@ -263,6 +263,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - Изделия только с вложенными изделиями (без прямых module lines) по-прежнему «не для Ганта» — отдельная TZ на deep BOM, если PO попросит.
 - Zoom Месяц: нет полосы дней недели под именем месяца — successor только по запросу PO.
 - **TZ-PRODUCTION-333/335:** catalog WorkType.days по-прежнему toast + full reload; второй write того же заказа, пока PATCH в полёте, игнорируется.
+- **P3 / G9:** after a plannedDate or start-offset shift, the moved order's range is padded on both edges; a forward shift beyond the prior `rangeEnd` widens the calendar before the bar is re-centered. Worker mode remains read-only for both move and resize.
 - Plan-vs-fact: после «выполнено» предлагать обновить норматив `WorkType.days` — **parked** (fact production OUT). См. `tasks/_backlog/PARK-plan-vs-fact-days.md`.
 - **TZ-PRODUCTION-337 known_limitation:** deep-link `?orderId=` на draft-заказ по-прежнему показывает его через selected bypass (`filterOrdersForRail`), хотя из «Все активные» draft исключён. Не чинить без отдельного TZ.
 - **TZ-PRODUCTION-338 known_limitation:** `destroy` → `clearCaches()` — повторный вход на `/production` снова платит cold hydrate; session cache / BE batch — successor.

@@ -746,19 +746,27 @@ export class ProductionCockpitPage {
   private refitRangeAfterShift(bars: GanttBar[], orderId: string): void {
     const orderBars = bars.filter((b) => b.orderId === orderId);
     if (!orderBars.length) return;
+
     let start = orderBars[0]!.startDate;
+    let end = orderBars[0]!.endDate;
     for (const b of orderBars) {
       if (b.startDate < start) start = b.startDate;
+      const barEnd = b.noTerm ? b.startDate : b.endDate;
+      if (barEnd > end) end = barEnd;
     }
+
     const paddedStart = addDays(start, -1);
-    if (paddedStart < this.rangeStart()) {
-      // Earlier than the visible range → widen; fit month density re-anchors scale.
-      this.rangeStart.set(paddedStart);
+    const paddedEnd = addDays(end, 1);
+    const widenedStart = paddedStart < this.rangeStart();
+    const widenedEnd = paddedEnd > this.rangeEnd();
+    if (widenedStart) this.rangeStart.set(paddedStart);
+    if (widenedEnd) this.rangeEnd.set(paddedEnd);
+
+    if (widenedStart || widenedEnd) {
+      // A range change re-anchors month density so the moved row stays gridded.
       this.ctx.setZoom('month');
-      this.requestTimelineScroll('bar', orderBars[0]!.id);
-      return;
     }
-    // In-range shift: re-anchor the viewport to the moved row (viewport pan fix).
+    // In-range shift and either edge expansion both re-anchor the moved row.
     this.requestTimelineScroll('bar', orderBars[0]!.id);
   }
 
