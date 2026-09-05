@@ -76,4 +76,4 @@ Live browser/deploy smoke — только после deploy (локальный
 - [x] archive + lock + удалить `_active`
 - [x] Status = DONE
 - closed_at: 2026-09-05T23:59:00Z
-- commit SHA: pending (filled after commit)
+- commit SHA: `db798a08`
