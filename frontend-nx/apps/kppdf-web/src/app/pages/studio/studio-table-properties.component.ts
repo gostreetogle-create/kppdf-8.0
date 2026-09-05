@@ -32,6 +32,7 @@ import {
   studioTableTemplateId,
   studioTableTransparentBackground,
   studioTableRows,
+  studioTableRowSource,
   remapRowsForColumnChange,
   filterHiddenColumnKeysForColumns,
   createStudioTableColumn,
@@ -428,9 +429,7 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   }
 
   protected rowSource(): string {
-    const source = (this.block.settings?.['dataSource'] as { type?: unknown } | undefined)?.type
-      ?? this.block.settings?.['tableDataSource'];
-    return typeof source === 'string' && source !== 'manual' ? source : 'manual';
+    return studioTableRowSource(this.block);
   }
 
   protected onRowSourceChange(source: 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'): void {

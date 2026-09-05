@@ -12,6 +12,7 @@ import {
   studioTableColumns,
   studioTableDisabledRowIndices,
   studioTableRows,
+  studioTableRowSource,
   studioTableTransparentBackground,
   studioVisibleColumnIndices,
   studioVisibleTableColumns,
@@ -128,7 +129,7 @@ import {
               (click)="selectBlock($event, block)"
               (pointerdown)="startDrag($event, block)"
             >
-              @if (selectedId === block._id && !block.locked && !readOnly) {
+              @if (selectedId === block._id && !block.locked && !readOnly && tableRowSource(block) === 'manual') {
                 <div
                   class="table-edit"
                   data-test="studio-table-rows-editor"
@@ -258,6 +259,9 @@ import {
     }
     .studio-block__text-body :where(p) {
       margin: 0;
+    }
+    :host ::ng-deep .studio-block__text-body .substitution-token {
+      color: oklch(var(--color-info));
     }
     .studio-block--text.studio-block--editable.selected {
       background: transparent;
@@ -450,6 +454,10 @@ export class StudioBlocksCanvasComponent {
 
   tableRowsAll(block: StudioBlock): string[][] {
     return studioTableRows(block);
+  }
+
+  tableRowSource(block: StudioBlock): string {
+    return studioTableRowSource(block);
   }
 
   visibleColumnIndices(block: StudioBlock): number[] {

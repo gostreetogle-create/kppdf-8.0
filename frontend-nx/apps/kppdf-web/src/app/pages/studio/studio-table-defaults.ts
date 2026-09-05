@@ -32,6 +32,21 @@ export function studioTableRowCount(block: { settings?: Record<string, unknown> 
   return studioTableRows(block).length;
 }
 
+export type StudioTableRowSource =
+  | 'manual'
+  | 'quotation-items'
+  | 'order-items'
+  | 'catalog-products'
+  | 'catalog-modules'
+  | 'catalog-parts'
+  | 'catalog-materials';
+
+export function studioTableRowSource(block: { settings?: Record<string, unknown> }): StudioTableRowSource {
+  const source = (block.settings?.['dataSource'] as { type?: unknown } | undefined)?.type
+    ?? block.settings?.['tableDataSource'];
+  return typeof source === 'string' && source !== 'manual' ? (source as StudioTableRowSource) : 'manual';
+}
+
 /** Default false — opaque table background on canvas/PDF. */
 export function studioTableTransparentBackground(block: {
   settings?: Record<string, unknown>;

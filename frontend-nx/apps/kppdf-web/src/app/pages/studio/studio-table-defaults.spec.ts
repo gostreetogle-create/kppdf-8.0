@@ -4,6 +4,7 @@ import {
   remapRowsForColumnChange,
   filterHiddenColumnKeysForColumns,
   studioTableHiddenColumnKeys,
+  studioTableRowSource,
   studioTableTemplateId,
   studioTableTransparentBackground,
   studioVisibleTableColumns,
@@ -82,5 +83,17 @@ describe('studio-table-defaults', () => {
     expect(
       studioTableTransparentBackground({ settings: { tableTransparentBackground: true } }),
     ).toBe(true);
+  });
+
+  it('studioTableRowSource defaults to manual and reads dataSource/tableDataSource', () => {
+    expect(studioTableRowSource({})).toBe('manual');
+    expect(studioTableRowSource({ settings: {} })).toBe('manual');
+    expect(studioTableRowSource({ settings: { tableDataSource: 'manual' } })).toBe('manual');
+    expect(studioTableRowSource({ settings: { tableDataSource: 'quotation-items' } })).toBe(
+      'quotation-items',
+    );
+    expect(
+      studioTableRowSource({ settings: { dataSource: { type: 'catalog-products' } } }),
+    ).toBe('catalog-products');
   });
 });

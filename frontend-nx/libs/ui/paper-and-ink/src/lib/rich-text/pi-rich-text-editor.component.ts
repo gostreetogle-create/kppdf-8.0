@@ -500,6 +500,12 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
           attrs: { token: tokenMatch[0] },
         })
         .run();
+      const posAfter = ed.state.selection.from;
+      const docSize = ed.state.doc.content.size;
+      const nextChar = posAfter < docSize ? ed.state.doc.textBetween(posAfter, posAfter + 1) : '';
+      if (nextChar !== '' && nextChar !== ' ') {
+        ed.chain().insertContentAt(posAfter, ' ').run();
+      }
     } else {
       chain.insertContent(text).run();
     }
