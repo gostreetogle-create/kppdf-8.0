@@ -49,4 +49,4 @@ The NX module create/edit dialog now has a separate «Виды работ» plan
 
 ## Commit
 
-a9895cf1
+32ef746b
