@@ -33,4 +33,4 @@ closed_by: claude
 
 ## Commit
 
-- see git log
+- `adef606c`

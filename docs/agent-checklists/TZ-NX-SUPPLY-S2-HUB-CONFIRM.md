@@ -65,5 +65,5 @@
 
 - [x] Archive + remove active marker
 - [x] Status = DONE
-- closed_at: pending (filled at commit)
-- commit SHA: pending (filled after commit)
+- closed_at: 2026-09-05T23:15:00+03:00
+- commit SHA: `adef606c`
