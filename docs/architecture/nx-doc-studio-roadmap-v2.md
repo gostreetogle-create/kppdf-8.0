@@ -78,6 +78,14 @@ Pack `tasks/_ready/docstudio-finish/`. S27–S35, S38, S39, S40 archived в `tas
 S36 (docs truth) — эта TZ. S37 (operator smoke) — последний, запускается после S36.
 Operator completeness: `docs/architecture/nx-doc-studio-operator-bar.md` (S27–S40; smoke S37 last).
 
+## WAVE-DOCSTUDIO-DATA-IA (D50–D54) — DONE
+
+Панель «Данные»: TOC категорий (Товары | Выбрано | Кому | Связи | Ещё), буфер «Выбрано» с
+badge, CTA «Вставить на лист» (создаёт/фокусирует table-блок + `putDataSet`, без второго
+write-path), Плательщик как secondary disclosure. Аудит:
+`docs/audits/2026-09-05-docstudio-data-panel-ia-audit.md`. Архивы:
+`tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-D50…D54-*.done.md`. Детали в `document-studio.page.md` § 3.3.
+
 ## PARK
 
 - Three-way merge

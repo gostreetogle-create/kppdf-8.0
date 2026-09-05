@@ -276,6 +276,7 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
                 (supplierChange)="onAnchorChange('supplier', $event)"
                 (catalogRemove)="removeCatalogChip($event)"
                 (catalogChange)="onCatalogSelectionChange($event)"
+                (insertTable)="insertCatalogTable($event)"
                 (quotationChange)="onQuotationChange($event)"
                 (quotationStatusChange)="onQuotationStatusChange($event)"
                 (orderChange)="onOrderChange($event)"
@@ -933,11 +934,40 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   addTableLayer(): void {
+    void this.createTableBlock().then((block) => {
+      if (block) this.activateLayer(block._id);
+    });
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-D52 — «Вставить на лист» from the «Выбрано» buffer.
+   * Reuses an existing table already wired to this catalog source (focus,
+   * no duplicate write) or creates one via the same path as `addTableLayer`
+   * and wires its source in one step — mirrors Elements → table → source,
+   * not a second write path.
+   */
+  insertCatalogTable(kind: StudioShowcaseKind): void {
+    const source = `catalog-${kind}` as const;
+    const existing = this.blocks().find(
+      (item) => item.type === 'table' && (item.settings?.['dataSource'] as { type?: string } | undefined)?.type === source,
+    );
+    if (existing) {
+      this.activateLayer(existing._id);
+      return;
+    }
+    void this.createTableBlock().then((block) => {
+      if (!block) return;
+      this.activateLayer(block._id);
+      this.setBlockCatalogSource(block._id, source);
+    });
+  }
+
+  private createTableBlock(): Promise<StudioBlock | null> {
     const d = this.document();
-    if (!d) return;
+    if (!d) return Promise.resolve(null);
     const layerNo = this.layersForPage().length + 1;
     const zIndex = this.nextZIndex();
-    void firstValueFrom(
+    return firstValueFrom(
       this.blocksService.create(d._id, {
         expectedRevision: d.revision ?? 1,
         type: 'table',
@@ -953,14 +983,43 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     ).then((r) => {
       if (!r.ok) {
         this.conflict();
-        return;
+        return null;
       }
       const block = r.data.layout
         ? { ...r.data, layout: coerceStudioBlockLayout(r.data.layout) }
         : r.data;
       this.blocks.update((b) => [...b, block]);
       this.document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x));
-      this.activateLayer(block._id);
+      return block;
+    });
+  }
+
+  /** Shared by `onTableSourceChange` (existing table, Свойства panel) and `insertCatalogTable` (D52, new table). */
+  private setBlockCatalogSource(
+    blockId: string,
+    source: 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials',
+  ): void {
+    const doc = this.document();
+    if (!doc) return;
+    const catalogKey = source.slice('catalog-'.length) as 'products' | 'modules' | 'parts' | 'materials';
+    const selectedCount = this.catalogSelections()[catalogKey].length;
+    const dataSet = { source: { type: source }, rows: [], catalogSelectionCount: selectedCount };
+    this.blocks.update((blocks) => blocks.map((item) => item._id === blockId
+      ? { ...item, settings: { ...(item.settings ?? {}), dataSource: { type: source } } }
+      : item));
+    void firstValueFrom(this.documents.putDataSet(doc._id, `table-${blockId}`, {
+      expectedRevision: doc.revision ?? 1,
+      dataSet,
+    })).then((result) => {
+      if (!result.ok) {
+        this.conflict();
+        return;
+      }
+      this.document.set(result.data);
+      const key = `table-${blockId}`;
+      this.applyLiveRowsFromDataSet(result.data, blockId, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
+      this.toast.success('На листе появятся строки из выбранных товаров');
+      this.refreshPreviewIfActive();
     });
   }
 
