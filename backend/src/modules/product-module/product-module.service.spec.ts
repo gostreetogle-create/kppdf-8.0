@@ -94,6 +94,51 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
     expect(model.create).toHaveBeenCalledTimes(1);
   });
 
+  it('persists module↔workType binding days on create (TZ-NX-MODULE-WT-DAYS-SOT)', async () => {
+    const { service, model } = serviceWith([]);
+    const workTypeId = new Types.ObjectId().toString();
+    await service.create({
+      name: 'Дни на связке',
+      article: 'MOD-DAYS',
+      workTypes: [{ workTypeId, estimatedHours: 8, days: 4 }],
+    });
+    expect(model.create).toHaveBeenCalledWith(
+      expect.objectContaining({ workTypes: [expect.objectContaining({ estimatedHours: 8, days: 4 })] }),
+    );
+  });
+
+  it('defaults binding days to null when omitted so Gantt falls back to catalog (TZ-NX-MODULE-WT-DAYS-SOT)', async () => {
+    const { service, model } = serviceWith([]);
+    const workTypeId = new Types.ObjectId().toString();
+    await service.create({ name: 'Без дней', article: 'MOD-NO-DAYS', workTypes: [{ workTypeId, estimatedHours: 8 }] });
+    expect(model.create).toHaveBeenCalledWith(
+      expect.objectContaining({ workTypes: [expect.objectContaining({ days: null })] }),
+    );
+  });
+
+  it('rejects binding days below 1 (TZ-NX-MODULE-WT-DAYS-SOT)', async () => {
+    const { service, model } = serviceWith([]);
+    const workTypeId = new Types.ObjectId().toString();
+    await expect(
+      service.create({ name: 'Плохие дни', article: 'MOD-BAD-DAYS', workTypes: [{ workTypeId, days: 0 }] }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(model.create).not.toHaveBeenCalled();
+  });
+
+  it('updates module↔workType binding days (TZ-NX-MODULE-WT-DAYS-SOT)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const workTypeId = new Types.ObjectId().toString();
+    const doc = { _id: new Types.ObjectId(), save, workTypes: [], materials: [] };
+    const { service } = serviceWith([]);
+    (service as any).model.findById.mockReturnValue({
+      populate: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue(doc),
+    });
+    await service.update('507f1f77bcf86cd799439011', { workTypes: [{ workTypeId, days: 2 }] });
+    expect(doc.workTypes).toEqual([expect.objectContaining({ days: 2 })]);
+    expect(save).toHaveBeenCalled();
+  });
+
   it('rejects immutable length override on composition material line', async () => {
     const save = jest.fn().mockResolvedValue(undefined);
     const doc = { _id: new Types.ObjectId(), save, composition: [], materials: [] };

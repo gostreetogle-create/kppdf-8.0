@@ -17,6 +17,8 @@ class ModuleWorkTypeSchema {
   @Prop({ type: Types.ObjectId, ref: 'WorkType', required: true }) workTypeId!: Types.ObjectId;
   @Prop({ default: 0 }) estimatedHours!: number;
   @Prop({ default: 0 }) sortOrder!: number;
+  /** Gantt planning days for this module↔workType binding; null/absent falls back to WorkType.days seed. */
+  @Prop({ type: Number, default: null }) days?: number | null;
 }
 
 const ModuleWorkTypeSchemaFactory = SchemaFactory.createForClass(ModuleWorkTypeSchema);
@@ -59,7 +61,7 @@ export class ProductModule {
   /** Canonical catalog photo references; ProductModulePhoto remains available for legacy reads/writes. */
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Photo' }], default: [] }) photoIds!: Types.ObjectId[];
   @Prop({ type: Types.ObjectId, ref: 'Photo' }) mainPhotoId?: Types.ObjectId;
-  @Prop({ type: [ModuleWorkTypeSchemaFactory], default: [] }) workTypes!: { workTypeId: Types.ObjectId; estimatedHours: number; sortOrder: number }[];
+  @Prop({ type: [ModuleWorkTypeSchemaFactory], default: [] }) workTypes!: { workTypeId: Types.ObjectId; estimatedHours: number; sortOrder: number; days?: number | null }[];
   /** Legacy embedded material rows retained for TZ-CATALOG-302 dual-read and TZ-CATALOG-304 migration. */
   @Prop({ type: [ModuleMaterialSchemaFactory], default: [] }) materials!: { materialId: Types.ObjectId; quantity: number; unit: string; isPurchased: boolean; overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string }; sortOrder: number }[];
   /** TZ-CATALOG-302: nested module/material composition. Product lines arrive in TZ-CATALOG-305. */

@@ -451,6 +451,58 @@ describe('ProductionReadFacade (TZ-NX-GANTT-G2-READ-MODEL)', () => {
     ).toHaveLength(1);
     jest.useRealTimers();
   });
+
+  it('TZ-NX-MODULE-WT-DAYS-SOT: module↔workType binding days win over the WorkType catalog; missing binding falls back to catalog', async () => {
+    const ordersApi = {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: [
+            { _id: 'order-heavy', number: 'HEAVY', status: 'confirmed', items: [{ productId: 'p-heavy', productName: 'Тяжёлый', quantity: 1 }] },
+            { _id: 'order-fallback', number: 'FALLBACK', status: 'confirmed', items: [{ productId: 'p-fallback', productName: 'Без переопределения', quantity: 1 }] },
+          ],
+        }),
+      ),
+    };
+    const productsApi = {
+      getById: jest.fn(),
+      getByIds: jest.fn().mockReturnValue(
+        of({ ok: true, data: [specProduct('p-heavy', 'Тяжёлый', 'm-heavy'), specProduct('p-fallback', 'Без переопределения', 'm-fallback')] }),
+      ),
+    };
+    const modulesApi = {
+      getById: jest.fn(),
+      getByIds: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: [specModule('m-heavy', 'Модуль тяжёлый', 'wt1', 4), specModule('m-fallback', 'Модуль без дней', 'wt1', null)],
+        }),
+      ),
+    };
+    const workTypesApi = {
+      list: jest.fn().mockReturnValue(
+        of({ ok: true, data: { items: [{ _id: 'wt1', name: 'Сварка', isActive: true, days: 2 }], total: 1 } }),
+      ),
+    };
+    const workersApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })) };
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        ProductionReadFacade,
+        { provide: PiOrdersService, useValue: ordersApi },
+        { provide: PiProductsService, useValue: productsApi },
+        { provide: PiModulesService, useValue: modulesApi },
+        { provide: PiWorkTypesService, useValue: workTypesApi },
+        { provide: PiPeopleService, useValue: workersApi },
+      ],
+    });
+    const facade = TestBed.inject(ProductionReadFacade);
+    const orders = await facade.loadOrders();
+    const bars = await facade.loadBarsForOrders(orders);
+    expect(bars.find((bar) => bar.orderId === 'order-heavy')?.days).toBe(4);
+    expect(bars.find((bar) => bar.orderId === 'order-fallback')?.days).toBe(2);
+  });
 });
 
 function specProduct(id: string, name: string, moduleRefId: string): Product {
@@ -471,10 +523,10 @@ function specProduct(id: string, name: string, moduleRefId: string): Product {
   } as unknown as Product;
 }
 
-function specModule(id: string, name: string, workTypeId: string): ProductModule {
+function specModule(id: string, name: string, workTypeId: string, days?: number | null): ProductModule {
   return {
     _id: id,
     name,
-    workTypes: [{ workTypeId, estimatedHours: 8, sortOrder: 0 }],
+    workTypes: [{ workTypeId, estimatedHours: 8, sortOrder: 0, ...(days === undefined ? {} : { days }) }],
   } as unknown as ProductModule;
 }

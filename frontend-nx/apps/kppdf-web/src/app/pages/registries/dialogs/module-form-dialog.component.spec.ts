@@ -99,6 +99,7 @@ describe('ModuleFormDialogComponent (Phase 2)', () => {
       workTypeId: 'wt-1',
       estimatedHours: 2.5,
       sortOrder: 1,
+      days: null,
     });
     expect(fixture.nativeElement.querySelector('[data-test="module-work-types"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="module-work-type-row-0"]')).toBeTruthy();
@@ -254,6 +255,89 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
         article: 'MOD-NEW',
         workTypes: [{ workTypeId: 'wt-1', estimatedHours: 3, sortOrder: 0 }],
       }),
+    );
+    TestBed.resetTestingModule();
+  });
+
+  it('seeds an empty days field from the WorkType catalog default on selection (TZ-NX-MODULE-WT-DAYS-SOT)', async () => {
+    const create = jest.fn().mockReturnValue(of({ ok: true, data: { ...SAMPLE, _id: 'created-module' } }));
+    await TestBed.configureTestingModule({
+      imports: [ModuleFormDialogComponent],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: { mode: 'create' } },
+        { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+        { provide: PiModulesService, useValue: { create, update: jest.fn() } },
+        { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        {
+          provide: PiDialogService,
+          useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
+        },
+        {
+          provide: PiCompositionService,
+          useValue: {
+            getModuleTree: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'created-module', name: 'K', kind: 'module', quantity: 1, children: [] } })),
+            getModuleComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture2 = TestBed.createComponent(ModuleFormDialogComponent);
+    fixture2.detectChanges();
+    await fixture2.whenStable();
+    const component = fixture2.componentInstance as unknown as {
+      addWorkType: () => void;
+      seedDaysFromCatalog: (index: number) => void;
+      workTypesArray: { at: (index: number) => { patchValue: (v: Record<string, unknown>) => void; controls: { days: { value: number | null } } } };
+    };
+    component.addWorkType();
+    component.workTypesArray.at(0).patchValue({ workTypeId: 'wt-2' });
+    component.seedDaysFromCatalog(0);
+    expect(component.workTypesArray.at(0).controls.days.value).toBe(1);
+    TestBed.resetTestingModule();
+  });
+
+  it('does not overwrite an explicit days override when a different work type is selected (TZ-NX-MODULE-WT-DAYS-SOT)', async () => {
+    const create = jest.fn().mockReturnValue(of({ ok: true, data: { ...SAMPLE, _id: 'created-module' } }));
+    await TestBed.configureTestingModule({
+      imports: [ModuleFormDialogComponent],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: { mode: 'create' } },
+        { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+        { provide: PiModulesService, useValue: { create, update: jest.fn() } },
+        { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        {
+          provide: PiDialogService,
+          useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
+        },
+        {
+          provide: PiCompositionService,
+          useValue: {
+            getModuleTree: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'created-module', name: 'K', kind: 'module', quantity: 1, children: [] } })),
+            getModuleComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture2 = TestBed.createComponent(ModuleFormDialogComponent);
+    fixture2.detectChanges();
+    await fixture2.whenStable();
+    const component = fixture2.componentInstance as unknown as {
+      form: { controls: { name: { setValue: (v: string) => void }; article: { setValue: (v: string) => void } } };
+      addWorkType: () => void;
+      seedDaysFromCatalog: (index: number) => void;
+      onSubmit: () => Promise<void>;
+      workTypesArray: { at: (index: number) => { patchValue: (v: Record<string, unknown>) => void } };
+    };
+    component.form.controls.name.setValue('Тяжёлый модуль');
+    component.form.controls.article.setValue('MOD-HEAVY');
+    component.addWorkType();
+    component.workTypesArray.at(0).patchValue({ workTypeId: 'wt-1', days: 4 });
+    component.seedDaysFromCatalog(0);
+    await component.onSubmit();
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ workTypes: [expect.objectContaining({ workTypeId: 'wt-1', days: 4 })] }),
     );
     TestBed.resetTestingModule();
   });

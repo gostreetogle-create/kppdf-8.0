@@ -15,6 +15,8 @@ export interface WorkTypeInModule {
   /** Intentionally unused for Gantt duration (lock D of gantt-bar.model). */
   estimatedHours?: number | null;
   sortOrder?: number;
+  /** Gantt duration SoT for this module↔workType binding; null/absent falls back to WorkType.days catalog seed. */
+  days?: number | null;
 }
 
 /** Normalized write shape accepted by module create/update endpoints. */
@@ -22,6 +24,8 @@ export interface ProductModuleWorkTypePayload {
   workTypeId: string;
   estimatedHours?: number;
   sortOrder?: number;
+  /** Gantt duration SoT for this module↔workType binding; omit/null falls back to WorkType.days catalog seed. */
+  days?: number | null;
 }
 
 export interface ProductModule {

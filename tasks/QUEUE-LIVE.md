@@ -2,20 +2,15 @@
 
 | Slot | Статус |
 |------|--------|
-| Freebuff | IDLE |
-| Claude | IDLE — S44→REG DONE |
+| Freebuff | READY Warehouse W1→W4 · `PROMPT-FREEBUFF-NX-WAREHOUSE.md` |
+| Claude | IDLE |
+
+## NEXT
+
+После W1+ : Claude `PROMPT-CLAUDE-NX-SUPPLY.md` (S0 BE can ∥ after Freebuff owns routes in W1, or wait W1 DONE for S1)
+
+Orders inset: park
 
 ## DONE
 
-Deals · Registries CRUD · WAVE-S · G14 · Data IA D50–D56 · S44 table canvas select (d5b7dcd8) ·
-Registries expand-scroll round 2 (route matcher + footer fix)
-
-## NEXT (Claude continuous)
-
-LIVE-очередь пуста — ждём скрин/ТЗ PO.
-
-WAVE: `docs/agent-checklists/WAVE-CLAUDE-S44-REGISTRIES.md`
-
-## NOTE
-
-Это вся текущая LIVE-очередь. `_backlog/` не клеить в этот промпт.
+Module↔WT days · S44 · REG-SCROLL · Data IA · Deals

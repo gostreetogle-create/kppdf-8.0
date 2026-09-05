@@ -1,21 +1,20 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T18:10:00+03:00
+updated_at: 2026-09-05T18:56:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Claude:** CLAIMED / IN PROGRESS — Module↔WT days SoT · `tasks/PROMPT-CLAUDE-MODULE-WT-DAYS.md`  
-  S: `TZ-NX-REGISTRIES-WORKER-SKILLS-NO-DAYS` DONE → L: `TZ-NX-MODULE-WT-DAYS-SOT` IN PROGRESS
-- **Freebuff:** IDLE (Orders hub tray inset → NEXT после Claude)
+- **Claude:** IDLE (Module↔WT days DONE — archive `TZ-NX-MODULE-WT-DAYS-SOT.done.md`; `_active/` empty)
+- **Freebuff:** READY — WAVE-NX-WAREHOUSE · `tasks/PROMPT-FREEBUFF-NX-WAREHOUSE.md`
 
 ## DONE (эта сессия)
 
-Deals D1–D5 · Registries · Gantt polish · Data IA D50–D56 · S44 · REG-SCROLL · TZ-NX-REGISTRIES-WORKER-SKILLS-NO-DAYS
+… · WORKER-SKILLS-NO-DAYS · MODULE-WT-DAYS-SOT
 
 ## NEXT
 
-После Claude days: Freebuff `tasks/PROMPT-FREEBUFF-ORDERS-HUB-TRAY-INSET.md` · глазами PO `/orders` expand.
+После W4: Claude SUPPLY S0 (`PROMPT-CLAUDE-NX-SUPPLY.md`) ∥ или после; Orders inset.
 
 ## PARK
 
-Cutover · Invoice · L1+ · `/desk` · G12
+Orders inset · WAVE-NX-SUPPLY · Cutover · `/desk` · G12

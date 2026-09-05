@@ -93,7 +93,6 @@ describe('ProductionCockpitPage write path (TZ-NX-GANTT-G5)', () => {
     onPlannedDateMoveCommit(ev: unknown): Promise<void>;
     onStartOffsetCommit(ev: unknown): Promise<void>;
     onWorkerAssignmentCommit(ev: unknown): Promise<void>;
-    onCatalogDaysRequest(ev: unknown): Promise<void>;
   } {
     return fixture.componentInstance as never;
   }
@@ -208,15 +207,11 @@ describe('ProductionCockpitPage write path (TZ-NX-GANTT-G5)', () => {
     expect(ordersApi.patchEstimateDays).not.toHaveBeenCalled();
   });
 
-  it('catalog button → confirm prompt → PATCH work-types (global, confirm-gated)', async () => {
+  it('TZ-NX-MODULE-WT-DAYS-SOT: no Gantt work-detail control PATCHes the WorkType catalog globally', async () => {
     const fixture = await setup();
-    const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('4');
-    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
-    await page(fixture).onCatalogDaysRequest({ workTypeId: 'wt1', currentDays: 3 });
-    expect(workTypesApi.update).toHaveBeenCalledWith('wt1', { days: 4 });
-    expect(ordersApi.patchEstimateDays).not.toHaveBeenCalled();
-    promptSpy.mockRestore();
-    confirmSpy.mockRestore();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test^="gantt-work-detail-catalog-"]')).toBeNull();
+    expect(workTypesApi.update).not.toHaveBeenCalled();
   });
 
   it('resize blocked without production:write (caps false → no API call)', async () => {

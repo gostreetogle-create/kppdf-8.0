@@ -60,6 +60,8 @@ Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** п
 Первый переход в `shop` → freeze состава заказа (модалка).
 Вход линии/модуля в `shop` — только при workType + days (override заказа или каталог `WorkType.days`), иначе 400 RU (TZ-COMBINE-408).
 
+**Gantt bar days SoT (2026-09-05, TZ-NX-MODULE-WT-DAYS-SOT):** `Order.estimateDayOverrides` → `ProductModule.workTypes[].days` → fallback `WorkType.days` (seed при добавлении WT к модулю). Карточка человека = `workTypeIds` без дней. Gantt work-detail «Изменить в справочнике» удалена — глобальная запись в каталог из бара не даёт править срок одного модуля.
+
 ## 3. Другие горячие поля
 
 | Поле | Пишут | Читают | Ловушка |

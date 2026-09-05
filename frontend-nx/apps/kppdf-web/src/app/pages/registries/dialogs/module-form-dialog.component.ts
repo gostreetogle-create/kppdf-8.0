@@ -99,7 +99,7 @@ export interface ModuleFormDialogData {
         <app-pi-form-section title="Виды работ" headingId="module-work-types" tone="neutral">
           <div class="flex items-baseline justify-between gap-3 mb-form-row">
             <p class="text-sm text-muted-foreground">
-              Планирование Ганта: длительность берётся из дней вида работ, норма — для себестоимости.
+              Длительность Ганта — «Дней» в строке модуля; норма, ч — только себестоимость. На заказе срок можно скорректировать на Ганте.
             </p>
             <app-pi-button type="button" variant="outline" size="sm" (click)="addWorkType()" data-test="module-work-type-add">
               + Добавить вид работы
@@ -108,22 +108,25 @@ export interface ModuleFormDialogData {
           <div formArrayName="workTypes" class="space-y-2" data-test="module-work-types">
             @for (group of workTypesArray.controls; track $index; let i = $index) {
               <div [formGroupName]="i" class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30" [attr.data-test]="'module-work-type-row-' + i">
-                <label class="block col-span-6">
+                <label class="block col-span-4">
                   <span class="eyebrow block mb-1.5">Вид работы</span>
-                  <select formControlName="workTypeId" class="pi-input w-full" [attr.aria-label]="'Вид работы ' + (i + 1)" data-test="module-work-type-select">
+                  <select formControlName="workTypeId" (change)="seedDaysFromCatalog(i)" class="pi-input w-full" [attr.aria-label]="'Вид работы ' + (i + 1)" data-test="module-work-type-select">
                     <option value="">— выберите —</option>
                     @for (workType of workTypes(); track workType._id) {
                       <option [value]="workType._id">{{ workType.name }}</option>
                     }
                   </select>
                 </label>
-                <app-pi-form-field label="Норма, ч" [htmlFor]="'module-work-type-hours-' + i" class="col-span-3">
+                <app-pi-form-field label="Дней" [htmlFor]="'module-work-type-days-' + i" class="col-span-2">
+                  <app-pi-input [id]="'module-work-type-days-' + i" type="number" formControlName="days" data-test="module-work-type-days" />
+                </app-pi-form-field>
+                <app-pi-form-field label="Норма, ч" [htmlFor]="'module-work-type-hours-' + i" class="col-span-2">
                   <app-pi-input [id]="'module-work-type-hours-' + i" type="number" formControlName="estimatedHours" data-test="module-work-type-hours" />
                 </app-pi-form-field>
                 <app-pi-form-field label="Порядок" [htmlFor]="'module-work-type-sort-' + i" class="col-span-2">
                   <app-pi-input [id]="'module-work-type-sort-' + i" type="number" formControlName="sortOrder" data-test="module-work-type-sort" />
                 </app-pi-form-field>
-                <div class="flex gap-1" role="group" [attr.aria-label]="'Порядок строки ' + (i + 1)">
+                <div class="flex gap-1 col-span-2" role="group" [attr.aria-label]="'Порядок строки ' + (i + 1)">
                   <app-pi-button type="button" variant="outline" size="icon" [disabled]="i === 0" (click)="moveWorkType(i, -1)" [attr.aria-label]="'Поднять вид работы ' + (i + 1)" data-test="module-work-type-up">↑</app-pi-button>
                   <app-pi-button type="button" variant="outline" size="icon" [disabled]="i === workTypesArray.length - 1" (click)="moveWorkType(i, 1)" [attr.aria-label]="'Опустить вид работы ' + (i + 1)" data-test="module-work-type-down">↓</app-pi-button>
                   <app-pi-button type="button" variant="destructive" size="icon" (click)="removeWorkType(i)" [attr.aria-label]="'Удалить вид работы ' + (i + 1)" data-test="module-work-type-remove">×</app-pi-button>
@@ -278,7 +281,16 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
       workTypeId: this.fb.control(resolveWorkTypeId(row), Validators.required),
       estimatedHours: this.fb.control(row?.estimatedHours ?? null),
       sortOrder: this.fb.control(row?.sortOrder ?? 0),
+      days: this.fb.control(row?.days ?? null),
     });
+  }
+
+  /** Seeds an empty «Дней» field from the WorkType catalog default when a skill is picked (fallback, not a lock). */
+  protected seedDaysFromCatalog(index: number): void {
+    const group = this.workTypesArray.at(index);
+    if (group.controls.days.value != null) return;
+    const catalogDays = this.workTypes().find((wt) => wt._id === group.controls.workTypeId.value)?.days;
+    if (catalogDays != null) group.controls.days.setValue(catalogDays);
   }
 
   private async loadWorkTypes(): Promise<void> {
@@ -324,6 +336,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
         workTypeId: row.workTypeId,
         ...(row.estimatedHours == null ? {} : { estimatedHours: Number(row.estimatedHours) }),
         ...(row.sortOrder == null ? {} : { sortOrder: Number(row.sortOrder) }),
+        ...(row.days == null ? {} : { days: Number(row.days) }),
       }));
     return payload;
   }
@@ -333,6 +346,7 @@ type WorkTypeFormGroup = FormGroup<{
   workTypeId: FormControl<string>;
   estimatedHours: FormControl<number | null>;
   sortOrder: FormControl<number>;
+  days: FormControl<number | null>;
 }>;
 
 function resolveWorkTypeId(row: NonNullable<ProductModule['workTypes']>[number] | undefined): string {

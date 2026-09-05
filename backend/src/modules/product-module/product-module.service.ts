@@ -14,7 +14,7 @@ import {
 } from '../cost-calculation/cost-calculation.service';
 
 export interface MaterialInModuleDto { materialId: string; quantity?: number; unit?: string; isPurchased?: boolean; overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string }; sortOrder?: number; }
-export interface WorkTypeInModuleDto { workTypeId: string; estimatedHours?: number; sortOrder?: number; }
+export interface WorkTypeInModuleDto { workTypeId: string; estimatedHours?: number; sortOrder?: number; days?: number | null; }
 export interface UpsertProductModuleDto { name: string; article: string; dimensions?: { width?: number; height?: number; depth?: number; unit?: string }; weight?: number; sortOrder?: number; workTypes?: WorkTypeInModuleDto[]; materials?: MaterialInModuleDto[]; }
 
 type DimensionKey = 'length' | 'width' | 'height';
@@ -97,7 +97,7 @@ export class ProductModuleService {
     if (dto.dimensions !== undefined) doc.dimensions = dto.dimensions;
     if (dto.weight !== undefined) doc.weight = dto.weight;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
-    if (dto.workTypes) doc.workTypes = dto.workTypes.map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0 }));
+    if (dto.workTypes) doc.workTypes = dto.workTypes.map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0, days: this.normalizeWorkTypeDays(w.days) }));
     try {
       return await doc.save();
     } catch (err) {
@@ -214,6 +214,15 @@ export class ProductModuleService {
     return article;
   }
 
+  /** Module↔workType planning days: null/absent falls back to WorkType.days seed; set values must be >= 1. */
+  private normalizeWorkTypeDays(value: number | null | undefined): number | null {
+    if (value === undefined || value === null) return null;
+    if (!Number.isFinite(value) || value < 1) {
+      throw new BadRequestException('Дни вида работ в модуле: число не менее 1');
+    }
+    return value;
+  }
+
   private rethrowDuplicateArticle(err: unknown): never {
     if ((err as { code?: number })?.code === 11000) {
       throw new ConflictException('Артикул уже используется');
@@ -225,7 +234,7 @@ export class ProductModuleService {
     return {
       ...dto,
       organizationId: organizationId ? this.organizationId(organizationId) : undefined,
-      workTypes: (dto.workTypes ?? []).map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0 })),
+      workTypes: (dto.workTypes ?? []).map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0, days: this.normalizeWorkTypeDays(w.days) })),
       materials: [],
     };
   }

@@ -16,6 +16,7 @@
 - **View mode persistence**: `localStorage['pi-modules-view-mode']` (`list` | `grid`), load/save в try/catch (паттерн products).
 - **Фильтр «Состав»** — client-side, dual-read: непустой `composition` (material-линии) приоритетнее legacy `materials[]`.
 - **Виды работ (TZ-NX-REGISTRIES-MODULE-WORK-TYPES):** отдельная секция диалога модуля хранит планирование Ганта в `workTypes[]`: `workTypeId`, опциональные `estimatedHours` (для себестоимости) и `sortOrder`. Выборка загружается из `GET /api/work-types`; эти строки не являются материалами и отправляются вместе с create/update модуля.
+- **Дни SoT (TZ-NX-MODULE-WT-DAYS-SOT):** длительность бара Ганта = `workTypes[].days` этой строки модуля (поле «Дней»); при выборе вида работ пустое поле подставляется из `WorkType.days` каталога как seed, но у каждого модуля свой срок — один и тот же вид работ может иметь разные дни в разных модулях. Резерв на конкретном заказе — `Order.estimateDayOverrides` (правится только с Ганта заказа, каталог не трогает).
 
 ## TZ-CATALOG-332 — визуальный маркер типа
 
@@ -122,6 +123,7 @@ listRes → data → filteredRows (поиск + «Состав») → sortedRows
 | TZ-CATALOG-372 | Витрина как у Продукции: фото, имя-ссылка, toolbar (Состав), filters flyout, grid `PiShowcaseCard` md, `pi-modules-view-mode` |
 | TZ-CATALOG-374 | List expandable состав (`expandedId` + `getModuleTree`); detail через имя / «Открыть карточку» |
 | TZ-NX-REGISTRIES-MODULE-WORK-TYPES | Module create/edit submits separate `workTypes[]` planning links; populated Work Types hydrate the dialog FormArray |
+| TZ-NX-MODULE-WT-DAYS-SOT | `workTypes[].days` per-module planning field (Gantt SoT); seeds from `WorkType.days` on selection, does not overwrite catalog; Gantt work-detail catalog button removed (was a global-write footgun) |
 | TZ-UX-327 | Chrome page-tools: `PiChromeToolsService` owner `modules-page`; L=filters R=view+refresh; нет w-12 filters-rail |
 
 ---

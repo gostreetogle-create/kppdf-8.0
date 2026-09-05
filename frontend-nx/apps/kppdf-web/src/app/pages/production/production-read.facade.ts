@@ -177,7 +177,8 @@ function mapModuleWorkTypes(mod: ProductModule, workTypeById: Map<string, WorkTy
     const populated = typeof wt.workTypeId === 'object' ? wt.workTypeId : null;
     const catalog = workTypeById.get(id);
     const name = populated?.name ?? catalog?.name ?? id;
-    const days = catalog?.days ?? populated?.days ?? null;
+    const bindingDays = Number.isFinite(wt.days as number) && (wt.days as number) >= 1 ? (wt.days as number) : null;
+    const days = bindingDays ?? catalog?.days ?? populated?.days ?? null;
     const accentHue = catalog?.accentHue ?? null;
     return {
       workTypeId: id,

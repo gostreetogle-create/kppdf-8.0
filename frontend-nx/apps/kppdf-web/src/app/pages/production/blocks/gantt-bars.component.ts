@@ -125,7 +125,7 @@ export function calculateCenteredMarkerScrollLeft(opts: {
 /** Fixed row height (px) — label column and timeline rows must match (no multi-line drift). */
 export const GANTT_ROW_PX = 44;
 
-/** Dense inline work-type detail (people / days / hint / catalog) — one horizontal row. */
+/** Dense inline work-type detail (people / days / hint) — one horizontal row. */
 export const GANTT_DETAIL_ROW_PX = 56;
 
 /** Dense order-meta strip under summary (status / priority / plannedDate) — one horizontal row. */
@@ -228,12 +228,6 @@ export interface GanttStartOffsetCommit {
   /** Bar startDate before drag (YYYY-MM-DD). */
   startDate: string;
   deltaDays: number;
-}
-
-/** Catalog days request from work-detail — parent prompts + PATCHes WorkType. */
-export interface GanttCatalogDaysRequest {
-  workTypeId: string;
-  currentDays: number;
 }
 
 /** Explicit order-scoped worker assignment from work-detail. */
@@ -694,17 +688,6 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   >
                     {{ overrideHint }}
                   </p>
-                  @if (canEdit() && !groupByWorkers()) {
-                    <button
-                      type="button"
-                      class="text-[10px] underline-offset-2 hover:underline text-ink shrink-0 pi-focus-ring disabled:opacity-50"
-                      [disabled]="readOnly()"
-                      (click)="onCatalogDaysClick(row.bar, $event)"
-                      [attr.data-test]="'gantt-work-detail-catalog-' + row.bar.id"
-                    >
-                      Изменить в справочнике
-                    </button>
-                  }
                 </div>
               }
             } @empty {
@@ -1402,8 +1385,6 @@ export class GanttBarsComponent implements AfterViewInit {
   readonly fit = output<void>();
   /** Child work-type label / ▸ → parent toggles work-detail for this bar.id. */
   readonly toggleWorkDetail = output<string>();
-  /** Catalog button in work-detail → parent prompts + PATCHes WorkType.days. */
-  readonly catalogDaysRequest = output<GanttCatalogDaysRequest>();
   /** Commit snapped days → parent PATCHes order estimate-days only. */
   readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
   /** Explicit worker assignment → parent PATCHes order estimateWorkerOverrides. */
@@ -2241,15 +2222,6 @@ export class GanttBarsComponent implements AfterViewInit {
       moduleId: bar.moduleId,
       workTypeId: bar.workTypeId,
       days,
-    });
-  }
-
-  protected onCatalogDaysClick(bar: GanttBar, ev: Event): void {
-    ev.stopPropagation();
-    if (!this.canEdit() || this.readOnly() || this.groupByWorkers()) return;
-    this.catalogDaysRequest.emit({
-      workTypeId: bar.workTypeId,
-      currentDays: bar.days ?? 1,
     });
   }
 

@@ -72,6 +72,7 @@ NX route.
 | TZ-COST-301 | `hourlyRate` required BE+FE; backfill 0; колонка «₽/час»; Виды работ принадлежат разделу **Цех** |
 | **TZ-PRODUCTION-STUDIO-A** | Wave A docs-only: IA `Цех`, studio chrome SoT |
 | **TZ-NX-REGISTRIES-WORK-TYPES** | NX registry CRUD: API list, create/edit and soft archive; typed days/rate/hue/active fields |
+| **TZ-NX-MODULE-WT-DAYS-SOT** | «Дней» renamed to «Дней по умолчанию»: this field is only a seed copied into `ProductModule.workTypes[].days` when a module picks the work type. The Gantt duration SoT is the module↔workType binding, not this catalog value; per-module days no longer round-trip back into the catalog. |
 
 ---
 

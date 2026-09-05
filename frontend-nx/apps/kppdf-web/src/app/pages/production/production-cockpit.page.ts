@@ -46,10 +46,8 @@ import {
 } from 'lucide-angular';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
-import { promptCatalogDaysChange } from './blocks/order-inspector.component';
 import {
   GanttBarsComponent,
-  type GanttCatalogDaysRequest,
   type GanttEstimateDaysCommit,
   type GanttOrderMetaCommit,
   type GanttOrderMetaView,
@@ -183,7 +181,6 @@ function toDateInput(value: string | undefined | null): string {
             (fit)="onFitHorizon()"
             (estimateDaysCommit)="onEstimateDaysCommit($event)"
             (workerAssignmentCommit)="onWorkerAssignmentCommit($event)"
-            (catalogDaysRequest)="onCatalogDaysRequest($event)"
             (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
             (startOffsetCommit)="onStartOffsetCommit($event)"
             (orderMetaCommit)="onOrderMetaCommit($event)"
@@ -592,25 +589,6 @@ export class ProductionCockpitPage {
     } finally {
       this.workerAssignmentSaving.set(false);
     }
-  }
-
-  /** TZ-PRODUCTION-311 — catalog button in work-detail → WorkType.days (confirm in helper). */
-  protected async onCatalogDaysRequest(ev: GanttCatalogDaysRequest): Promise<void> {
-    if (!this.canEditCatalog()) return;
-    const prompted = promptCatalogDaysChange(ev.currentDays);
-    if (prompted === 'cancel') return;
-    if (prompted === 'invalid') {
-      this.toast.error('Дни: целое число ≥ 1');
-      return;
-    }
-    const res = await firstValueFrom(this.workTypesApi.update(ev.workTypeId, { days: prompted }));
-    if (!res.ok) {
-      this.toast.error('Не удалось обновить норматив дней вида работ');
-      return;
-    }
-    this.toast.success('Норматив дней вида работ обновлён (глобально)');
-    this.facade.clearCaches();
-    await this.reloadOrdersKeepingSelection();
   }
 
   /** TZ-PRODUCTION-335 — order-meta auto-save: optimistic local bars + silent PATCH. */

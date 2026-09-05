@@ -54,7 +54,7 @@ export interface WorkTypeFormDialogData {
             <app-pi-form-field label="Отдел" htmlFor="work-type-department">
               <app-pi-input id="work-type-department" formControlName="department" data-test="work-type-department" />
             </app-pi-form-field>
-            <app-pi-form-field label="Дней" htmlFor="work-type-days" hint="Пусто — срок неизвестен.">
+            <app-pi-form-field label="Дней по умолчанию" htmlFor="work-type-days" hint="Подставляется при добавлении вида работ к модулю; фактический срок — в модуле / на Ганте заказа.">
               <app-pi-input id="work-type-days" type="number" formControlName="days" data-test="work-type-days" />
             </app-pi-form-field>
             <app-pi-form-field label="Ставка, ₽/час" htmlFor="work-type-rate" [required]="true" [error]="fieldError('hourlyRate')">
