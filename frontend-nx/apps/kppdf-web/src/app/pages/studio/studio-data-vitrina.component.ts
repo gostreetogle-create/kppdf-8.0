@@ -91,11 +91,16 @@ const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], p
     `
       :host {
         display: block;
+        min-width: 0;
+        max-width: 100%;
+        overflow-x: hidden;
       }
       .vitrina {
         display: flex;
         flex-direction: column;
         gap: 10px;
+        min-width: 0;
+        max-width: 100%;
         padding-bottom: 14px;
         border-bottom: 1px solid var(--color-rule);
       }
@@ -117,6 +122,9 @@ const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], p
         background: var(--color-paper-raised);
       }
       .vitrina-search {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         padding: 7px;
         border: 1px solid var(--color-rule-strong);
         background: var(--color-paper-2);
@@ -124,6 +132,9 @@ const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], p
       }
       .vitrina-grid {
         display: grid;
+        min-width: 0;
+        max-width: 100%;
+        overflow-x: hidden;
         /* TZ-NX-DOCSTUDIO-S41 — size="sm" cards are compact rows (40px media
            + one-line title/desc), not tiles; the panel content column is
            272px (docs/architecture/nx-doc-studio.md § 5 geometry), so a
@@ -132,7 +143,11 @@ const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], p
         grid-template-columns: 1fr;
         gap: 6px;
         max-height: 480px;
-        overflow: auto;
+        overflow-y: auto;
+      }
+      .vitrina-grid app-pi-showcase-card {
+        min-width: 0;
+        max-width: 100%;
       }
       .vitrina-grid app-pi-showcase-card.is-selected {
         outline: 2px solid var(--color-gold-deep);

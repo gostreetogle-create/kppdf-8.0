@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
@@ -46,5 +48,16 @@ describe('StudioDataPanelComponent', () => {
     expect(el.querySelector('[data-test="studio-data-vitrina"]')).toBeTruthy();
     expect(el.querySelector('[data-test="studio-data-vitrina-tab-products"]')).toBeTruthy();
     expect(el.querySelector('[data-test="studio-data-vitrina-grid"]')).toBeTruthy();
+  });
+
+  it('keeps the vitrina grid inside its panel and clips only horizontal overflow', () => {
+    const css = readFileSync(
+      join(__dirname, 'studio-data-vitrina.component.ts'),
+      'utf8',
+    );
+    expect(css).toMatch(/\.vitrina-grid\s*\{[^}]*min-width:\s*0/s);
+    expect(css).toMatch(/\.vitrina-grid\s*\{[^}]*overflow-x:\s*hidden/s);
+    expect(css).toMatch(/\.vitrina-grid\s*\{[^}]*overflow-y:\s*auto/s);
+    expect(css).toMatch(/\.vitrina-grid app-pi-showcase-card\s*\{[^}]*min-width:\s*0/s);
   });
 });

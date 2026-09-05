@@ -1,6 +1,6 @@
 # WAVE — NX polish after Gantt L0 (Freebuff continuous)
 
-Status: **IN FLIGHT** · P1–P3 DONE · 2026-09-05
+Status: **IN FLIGHT** · P1–P4 DONE · 2026-09-05
 
 Промпт: `tasks/PROMPT-FREEBUFF-NX-GANTT-POLISH.md`
 Ревью необходимости: `docs/audits/2026-09-05-tz-queue-necessity-review.md`
@@ -14,7 +14,7 @@ Status: **IN FLIGHT** · P1–P3 DONE · 2026-09-05
 - [x] **P1** `TZ-NX-REGISTRIES-CATALOG-SPEC-FIX` — DONE (archive 2026-09)
 - [x] **P2** `TZ-NX-GANTT-G8-CALENDAR-WASH` — DONE (calendar wash + TOC-chip controls; archive `tasks/_archive/2026-09/TZ-NX-GANTT-G8-CALENDAR-WASH.done.md`)
 - [x] **P3** `TZ-NX-GANTT-G9-RANGE-REFIT-FORWARD` — DONE (symmetric range refit + worker read-only regression; archive `tasks/_archive/2026-09/TZ-NX-GANTT-G9-RANGE-REFIT-FORWARD.done.md`)
-- [ ] **P4** `TZ-NX-DOCSTUDIO-S43-VITRINA-TITLE-WRAP`
+- [x] **P4** `TZ-NX-DOCSTUDIO-S43-VITRINA-TITLE-WRAP` — DONE (two-line sm titles + no horizontal vitrina overflow; archive `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-S43-VITRINA-TITLE-WRAP.done.md`)
 - [ ] **P5** `TZ-NX-GANTT-G10-PHOTO-THUMBS`
 
 ## Снято

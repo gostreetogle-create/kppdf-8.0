@@ -110,6 +110,26 @@ describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
     expect(descEl?.textContent?.trim()).toBe('Stainless steel');
   });
 
+  it('size="sm" wraps a long title to at most two lines without changing md rules', () => {
+    host.size.set('sm');
+    host.title.set('Очень длинное название изделия с артикулом и дополнительным описанием');
+    fixture.detectChanges();
+
+    const article = fixture.nativeElement.querySelector('article[data-test="showcase-card"]');
+    const titleEl = article.querySelector('[data-test="title"]');
+    expect(titleEl?.classList.contains('sc-title-sm')).toBe(true);
+    expect(titleEl?.textContent).toContain('Очень длинное название изделия');
+
+    const css = require('fs').readFileSync(
+      require('path').join(__dirname, 'pi-showcase-card.component.ts'),
+      'utf8',
+    );
+    expect(css).toMatch(
+      /\.sc-title-sm\s*\{[\s\S]*-webkit-line-clamp:\s*2[\s\S]*white-space:\s*normal/,
+    );
+    expect(css).toMatch(/\.sc-title-md\s*\{[\s\S]*-webkit-line-clamp:\s*2/);
+  });
+
   it('size="md" shows eyebrow, title, media img', () => {
     host.size.set('md');
     host.eyebrow.set('product module');

@@ -241,6 +241,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         gap: 12px;
         padding: 10px 12px;
         min-height: 56px;
+        min-width: 0;
       }
       .sc-media--sm {
         width: 40px;
@@ -259,9 +260,15 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         font-weight: 600;
         color: var(--color-ink, #1a1815);
         margin: 0;
+        min-width: 0;
+        line-height: 1.25;
+        max-height: calc(1.25em * 2);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
+        overflow-wrap: anywhere;
       }
       .sc-desc-sm {
         font-size: 11px;
@@ -275,6 +282,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         flex-shrink: 0;
         display: flex;
         gap: 6px;
+        min-width: 0;
       }
 
       /* md — equal-height catalog tiles */
