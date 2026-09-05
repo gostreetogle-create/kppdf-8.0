@@ -41,4 +41,4 @@ The Doc Studio Data panel now uses the compact Russian quotation label `КП`, s
 - No backend, `putDataSet`, Properties, right rail, legacy `frontend/`, or D56 selected rail files changed.
 - Empty-option edge and KP auto-link limitation remain governed by the existing handler/effect contract.
 - A4 geometry is unchanged; no reflow or new overlay introduced.
-- Commit SHA is recorded in the closeout commit after commit finalization.
+- Commit SHA: `771caf3f`.

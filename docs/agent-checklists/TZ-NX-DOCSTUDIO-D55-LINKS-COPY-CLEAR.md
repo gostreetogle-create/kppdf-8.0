@@ -58,7 +58,7 @@
 - D55 implementation is complete and limited to the Data panel, its regression spec, and page contract.
 - D56 selected rail remains untouched and will be claimed only after this TZ is archived.
 - Foreign dirty workspace files and unrelated Studio work are excluded from the planned commit.
-- Final commit SHA is recorded in the archive after commit finalization.
+- Final commit SHA: `771caf3f`.
 
 ## Closeout
 
