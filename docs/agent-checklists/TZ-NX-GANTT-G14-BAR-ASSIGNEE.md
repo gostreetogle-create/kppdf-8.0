@@ -62,7 +62,7 @@
 
 ## Executor report
 
-- G14-FE complete; final commit SHA is recorded in the archive after amend (`b7846193`).
+- G14-FE complete; final commit SHA is recorded in the archive after amend (`f3813dd1`).
 - Conflict disclosure: Claude’s G14-BE and Studio/Data IA work are excluded; dirty workspace files are not owned by this task.
 
 ## Closeout

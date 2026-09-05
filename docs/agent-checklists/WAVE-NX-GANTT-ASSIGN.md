@@ -1,13 +1,13 @@
 # WAVE — Gantt job assignment (G13–G14)
 
-Status: **READY for Claude** · 2026-09-05
+Status: **DONE** · 2026-09-05
 Audit: `docs/audits/2026-09-05-gantt-worker-assignment-audit.md`
 G11 chip: CANCELLED
 
 ## Chain
 
 - [x] **G14-BE** — schema + PATCH · SHA `73b1a09b`
-- [x] **G14-FE** — Freebuff · FE assignment panel, override labels, and worker links · SHA `b7846193`
+- [x] **G14-FE** — Freebuff · FE assignment panel, override labels, and worker links · SHA `f3813dd1`
 - [x] **G13** — deep-link `/registries/workers` (covered by G14-FE work-detail/banner links; no separate TZ archive because source TZ is superseded)
 
 ## Parallelism

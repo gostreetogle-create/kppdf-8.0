@@ -60,4 +60,4 @@ The inline work-detail offers active workers with the selected Work Type skill, 
 
 ## Commit
 
-b7846193
+f3813dd1
