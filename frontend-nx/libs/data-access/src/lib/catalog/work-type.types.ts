@@ -27,3 +27,19 @@ export interface WorkTypeListParams {
   /** if true, server returns only isActive=true (frontend filter for picker use-case). */
   activeOnly?: boolean;
 }
+
+/** Fields accepted by the WorkType create/PATCH endpoints. */
+export interface WorkTypeWritePayload {
+  name: string;
+  section?: string;
+  department?: string;
+  description?: string;
+  defaultDurationHours?: number;
+  hourlyRate: number;
+  days?: number | null;
+  accentHue?: number | null;
+  isActive?: boolean;
+  workCenterId?: string;
+}
+
+export type WorkTypeUpdatePayload = Partial<WorkTypeWritePayload> & Pick<WorkTypeWritePayload, 'hourlyRate'>;

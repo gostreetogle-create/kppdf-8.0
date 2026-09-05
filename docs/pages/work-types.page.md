@@ -4,14 +4,15 @@
 
 **Краткое описание:** Виды работ (сварка, покраска, сборка…) с нормативами
 часов, **обязательной** ставкой ₽/час и привязкой к рабочему центру / Ганту.
-В Wave A меняется только IA-документация; CRUD и product-код не меняются.
+Реестр доступен на `/registries/work-types`; `/work-types` не является отдельным
+NX route.
 
 **Studio chrome SoT:** [`production-gantt-studio-spec.md`](../ux/production-gantt-studio-spec.md). `/production` и `/work-types` должны читаться как единый раздел «Цех».
 
 ## Route
 
 ```
-/work-types — «KPPDF — Виды работ»
+/registries/work-types — «KPPDF — Виды работ» внутри master table реестров
 ```
 
 ## Query params
@@ -22,10 +23,10 @@
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
-| GET | `/api/work-types` | Список (flat array) |
+| GET | `/api/work-types` | Список (flat array; поиск, сортировка и пагинация — client-side) |
 | POST | `/api/work-types` | Создание (`hourlyRate` обязателен, ≥ 0); **auth:** `production:write` |
 | PATCH | `/api/work-types/:id` | Обновление (`hourlyRate` обязателен в теле); **auth:** `production:write` |
-| DELETE | `/api/work-types/:id` | Удаление (soft delete); **auth:** `production:write` |
+| DELETE | `/api/work-types/:id` | Архивирование (soft delete); **auth:** `production:write` |
 
 ## Dialogs
 
@@ -38,7 +39,8 @@
 
 | Сервис | Методы |
 |--------|--------|
-| `WorkTypesService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `PiWorkTypesService` | `list()`, `getById(id)`, `create(payload)`, `update(id, payload)`, `archive(id)` |
+| `createWorkTypesRegistryDefinition` | API data source, client filters/sort/pagination and CRUD actions for `/registries/work-types` |
 
 ## State (signals)
 
@@ -68,8 +70,9 @@
 | TZ-PRODUCTION-302 | Поле `days` (календарные дни) — schema/DTO/service + FE-диалог + колонка «Дней»; >0 или null (stuck path) |
 | — | `accentHue` для цвета на Ганте; фикс Save вне form (2026-08-07) |
 | TZ-COST-301 | `hourlyRate` required BE+FE; backfill 0; колонка «₽/час»; Виды работ принадлежат разделу **Цех** |
-| **TZ-PRODUCTION-STUDIO-A** | Wave A docs-only: IA `Цех`, studio chrome SoT; CRUD не меняется |
+| **TZ-PRODUCTION-STUDIO-A** | Wave A docs-only: IA `Цех`, studio chrome SoT |
+| **TZ-NX-REGISTRIES-WORK-TYPES** | NX registry CRUD: API list, create/edit and soft archive; typed days/rate/hue/active fields |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-08 (TZ-COST-301)._
+_Создано: 2026-07-19. Обновлено: 2026-09-05 (TZ-NX-REGISTRIES-WORK-TYPES)._

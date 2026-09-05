@@ -13,6 +13,7 @@ import {
   PiTextBlockCategoriesService,
   PiTableTemplatesService,
   PiRegistryDataSourcesService,
+  PiWorkTypesService,
 } from '@kppdf/data-access';
 import { collectPageRoutePaths } from '../../../layout/route-paths';
 import type { RegistryDefinition, RegistryRow } from '../model/registry.types';
@@ -32,6 +33,9 @@ import { createTextBlocksRegistry } from './text-blocks.registry';
 import { createTableTemplatesRegistry } from './table-templates.registry';
 import { createVatRateRegistry } from './vat-rate.registry';
 import { createFormulasRegistry } from './formulas.registry';
+import { createWorkTypesRegistry } from './work-types.registry';
+import type { WorkTypeRegistryDeps } from './work-type-registry-actions';
+import { createWorkTypeRegistryDialogHost } from './work-type-registry-dialog-host';
 
 export function buildMaterialRegistryDeps(
   materialsService: PiMaterialsService,
@@ -83,6 +87,8 @@ export function buildRegistriesCatalogDefault(
   catalogDialogHost: ModuleRegistryDeps['dialogHost'],
   unitsDialogHost: ReturnType<typeof createUnitsDialogHost>,
   docStudioDeps?: DocStudioDialogDeps,
+  workTypesService?: PiWorkTypesService,
+  workTypeDialogHost?: WorkTypeRegistryDeps['dialogHost'],
 ): readonly RegistryDefinition<RegistryRow>[] {
   const materialDeps = buildMaterialRegistryDeps(materialsService, router, materialDialogHost);
   const moduleDeps = buildModuleRegistryDeps(modulesService, catalogDialogHost);
@@ -99,6 +105,9 @@ export function buildRegistriesCatalogDefault(
     createOrganizationsRegistry(organizationsService, registryDialog ?? undefined),
     createVatRateRegistry(organizationsService),
     createFormulasRegistry(),
+    ...(workTypesService && workTypeDialogHost
+      ? [createWorkTypesRegistry({ workTypesService, dialogHost: workTypeDialogHost })]
+      : []),
     createProductPassportsRegistry(productPassportsService, registryDialog ?? undefined),
     ...(studio ? [createTextBlocksRegistry(studio), createTableTemplatesRegistry(studio)] : []).map((definition) => definition as RegistryDefinition<RegistryRow>),
   ];
@@ -125,6 +134,7 @@ export function createRegistriesCatalog(
   const textBlockCategoriesService = inject(PiTextBlockCategoriesService);
   const tableTemplatesService = inject(PiTableTemplatesService);
   const dataSourcesService = inject(PiRegistryDataSourcesService);
+  const workTypesService = inject(PiWorkTypesService);
 
   const materialDialogHost = createMaterialRegistryDialogHost({
     dialog,
@@ -141,6 +151,12 @@ export function createRegistriesCatalog(
   });
 
   const unitsDialogHost = createUnitsDialogHost({ dialog, destroyRef, injector, unitsService });
+  const workTypeDialogHost = createWorkTypeRegistryDialogHost({
+    dialog,
+    destroyRef,
+    injector,
+    workTypesService,
+  });
 
   const docStudioDeps = createDocStudioDialogDeps(dialog, destroyRef, injector);
   docStudioDeps.textBlocks = textBlocksService;
@@ -161,6 +177,8 @@ export function createRegistriesCatalog(
     catalogDialogHost,
     unitsDialogHost,
     docStudioDeps,
+    workTypesService,
+    workTypeDialogHost,
   );
 }
 

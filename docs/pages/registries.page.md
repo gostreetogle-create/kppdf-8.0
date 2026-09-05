@@ -117,6 +117,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `product-passports` | Паспорта изделий | `api` (`GET /passports`) | read-only collection registry; product form dialog has **no** embedded passport preview (removed, `TZ-NX-REGISTRY-PRODUCT-FORM-UX`) — open passports only from this registry; **client** pagination |
 | `text-blocks` | Тексты | `api` (`GET/POST/PATCH/DELETE /text-blocks`) | client pagination; search client-side, categoryId/isActive API filters; create/edit/archive dialogs |
 | `table-templates` | Виды таблиц | `api` (`GET/POST/PATCH/DELETE /table-templates`) | client pagination; search/category client-side; column editor and data-source picker |
+| `work-types` | Виды работ | `api` (`GET/POST/PATCH/DELETE /work-types`) | client pagination; search по названию/секции/отделу/описанию; create/edit/soft archive; поля days, hourlyRate, accentHue и isActive |
 
 Каталог — `createRegistriesCatalog()` / `provideRegistriesCatalog()` на `RegistriesPage`
 (`REGISTRIES_CATALOG`, `data/registries.catalog.ts`). Dialog hosts получают **page-scoped**
@@ -145,6 +146,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `departments` | `search`, `status` | `fixture` | in-memory demo adapter |
 | `text-blocks` | `search` (client), `categoryId`, `isActive` | `client` | GET /text-blocks returns full list; no server pagination |
 | `table-templates` | `search`, `category` (client) | `client` | GET /table-templates returns full list; no server pagination |
+| `work-types` | `search` (client) | `client` | GET /work-types returns full list; no server pagination |
 
 ### Icon row actions (TZ-NX-REGISTRIES-FULL-CLOSEOUT)
 
@@ -291,7 +293,8 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
   row edit/copy/archive для `materials`/`details`; `MaterialFormDialogComponent`;
   `PiMaterialsService` write methods в data-access.
 - **TZ-NX-REGISTRIES-FILTERS-PAGINATION-CONSISTENCY (2026-08-29)** — unified toolbar: filters left, pagination + create right; `paginationMode` on definitions.
+- **TZ-NX-REGISTRIES-WORK-TYPES (2026-09-05)** — API-backed «Виды работ» registry with typed CRUD and client-side list controls.
 
 ---
 
-_Обновлено: 2026-08-30 (TZ-NX-REGISTRY-CRUD-UNIFY)._
+_Обновлено: 2026-09-05 (TZ-NX-REGISTRIES-WORK-TYPES)._
