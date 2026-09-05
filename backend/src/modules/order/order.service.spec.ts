@@ -1787,4 +1787,154 @@ describe('OrderService — TZ-ORDERS-301', () => {
       );
     });
   });
+
+  /**
+   * TZ-BACKEND-ORDER-ORG-SCOPE-HARDEN — same defect class as the estimate-days/
+   * estimate-start fix in ff5cbad3: findByIdRaw is an unscoped Model.findById,
+   * and OrgScopeGuardInterceptor only filters the RESPONSE after the handler
+   * runs, which is too late for a write. Each of these five methods now calls
+   * the existing assertOrgAccess() right after findByIdRaw, before any
+   * mutation — these tests prove a cross-org caller is rejected before
+   * doc.save() and a same-org (or legacy no-org) caller still works.
+   */
+  describe('org-scope hardening (TZ-BACKEND-ORDER-ORG-SCOPE-HARDEN)', () => {
+    function lineFor(lineId = 'line-a'): MockOrderItem {
+      return {
+        lineId,
+        boardLane: 'prep',
+        productId: new Types.ObjectId(PRODUCT),
+        quantity: 1,
+        unitPrice: 0,
+        total: 0,
+        status: 'pending',
+      };
+    }
+
+    it('update: rejects a cross-org caller before saving', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.update(doc._id.toString(), { notes: 'x' } as never, new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('update: allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), { notes: 'x' } as never, ownerOrgId.toString());
+      expect(doc.notes).toBe('x');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('setItemStatus: rejects a cross-org caller before saving', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'in_production', items: [lineFor()], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.setItemStatus(doc._id.toString(), '0', 'ready', new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.items[0].status).not.toBe('ready');
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('setItemStatus: allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'in_production', items: [lineFor()], organizationId: ownerOrgId });
+      model.findById.mockReturnValueOnce(mockQuery(doc)).mockReturnValueOnce(mockQuery(doc));
+
+      await service.setItemStatus(doc._id.toString(), '0', 'ready', ownerOrgId.toString());
+      expect(doc.items[0].status).toBe('ready');
+    });
+
+    it('patchLineBoardLane: rejects a cross-org caller before saving', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', items: [lineFor()], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchLineBoardLane(doc._id.toString(), 'line-a', 'design', new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.items[0].boardLane).toBe('prep');
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('patchLineBoardLane: allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', items: [lineFor()], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchLineBoardLane(doc._id.toString(), 'line-a', 'design', ownerOrgId.toString());
+      expect(doc.items[0].boardLane).toBe('design');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('patchModuleLane: rejects a cross-org caller before saving', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const moduleId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', items: [lineFor()], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchModuleLane(
+          doc._id.toString(),
+          'line-a',
+          moduleId.toString(),
+          'design',
+          new Types.ObjectId().toString(),
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.moduleLanes).toHaveLength(0);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('patchModuleLane: allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const moduleId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', items: [lineFor()], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchModuleLane(doc._id.toString(), 'line-a', moduleId.toString(), 'design', ownerOrgId.toString());
+      expect(doc.moduleLanes).toHaveLength(1);
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('setLineReady: rejects a cross-org caller before saving', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', items: [lineFor()], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+      const userId = new Types.ObjectId().toString();
+
+      await expect(
+        service.setLineReady(doc._id.toString(), '0', true, userId, new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.items[0].readyForWork).not.toBe(true);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('setLineReady: allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', items: [lineFor()], organizationId: ownerOrgId });
+      model.findById.mockReturnValueOnce(mockQuery(doc)).mockReturnValueOnce(mockQuery(doc));
+      const userId = new Types.ObjectId().toString();
+
+      await service.setLineReady(doc._id.toString(), '0', true, userId, ownerOrgId.toString());
+      expect(doc.items[0].readyForWork).toBe(true);
+    });
+  });
 });

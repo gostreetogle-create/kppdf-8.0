@@ -495,8 +495,10 @@ export class OrderService {
     lineIndex: string,
     readyForWork: boolean,
     userId: string,
+    organizationId?: string | null,
   ): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
+    this.assertOrgAccess(doc, organizationId);
     if (!['draft', 'confirmed'].includes(doc.status)) {
       throw new BadRequestException(`Order in status \"${doc.status}\" cannot change line readiness`);
     }
@@ -520,8 +522,10 @@ export class OrderService {
     id: string,
     itemId: string,
     status: 'pending' | 'in_production' | 'ready' | 'shipped',
+    organizationId?: string | null,
   ): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
+    this.assertOrgAccess(doc, organizationId);
     const index = Number(itemId);
     if (!Number.isInteger(index) || index < 0 || index >= doc.items.length) {
       throw new NotFoundException(`Order line ${itemId} not found`);
@@ -635,11 +639,13 @@ export class OrderService {
     id: string,
     lineId: string,
     lane: BoardLane,
+    organizationId?: string | null,
   ): Promise<OrderDocument> {
     if (lane === 'shipped') {
       throw new BadRequestException(LANE_SHIPPED_PATCH_RU);
     }
     const doc = await this.findByIdRaw(id);
+    this.assertOrgAccess(doc, organizationId);
     if (HARD_FROZEN.has(doc.status)) {
       const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
       throw new BadRequestException(`Заказ в статусе «${label}» нельзя менять`);
@@ -670,11 +676,13 @@ export class OrderService {
     lineId: string,
     moduleId: string,
     lane: BoardLane,
+    organizationId?: string | null,
   ): Promise<OrderDocument> {
     if (lane === 'shipped') {
       throw new BadRequestException(LANE_SHIPPED_PATCH_RU);
     }
     const doc = await this.findByIdRaw(id);
+    this.assertOrgAccess(doc, organizationId);
     if (HARD_FROZEN.has(doc.status)) {
       const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
       throw new BadRequestException(`Заказ в статусе «${label}» нельзя менять`);
@@ -852,8 +860,9 @@ export class OrderService {
     }
   }
 
-  async update(id: string, dto: UpdateOrderDto): Promise<OrderDocument> {
+  async update(id: string, dto: UpdateOrderDto, organizationId?: string | null): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
+    this.assertOrgAccess(doc, organizationId);
     const definedKeys = (Object.keys(dto) as (keyof UpdateOrderDto)[]).filter(
       (key) => dto[key] !== undefined,
     );

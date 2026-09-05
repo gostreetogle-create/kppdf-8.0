@@ -2,17 +2,20 @@
 
 | Slot | Волна | Статус |
 |------|-------|--------|
-| **#1** | Claude | **Gantt L0 peer review DONE** — P0 backend fixed+tested; P1/P2 → `TZ-NX-GANTT-G9-RANGE-REFIT-FORWARD.md` |
-| **#2** | Freebuff Gantt | G8 calendar-wash / S43 title wrap |
+| **#1** | Claude | **IDLE — org-scope harden DONE** (`TZ-BACKEND-ORDER-ORG-SCOPE-HARDEN.done.md`) |
+| **#2** | Freebuff | polish P1–P5 in progress |
 
-## NEXT
+## NEXT (спеки готовы, промпты — по команде PO)
 
-1. PO/next FE slot: `tasks/_ready/TZ-NX-GANTT-G9-RANGE-REFIT-FORWARD.md` (range-refit forward + workers read-only test)
-2. Recommend dedicated backend security TZ for broader org-scope gap (`update()`/`patchLineBoardLane`/`patchModuleLane`/`setItemStatus`) — not drafted, needs PO priority call
-3. Свободен FE-слот → S43 title wrap (`PROMPT-20-S43-VITRINA-TITLE-WRAP.md`) — по команде PO
+Цепочка: `docs/agent-checklists/WAVE-NX-GANTT-POLISH.md`  
+P1 catalog-spec → P2 G8 → P3 G9 → P4 S43 → P5 G10 photos  
+
+Claude: ждать новую TZ / PO команду. Known_limitation, если PO захочет полное
+закрытие: `reserveStock`/`ship`/`cancel`/`remove` на Order всё ещё unscoped
+(session-transaction-wrapped) — см. `docs/audits/2026-09-05-gantt-nx-l0-peer-review.md`.
+
+PARK: legacy Gantt delete — только Да PO (`_backlog/nx/TZ-NX-GANTT-LEGACY-DECOMMISSION.md`)
 
 ## DONE
 
-- Gantt L0 peer review: `docs/audits/2026-09-05-gantt-nx-l0-peer-review.md` — P0 cross-org write on
-  estimate-days/estimate-start fixed + regression-tested
-- S42 `7e673953` · Doc Studio FINISH · Gantt NX G0–G7 (smoke `2026-09-05-gantt-nx-smoke.md`)  
+Gantt G0–G7 · Doc Studio FINISH · S42 · peer review · **org-scope harden (5 Order methods)**  

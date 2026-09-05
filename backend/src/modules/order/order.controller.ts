@@ -100,7 +100,7 @@ export class OrderController {
     @Body() dto: SetOrderLineReadyDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.setLineReady(id, lineIndex, dto.readyForWork, user.id);
+    return this.service.setLineReady(id, lineIndex, dto.readyForWork, user.id, user.organizationId);
   }
 
   @Patch(':id/items/:lineIndex/status')
@@ -113,8 +113,9 @@ export class OrderController {
     @Param('id') id: string,
     @Param('lineIndex') lineIndex: string,
     @Body() body: { status: 'pending' | 'in_production' | 'ready' | 'shipped' },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.setItemStatus(id, lineIndex, body.status);
+    return this.service.setItemStatus(id, lineIndex, body.status, user.organizationId);
   }
 
   @Patch(':id/lines/:lineId/lane')
@@ -133,8 +134,9 @@ export class OrderController {
     @Param('id') id: string,
     @Param('lineId') lineId: string,
     @Body() dto: PatchLineBoardLaneDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.patchLineBoardLane(id, lineId, dto.lane);
+    return this.service.patchLineBoardLane(id, lineId, dto.lane, user.organizationId);
   }
 
   @Patch(':id/lines/:lineId/modules/:moduleId/lane')
@@ -154,8 +156,9 @@ export class OrderController {
     @Param('lineId') lineId: string,
     @Param('moduleId') moduleId: string,
     @Body() dto: PatchModuleLaneDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.patchModuleLane(id, lineId, moduleId, dto.lane);
+    return this.service.patchModuleLane(id, lineId, moduleId, dto.lane, user.organizationId);
   }
 
   @Patch(':id/estimate-days')
@@ -208,8 +211,8 @@ export class OrderController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  update(@Param('id') id: string, @Body() dto: UpdateOrderDto) {
-    return this.service.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateOrderDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.update(id, dto, user.organizationId);
   }
 
   @Post(':id/reserve-stock')
