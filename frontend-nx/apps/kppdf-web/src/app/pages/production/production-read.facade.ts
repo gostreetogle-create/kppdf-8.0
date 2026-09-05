@@ -19,6 +19,8 @@ import {
   type Order,
   type OrderStatus,
   type Product,
+  type Person,
+  type EstimateWorkerOverride,
   type ProductModule,
   type WorkTypeInModule,
   type WorkType,
@@ -200,8 +202,8 @@ export class ProductionReadFacade {
   private readonly moduleCache = new Map<string, ProductModule | null>();
   private workTypesCache: Map<string, WorkType> | null = null;
   private workTypesInflight: Promise<Map<string, WorkType>> | null = null;
-  private workersByWtCache: Map<string, string[]> | null = null;
-  private workersInflight: Promise<Map<string, string[]>> | null = null;
+  private workersDirectoryCache: WorkerDirectory | null = null;
+  private workersInflight: Promise<WorkerDirectory> | null = null;
   private productInflight = new Map<string, Promise<Product | null>>();
   private moduleInflight = new Map<string, Promise<ProductModule | null>>();
 
@@ -219,7 +221,7 @@ export class ProductionReadFacade {
     this.moduleCache.clear();
     this.workTypesCache = null;
     this.workTypesInflight = null;
-    this.workersByWtCache = null;
+    this.workersDirectoryCache = null;
     this.workersInflight = null;
     this.productInflight.clear();
     this.moduleInflight.clear();
@@ -252,7 +254,7 @@ export class ProductionReadFacade {
     const ineligible: GanttSkipInfo[] = [];
     try {
       const workTypes = await this.getWorkTypesMap();
-      const workersByWt = await this.getWorkersByWorkType();
+      const workerDirectory = await this.getWorkerDirectory();
       // TZ-PRODUCTION-338 — warm the catalog in parallel; the sequential build below
       // then only walks the caches (same estimate math, same warnings).
       await this.prefetchCatalog(orders, warnings);
@@ -273,7 +275,9 @@ export class ProductionReadFacade {
           if (isGanttHeaderSpam(warning)) continue;
           warnings.push(warning);
         }
-        bars.push(...applyWorkerLabels(buildGanttBars(input), workersByWt));
+        bars.push(
+          ...applyWorkerLabels(buildGanttBars(input), input.estimateWorkerOverrides, workerDirectory),
+        );
       }
 
       this.patch({ loading: false, bars, warnings: [...warnings], ineligible });
@@ -292,12 +296,36 @@ export class ProductionReadFacade {
     return this.buildOrderEstimate(order, workTypes, warnings);
   }
 
-  /** Map workTypeId → «Иванов Иван, …» for inspector + bars. */
+  /** Candidate worker ids by skilled Work Type; assignment is resolved per Order override. */
+  async getWorkerCandidates(workTypeId: string): Promise<Person[]> {
+    const directory = await this.getWorkerDirectory();
+    const ids = directory.idsByWorkType.get(workTypeId) ?? [];
+    return ids.map((id) => directory.byId.get(id)).filter((person): person is Person => person != null);
+  }
+
+  async getWorkerCandidatesMap(workTypeIds: readonly string[]): Promise<Map<string, Person[]>> {
+    const directory = await this.getWorkerDirectory();
+    const result = new Map<string, Person[]>();
+    for (const workTypeId of new Set(workTypeIds)) {
+      const ids = directory.idsByWorkType.get(workTypeId) ?? [];
+      result.set(
+        workTypeId,
+        ids.map((id) => directory.byId.get(id)).filter((person): person is Person => person != null),
+      );
+    }
+    return result;
+  }
+
+  /** Map Work Type → skilled people labels for compatibility; not used as assignment data. */
   async getWorkerLabelsMap(): Promise<Map<string, string>> {
-    const byWt = await this.getWorkersByWorkType();
+    const directory = await this.getWorkerDirectory();
     const out = new Map<string, string>();
-    for (const [wtId, names] of byWt) {
-      out.set(wtId, names.join(', ') || '—');
+    for (const [wtId, ids] of directory.idsByWorkType) {
+      out.set(
+        wtId,
+        ids.map((id) => directory.byId.get(id)).filter((person): person is Person => person != null)
+          .map(personDisplayName).join(', ') || '—',
+      );
     }
     return out;
   }
@@ -557,28 +585,31 @@ export class ProductionReadFacade {
       items: estimateItems,
       estimateDayOverrides: normalizeEstimateDayOverrides(order.estimateDayOverrides),
       estimateStartOffsets: normalizeEstimateStartOffsets(order.estimateStartOffsets),
+      estimateWorkerOverrides: normalizeEstimateWorkerOverrides(order.estimateWorkerOverrides),
     };
   }
 
-  private async getWorkersByWorkType(): Promise<Map<string, string[]>> {
-    if (this.workersByWtCache) return this.workersByWtCache;
+  private async getWorkerDirectory(): Promise<WorkerDirectory> {
+    if (this.workersDirectoryCache) return this.workersDirectoryCache;
     if (this.workersInflight) return this.workersInflight;
 
     this.workersInflight = (async () => {
       const res = await firstValueFrom(this.workersApi.list({ limit: 100, isActive: true }));
-      const map = new Map<string, string[]>();
+      const byId = new Map<string, Person>();
+      const idsByWorkType = new Map<string, string[]>();
       if (res.ok) {
         for (const person of res.data?.items ?? []) {
-          const name = personDisplayName(person);
+          byId.set(person._id, person);
           for (const wtId of person.workTypeIds ?? []) {
-            const list = map.get(wtId) ?? [];
-            list.push(name);
-            map.set(wtId, list);
+            const ids = idsByWorkType.get(wtId) ?? [];
+            ids.push(person._id);
+            idsByWorkType.set(wtId, ids);
           }
         }
       }
-      this.workersByWtCache = map;
-      return map;
+      const directory = { byId, idsByWorkType };
+      this.workersDirectoryCache = directory;
+      return directory;
     })();
 
     try {
@@ -593,11 +624,30 @@ function isGanttHeaderSpam(warning: string): boolean {
   return warning.includes('нет прямых модулей') || warning.includes('без изделия');
 }
 
-function applyWorkerLabels(bars: GanttBar[], workersByWt: Map<string, string[]>): GanttBar[] {
-  return bars.map((b) => ({
-    ...b,
-    workerLabel: (workersByWt.get(b.workTypeId) ?? []).join(', ') || '—',
-  }));
+interface WorkerDirectory {
+  byId: Map<string, Person>;
+  idsByWorkType: Map<string, string[]>;
+}
+
+function applyWorkerLabels(
+  bars: GanttBar[],
+  overrides: readonly EstimateWorkerOverride[] | undefined,
+  directory: WorkerDirectory,
+): GanttBar[] {
+  const byKey = new Map<string, readonly string[]>();
+  for (const row of overrides ?? []) {
+    byKey.set(`${row.orderItemIndex}|${row.moduleId}|${row.workTypeId}`, row.workerIds);
+  }
+  return bars.map((bar) => {
+    const workerIds = byKey.get(`${bar.orderItemIndex}|${bar.moduleId}|${bar.workTypeId}`) ?? [];
+    const workerLabel = workerIds
+      .map((id) => directory.byId.get(id))
+      .filter((person): person is Person => person != null)
+      .map(personDisplayName)
+      .filter(Boolean)
+      .join(', ');
+    return { ...bar, workerIds, workerLabel: workerLabel || 'Не назначен' };
+  });
 }
 
 function normalizeEstimateDayOverrides(
@@ -620,6 +670,28 @@ function normalizeEstimateDayOverrides(
     });
   }
   return out;
+}
+
+function normalizeEstimateWorkerOverrides(
+  rows: Order['estimateWorkerOverrides'] | null | undefined,
+): EstimateWorkerOverride[] {
+  if (!rows?.length) return [];
+  return rows
+    .filter(
+      (row) =>
+        Number.isInteger(row.orderItemIndex) &&
+        row.orderItemIndex >= 0 &&
+        typeof row.moduleId === 'string' &&
+        row.moduleId.length > 0 &&
+        typeof row.workTypeId === 'string' &&
+        row.workTypeId.length > 0,
+    )
+    .map((row) => ({
+      orderItemIndex: row.orderItemIndex,
+      moduleId: row.moduleId,
+      workTypeId: row.workTypeId,
+      workerIds: [...row.workerIds],
+    }));
 }
 
 function normalizeEstimateStartOffsets(

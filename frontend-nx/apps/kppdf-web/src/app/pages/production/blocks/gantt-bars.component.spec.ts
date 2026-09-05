@@ -165,4 +165,57 @@ describe('GanttBarsComponent (TZ-NX-GANTT-G4 pan/zoom)', () => {
       comp.scrollToBarId('missing-row');
     }).not.toThrow();
   });
+
+  it('G14: work detail offers skilled workers and emits the explicit assignment payload', async () => {
+    const bar = makeBar({ workerLabel: 'Не назначен', workerIds: [] });
+    const fixture = await setup([bar], '2026-09-01', '2026-09-21');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('expandedProductIds', new Set(['product:o1:0']));
+    fixture.componentRef.setInput('expandedModuleIds', new Set(['module:o1:0:m1']));
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput(
+      'workerCandidates',
+      new Map([
+        [
+          'wt1',
+          [
+            { _id: 'w1', lastName: 'Петров', firstName: 'Пётр', isActive: true, workTypeIds: ['wt1'] },
+            { _id: 'w2', lastName: 'Иванов', firstName: 'Иван', isActive: true, workTypeIds: ['wt1'] },
+          ],
+        ],
+      ]),
+    );
+    fixture.detectChanges();
+
+    const expand = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      `[data-test="gantt-work-expand-${bar.id}"]`,
+    );
+    expect(expand).toBeTruthy();
+    expand!.click();
+    fixture.componentRef.setInput('expandedWorkBarId', bar.id);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelectorAll(`[data-test^="gantt-worker-option-${bar.id}-"]`)).toHaveLength(2);
+    const workerOption = root.querySelector<HTMLInputElement>(
+      `[data-test="gantt-worker-option-${bar.id}-w1"]`,
+    );
+    expect(workerOption).toBeTruthy();
+    workerOption!.click();
+    fixture.detectChanges();
+
+    const emitted: Array<{ workerIds: readonly string[] }> = [];
+    fixture.componentInstance.workerAssignmentCommit.subscribe((event) => emitted.push(event));
+    root.querySelector<HTMLButtonElement>(`[data-test="gantt-worker-save-${bar.id}"]`)!.click();
+    expect(emitted).toEqual([
+      expect.objectContaining({
+        orderId: 'o1',
+        orderItemIndex: 0,
+        moduleId: 'm1',
+        workTypeId: 'wt1',
+        workerIds: ['w1'],
+      }),
+    ]);
+    expect(root.querySelector(`[data-test="gantt-work-detail-worker-link-${bar.id}"]`)).toBeTruthy();
+  });
 });

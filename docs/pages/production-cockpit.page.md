@@ -58,7 +58,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 | GET | `/api/products/:id` | Изделие + composition (dual-read) |
 | GET | `/api/modules/:id` | Модуль + `workTypes[]` planning links (separate from material composition) |
 | GET | `/api/work-types` | Справочник дней (`days`) |
-| GET | `/api/workers?limit=100&isActive=true` | Лейблы людей по workType (TZ-334; BE `@Max(100)`, не 200) |
+| GET | `/api/workers?limit=100&isActive=true` | Кандидаты по навыку `Worker.workTypeIds[]`; не является назначением (TZ-334; BE `@Max(100)`, не 200) |
 
 ### Blocks
 
@@ -144,6 +144,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 | Child resize estimate days | `production:write` | `PATCH /orders/:id/estimate-days` | optimistic local bars; no full reload |
 | Child drag start offset | `production:write` | `PATCH /orders/:id/estimate-start` | optimistic local bars; no full reload |
 | Catalog WorkType.days | `production:write` | existing WorkTypes update | clear cache + reload |
+| Order work assignment | `production:write` | `PATCH /orders/:id/estimate-worker` | refresh orders/bars; empty `workerIds[]` → `Не назначен` |
 
 BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new endpoint in this TZ.
 
@@ -170,6 +171,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-351:** «По рабочим» — ФИО + сводная полоса tinted **dominant WT** (`accentHue`, max days); label wash + chip; milk fallback без hue. ▸ worker → module context rows; WT после ▸ модуля.
 - **TZ-PRODUCTION-352:** dominant WT tint для **назначенных** worker summary — `resolveWorkTypeHue` (catalog `accentHue` или hash/snap как у leaf WT); «Не назначен» без hue до 353.
 - **TZ-PRODUCTION-353:** banner «Без исполнителя» + link `/people`; «Не назначен» row amber wash/chip; bars остаются на Ганте.
+- **TZ-NX-GANTT-G14:** навыки `Worker.workTypeIds[]` используются только для списка кандидатов. Поручение хранится отдельно на Order в `estimateWorkerOverrides[]` по ключу заказ → строка изделия → модуль → вид работ; без override бар и «По рабочим» показывают «Не назначен». Work-detail сохраняет выбранных активных кандидатов через `PATCH /orders/:id/estimate-worker`; очистка отправляет `workerIds: []`. ФИО/«Люди» ведут в `/registries/workers`.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
 - **TZ-PRODUCTION-336:** на Гант кладутся только заказы с ≥1 work-bar (прямой модуль + вид работ). Заказы без модулей остаются в rail с маркером «нет плана»; жёлтая шапка «нет прямых модулей» не показывается. При выборе / `?orderId=` такого заказа — RU toast (и hint для deep-link); диаграмма не заполняется пустыми полосками. Deep product→product BOM — known_limitation.
 - **TZ-PRODUCTION-347:** модули/виды работ с именами «сборк*/упаков*» (напр. «Финишная сборка», «Упаковка») скрыты из `buildGanttBars` до складской волны; каталог не удаляется.
@@ -258,7 +260,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 
 - Полная keyboard-семантика grid — 310+.
 - Drag-resize UI — TZ-PRODUCTION-311 (после 309 SoT).
-- Нет assign writes / ProductionSchedule SoT.
+- Assignment write-path существует только как Order `estimateWorkerOverrides[]`; нет auto-assign, drag между рабочими или ProductionSchedule SoT.
 - Browser smoke зависит от живого API/Mongo.
 - Existing manager roles in DB may need `production:write` re-seed / manual grant if created before 309.
 - Изделия только с вложенными изделиями (без прямых module lines) по-прежнему «не для Ганта» — отдельная TZ на deep BOM, если PO попросит.

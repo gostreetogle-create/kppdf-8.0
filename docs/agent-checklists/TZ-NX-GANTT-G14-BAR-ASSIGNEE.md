@@ -1,63 +1,74 @@
 # TZ-NX-GANTT-G14-BAR-ASSIGNEE checklist
 
-> Status: **CLAIMED / IN PROGRESS** (scope: backend-only, G14-BE)
+> Status: **DONE** (scope: G14-FE only; G14-BE already DONE)
 > Marker: `tasks/_active/TZ-NX-GANTT-G14-BAR-ASSIGNEE.md`
-> Commit/push: `docs/GIT-POLICY.md` (continuous executor on main)
+> Commit/push: continuous executor on `main`, per `docs/GIT-POLICY.md`
 
-## Claim slot (ОБЯЗАТЕЛЬНО до кода)
+## Claim slot
 
-- agent_id: claude
-- claimed_at: 2026-09-05T06:31:16Z
+- agent_id: freebuff
+- claimed_at: 2026-09-05T11:54:47+03:00
 - workspace: D:\kppdf-8.0
 - team_room_claim: unavailable (no Team Room CLI in this session)
 
-## Scope split (PO prompt 2026-09-05)
-
-- **G14-BE (this pass):** `backend/src/modules/order/order.schema.ts`, `dto/*` (new patch dto),
-  `order.service.ts`, `order.controller.ts`, `order.service.spec.ts` (+ controller spec if needed).
-- **G13 + G14-FE:** deferred — `production/**` currently held by Freebuff
-  (`docs/agent-checklists/WAVE-NX-GANTT-ASSIGN.md`). Re-check `git status` /
-  `tasks/_active/` before claiming FE conflict keys.
-
 ## Preflight
 
-- [x] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
-- [x] Прочитал `_NOW.md` + `tasks/_active/` — только `TZ-NX-GANTT-G10-PHOTO-THUMBS.md`, другие conflict keys, не пересекается
-- [x] TZ / канон / deps прочитаны (audit `2026-09-05-gantt-worker-assignment-audit.md`, `WAVE-NX-GANTT-ASSIGN.md`, `order.schema.ts`/`order.service.ts` estimateDayOverrides pattern as mirror)
-- [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS
-- [x] `tasks/_active/TZ-NX-GANTT-G14-BAR-ASSIGNEE.md` на месте
+- [x] Read `docs/how-to-connect-ai.md`, `GEMINI.md`, `docs/PROJECT-MEMORY.md`, `docs/PO-CANON.md`
+- [x] Read `docs/agent-checklists/_NOW.md` and all active tasks; only Claude G14 BE marker existed, with disjoint backend keys
+- [x] Read FE TZ, `WAVE-NX-GANTT-ASSIGN.md`, `docs/pages/production-cockpit.page.md`, FIC, and DOCS-INTEGRITY
+- [x] Claim slot filled; Status = CLAIMED / IN PROGRESS
+- [x] FE marker is present in `tasks/_active/`
 
-## Acceptance (BE slice)
+### Preflight Check Output
 
-- [ ] `Order.estimateWorkerOverrides[]` schema field: `{ orderItemIndex, moduleId, workTypeId, workerIds: ObjectId[] }`
-- [ ] `PATCH /orders/:id/estimate-worker` — upsert/clear by composite key, org-scope `assertOrgAccess` BEFORE save
-- [ ] Empty/absent override → no auto-fill from skills (FE will render "Не назначен")
-- [ ] Tests: upsert, update existing, clear (empty array), unknown line index, cross-org reject (no save), matching-org allow
-- [ ] Gates BE PASS (tsc/test/lint)
+- **Context read:** `frontend-nx/apps/kppdf-web/src/app/pages/production/production-read.facade.ts`, `frontend-nx/apps/kppdf-web/src/app/pages/production/gantt-bar.model.ts`, `frontend-nx/apps/kppdf-web/src/app/pages/production/blocks/gantt-bars.component.ts`, `frontend-nx/apps/kppdf-web/src/app/pages/production/production-cockpit.page.ts`, `frontend-nx/libs/data-access/src/lib/sales/order.types.ts`, `frontend-nx/libs/data-access/src/lib/sales/pi-orders.service.ts`, `frontend-nx/libs/data-access/src/lib/people/person.types.ts`, `frontend-nx/libs/data-access/src/lib/people/pi-people.service.ts`
+- **Key Constraints:** FE-only; skills are `Worker.workTypeIds`; empty override is `Не назначен`; no auto-assign, drag-between-workers, backend edits, Studio/Data IA, Deals, or legacy delete
+- **Planned Deliverable:** typed order override client; override-derived facade labels; skill-filtered worker multi-select/save/refresh; worker grouping; `/registries/workers` CTA; production docs
+- **Validation Path:** FE focused Jest/DOM tests, app typecheck, changed-file lint, diff check, final `pnpm exec nx build kppdf-web`; fill Integrity slot, archive and lock
 
-## Integrity slot (до READY / archive)
+## Acceptance
 
-- [ ] Тип изменения: module (backend field + endpoint), FE deferred
-- [ ] FIC — N/A this pass (backend-only slice, no page.md UI change yet; FE TZ will carry FIC)
-- [ ] page.md — N/A this pass (no UI route touched in G14-BE)
-- [ ] Чужой WIP не в коммите; conflict keys соблюдены (только backend/src/modules/order/*)
-- [ ] Coupling map — N/A (не трогал общее поле/статус вне Order)
+- [x] `estimateWorkerOverrides[]` is typed and `PATCH /orders/:id/estimate-worker` is available in NX data-access
+- [x] Facade label uses override worker names and otherwise returns `Не назначен`
+- [x] Work-detail shows active skill candidates, supports multi-select, saves once via PATCH, and refreshes bars
+- [x] Assignment is order/item/module/work-type scoped; another order without override remains unassigned
+- [x] `По рабочим` reflects the saved override-derived label after refresh
+- [x] Unassigned banner and work-detail people link to `/registries/workers`
+- [x] No backend or Studio files changed
 
-## Gates (факт)
+## Integrity slot (before READY/archive)
 
-- `cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit` — TBD
-- `cd backend && pnpm test` — TBD
-- `cd backend && pnpm lint` — TBD
+- [x] Type: module/API-client + page behavior (FE only)
+- [x] FIC §A–E: N/A for new route/permission/module/MCP; existing `/production` and `/registries/workers` routes reused
+- [x] `docs/pages/production-cockpit.page.md` updated with skill vs assignment contract
+- [x] `SECTION-READINESS.md`: N/A; no user contour/route/capability change
+- [x] Foreign WIP excluded; conflict keys remain FE-only
+- [x] `docs/COUPLING-MAP.md`: N/A; assignment is an existing Order field and no status/filter meaning changes
+- [x] Canon: `docs/DOCS-INTEGRITY.md`
+
+## Build integrity
+
+- [ ] Baseline `pnpm exec nx build kppdf-web` before code: not run in this claim; existing recent G14/R3 builds were green
+- [x] No other active task claims `frontend-nx/apps/kppdf-web/src/**` after FE handoff
+- [x] Closing `pnpm exec nx build kppdf-web` was the last gate command, exit 0
+
+## Gates (fact)
+
+- Focused tests: PASS (`4 app suites / 35 tests`; `data-access` target 18 suites / 89 tests, exit 0)
+- Typecheck: PASS (`pnpm exec tsc -p apps/kppdf-web/tsconfig.app.json --noEmit`, exit 0)
+- Lint: PASS on changed FE files, 0 errors (43 existing warnings)
+- Diff check: PASS (exit 0)
+- Final NX build: PASS (`pnpm exec nx build kppdf-web`, exit 0; known Studio nullish-coalescing and Gantt style-budget warnings only)
 
 ## Executor report
 
-- TBD after implementation.
+- G14-FE complete; final commit SHA is recorded in the archive after amend (`b7846193`).
+- Conflict disclosure: Claude’s G14-BE and Studio/Data IA work are excluded; dirty workspace files are not owned by this task.
 
-## Review handoff
+## Closeout
 
-- [ ] READY FOR REVIEW — n/a for BE-only continuous slice (no wave inbox requirement); PO report on completion.
-
-## Closeout (после PASS)
-
-- [ ] G14-BE: mark `[x]` in `WAVE-NX-GANTT-ASSIGN.md`; commit + push on main
-- [ ] Full G14 (incl. FE) archives only after G14-FE done — this checklist stays IN PROGRESS until then
+- [x] Integrity slot complete
+- [x] Archive + lock + live wave status update
+- [x] Remove `tasks/_active/TZ-NX-GANTT-G14-BAR-ASSIGNEE.md`
+- [x] Selective commit + push
+- [x] Record final SHA

@@ -13,6 +13,7 @@ import type {
   Order,
   PatchEstimateDaysPayload,
   PatchEstimateStartPayload,
+  PatchEstimateWorkerPayload,
   UpdateOrderPayload,
 } from './order.types';
 
@@ -56,5 +57,13 @@ export class PiOrdersService {
     payload: PatchEstimateStartPayload,
   ): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/estimate-start`, payload);
+  }
+
+  /** TZ-NX-GANTT-G14 — explicit order-scoped worker assignment override. */
+  patchEstimateWorker(
+    id: string,
+    payload: PatchEstimateWorkerPayload,
+  ): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/estimate-worker`, payload);
   }
 }

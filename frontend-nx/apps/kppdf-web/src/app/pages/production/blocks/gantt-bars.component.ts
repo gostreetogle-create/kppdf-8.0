@@ -40,7 +40,7 @@ import {
   workTypeWash,
   type GanttBar,
 } from '../gantt-bar.model';
-import type { OrderPriority, OrderStatus } from '@kppdf/data-access';
+import { personDisplayName, type OrderPriority, type OrderStatus, type Person } from '@kppdf/data-access';
 import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
 import { ProductionScaleControlsComponent } from './production-scale-controls.component';
 
@@ -234,6 +234,15 @@ export interface GanttStartOffsetCommit {
 export interface GanttCatalogDaysRequest {
   workTypeId: string;
   currentDays: number;
+}
+
+/** Explicit order-scoped worker assignment from work-detail. */
+export interface GanttWorkerAssignmentCommit {
+  orderId: string;
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  workerIds: readonly string[];
 }
 
 /**
@@ -445,7 +454,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     [attr.aria-expanded]="isWorkDetailOpen(row.bar.id)"
                     [attr.title]="workDetailTitle(row.bar, isWorkDetailOpen(row.bar.id))"
                     [attr.aria-label]="workDetailTitle(row.bar, isWorkDetailOpen(row.bar.id))"
-                    (click)="onChildWorkToggle($event, row.bar.id)"
+                    (click)="onChildWorkToggle($event, row.bar)"
                   >
                     <span aria-hidden="true" class="gantt-chevron font-mono leading-none">{{
                       isWorkDetailOpen(row.bar.id) ? '▾' : '▸'
@@ -622,10 +631,49 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   (click)="$event.stopPropagation()"
                 >
                   <div
-                    class="text-[10px] text-muted-foreground shrink-0"
+                    class="flex items-center gap-1.5 text-[10px] text-muted-foreground shrink-0"
                     [attr.data-test]="'gantt-work-detail-people-' + row.bar.id"
                   >
-                    Люди: {{ row.bar.workerLabel }}
+                    <span>Люди:</span>
+                    <a
+                      routerLink="/registries/workers"
+                      class="underline underline-offset-2 hover:text-ink"
+                      [attr.data-test]="'gantt-work-detail-worker-link-' + row.bar.id"
+                    >{{ row.bar.workerLabel }}</a>
+                    @if (row.bar.workerLabel === 'Не назначен') {
+                      <span class="text-hint-warn">(не назначено)</span>
+                    }
+                  </div>
+                  <div
+                    class="flex items-center gap-1.5 text-[11px] shrink-0"
+                    [attr.data-test]="'gantt-worker-assignment-' + row.bar.id"
+                  >
+                    <span class="text-muted-foreground shrink-0">Исполнители</span>
+                    <span class="inline-flex flex-wrap items-center gap-1 max-w-72">
+                      @for (person of workerCandidatesFor(row.bar); track person._id) {
+                        <label class="inline-flex items-center gap-1 rounded-sm border hairline px-1.5 py-0.5">
+                          <input
+                            type="checkbox"
+                            [checked]="workerDraftFor(row.bar).includes(person._id)"
+                            [disabled]="!canEdit() || readOnly() || groupByWorkers() || workerAssignmentSaving()"
+                            (change)="onWorkerToggle(row.bar, person._id, $event)"
+                            [attr.data-test]="'gantt-worker-option-' + row.bar.id + '-' + person._id"
+                          />
+                          <span>{{ personDisplayName(person) }}</span>
+                        </label>
+                      } @empty {
+                        <span class="text-muted-foreground">Нет активных людей с этим навыком</span>
+                      }
+                    </span>
+                    <button
+                      type="button"
+                      class="text-[10px] underline-offset-2 hover:underline text-ink shrink-0 pi-focus-ring disabled:opacity-50"
+                      [disabled]="!canEdit() || readOnly() || groupByWorkers() || workerAssignmentSaving()"
+                      (click)="onWorkerSave(row.bar, $event)"
+                      [attr.data-test]="'gantt-worker-save-' + row.bar.id"
+                    >
+                      Сохранить
+                    </button>
                   </div>
                   <label class="flex items-center gap-1.5 text-[11px] shrink-0">
                     <span class="text-muted-foreground shrink-0">Дни</span>
@@ -1299,6 +1347,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
   `,
 })
 export class GanttBarsComponent implements AfterViewInit {
+  protected readonly personDisplayName = personDisplayName;
   /** Work-type bars from buildGanttBars (not pre-built summaries). */
   readonly bars = input.required<GanttBar[]>();
   readonly rangeStart = input.required<string>();
@@ -1327,6 +1376,10 @@ export class GanttBarsComponent implements AfterViewInit {
   readonly expandedWorkerModuleIds = input<ReadonlySet<string>>(new Set());
   /** TZ-PRODUCTION-321 — one open work-type detail (`bar.id`). */
   readonly expandedWorkBarId = input<string | null>(null);
+  /** Active workers with the current Work Type skill, keyed by workTypeId. */
+  readonly workerCandidates = input<ReadonlyMap<string, readonly Person[]>>(new Map());
+  /** Parent blocks duplicate assignment PATCHes while refreshing bars. */
+  readonly workerAssignmentSaving = input(false);
   /** Order id with open order-meta strip — highlight label + timeline rows. */
   readonly highlightOrderId = input<string | null>(null);
   /** TZ-PRODUCTION-322 — live order fields for the meta strip under summary. */
@@ -1353,6 +1406,8 @@ export class GanttBarsComponent implements AfterViewInit {
   readonly catalogDaysRequest = output<GanttCatalogDaysRequest>();
   /** Commit snapped days → parent PATCHes order estimate-days only. */
   readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
+  /** Explicit worker assignment → parent PATCHes order estimateWorkerOverrides. */
+  readonly workerAssignmentCommit = output<GanttWorkerAssignmentCommit>();
   /** Body-drag on summary → parent PATCHes order plannedDate (whole chain). */
   readonly plannedDateMoveCommit = output<GanttPlannedDateMoveCommit>();
   /** Child body-drag → parent PATCHes estimate-start offset. */
@@ -1428,6 +1483,7 @@ export class GanttBarsComponent implements AfterViewInit {
   /** Open floating label peek (`bar.id`) — hover or cascade expand when truncated. */
   private readonly labelOverlayKey = signal<string | null>(null);
   private labelOverlayLeaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly workerDrafts = signal<Map<string, string[]>>(new Map());
 
   protected readonly pxPerDay = computed(() =>
     calculateGanttPxPerDay(this.zoom(), this.totalDays(), this.timelineViewportWidth()),
@@ -1896,11 +1952,50 @@ export class GanttBarsComponent implements AfterViewInit {
     return bar.orderNumber;
   }
 
-  protected onChildWorkToggle(event: Event, barId: string): void {
+  protected onChildWorkToggle(event: Event, bar: GanttBar): void {
     event.stopPropagation();
     event.preventDefault();
     this.closeLabelOverlay();
-    this.toggleWorkDetail.emit(barId);
+    if (!this.isWorkDetailOpen(bar.id)) {
+      this.workerDrafts.update((drafts) => {
+        const next = new Map(drafts);
+        next.set(bar.id, [...(bar.workerIds ?? [])]);
+        return next;
+      });
+    }
+    this.toggleWorkDetail.emit(bar.id);
+  }
+
+  protected workerCandidatesFor(bar: GanttBar): readonly Person[] {
+    return this.workerCandidates().get(bar.workTypeId) ?? [];
+  }
+
+  protected workerDraftFor(bar: GanttBar): readonly string[] {
+    return this.workerDrafts().get(bar.id) ?? bar.workerIds ?? [];
+  }
+
+  protected onWorkerToggle(bar: GanttBar, workerId: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.workerDrafts.update((drafts) => {
+      const next = new Map(drafts);
+      const ids = new Set(this.workerDraftFor(bar));
+      if (checked) ids.add(workerId);
+      else ids.delete(workerId);
+      next.set(bar.id, [...ids]);
+      return next;
+    });
+  }
+
+  protected onWorkerSave(bar: GanttBar, event: Event): void {
+    event.stopPropagation();
+    if (!this.canEdit() || this.readOnly() || this.groupByWorkers() || this.workerAssignmentSaving()) return;
+    this.workerAssignmentCommit.emit({
+      orderId: bar.orderId,
+      orderItemIndex: bar.orderItemIndex,
+      moduleId: bar.moduleId,
+      workTypeId: bar.workTypeId,
+      workerIds: [...this.workerDraftFor(bar)],
+    });
   }
 
   protected isWorkDetailOpen(barId: string): boolean {

@@ -95,6 +95,9 @@ describe('ProductionReadFacade (TZ-NX-GANTT-G2-READ-MODEL)', () => {
               number: 'ORD-1',
               status: 'confirmed',
               plannedDate: '2026-08-01',
+              estimateWorkerOverrides: [
+                { orderItemIndex: 0, moduleId: 'm1', workTypeId: 'wt1', workerIds: ['w1'] },
+              ],
               items: [{ productId: 'p1', productName: 'Стол', quantity: 2 }],
             },
           ],
@@ -160,6 +163,7 @@ describe('ProductionReadFacade (TZ-NX-GANTT-G2-READ-MODEL)', () => {
     expect(bars[0]!.quantityLabel).toBe('×2');
     expect(bars[0]!.noTerm).toBe(false);
     expect(bars[0]!.workerLabel).toContain('Иванов');
+    expect(bars[0]!.workerIds).toEqual(['w1']);
 
     // Second load hits caches (getByIds not called again for products/modules).
     await facade.loadBarsForOrders(orders);
@@ -168,6 +172,47 @@ describe('ProductionReadFacade (TZ-NX-GANTT-G2-READ-MODEL)', () => {
     expect(workTypesApi.list).toHaveBeenCalledTimes(1);
     expect(workersApi.list).toHaveBeenCalledTimes(1);
     expect(workersApi.list).toHaveBeenCalledWith({ limit: 100, isActive: true });
+  });
+
+  it('TZ-NX-GANTT-G14: skills do not assign another order without an override', async () => {
+    const ordersApi = { list: jest.fn() };
+    const productsApi = {
+      getById: jest.fn(),
+      getByIds: jest.fn().mockReturnValue(of({ ok: true, data: [specProduct('p1', 'Стол', 'm1')] })),
+    };
+    const modulesApi = {
+      getById: jest.fn(),
+      getByIds: jest.fn().mockReturnValue(of({ ok: true, data: [specModule('m1', 'Каркас', 'wt1')] })),
+    };
+    const workTypesApi = {
+      list: jest.fn().mockReturnValue(
+        of({ ok: true, data: { items: [{ _id: 'wt1', name: 'Сварка', isActive: true, days: 2 }], total: 1 } }),
+      ),
+    };
+    const workersApi = {
+      list: jest.fn().mockReturnValue(
+        of({ ok: true, data: { items: [{ _id: 'w1', lastName: 'Иванов', firstName: 'Иван', isActive: true, workTypeIds: ['wt1'] }], total: 1, page: 1, limit: 100 } }),
+      ),
+    };
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        ProductionReadFacade,
+        { provide: PiOrdersService, useValue: ordersApi },
+        { provide: PiProductsService, useValue: productsApi },
+        { provide: PiModulesService, useValue: modulesApi },
+        { provide: PiWorkTypesService, useValue: workTypesApi },
+        { provide: PiPeopleService, useValue: workersApi },
+      ],
+    });
+    const facade = TestBed.inject(ProductionReadFacade);
+    const bars = await facade.loadBarsForOrders([
+      { _id: 'order-a', number: 'A', status: 'confirmed', items: [{ productId: 'p1', quantity: 1 }], estimateWorkerOverrides: [{ orderItemIndex: 0, moduleId: 'm1', workTypeId: 'wt1', workerIds: ['w1'] }] },
+      { _id: 'order-b', number: 'B', status: 'confirmed', items: [{ productId: 'p1', quantity: 1 }] },
+    ] as never);
+    expect(bars.find((bar) => bar.orderId === 'order-a')?.workerLabel).toContain('Иванов');
+    expect(bars.find((bar) => bar.orderId === 'order-b')?.workerLabel).toBe('Не назначен');
+    expect((await facade.getWorkerCandidates('wt1')).map((person) => person._id)).toEqual(['w1']);
   });
 
   it('TZ-PRODUCTION-336: skips ineligible orders and does not persist «нет прямых модулей»', async () => {

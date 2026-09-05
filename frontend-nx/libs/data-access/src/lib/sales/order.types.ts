@@ -79,6 +79,8 @@ export interface Order {
   readonly estimateDayOverrides?: readonly EstimateDayOverride[] | null;
   /** TZ-PRODUCTION-316: per-bar start offset from visualAnchor. */
   readonly estimateStartOffsets?: readonly EstimateStartOffset[] | null;
+  /** TZ-NX-GANTT-G14: explicit order/item/module/work-type assignee override. */
+  readonly estimateWorkerOverrides?: readonly EstimateWorkerOverride[] | null;
 }
 
 /** TZ-PRODUCTION-309 composite key for order-level duration override. */
@@ -111,4 +113,20 @@ export interface PatchEstimateStartPayload {
   readonly moduleId: string;
   readonly workTypeId: string;
   readonly offsetDays: number | null;
+}
+
+/** Order-scoped assignee override; an empty workerIds array clears the row. */
+export interface EstimateWorkerOverride {
+  readonly orderItemIndex: number;
+  readonly moduleId: string;
+  readonly workTypeId: string;
+  readonly workerIds: readonly string[];
+}
+
+/** Body for PATCH /orders/:id/estimate-worker. */
+export interface PatchEstimateWorkerPayload {
+  readonly orderItemIndex: number;
+  readonly moduleId: string;
+  readonly workTypeId: string;
+  readonly workerIds: readonly string[];
 }

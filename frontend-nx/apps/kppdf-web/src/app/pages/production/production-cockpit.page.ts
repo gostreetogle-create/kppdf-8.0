@@ -30,6 +30,7 @@ import {
   PiOrdersService,
   PiWorkTypesService,
   type Order,
+  type Person,
   type OrderPriority,
   type OrderStatus,
 } from '@kppdf/data-access';
@@ -54,6 +55,7 @@ import {
   type GanttOrderMetaView,
   type GanttPlannedDateMoveCommit,
   type GanttStartOffsetCommit,
+  type GanttWorkerAssignmentCommit,
 } from './blocks/gantt-bars.component';
 import {
   ProductionCockpitContext,
@@ -167,6 +169,8 @@ function toDateInput(value: string | undefined | null): string {
             [expandedWorkerModuleIds]="ctx.expandedWorkerModuleIds()"
             [expandedWorkBarId]="ctx.expandedWorkBarId()"
             [groupByWorkers]="groupBy() === 'workers'"
+            [workerCandidates]="workerCandidates()"
+            [workerAssignmentSaving]="workerAssignmentSaving()"
             [highlightOrderId]="metaHighlightOrderId()"
             [orderMeta]="orderMetaView()"
             [canEditOrder]="canEditOrder()"
@@ -178,6 +182,7 @@ function toDateInput(value: string | undefined | null): string {
             (groupByChange)="groupBy.set($event)"
             (fit)="onFitHorizon()"
             (estimateDaysCommit)="onEstimateDaysCommit($event)"
+            (workerAssignmentCommit)="onWorkerAssignmentCommit($event)"
             (catalogDaysRequest)="onCatalogDaysRequest($event)"
             (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
             (startOffsetCommit)="onStartOffsetCommit($event)"
@@ -339,6 +344,8 @@ export class ProductionCockpitPage {
   /** TZ-GANTT-401 — row grouping mode (По заказам | По рабочим). */
   protected readonly groupBy = signal<GanttGroupBy>('orders');
   protected readonly workerLabels = signal<ReadonlyMap<string, string>>(new Map());
+  protected readonly workerCandidates = signal<ReadonlyMap<string, readonly Person[]>>(new Map());
+  protected readonly workerAssignmentSaving = signal(false);
   protected readonly orderThumbs = signal<ReadonlyMap<string, string>>(new Map());
   /** HUB-303: RU hint when ?orderId= is unknown. */
   protected readonly orderIdHint = signal<string | null>(null);
@@ -563,6 +570,31 @@ export class ProductionCockpitPage {
   }
 
   /** TZ-PRODUCTION-311 — catalog button in work-detail → WorkType.days (confirm in helper). */
+  protected async onWorkerAssignmentCommit(ev: GanttWorkerAssignmentCommit): Promise<void> {
+    if (!this.canEditCatalog() || this.workerAssignmentSaving()) return;
+    const order = this.orders().find((candidate) => candidate._id === ev.orderId);
+    if (!order || isHardFrozenOrderStatus(order.status ?? 'draft')) return;
+    this.workerAssignmentSaving.set(true);
+    try {
+      const res = await firstValueFrom(
+        this.ordersApi.patchEstimateWorker(ev.orderId, {
+          orderItemIndex: ev.orderItemIndex,
+          moduleId: ev.moduleId,
+          workTypeId: ev.workTypeId,
+          workerIds: [...ev.workerIds],
+        }),
+      );
+      if (!res.ok) {
+        this.toast.error('Не удалось сохранить исполнителей');
+        return;
+      }
+      await this.reloadOrdersKeepingSelection();
+    } finally {
+      this.workerAssignmentSaving.set(false);
+    }
+  }
+
+  /** TZ-PRODUCTION-311 — catalog button in work-detail → WorkType.days (confirm in helper). */
   protected async onCatalogDaysRequest(ev: GanttCatalogDaysRequest): Promise<void> {
     if (!this.canEditCatalog()) return;
     const prompted = promptCatalogDaysChange(ev.currentDays);
@@ -781,6 +813,7 @@ export class ProductionCockpitPage {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
+    // Candidate workers are hydrated after the first bar build in applyBars().
     // TZ-NX-GANTT-G10 — hydrate populated catalog thumbs without blocking bars.
     void this.loadThumbs(list);
     const params = await firstValueFrom(this.route.queryParamMap);
@@ -832,6 +865,7 @@ export class ProductionCockpitPage {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
+    // Candidate workers are refreshed after bars are rebuilt in applyBars().
     // TZ-NX-GANTT-G10 — keep rail thumbs in the same non-blocking path on refresh.
     void this.loadThumbs(list);
     const id = this.ctx.selectedOrderId();
@@ -866,6 +900,11 @@ export class ProductionCockpitPage {
   private async applyBars(target: Order[], fitRange = false): Promise<void> {
     const built = await this.facade.loadBarsForOrders(target);
     this.bars.set(built);
+    this.workerCandidates.set(
+      await this.facade.getWorkerCandidatesMap(
+        built.map((bar) => bar.workTypeId).filter((id) => !id.startsWith('__')),
+      ),
+    );
     this.usedTodayFallback.set(built.some((b) => b.usedFallbackToday));
     if (built.length === 0) {
       this.rangeStart.set(defaultRangeStart());

@@ -94,4 +94,18 @@ describe('PiOrdersService (TZ-NX-SALES-S33-PI-ORDERS-CRUD)', () => {
     expect(request.request.body).toEqual(payload);
     request.flush({ _id: orderId, number: 'ORD-001' });
   });
+
+  it('patchEstimateWorker() PATCHes /orders/:id/estimate-worker (TZ-NX-GANTT-G14)', () => {
+    const payload = {
+      orderItemIndex: 0,
+      moduleId: '507f1f77bcf86cd799439020',
+      workTypeId: '507f1f77bcf86cd799439021',
+      workerIds: ['507f1f77bcf86cd799439024', '507f1f77bcf86cd799439025'],
+    };
+    service.patchEstimateWorker(orderId, payload).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/estimate-worker`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual(payload);
+    request.flush({ _id: orderId, number: 'ORD-001' });
+  });
 });

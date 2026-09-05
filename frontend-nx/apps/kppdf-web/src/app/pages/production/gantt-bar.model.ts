@@ -158,6 +158,8 @@ export interface OrderEstimateInput {
   estimateDayOverrides?: EstimateDayOverrideRef[];
   /** TZ-PRODUCTION-316 — per-bar start offset from visualAnchor. */
   estimateStartOffsets?: EstimateStartOffsetRef[];
+  /** TZ-NX-GANTT-G14 — explicit order-scoped assignee overrides. */
+  estimateWorkerOverrides?: EstimateWorkerOverrideRef[];
 }
 
 /** TZ-PRODUCTION-309 composite key for order-level duration. */
@@ -174,6 +176,14 @@ export interface EstimateStartOffsetRef {
   moduleId: string;
   workTypeId: string;
   offsetDays: number;
+}
+
+/** TZ-NX-GANTT-G14 — normalized assignment row used by the pure Gantt model. */
+export interface EstimateWorkerOverrideRef {
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  workerIds: readonly string[];
 }
 
 export function estimateOverrideKey(
@@ -269,6 +279,8 @@ export interface GanttBar {
   endDate: string;
   usedFallbackToday: boolean;
   workerLabel: string;
+  /** Explicit order-scoped assignees; absent/empty means «Не назначен». */
+  workerIds?: readonly string[];
   accentHue?: number | null;
   /** TZ-NX-GANTT-G10 — populated catalog photo for product/order tree rows. */
   productPhotoUrl?: string | null;
@@ -637,7 +649,9 @@ export function isOrderSummaryBar(bar: GanttBar): boolean {
 /** Worker group key from a bar's workerLabel; '—'/empty → «Не назначен». */
 export function workerGroupKeyOf(bar: GanttBar): string {
   const label = (bar.workerLabel ?? '').trim();
-  return label && label !== '—' ? label : UNASSIGNED_WORKER_LABEL;
+  return label && label !== '—' && label !== UNASSIGNED_WORKER_LABEL
+    ? label
+    : UNASSIGNED_WORKER_LABEL;
 }
 
 export interface WorkerGroup {

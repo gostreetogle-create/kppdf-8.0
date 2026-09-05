@@ -30,6 +30,7 @@ describe('ProductionCockpitPage write path (TZ-NX-GANTT-G5)', () => {
     update: jest.Mock;
     patchEstimateDays: jest.Mock;
     patchEstimateStart: jest.Mock;
+    patchEstimateWorker: jest.Mock;
   };
   let workTypesApi: { update: jest.Mock };
 
@@ -49,6 +50,7 @@ describe('ProductionCockpitPage write path (TZ-NX-GANTT-G5)', () => {
       update: jest.fn(() => of(okOrder('o1'))),
       patchEstimateDays: jest.fn(() => of(okOrder('o1'))),
       patchEstimateStart: jest.fn(() => of(okOrder('o1'))),
+      patchEstimateWorker: jest.fn(() => of(okOrder('o1'))),
     };
     workTypesApi = { update: jest.fn(() => of({ ok: true, data: { _id: 'wt1', days: 5 } })) };
 
@@ -90,6 +92,7 @@ describe('ProductionCockpitPage write path (TZ-NX-GANTT-G5)', () => {
     onEstimateDaysCommit(ev: unknown): Promise<void>;
     onPlannedDateMoveCommit(ev: unknown): Promise<void>;
     onStartOffsetCommit(ev: unknown): Promise<void>;
+    onWorkerAssignmentCommit(ev: unknown): Promise<void>;
     onCatalogDaysRequest(ev: unknown): Promise<void>;
   } {
     return fixture.componentInstance as never;
@@ -186,6 +189,25 @@ describe('ProductionCockpitPage write path (TZ-NX-GANTT-G5)', () => {
     expect(bars(fixture).map((b) => b.days)).toEqual(before);
   });
 
+  it('G14: worker assignment → PATCH estimate-worker and refreshes bars', async () => {
+    const fixture = await setup();
+    await page(fixture).onWorkerAssignmentCommit({
+      orderId: 'o1',
+      orderItemIndex: 0,
+      moduleId: 'm1',
+      workTypeId: 'wt1',
+      workerIds: ['w1', 'w2'],
+    });
+    expect(ordersApi.patchEstimateWorker).toHaveBeenCalledWith('o1', {
+      orderItemIndex: 0,
+      moduleId: 'm1',
+      workTypeId: 'wt1',
+      workerIds: ['w1', 'w2'],
+    });
+    expect(ordersApi.update).not.toHaveBeenCalled();
+    expect(ordersApi.patchEstimateDays).not.toHaveBeenCalled();
+  });
+
   it('catalog button → confirm prompt → PATCH work-types (global, confirm-gated)', async () => {
     const fixture = await setup();
     const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('4');
@@ -276,6 +298,9 @@ class FakeWriteFacade {
     return Promise.resolve(this.state().bars);
   }
   getWorkerLabelsMap(): Promise<Map<string, string>> {
+    return Promise.resolve(new Map());
+  }
+  getWorkerCandidatesMap(): Promise<Map<string, never[]>> {
     return Promise.resolve(new Map());
   }
   clearCaches(): void {

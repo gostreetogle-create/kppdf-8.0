@@ -290,6 +290,9 @@ export class FakeReadFacade {
   getWorkerLabelsMap(): Promise<Map<string, string>> {
     return Promise.resolve(new Map());
   }
+  getWorkerCandidatesMap(): Promise<Map<string, never[]>> {
+    return Promise.resolve(new Map());
+  }
   clearCaches(): void {
     /* noop */
   }
@@ -314,6 +317,9 @@ class EmptyReadFacade {
   getWorkerLabelsMap(): Promise<Map<string, string>> {
     return Promise.resolve(new Map());
   }
+  getWorkerCandidatesMap(): Promise<Map<string, never[]>> {
+    return Promise.resolve(new Map());
+  }
   clearCaches(): void {
     /* noop */
   }
@@ -335,6 +341,9 @@ class FailingReadFacade {
     return Promise.resolve([]);
   }
   getWorkerLabelsMap(): Promise<Map<string, string>> {
+    return Promise.resolve(new Map());
+  }
+  getWorkerCandidatesMap(): Promise<Map<string, never[]>> {
     return Promise.resolve(new Map());
   }
   clearCaches(): void {
