@@ -270,6 +270,10 @@ export interface GanttBar {
   usedFallbackToday: boolean;
   workerLabel: string;
   accentHue?: number | null;
+  /** TZ-NX-GANTT-G10 — populated catalog photo for product/order tree rows. */
+  productPhotoUrl?: string | null;
+  /** TZ-NX-GANTT-G10 — populated catalog photo for module rows. */
+  modulePhotoUrl?: string | null;
   /** TZ-PRODUCTION-314/342 — order/product/module summary vs work leaf. Default work. */
   kind?: GanttBarKind;
   /**
@@ -427,6 +431,7 @@ export function buildOrderSummaryBar(children: readonly GanttBar[]): GanttBar | 
     usedFallbackToday,
     workerLabel: '—',
     accentHue: null,
+    productPhotoUrl: first.productPhotoUrl,
     kind: 'summary',
   };
 }
@@ -472,6 +477,10 @@ function buildSpanSummaryBar(
     usedFallbackToday,
     workerLabel: '—',
     accentHue: null,
+    productPhotoUrl:
+      patch.productPhotoUrl !== undefined ? patch.productPhotoUrl : first.productPhotoUrl,
+    modulePhotoUrl:
+      patch.modulePhotoUrl !== undefined ? patch.modulePhotoUrl : first.modulePhotoUrl,
     kind: patch.kind,
   };
 }
@@ -491,6 +500,7 @@ export function buildProductSummaryBar(children: readonly GanttBar[]): GanttBar 
     workTypeName: first.productName,
     quantity: first.quantity,
     quantityLabel: first.quantityLabel,
+    productPhotoUrl: first.productPhotoUrl,
   });
 }
 
@@ -514,6 +524,8 @@ export function buildModuleSummaryBar(children: readonly GanttBar[]): GanttBar |
     workTypeName: moduleName,
     quantity: first.quantity,
     quantityLabel: null,
+    productPhotoUrl: first.productPhotoUrl,
+    modulePhotoUrl: first.modulePhotoUrl,
   });
 }
 
@@ -871,6 +883,8 @@ export function buildWorkerModuleSummaryBar(
     productName: first.productName,
     moduleId: first.moduleId,
     moduleName: label,
+    productPhotoUrl: first.productPhotoUrl,
+    modulePhotoUrl: first.modulePhotoUrl,
     workTypeId: '__worker_module_summary__',
     workTypeName: label,
     quantity: first.quantity,
@@ -1022,6 +1036,8 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
           usedFallbackToday,
           workerLabel: '—',
           accentHue: wt.accentHue ?? null,
+          productPhotoUrl: item.productPhotoUrl,
+          modulePhotoUrl: mod.modulePhotoUrl,
           startOffsetDays,
         });
 

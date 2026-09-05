@@ -476,6 +476,28 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                           : null
                     "
                   >
+                    @if (row.isOrderSummary && row.bar.productPhotoUrl; as src) {
+                      <img
+                        [src]="src"
+                        alt=""
+                        class="w-6 h-6 rounded-sm object-cover border hairline shrink-0"
+                        data-test="gantt-photo-order"
+                      />
+                    } @else if (row.isProductSummary && row.bar.productPhotoUrl; as src) {
+                      <img
+                        [src]="src"
+                        alt=""
+                        class="w-6 h-6 rounded-sm object-cover border hairline shrink-0"
+                        data-test="gantt-photo-product"
+                      />
+                    } @else if (row.isModuleSummary && row.bar.modulePhotoUrl; as src) {
+                      <img
+                        [src]="src"
+                        alt=""
+                        class="w-6 h-6 rounded-sm object-cover border hairline shrink-0"
+                        data-test="gantt-photo-module"
+                      />
+                    }
                     @if (row.isWorkerSummary && row.bar.accentHue != null) {
                       <span
                         class="w-1.5 h-5 rounded-sm shrink-0"

@@ -100,7 +100,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 - Приоритет = важность в списке/фильтре (**не** длина полосок); подсказка в UI.
 - Виды работ: wash/цвет как на Ганте; опц. `WorkType.accentHue` в форме вида работ.
 - Раскрытие дерева: крупные «+ / −», клик по всей строке; «→» в карточку `/products/:id` / `/modules/:id`.
-- Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`).
+- Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`); NX G10 обогащает populated `photoIds` через `firstPhotoUrl`, без отдельного Photos API.
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
 - **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
 - **No bottom card:** the old `Карточка` bottom sheet and chrome action were removed in TZ-322; order meta lives only as one cascade strip under the summary row. The cascade is the canonical interaction surface for status/priority/plannedDate and work-detail; do not restore a bottom overlay.
@@ -129,7 +129,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 | Сервис | Методы / boundary |
 |--------|-------------------|
 | `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, counterpartyFilter, filtersDirty, resetFilters; local UI state |
-| `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap; read/cache/composition mapping, no fact-production SoT |
+| `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap, getOrderThumbMap; read/cache/composition/photo mapping, no fact-production SoT |
 | `ProductionCockpitPage` | `onRefresh`, `onToday`, `onFitHorizon`, order-meta/estimate commits; smart shell: chrome, filters, PATCH orchestration, range + reload |
 | `ProductionScaleControlsComponent` | `zoom` + `groupBy` inputs; `zoomChange` / `fit` / `groupByChange` outputs; dumb RU controls only |
 | `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) / **patchEstimateStart()** (316); existing API paths |
@@ -271,7 +271,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-345:** изделие без модулей остаётся ineligible (336), если нет WT; pseudo-module `moduleId=productId` → одна строка модуля «Изделие · целиком» под изделием (order/worker trees 342–344).
 - **TZ-PRODUCTION-343:** RU labels/frames for product/module DONE («По заказам» ok).
 - **TZ-PRODUCTION-344:** worker lens Module+context DONE (default collapsed).
-- **NX known gaps vs legacy (порт G0–G7):** photo-URL resolution из legacy facade не портирован (в NX-шелле нет photo-клиента; thumb'ы rail работают без него); live smoke выполнялся на admin (директор/менеджер-роли с `production` page — как в legacy). Pre-existing (не из волны): 2 failing tests в `registries.catalog.spec.ts` (`59bcf499`, другой агент; вне conflict keys).
+- **NX known gaps vs legacy (порт G0–G7):** live smoke выполнялся на admin (директор/менеджер-роли с `production` page — как в legacy). G10 добавил безопасное разрешение populated `storageUrl` (включая связанный `thumb`) для rail и дерева; unpopulated refs остаются без изображения. Pre-existing (не из волны): 2 failing tests в `registries.catalog.spec.ts` (`59bcf499`, другой агент; вне conflict keys).
 
 ### Final interaction contract (TZ-PRODUCTION-328)
 

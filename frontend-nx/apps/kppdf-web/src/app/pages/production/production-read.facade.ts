@@ -5,8 +5,8 @@
  *
  * NX port (TZ-NX-GANTT-G2-READ-MODEL): same cache/inflight/retry shape as
  * legacy, drivers swapped to the NX `@kppdf/data-access` clients. Photo URL
- * enrichment is dropped (no photo client in NX data-access yet) — thumbnails
- * are a later improvement, not part of the Gantt read model.
+ * enrichment uses populated catalog photo refs when available; unpopulated refs
+ * safely resolve to no thumbnail without adding a Photos API dependency.
  */
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -75,6 +75,47 @@ function refId(value: string | { _id?: string } | null | undefined): string | nu
   if (!value) return null;
   if (typeof value === 'string') return value;
   return value._id ?? null;
+}
+
+type PhotoRefLike = {
+  _id?: string;
+  storageUrl?: string;
+  variant?: string;
+  parentPhotoId?: string;
+  linkedPhotoId?: string;
+};
+
+function photoRef(value: unknown): PhotoRefLike | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as PhotoRefLike;
+  return typeof candidate.storageUrl === 'string' && candidate.storageUrl.trim()
+    ? candidate
+    : null;
+}
+
+function photoListUrl(photo: PhotoRefLike, allPhotos: readonly PhotoRefLike[]): string {
+  if (photo.variant === 'thumb') return photo.storageUrl!;
+  const linkedThumb = allPhotos.find(
+    (candidate) =>
+      candidate.variant === 'thumb' &&
+      (candidate.parentPhotoId === photo._id || candidate.linkedPhotoId === photo._id),
+  );
+  return linkedThumb?.storageUrl ?? photo.storageUrl!;
+}
+
+/** Resolve the cheapest populated catalog photo for list/tree surfaces. */
+export function firstPhotoUrl(
+  photoIds?: readonly unknown[] | null,
+  mainPhotoId?: unknown | null,
+): string | null {
+  const photos = (photoIds ?? []).map(photoRef).filter((photo): photo is PhotoRefLike => photo != null);
+  const main = photoRef(mainPhotoId);
+  const mainId = typeof mainPhotoId === 'string' ? mainPhotoId : main?._id;
+  const selected =
+    main ??
+    (mainId ? photos.find((photo) => photo._id === mainId) : undefined) ??
+    photos[0];
+  return selected ? photoListUrl(selected, photos) : null;
 }
 
 /** Product composition line — structural subset (NX `Product.composition` is `ProductRef[]`). */
@@ -257,6 +298,22 @@ export class ProductionReadFacade {
     const out = new Map<string, string>();
     for (const [wtId, names] of byWt) {
       out.set(wtId, names.join(', ') || '—');
+    }
+    return out;
+  }
+
+  /** First populated product photo per order for the collapsed Orders rail. */
+  async getOrderThumbMap(orders: Order[]): Promise<Map<string, string>> {
+    const out = new Map<string, string>();
+    const warnings: string[] = [];
+    for (const order of orders) {
+      const first = order.items?.[0];
+      const productId = first?.productId;
+      if (!productId) continue;
+      const product = await this.getProduct(productId, warnings);
+      if (!product) continue;
+      const url = firstPhotoUrl(product.photoIds);
+      if (url) out.set(order._id, url);
     }
     return out;
   }
@@ -477,6 +534,7 @@ export class ProductionReadFacade {
           moduleName: mod.name,
           sortOrder: compositionSort,
           workTypes: mapModuleWorkTypes(mod, workTypes),
+          modulePhotoUrl: firstPhotoUrl(mod.photoIds),
         });
       }
 
@@ -486,6 +544,7 @@ export class ProductionReadFacade {
         productName: item.productName ?? product.name,
         quantity: item.quantity ?? 1,
         modules,
+        productPhotoUrl: firstPhotoUrl(product.photoIds),
       });
     }
 

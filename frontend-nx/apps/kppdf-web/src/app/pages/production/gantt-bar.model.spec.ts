@@ -108,6 +108,39 @@ describe('gantt-bar.model', () => {
     expect(normalizeWorkTypeDays(3.9)).toBe(3);
   });
 
+  it('TZ-NX-GANTT-G10: carries product and module photos from estimate input into work bars', () => {
+    const bars = buildGanttBars({
+      orderId: 'o-photo',
+      orderNumber: 'ORD-PHOTO',
+      status: 'confirmed',
+      plannedDate: '2026-08-01',
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p-photo',
+          productName: 'Фото изделие',
+          quantity: 1,
+          productPhotoUrl: '/thumbs/product.jpg',
+          modules: [
+            {
+              moduleId: 'm-photo',
+              moduleName: 'Фото модуль',
+              modulePhotoUrl: '/thumbs/module.jpg',
+              sortOrder: 0,
+              workTypes: [
+                { workTypeId: 'wt-photo', workTypeName: 'Сварка', days: 1, sortOrder: 0 },
+              ],
+            },
+          ],
+        },
+      ],
+    }, new Date(2026, 7, 1));
+    expect(bars[0]).toEqual(expect.objectContaining({
+      productPhotoUrl: '/thumbs/product.jpg',
+      modulePhotoUrl: '/thumbs/module.jpg',
+    }));
+  });
+
   it('builds sequential bars by sortOrder and does not multiply duration by quantity', () => {
     const input: OrderEstimateInput = {
       orderId: 'o1',

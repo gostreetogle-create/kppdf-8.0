@@ -1,6 +1,6 @@
 # WAVE — NX polish after Gantt L0 (Freebuff continuous)
 
-Status: **IN FLIGHT** · P1–P4 DONE · 2026-09-05
+Status: **DONE** · P1–P5 DONE · 2026-09-05
 
 Промпт: `tasks/PROMPT-FREEBUFF-NX-GANTT-POLISH.md`
 Ревью необходимости: `docs/audits/2026-09-05-tz-queue-necessity-review.md`
@@ -15,16 +15,15 @@ Status: **IN FLIGHT** · P1–P4 DONE · 2026-09-05
 - [x] **P2** `TZ-NX-GANTT-G8-CALENDAR-WASH` — DONE (calendar wash + TOC-chip controls; archive `tasks/_archive/2026-09/TZ-NX-GANTT-G8-CALENDAR-WASH.done.md`)
 - [x] **P3** `TZ-NX-GANTT-G9-RANGE-REFIT-FORWARD` — DONE (symmetric range refit + worker read-only regression; archive `tasks/_archive/2026-09/TZ-NX-GANTT-G9-RANGE-REFIT-FORWARD.done.md`)
 - [x] **P4** `TZ-NX-DOCSTUDIO-S43-VITRINA-TITLE-WRAP` — DONE (two-line sm titles + no horizontal vitrina overflow; archive `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-S43-VITRINA-TITLE-WRAP.done.md`)
-- [ ] **P5** `TZ-NX-GANTT-G10-PHOTO-THUMBS`
+- [x] **P5** `TZ-NX-GANTT-G10-PHOTO-THUMBS` — DONE (populated catalog photo thumbs in rail and Gantt tree; archive `tasks/_archive/2026-09/TZ-NX-GANTT-G10-PHOTO-THUMBS.done.md`)
 
 ## Снято
 
 - ~~P6 legacy partial delete~~ — cutover целиком позже / вручную PO
 
-## После P5 (заранее)
+## После P5
 
-Freebuff: **промптов нет**, пока PO не назовёт следующий модуль / не кинет скрин.
-Claude (готов): `TZ-BACKEND-ORDER-ORG-SCOPE-TX` · `tasks/PROMPT-CLAUDE-ORDER-ORG-SCOPE-TX.md`
+P5 closeout complete. Next continuous wave: `WAVE-NX-GANTT-REGISTRIES`, then `WAVE-S-UX-POLISH`.
 
 ## Hard rules
 

@@ -781,9 +781,21 @@ export class ProductionCockpitPage {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
+    // TZ-NX-GANTT-G10 — hydrate populated catalog thumbs without blocking bars.
+    void this.loadThumbs(list);
     const params = await firstValueFrom(this.route.queryParamMap);
     const orderId = (params.get('orderId') ?? '').trim();
     await this.applyInitialOrderId(orderId || null);
+  }
+
+  /** TZ-NX-GANTT-G10 — rail thumbnails hydrate in the background (bars go first). */
+  private async loadThumbs(orders: Order[]): Promise<void> {
+    try {
+      this.orderThumbs.set(await this.facade.getOrderThumbMap(orders));
+    } catch {
+      // A missing/partial photo payload must never make the estimate screen fail.
+      this.orderThumbs.set(new Map());
+    }
   }
 
   /** HUB-303: deep-link `?orderId=` after orders are loaded. */
@@ -820,6 +832,8 @@ export class ProductionCockpitPage {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
+    // TZ-NX-GANTT-G10 — keep rail thumbs in the same non-blocking path on refresh.
+    void this.loadThumbs(list);
     const id = this.ctx.selectedOrderId();
     if (id) {
       const order = list.find((o) => o._id === id);

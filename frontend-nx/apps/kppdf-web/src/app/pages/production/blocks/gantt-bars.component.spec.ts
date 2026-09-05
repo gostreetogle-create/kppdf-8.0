@@ -122,6 +122,32 @@ describe('GanttBarsComponent (TZ-NX-GANTT-G4 pan/zoom)', () => {
     expect(component.canMoveBar(summary)).toBe(false);
   });
 
+  it('TZ-NX-GANTT-G10: renders product and module thumbnails only on tree summary rows', async () => {
+    const fixture = await setup([
+      makeBar({ productPhotoUrl: '/thumbs/product.jpg', modulePhotoUrl: '/thumbs/module.jpg' }),
+    ], '2026-09-01', '2026-09-21');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('expandedProductIds', new Set(['product:o1:0']));
+    fixture.componentRef.setInput('expandedModuleIds', new Set(['module:o1:0:m1']));
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-test="gantt-photo-product"]')).toBeTruthy();
+    expect(root.querySelector('[data-test="gantt-photo-module"]')).toBeTruthy();
+    expect(root.querySelectorAll('[data-test="gantt-photo-product"], [data-test="gantt-photo-module"]').length).toBe(2);
+    expect(root.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1"] img')).toBeFalsy();
+  });
+
+  it('does not render a photo element when tree rows have no populated URL', async () => {
+    const fixture = await setup([makeBar({ productPhotoUrl: null, modulePhotoUrl: null })], '2026-09-01', '2026-09-21');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('expandedProductIds', new Set(['product:o1:0']));
+    fixture.componentRef.setInput('expandedModuleIds', new Set(['module:o1:0:m1']));
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-test="gantt-photo-product"]')).toBeFalsy();
+    expect(root.querySelector('[data-test="gantt-photo-module"]')).toBeFalsy();
+  });
+
   it('scrollRequest target "bar" re-anchors without errors (viewport pan fix)', async () => {
     const bar = makeBar({});
     const fixture = await setup([bar], '2026-09-01', '2026-09-21');
