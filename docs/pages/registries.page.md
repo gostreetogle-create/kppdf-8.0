@@ -177,6 +177,7 @@ Row actions и toolbar create — **icon-only** Lucide через app-layer ко
   (`POST /modules/:id/composition` / `POST /products/:id/composition`), не в root.
 - **`focusComposition`:** row action «Открыть состав» прокручивает composition block в видимую область
   (`scrollIntoView` + focus), без изменения layout shell.
+- **Master expand scroll (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE):** clicking a master row preserves the `.shell-main` scrollTop across the route navigation and restores it after two render frames. The URL-driven single-expand model remains unchanged; no `scrollIntoView` is used for master expansion. The page wrapper has no vertical padding/min-height beyond the normal category gap and panel content.
 - **Edit loading:** перед открытием edit dialog для module/product/material вызывается `getById`;
   при ошибке — toast, dialog не открывается (list row может быть неполным).
 - **Details filter:** пустое значение фильтра «Вид» = только `part` (дефолтный запрос), не «все виды»;
@@ -301,4 +302,4 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 
 ---
 
-_Обновлено: 2026-09-05 (TZ-NX-REGISTRIES-WORKERS)._
+_Обновлено: 2026-09-05 (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE)._

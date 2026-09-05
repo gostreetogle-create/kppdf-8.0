@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter, type ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { RegistriesPage } from './registries-page';
+import { RegistriesPage, restoreRegistryScrollPosition } from './registries-page';
 import { REGISTRIES_CATALOG } from './data/registries.catalog';
 import { defineRegistry, type RegistryDefinition, type RegistryRow } from './model/registry.types';
 
@@ -49,6 +49,28 @@ function routeStub(registryKey: string | null): ActivatedRoute {
     },
   } as unknown as ActivatedRoute;
 }
+
+describe('restoreRegistryScrollPosition (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE)', () => {
+  it('restores the captured scrollTop after two render scheduling steps', () => {
+    const scrollport = { scrollTop: 640 };
+    const callbacks: Array<() => void> = [];
+
+    restoreRegistryScrollPosition(scrollport, 128, (callback) => callbacks.push(callback));
+    expect(scrollport.scrollTop).toBe(640);
+    expect(callbacks).toHaveLength(1);
+
+    callbacks.shift()?.();
+    expect(scrollport.scrollTop).toBe(640);
+    expect(callbacks).toHaveLength(1);
+
+    callbacks.shift()?.();
+    expect(scrollport.scrollTop).toBe(128);
+  });
+
+  it('does nothing when the shell scrollport is unavailable', () => {
+    expect(() => restoreRegistryScrollPosition(null, 100, jest.fn())).not.toThrow();
+  });
+});
 
 describe('RegistriesPage — master table (TZ-NX-REGISTRIES-MASTER-TABLE-UX)', () => {
   let fixture: ComponentFixture<RegistriesPage>;

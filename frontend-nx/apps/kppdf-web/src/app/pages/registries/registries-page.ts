@@ -43,6 +43,27 @@ interface RegistryCategoryGroup {
  * open row by construction (a single `registryKey` drives the single
  * `expandedRowWhen` predicate).
  */
+/** Restore the shell scrollport after route-driven inline expansion settles. */
+export function restoreRegistryScrollPosition(
+  scrollport: { scrollTop: number } | null,
+  scrollTop: number,
+  schedule?: (callback: () => void) => void,
+): void {
+  if (!scrollport) return;
+  const restore = (): void => {
+    scrollport.scrollTop = scrollTop;
+  };
+  if (schedule) {
+    schedule(() => schedule(restore));
+    return;
+  }
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => requestAnimationFrame(restore));
+  } else {
+    queueMicrotask(restore);
+  }
+}
+
 @Component({
   selector: 'pi-registries-page',
   standalone: true,
@@ -230,11 +251,21 @@ export class RegistriesPage implements OnInit {
   }
 
   protected onMasterRowClick(row: RegistryMasterRow): void {
-    if (this.registryKey() === row.key) {
-      void this.router.navigate(['/registries']);
-    } else {
-      void this.router.navigate(['/registries', row.key]);
-    }
+    const scrollport = this.registryScrollport();
+    const scrollTop = scrollport?.scrollTop;
+    const target = this.registryKey() === row.key
+      ? ['/registries']
+      : ['/registries', row.key];
+    void this.router.navigate(target).then(() => {
+      if (scrollport && scrollTop !== undefined) {
+        restoreRegistryScrollPosition(scrollport, scrollTop);
+      }
+    });
+  }
+
+  private registryScrollport(): HTMLElement | null {
+    if (typeof document === 'undefined') return null;
+    return document.querySelector<HTMLElement>('.shell-main');
   }
 }
 
