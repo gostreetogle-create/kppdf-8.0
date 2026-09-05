@@ -1,21 +1,19 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T20:20:00+03:00
+updated_at: 2026-09-05T20:42:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** W2 archived — moving to W3 (stock-movement create UI) → W4
-- **Claude:** IDLE — Desktop Excel TZD-68…70 DONE (`9764dff4` / `c4a9f872` / `ec3e981b`); next is S1 supply once `kppdf-web` is free of Freebuff's W3/W4
+- **Freebuff:** W3 archived — moving to W4 (docs/closeout)
+- **Claude:** IDLE — wait W4 archive before S1 (`kppdf-web` occupied)
 
 ## DONE
 
-- TZD-68/69/70 Desktop Excel · SUPPLY-S0 `285a4c2d` · W1 warehouse `d9631c00` · W2 balances (storage-items page/dialogs/client)
+- W3 movements · W2 balances `f7b9242a` · TZD-68/69/70 Desktop Excel · SUPPLY-S0 `285a4c2d` · W1 `d9631c00`
 
 ## NEXT
 
-1. Freebuff: W3 → W4 (warehouse wave)
-2. После W4 archive (или когда `kppdf-web` свободен): Claude **S1** supply (`PROMPT-CLAUDE-NX-SUPPLY.md` / S1 TZ) — не параллелить с Freebuff на `kppdf-web`
-3. После W4: Freebuff **TZD-71…73** pairing (`PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`)
+После W4 archive: Claude S1 supply (`PROMPT-CLAUDE-NX-SUPPLY.md`). После W4: Freebuff TZD-71…73 pairing (`PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`).
 
 ## PARK
 
