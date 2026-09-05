@@ -12,6 +12,9 @@ import {
   signal,
 } from '@angular/core';
 import {
+  FormArray,
+  FormControl,
+  FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
@@ -19,8 +22,11 @@ import {
 import { firstValueFrom } from 'rxjs';
 import {
   PiModulesService,
+  PiWorkTypesService,
   type CreateProductModulePayload,
   type ProductModule,
+  type ProductModuleWorkTypePayload,
+  type WorkType,
 } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiDialogComponent, PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
@@ -90,6 +96,45 @@ export interface ModuleFormDialogData {
           </div>
         </app-pi-form-section>
 
+        <app-pi-form-section title="Виды работ" headingId="module-work-types" tone="neutral">
+          <div class="flex items-baseline justify-between gap-3 mb-form-row">
+            <p class="text-sm text-muted-foreground">
+              Планирование Ганта: длительность берётся из дней вида работ, норма — для себестоимости.
+            </p>
+            <app-pi-button type="button" variant="outline" size="sm" (click)="addWorkType()" data-test="module-work-type-add">
+              + Добавить вид работы
+            </app-pi-button>
+          </div>
+          <div formArrayName="workTypes" class="space-y-2" data-test="module-work-types">
+            @for (group of workTypesArray.controls; track $index; let i = $index) {
+              <div [formGroupName]="i" class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30" [attr.data-test]="'module-work-type-row-' + i">
+                <label class="block col-span-6">
+                  <span class="eyebrow block mb-1.5">Вид работы</span>
+                  <select formControlName="workTypeId" class="pi-input w-full" [attr.aria-label]="'Вид работы ' + (i + 1)" data-test="module-work-type-select">
+                    <option value="">— выберите —</option>
+                    @for (workType of workTypes(); track workType._id) {
+                      <option [value]="workType._id">{{ workType.name }}</option>
+                    }
+                  </select>
+                </label>
+                <app-pi-form-field label="Норма, ч" [htmlFor]="'module-work-type-hours-' + i" class="col-span-3">
+                  <app-pi-input [id]="'module-work-type-hours-' + i" type="number" formControlName="estimatedHours" data-test="module-work-type-hours" />
+                </app-pi-form-field>
+                <app-pi-form-field label="Порядок" [htmlFor]="'module-work-type-sort-' + i" class="col-span-2">
+                  <app-pi-input [id]="'module-work-type-sort-' + i" type="number" formControlName="sortOrder" data-test="module-work-type-sort" />
+                </app-pi-form-field>
+                <div class="flex gap-1" role="group" [attr.aria-label]="'Порядок строки ' + (i + 1)">
+                  <app-pi-button type="button" variant="outline" size="icon" [disabled]="i === 0" (click)="moveWorkType(i, -1)" [attr.aria-label]="'Поднять вид работы ' + (i + 1)" data-test="module-work-type-up">↑</app-pi-button>
+                  <app-pi-button type="button" variant="outline" size="icon" [disabled]="i === workTypesArray.length - 1" (click)="moveWorkType(i, 1)" [attr.aria-label]="'Опустить вид работы ' + (i + 1)" data-test="module-work-type-down">↓</app-pi-button>
+                  <app-pi-button type="button" variant="destructive" size="icon" (click)="removeWorkType(i)" [attr.aria-label]="'Удалить вид работы ' + (i + 1)" data-test="module-work-type-remove">×</app-pi-button>
+                </div>
+              </div>
+            } @empty {
+              <p class="text-sm text-muted-foreground" data-test="module-work-types-empty">Виды работ не добавлены.</p>
+            }
+          </div>
+        </app-pi-form-section>
+
         @if (savedId(); as id) {
           <div
             #compositionBlock
@@ -122,6 +167,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   @ViewChild('compositionBlock') private compositionBlock?: ElementRef<HTMLElement>;
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly modulesService = inject(PiModulesService);
+  private readonly workTypesService = inject(PiWorkTypesService);
   private readonly data = inject<ModuleFormDialogData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<ProductModule | null | undefined>>(PI_DIALOG_REF);
   private readonly dialog = inject(PiDialogService);
@@ -135,6 +181,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
 
   protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
   protected readonly moduleEntity = signal<ProductModule | undefined>(this.data.module);
+  protected readonly workTypes = signal<WorkType[]>([]);
 
   protected readonly dialogTitle = computed(() =>
     this.mode() === 'edit' ? 'Редактировать модуль' : 'Создать модуль',
@@ -149,9 +196,15 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
     dimUnit: this.fb.control('mm'),
     weight: this.fb.control<number | null>(null),
     sortOrder: this.fb.control<number | null>(null),
+    workTypes: this.fb.array<WorkTypeFormGroup>([]),
   });
 
+  get workTypesArray(): FormArray<WorkTypeFormGroup> {
+    return this.form.controls.workTypes;
+  }
+
   ngOnInit(): void {
+    void this.loadWorkTypes();
     if (this.data.module) {
       this.savedId.set(this.data.module._id);
       this.patchModule(this.data.module);
@@ -201,6 +254,38 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
     }
   }
 
+  protected addWorkType(): void {
+    this.workTypesArray.push(this.createWorkTypeGroup());
+    this.form.markAsDirty();
+  }
+
+  protected removeWorkType(index: number): void {
+    this.workTypesArray.removeAt(index);
+    this.form.markAsDirty();
+  }
+
+  protected moveWorkType(index: number, direction: -1 | 1): void {
+    const target = index + direction;
+    if (target < 0 || target >= this.workTypesArray.length) return;
+    const current = this.workTypesArray.at(index);
+    this.workTypesArray.removeAt(index, { emitEvent: false });
+    this.workTypesArray.insert(target, current, { emitEvent: false });
+    this.form.markAsDirty();
+  }
+
+  private createWorkTypeGroup(row?: NonNullable<ProductModule['workTypes']>[number]): WorkTypeFormGroup {
+    return this.fb.group({
+      workTypeId: this.fb.control(resolveWorkTypeId(row), Validators.required),
+      estimatedHours: this.fb.control(row?.estimatedHours ?? null),
+      sortOrder: this.fb.control(row?.sortOrder ?? 0),
+    });
+  }
+
+  private async loadWorkTypes(): Promise<void> {
+    const result = await firstValueFrom(this.workTypesService.list({ activeOnly: true }));
+    if (result.ok) this.workTypes.set(result.data.items);
+  }
+
   private patchModule(m: ProductModule): void {
     this.form.patchValue({
       name: m.name,
@@ -212,6 +297,9 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
       weight: m.weight ?? null,
       sortOrder: m.sortOrder ?? null,
     });
+    this.workTypesArray.clear();
+    for (const row of m.workTypes ?? []) this.workTypesArray.push(this.createWorkTypeGroup(row));
+    this.form.markAsPristine();
   }
 
   private buildPayload(): CreateProductModulePayload {
@@ -230,6 +318,24 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
         unit: v.dimUnit || undefined,
       };
     }
+    payload.workTypes = v.workTypes
+      .filter((row) => row.workTypeId.trim().length > 0)
+      .map((row): ProductModuleWorkTypePayload => ({
+        workTypeId: row.workTypeId,
+        ...(row.estimatedHours == null ? {} : { estimatedHours: Number(row.estimatedHours) }),
+        ...(row.sortOrder == null ? {} : { sortOrder: Number(row.sortOrder) }),
+      }));
     return payload;
   }
+}
+
+type WorkTypeFormGroup = FormGroup<{
+  workTypeId: FormControl<string>;
+  estimatedHours: FormControl<number | null>;
+  sortOrder: FormControl<number>;
+}>;
+
+function resolveWorkTypeId(row: NonNullable<ProductModule['workTypes']>[number] | undefined): string {
+  if (!row) return '';
+  return typeof row.workTypeId === 'string' ? row.workTypeId : row.workTypeId._id;
 }

@@ -17,6 +17,13 @@ export interface WorkTypeInModule {
   sortOrder?: number;
 }
 
+/** Normalized write shape accepted by module create/update endpoints. */
+export interface ProductModuleWorkTypePayload {
+  workTypeId: string;
+  estimatedHours?: number;
+  sortOrder?: number;
+}
+
 export interface ProductModule {
   _id: string;
   name: string;
@@ -48,6 +55,8 @@ export interface CreateProductModulePayload {
   dimensions?: ModuleDimensions;
   weight?: number;
   sortOrder?: number;
+  /** Planning links used by the Gantt; material composition remains separate. */
+  workTypes?: ProductModuleWorkTypePayload[];
 }
 
 export type UpdateProductModulePayload = Partial<CreateProductModulePayload>;

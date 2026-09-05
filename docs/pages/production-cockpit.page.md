@@ -56,7 +56,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 |-------|----------|-----------|
 | GET | `/api/orders` | Список коммерческих заказов |
 | GET | `/api/products/:id` | Изделие + composition (dual-read) |
-| GET | `/api/modules/:id` | Модуль + workTypes |
+| GET | `/api/modules/:id` | Модуль + `workTypes[]` planning links (separate from material composition) |
 | GET | `/api/work-types` | Справочник дней (`days`) |
 | GET | `/api/workers?limit=100&isActive=true` | Лейблы людей по workType (TZ-334; BE `@Max(100)`, не 200) |
 
@@ -87,6 +87,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 | `pages/production/blocks/order-inspector.component.ts` | `promptCatalogDaysChange` helper | G3/G5 |
 | `libs/data-access`: `sales/order.types.ts` + `pi-orders.service.ts` | `estimateDays/estimateStartOffsets/estimateDayOverrides` + `patchEstimateDays/patchEstimateStart` | G2 |
 | `libs/data-access`: `catalog/work-type.types.ts`, `pi-work-types.service.ts` | WorkTypes read + `update` (catalog days, G5) | G2/G5 |
+| `registries/dialogs/module-form-dialog.component.ts` | Module `workTypes[]` editor; active picker, estimated hours, order, and populated edit hydration | R3 |
 | `libs/data-access`: `people/person.types.ts`, `pi-people.service.ts` | Workers (`/workers?limit=100&isActive=true`) | G2 |
 
 Спецификации NX: model/facade/page/bars/rail/workers + write-path (`*.spec.ts` рядом). G3 выравнял `anyComponentStyle` budget NX до legacy 8/16kB (Гант style-heavy by design). Данные: bulk hydrate `POST /products/bulk` + `POST /modules/batch` (aliases `GET /api/products/bulk?ids=`, `/api/modules/bulk?ids=`), как в legacy TZ-PRODUCTION-338/341.

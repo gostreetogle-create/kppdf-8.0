@@ -15,6 +15,7 @@
 - **Grid**: `app-pi-showcase-card size="md"` в сетке `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`; `mediaUrl` из main/first фото; grid media: contain (TZ-UX-344); `title` = name, `eyebrow` = article или «Модуль», `description` = габариты или «N мат. · M раб.»; `sc-actions-md` — hint «Себест. см. карточку» (без batch cost-preview, TZ-COST-303); grid slice = `paginatedRows()`; pager = `<app-pi-pagination>` (канон TZ-UX-341 / UX-340).
 - **View mode persistence**: `localStorage['pi-modules-view-mode']` (`list` | `grid`), load/save в try/catch (паттерн products).
 - **Фильтр «Состав»** — client-side, dual-read: непустой `composition` (material-линии) приоритетнее legacy `materials[]`.
+- **Виды работ (TZ-NX-REGISTRIES-MODULE-WORK-TYPES):** отдельная секция диалога модуля хранит планирование Ганта в `workTypes[]`: `workTypeId`, опциональные `estimatedHours` (для себестоимости) и `sortOrder`. Выборка загружается из `GET /api/work-types`; эти строки не являются материалами и отправляются вместе с create/update модуля.
 
 ## TZ-CATALOG-332 — визуальный маркер типа
 
@@ -39,7 +40,7 @@
 | POST | `/api/modules/:id/composition` | Добавить линию состава (lineType=material) |
 | PATCH | `/api/modules/:id/composition/:lineId` | Обновить линию (quantity/unit/…) |
 | DELETE | `/api/modules/:id/composition/:lineId` | Удалить линию состава |
-| DELETE | `/api/modules/:id` | **Hard delete** (`deleteOne`) — soft-delete Module = TZ-CATALOG-314 |
+| DELETE | `/api/modules/:id` | Archive module (`deletedAt`; current backend write path) |
 
 > **TZ-CATALOG-317:** материалы модуля читаются dual-read (непустой
 > `composition` → material-линии, иначе legacy `materials[]`); редактирование
@@ -59,7 +60,7 @@
 | Компонент | Режим | Данные |
 |-----------|-------|--------|
 | `QuickCreateDialogComponent` | **create** (TZ-DICT-316) | `{ entity: 'module', size?: 'S'\|'M'\|'L' }` — default M; profile from `/form-profiles` |
-| `ModuleFormDialogComponent` | **edit** (FullEditor) | `ProductModule` |
+| `ModuleFormDialogComponent` | **create/edit** (FullEditor) | `ProductModule` passport + separate Work Types planning rows; material composition remains in `pi-composition-panel` |
 
 **TZ-UX-FORM-310:** FullEditor пакует 12-col (имя 8 / артикул 4, не 50/50); габариты+вес одна узкая лента, числа `text-right`. Канон: [`ui-form-field-capacity.md`](./ui-form-field-capacity.md).
 | `AlertDialogComponent` | confirm delete | `{ title, description, confirmLabel, variant }` |
@@ -96,11 +97,11 @@ listRes → data → filteredRows (поиск + «Состав») → sortedRows
 
 ## Column definitions (7 колонок)
 
-`photoIds` (Фото, template) → `name` (sticky, sortable, имя-ссылка) → `article` (sortable) → `dimensions` (formatted: W×H×D) → `materials` (count) → `workTypes` (count) → `weight` (Себест., hint «см. карточку»)
+`photoIds` (Фото, template) → `name` (sticky, sortable, имя-ссылка) → `article` (sortable) → `dimensions` (formatted: W×H×D) → `materials` (count) → `workTypes` (count; planning links for Gantt) → `weight` (Себест., hint «см. карточку»)
 
 ## Состав модуля (TZ-CATALOG-320)
 
-Редактор состава допускает `material` и дочерний `module`; текущий модуль исключается из списка. Материал в пикере получает kind-лейбл: сырьё, деталь, метиз, покупное, другое. Каноническая запись идёт через `/modules/:id/composition`; полный lazy CompositionTree остаётся в `TZ-CATALOG-311`.
+Редактор состава допускает `material` и дочерний `module`; текущий модуль исключается из списка. Материал в пикере получает kind-лейбл: сырьё, деталь, метиз, покупное, другое. Каноническая запись идёт через `/modules/:id/composition`; полный lazy CompositionTree остаётся в `TZ-CATALOG-311`. Это отдельная модель от `workTypes[]`: composition описывает материалы/модули, а `workTypes[]` — планирование операций для Ганта.
 
 ## Особенности
 
@@ -120,6 +121,7 @@ listRes → data → filteredRows (поиск + «Состав») → sortedRows
 | TZ-CATALOG-319 | Docs: hard-delete Module (не soft) |
 | TZ-CATALOG-372 | Витрина как у Продукции: фото, имя-ссылка, toolbar (Состав), filters flyout, grid `PiShowcaseCard` md, `pi-modules-view-mode` |
 | TZ-CATALOG-374 | List expandable состав (`expandedId` + `getModuleTree`); detail через имя / «Открыть карточку» |
+| TZ-NX-REGISTRIES-MODULE-WORK-TYPES | Module create/edit submits separate `workTypes[]` planning links; populated Work Types hydrate the dialog FormArray |
 | TZ-UX-327 | Chrome page-tools: `PiChromeToolsService` owner `modules-page`; L=filters R=view+refresh; нет w-12 filters-rail |
 
 ---

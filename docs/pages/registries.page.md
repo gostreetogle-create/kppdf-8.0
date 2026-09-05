@@ -110,7 +110,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `units` | Единицы измерения | `api` (`GET /units`, `PATCH /units/:key`) | реальный backend, server-side search/filter/pagination, `sortable: false` (backend не поддерживает sort), toggle-active row actions, без delete (TZ-NX-REGISTRY-UNITS-READ-SLICE) |
 | `materials` | Материалы | `api` (`GET/POST/PATCH/DELETE /materials`, duplicate) | сырьё (`materialKind=raw`); toolbar «Создать материал»; row actions: Редактировать, Копировать, Архивировать, Открыть в Конструкторе |
 | `details` | Детали | `api` (тот же `/materials`, один `materialKind` за запрос) | Material с kind part/fastener/purchased/other; **по умолчанию** список только `part` (не «все non-raw»); фильтр «Вид» честно подписан; toolbar «Создать деталь»; тот же dialog/actions, kind выбирается в форме |
-| `modules` | Модули | `api` (`GET/POST/PATCH/DELETE /modules`, composition) | toolbar create; row: Редактировать, Открыть состав (dialog), Архивировать |
+| `modules` | Модули | `api` (`GET/POST/PATCH/DELETE /modules`, composition) | toolbar create; row: Редактировать, Открыть состав (dialog), Архивировать; module dialog also edits separate `workTypes[]` planning links |
 | `products` | Изделия | `api` (`GET/POST/PATCH/DELETE /products`, duplicate, composition) | toolbar create; row: edit/copy/archive, Открыть состав (dialog), Открыть в Конструкторе; badge «Комплекс» только при `isComplex` |
 | `supply-requests` | Заявки снабжения | `api` (`GET /supply-requests`) | read-only; filters status/priority/search/orderId; **client** pagination (API cap 500) |
 | `organizations` | Организации | `api` (`GET /organizations`) | read-only; supplier = `type` filter; server pagination |
@@ -297,6 +297,7 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 - **TZ-NX-REGISTRIES-FILTERS-PAGINATION-CONSISTENCY (2026-08-29)** — unified toolbar: filters left, pagination + create right; `paginationMode` on definitions.
 - **TZ-NX-REGISTRIES-WORK-TYPES (2026-09-05)** — API-backed «Виды работ» registry with typed CRUD and client-side list controls.
 - **TZ-NX-REGISTRIES-WORKERS (2026-09-05)** — API-backed «Люди» registry with typed CRUD, `workTypeIds[]` skill selection, and a Gantt link to `/registries/workers`.
+- **TZ-NX-REGISTRIES-MODULE-WORK-TYPES (2026-09-05)** — module create/edit dialog loads active Work Types and persists `workTypes[]` planning links independently from material composition.
 
 ---
 
