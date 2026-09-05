@@ -1,7 +1,7 @@
 # TZ-NX-SUPPLY-S1-PAGE checklist — NX `/supply` реестр (без mock)
 
-> Status: **CLAIMED / IN PROGRESS**
-> Marker: `tasks/_active/TZ-NX-SUPPLY-S1-PAGE.md`
+> Status: **DONE**
+> Archive: `tasks/_archive/2026-09/TZ-NX-SUPPLY-S1-PAGE.done.md`
 
 ## Claim slot
 
@@ -65,5 +65,5 @@
 
 - [x] Archive + remove active marker
 - [x] Status = DONE
-- closed_at: 2026-09-05T22:40:00Z
+- closed_at: 2026-09-05T22:32:12+03:00
 - commit SHA: `9680c441`
