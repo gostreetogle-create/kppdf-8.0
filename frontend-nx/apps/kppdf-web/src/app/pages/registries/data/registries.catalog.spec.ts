@@ -26,10 +26,10 @@ function buildCatalog() {
 
 describe('registries.catalog CRUD unify', () => {
   it('contains production registries and excludes the fixture departments registry', () => {
-    expect(buildCatalog().map((registry) => registry.key)).toEqual(['units', 'materials', 'details', 'modules', 'products', 'supply-requests', 'organizations', 'product-passports', 'text-blocks', 'table-templates']);
+    expect(buildCatalog().map((registry) => registry.key)).toEqual(['units', 'materials', 'details', 'modules', 'products', 'supply-requests', 'organizations', 'vat-rate', 'formulas', 'product-passports', 'text-blocks', 'table-templates']);
   });
 
   it('does not expose constructor actions or route capability', () => {
-    for (const registry of buildCatalog()) expect(registry.rowActions?.some((action) => action.id === 'open-constructor')).toBe(false);
+    for (const registry of buildCatalog()) expect(registry.rowActions?.some((action) => action.id === 'open-constructor')).toBeFalsy();
   });
 });
