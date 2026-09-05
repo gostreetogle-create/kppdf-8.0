@@ -1,84 +1,63 @@
 # DOMAIN-MAP — домен ↔ модули ↔ страницы
 
-> TZ-OPS-304 · docs-only · факты из репо (routes/modules прочитаны read-only 2026-08-09)
+> TZ-OPS-304 · docs-only · **dual-track**: legacy `frontend/` + целевой **`frontend-nx`**
+> Snapshots: legacy routes 2026-08-09 · NX `frontend-nx/.../app.routes.ts` 2026-09-05
 
 ## 1.1 Шапка
 
-**Зачем:** быстрый канон связности для агентов — «домен → BE module → FE route → page.md → SoT».
-**Правило:** при споре побеждают **живая schema** (`backend/src/modules/<x>/`) и **route**;
-карта обновляется в той же TZ, что меняет контур домена.
+**Зачем:** быстрый канон связности — «домен → BE → legacy FE → **NX FE** → page.md → SoT».
+**Цель UI:** итог продукта = **`frontend-nx`**. Legacy живёт до cutover; карту вести **параллельно** с NX-портами, не «одним махом потом».
+**Правило:** в **той же TZ**, что меняет BE module / legacy route / **NX route** / page.md — обновить строку здесь (+ Integrity slot). При споре побеждают **живая schema** и **живой route** (после cutover SoT UI = NX).
 **Ссылки:** `docs/PROJECT-MEMORY.md` · `docs/DOCS-INTEGRITY.md` · `docs/SECTION-READINESS.md` ·
-`docs/data-model.md` (осторожно: может отставать от schema).
+`docs/pages/PAGE-TZ-INDEX.md` · `docs/data-model.md` (может отставать от schema).
 
 ## 1.2 Таблица доменов
 
-`Домен | BE modules (папки) | FE routes | page.md | SoT / канон docs | Не путать`
+`Домен | BE | Legacy FE | NX FE (target) | page.md | SoT | Не путать`
 
-| Домен | BE modules | FE routes | page.md | SoT / канон | Не путать |
-|-------|-----------|-----------|---------|-------------|-----------|
-| **Auth / Users / Roles** | `auth`, `user`, `role`, `permissions`, `rate-limit` | `/login`, `/admin/users`, `/admin/roles` | `login`, `admin-users`, `admin-roles` | `docs/RBAC-CONTRACT.md`, `permissions.constants.ts` | `User` (аккаунт) ≠ `Worker` (сотрудник цеха); `user:read` ≠ `user:admin` |
-| **Party (контрагенты/орг)** | `counterparty`, `organization`, `person`, `worker`, `role-counterparty`, `role-org` | `/counterparties`, `/organizations`, `/people` | `counterparties`, `organizations`, `people` | `docs/data-model.md`, TZ-PARTY-* | **Counterparty = клиент сделки; Organization = наша фирма / supplier org** |
-| **Catalog** | `product`, `product-module`, `material`, `bom`, `category`, `product-passport`, `product-photo`, `product-module-photo`, `certificate`, `inventor-file`, `catalog`, `catalog-graph` | `/products`, `/products/:id`, `/modules`, `/modules/:id`, `/materials`, `/materials/:id`, `/categories`, `/catalog/appearance` | `products`, `product-detail`, `modules`, `module-detail`, `materials`, `material-detail`, `categories`, `catalog-appearance` | `docs/data-model.md`, `docs/product-vision-lite.md` | **Catalog composition ≠ warehouse stock**; `Product` ≠ `ProductModule`; материал ≠ готовое изделие |
-| **Warehouse / Inventory** | `warehouse`, `storage-item`, `stock-movement`, `reservation`, `inventory` | `/inventory`, `/storage-items`, `/stock-movements`, `/warehouses` | `inventory-dashboard`, `storage-items`, `stock-movements`, `warehouses` | `docs/SECTION-READINESS.md` §2 (Склад READY) | **Остаток SoT = `StorageItem`/movements, не `Material.stockQty`**; движение ≠ остаток |
-| **Sales / КП / Orders** | `quotation`, `order`, `contract`, `shipment`, `invoice`, `order-closing` | `/dashboard`, `/proposals`, `/proposals/create`, `/orders`, `/orders/:id`, `/contracts`, `/shipping` | `dashboard`, `proposals`, `proposals-create`, `orders`, `contracts`, `shipping` (stub) | `docs/audits/2026-08-08-sales-to-shop-flow-canon.md`, `docs/COUPLING-MAP.md` (`Order.status`) | **КП ≠ Order**; Комбайн `/dashboard` ≠ склад `/inventory`; `draft` ≠ работа цеха |
-| **Documents / Builder** | `document-template`, `document-template-category`, `doc-type`, `template-block`, `text-block`, `text-block-category`, `table-template`, `document-table-type`, `generated-document`, `registry`, `attachment` | `/doc-constructor/templates`, `/documents`, `/texts`, `/tables`, `/builder/:id` | `templates`, `documents`, `texts`, `tables`, `builder` (+ tool-pane, inspector) | `docs/pages/builder.page.md`, `docs/FEATURE-INTEGRATION-CHECKLIST.md`, `desktop/docs/MCP.md` | `DocumentTemplate` ≠ `TableTemplate`; `TableTemplateCategory` enum ≠ `DocumentTemplateCategory` dict |
-| **Production** | `production-order`, `work-order`, `work-order-operation`, `work-type`, `work-center`, `routing-step`, `tech-process`, `order-task` | `/production`, `/work-types` | `production-cockpit`, `work-types` | `docs/SECTION-READINESS.md` (SHELL/MVP), `docs/COUPLING-MAP.md` | `WorkType` ≠ `RoutingStep`; `production-order` ≠ sales `order`; цех фильтрует sales `Order.status` |
-| **Supply** | `supply`, `purchase-order`, `purchase-request`, `tender` | `/supply` | `supply` | `docs/SECTION-READINESS.md`, `docs/data-model.md` | supply-task ≠ sales order; закупка ≠ договор продажи; **PurchaseRequest/PurchaseOrder = LEGACY (TZ-SUPPLY-313 A) — без UI, новые закупки через `SupplyRequest`/`SupplyTask`** |
-| **Desktop / Import / MCP** | `desktop`, `mutation-journal`, `import-task`, `import-todo`, `import-jobs` | `/import-todos` | `import-todos` | `desktop/docs/MCP.md`, journal propose→confirm vision | write через journal propose/confirm ≠ прямой SoT write; `import-todo` ≠ `import-task` |
-| **Admin / Settings** | `admin`, `setting`, `feature-flag`, `form-profiles`, `counter`, `site` | `/admin/*`, `/dictionaries/form-profiles` | `form-profiles`, `admin-users`, `admin-roles` | `docs/RBAC-CONTRACT.md`, `permissions.constants.ts` | FE `admin/*` routes ≠ BE `admin` module; form-profiles ≠ роли |
-| **Cost** | `actual-cost`, `cost-calculation`, `financial-report`, `reconciliation-act`, `rpp` | — (нет отдельного UI) | N/A | `docs/data-model.md`, TZ-COST-* | `actual-cost` ≠ `cost-calculation`; учётная/закупочная цена ≠ цена продажи |
-| **Dictionaries / refs** | `unit`, `color-reference`, `attribute-definition`, `entity-attribute-value`, `status`, `currency`, `doc-type` | `/dictionaries/*`, `/categories`, `/doc-template-categories`, `/dictionaries/text-block-categories` | `measurements-group`, `units`, `categories`, `color-references`, `document-template-categories`, `text-block-categories` | `docs/data-model.md`, `docs/SECTION-READINESS.md` §4 | `Unit` ≠ «Измерения» (группа); общая `Category` vs legacy ProductCategory/MaterialCategory |
+| Домен | BE modules | Legacy FE | NX FE (target) | page.md | SoT / канон | Не путать |
+|-------|------------|-----------|----------------|---------|-------------|-----------|
+| **Auth / Users / Roles** | `auth`, `user`, `role`, `permissions`, `rate-limit` | `/login`, `/admin/users`, `/admin/roles` | `/login`, `/enroll/:token`, `/admin/devices`, `/admin/roles`, `/forbidden` | `login`, `admin-users`, `admin-roles` | `docs/RBAC-CONTRACT.md`, `nx-auth-platform.md` | `User` ≠ `Worker`; `user:read` ≠ `user:admin` |
+| **Party** | `counterparty`, `organization`, `person`, `worker`, `role-counterparty`, `role-org` | `/counterparties`, `/organizations`, `/people` | `/counterparties` (thin D3); orgs/people — **gap** | `counterparties`, `organizations`, `people` | `docs/data-model.md`, TZ-PARTY-*, TZ-NX-DEALS-D3 | **Counterparty = клиент**; **Organization = наша фирма** |
+| **Catalog** | `product`, `product-module`, `material`, `bom`, `category`, … `catalog-graph` | `/products`, `/modules`, `/materials`, `/categories`, `/catalog/appearance` | **gap** (shell `/constructor` не в live routes) | `products`, `modules`, `materials`, … | `docs/data-model.md`, `product-vision-lite.md` | composition ≠ warehouse stock |
+| **Warehouse** | `warehouse`, `storage-item`, `stock-movement`, `reservation`, `inventory` | `/inventory`, `/storage-items`, `/stock-movements`, `/warehouses` | **Live (W1–W3 DONE):** `/warehouses`, `/storage-items` (balances), `/stock-movements` (journal + in/out) | `warehouses`, `storage-items`, `stock-movements`, … | audit `2026-09-05-warehouse-nx-port-audit.md` | SoT qty = `StorageItem`/movements; NX без dashboard/types/zones/transfer-create |
+| **Sales / КП / Orders** | `quotation`, `order`, `contract`, `shipment`, `invoice`, `order-closing` | `/dashboard`, `/desk`, `/proposals*`, `/orders*`, `/contracts`, `/shipping` | `/proposals`, `/orders`, `/orders/create`, `/orders/:id`, `/contracts`, `/contracts/:id` | `dashboard`, `manager-desk`, `proposals*`, `orders`, `contracts`, `shipping` | sales-to-shop canon, `COUPLING-MAP` | **КП ≠ Order**; desk ≠ inventory |
+| **Documents / Studio** | `document-template`, `text-block`, `table-template`, `generated-document`, `registry`, … | `/doc-constructor/*`, `/builder/:id` | `/studio`, `/studio/:id` (Doc Studio) | `templates`, `documents`, `texts`, `tables`, `builder`, `document-studio` | builder/studio page.md, FIC | Template ≠ TableTemplate |
+| **Production** | `production-order`, `work-order`, `work-type`, … | `/production`, `/work-types` | `/production` (**Gantt SoT NX**, WAVE G0–G7) | `production-cockpit`, `work-types` | SECTION-READINESS, `COUPLING-MAP` | `production-order` ≠ sales `order` |
+| **Supply** | `supply`, `purchase-order`, `purchase-request`, `tender` | `/supply` | **WAVE READY** `WAVE-NX-SUPPLY` (S0 BE ∥; S1 after W1) | `supply` | same warehouse audit | Purchase* = LEGACY; NX = Supply* + kit confirm |
+| **Desktop / Import** | `desktop`, `mutation-journal`, `import-*` | `/import-todos` | **gap** (Desktop app) | `import-todos` | `desktop/docs/MCP.md` | propose/confirm ≠ прямой SoT write |
+| **Admin / Settings** | `admin`, `setting`, `feature-flag`, `form-profiles`, `counter`, `site` | `/admin/*`, form-profiles | `/admin/devices`, `/admin/roles` (+ kit вне бизнеса) | `form-profiles`, `admin-*` | RBAC | FE admin ≠ BE `admin` module |
+| **Cost** | `actual-cost`, `cost-calculation`, … | — | — | N/A | data-model, TZ-COST-* | actual ≠ calculation |
+| **Dictionaries / Registries** | `unit`, `color-reference`, `attribute-definition`, … | `/dictionaries/*`, `/categories`, … | `/registries`, `/registries/:registryKey` (**NX-only**) | `units`, `categories`, `registries`, … | SECTION-READINESS §4, registries.page.md | `Unit` ≠ группа «Измерения» |
 
-## 1.3 Gap inventory (route ↔ page.md)
+## 1.3 Gap inventory (legacy route ↔ page.md)
 
-Источники (read-only): `frontend/src/app/app.routes.ts` + `docs/pages/README.md` (2026-08-09).
+Источники: `frontend/.../app.routes.ts` + `docs/pages/README.md` (2026-08-09).
+**Итог legacy:** 36 бизнес-routes; **0 × NO** page.md (design/shipping — stub).
+Полный список — в git history OPS-305→307; новые legacy routes → page.md в той же TZ.
 
-`Route | Есть page.md? (yes/path/NO) | Примечание`
+## 1.4 NX surface (живой inventory)
 
-| Route | Есть page.md? | Примечание |
-|-------|---------------|------------|
-| `/login` | yes — `login.page.md` | |
-| `/`, `/dashboard` | yes — `dashboard.page.md` | Комбайн заказов; не путать со складом `/inventory` |
-| `/materials`, `/materials/:id` | yes — `materials`, `material-detail` | |
-| `/organizations` | yes — `organizations` | |
-| `/counterparties` | yes — `counterparties` | |
-| `/design` | yes — `design` (stub-documented) | stub (TZ-NAV-301) |
-| `/supply` | yes — `supply` | |
-| `/shipping` | yes — `shipping` (stub-documented) | stub (TZ-NAV-301) |
-| `/dictionaries/measurements` | yes — `measurements-group` | `/dictionaries/units` legacy → redirect |
-| `/categories` | yes — `categories` | |
-| `/doc-template-categories` | yes — `document-template-categories` | справочник категорий шаблонов (TZ-DOC-308) |
-| `/dictionaries/text-block-categories` | yes — `text-block-categories` | категории текстовых блоков (TZ-DOC-334) |
-| `/dictionaries/color-references` | yes — `color-references` | |
-| `/dictionaries/form-profiles` | yes — `form-profiles` | |
-| `/catalog/appearance` | yes — `catalog-appearance` | |
-| `/products`, `/products/:id` | yes — `products`, `product-detail` | |
-| `/modules`, `/modules/:id` | yes — `modules`, `module-detail` | |
-| `/work-types` | yes — `work-types` | |
-| `/import-todos` | yes — `import-todos` | |
-| `/people` | yes — `people` | |
-| `/orders`, `/orders/:id` | yes — `orders` (деталь внутри) | |
-| `/production` | yes — `production-cockpit` | |
-| `/proposals`, `/proposals/create` | yes — `proposals`, `proposals-create` | |
-| `/contracts` | yes — `contracts` | |
-| `/doc-constructor/templates` | yes — `templates` | `/doc-constructor/builder` bare → redirect |
-| `/doc-constructor/documents` | yes — `documents` | |
-| `/doc-constructor/texts` | yes — `texts` | |
-| `/doc-constructor/tables` | yes — `tables` | |
-| `/doc-constructor/builder/:id` | yes — `builder` (+ tool-pane, inspector) | |
-| `/inventory` | yes — `inventory-dashboard` | README исправлен на `/inventory` (OPS-307) |
-| `/storage-items` | yes — `storage-items` | |
-| `/stock-movements` | yes — `stock-movements` | |
-| `/warehouses` | yes — `warehouses` | |
-| `/admin/users`, `/admin/roles` | yes — `admin-users`, `admin-roles` | admin registry/roles; `/admin` → redirect |
+Источник: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` (+ `studio.routes`, `registries.routes`).
+Не бизнес: `/kit/*` (design kit). Default auth landing: `/admin/devices`.
 
-**Итог:** 36 бизнес-routes; **0 × NO** — все документированы (design/shipping — stub-documented, OPS-307).
+| NX route | page.md | Статус (кратко) |
+|----------|---------|-----------------|
+| `/login`, `/enroll/:token`, `/forbidden` | `login` (+ enroll note) | Auth platform F3 |
+| `/admin/devices`, `/admin/roles` | `admin-users`, `admin-roles` | NX admin |
+| `/registries`, `/registries/:registryKey` | `registries` | NX-only platform |
+| `/studio`, `/studio/:id` | `document-studio` | Doc Studio волны |
+| `/proposals`, `/proposals/list` (`create`→`/studio`) | `proposals` | NX KP family |
+| `/production` | `production-cockpit` | Gantt SoT NX |
+| `/orders`, `/orders/create`, `/orders/:id` | `orders` | NX deals/orders |
+| `/warehouses` | `warehouses` | W1 live thin named-warehouse CRUD |
+| `/storage-items` | `storage-items` | W2 live: balances list/filters + put-on-stock/adjust |
+| `/stock-movements` | `stock-movements` | W3 live: journal + in/out create (no transfer-create) |
+| `/contracts`, `/contracts/:id` | `contracts` | thin D4 read |
 
-> Gap fill **DONE** (WAVE-PAGE-DOCS-GAPS / OPS-305→307): шесть former-NO закрыты page.md;
-> README hygiene (`/inventory` вместо `/dashboard`, индекс живых страниц) — в OPS-307.
-> Дальше: при новых routes — page.md в том же PR/TZ (см. `docs/DOCS-INTEGRITY.md`);
-> опциональный авто-скрипт routes↔page.md — P2, не срочно.
+**NX gaps (ещё нет route):** supply, catalog lists, desk/combine, organizations/people, work-types, import-todos. Warehouse W1–W3 are DONE and live (WAVE-NX-WAREHOUSE); W4 is docs-only closeout.
+Детали TZ: `docs/pages/PAGE-TZ-INDEX.md` (секции frontend-nx).
 
 ---
 
-*Живой файл: обновляй строку домена при смене контура (см. `docs/DOCS-INTEGRITY.md`). Лимит: ≤180 строк.*
+*Живой файл: строка домена + §1.4 при смене NX/legacy контура (`docs/DOCS-INTEGRITY.md`). Лимит: ≤180 строк.*

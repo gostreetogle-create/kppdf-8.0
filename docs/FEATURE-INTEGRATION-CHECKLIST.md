@@ -44,9 +44,12 @@
 - [ ] `PAGE_KEYS` в `permissions.constants.ts` (1:1 с nav)
 - [ ] Default `pages[]` в `admin.seed.ts` (admin / director / manager / user)
 - [ ] `docs/pages/<name>.page.md` из шаблона + строка в `pages/README.md` / `PAGE-TZ-INDEX.md`
+- [ ] `docs/DOMAIN-MAP.md` — legacy и/или **NX** колонка / §1.4 (цель UI = `frontend-nx`)
 - [ ] RU UI-лейблы (не английский цех в таблице)
 
 **TZ-PRODUCTION-303 (2026-08-06) — §A done for `/production`:** route + nav «Производство» + `PAGE_KEYS.production` + seed pages (admin/director/manager) + `production-cockpit.page.md` + PAGE-TZ-INDEX/README/SECTION-READINESS; capabilities `production:read`; director Roles on facade GET reads. Group chips N/A (single page).
+
+**WAVE-NX-WAREHOUSE W1–W4 (2026-09-05) — §A N/A (port, not new pages):** `/warehouses`, `/storage-items`, `/stock-movements` route/nav/`PAGE_KEYS`/permissions/seed already existed pre-wave (legacy `frontend/`); W1–W3 replaced their `frontend-nx` implementations end-to-end (thin CRUD → balances → journal), no new route/permission/seed row was added. `docs/pages/{warehouses,storage-items,stock-movements}.page.md` and `PAGE-TZ-INDEX.md` updated with NX SoT notes; `docs/DOMAIN-MAP.md` Warehouse row/route table updated to live (was gap/placeholder).
 
 ## B. Новое право (`section:action`)
 

@@ -1,19 +1,20 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T20:42:00+03:00
+updated_at: 2026-09-05T21:40:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** W3 archived — moving to W4 (docs/closeout)
-- **Claude:** IDLE — wait W4 archive before S1 (`kppdf-web` occupied)
+- **Freebuff:** W4 docs commit+push only · `PROMPT-FREEBUFF-W4-COMMIT.md` (W3 `7f90a28d` already DONE)
+- **Claude:** IDLE until W4 `_active` cleared + W4 committed — then **S1** supply
 
 ## DONE
 
-- W3 movements · W2 balances `f7b9242a` · TZD-68/69/70 Desktop Excel · SUPPLY-S0 `285a4c2d` · W1 `d9631c00`
+- W1 `d9631c00` · W2 `f7b9242a` · W3 `7f90a28d` · TZD-68…70 Desktop · SUPPLY-S0 `285a4c2d`
 
-## NEXT
+## NEXT (после W4 push)
 
-После W4 archive: Claude S1 supply (`PROMPT-CLAUDE-NX-SUPPLY.md`). После W4: Freebuff TZD-71…73 pairing (`PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`).
+1. Claude: S1 supply page (`tasks/_ready/nx-supply/TZ-NX-SUPPLY-S1-PAGE.md`)
+2. Freebuff: TZD-71…73 NX pairing (`PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`) — **не** параллелить с S1 на `kppdf-web`
 
 ## PARK
 
