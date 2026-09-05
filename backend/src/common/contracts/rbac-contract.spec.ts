@@ -20,9 +20,10 @@ import {
 describe('RBAC contract (TZ-254)', () => {
   describe('catalog re-export', () => {
     it('exports the same PERMISSIONS catalog as the seed module', () => {
-      // 29 keys seeded by PermissionsService (3+3+3+2+2+3+2+2+3+2+2+2);
+      // 30 keys seeded by PermissionsService (3+3+3+2+2+3+2+2+3+2+2+2+1 desktop);
       // we use a smoke-test bound to catch accidental truncation or remap.
-      expect(PERMISSIONS.length).toBe(29);
+      // TZD-72 added `desktop:admin` (29 -> 30).
+      expect(PERMISSIONS.length).toBe(30);
     });
 
     it('every permission key is well-formed `<section>:<action>`', () => {

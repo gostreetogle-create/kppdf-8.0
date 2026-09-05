@@ -59,6 +59,9 @@ export const PERMISSIONS_CATALOG = [
   // System
   { key: 'system:read', section: 'system', action: 'read' },
   { key: 'system:write', section: 'system', action: 'write' },
+
+  // Desktop (TZD-72)
+  { key: 'desktop:admin', section: 'desktop', action: 'admin' },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS_CATALOG)[number]['key'];

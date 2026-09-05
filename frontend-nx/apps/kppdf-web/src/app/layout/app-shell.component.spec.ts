@@ -8,6 +8,8 @@ import { ShellToolRailService } from './shell-tool-rail.service';
 import { NavHistoryService } from './nav-history.service';
 import { AuthService } from '@kppdf/data-access/auth';
 import { CapabilitiesService } from '@kppdf/data-access/capabilities';
+import { PiDialogService } from '@kppdf/ui/dialog';
+import { PiToastService } from '@kppdf/ui/toast';
 import { appRoutes } from '../app.routes';
 
 describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
@@ -17,13 +19,15 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
   const forward = jest.fn();
   let canGoBackSig: ReturnType<typeof signal<boolean>>;
   let canGoForwardSig: ReturnType<typeof signal<boolean>>;
-  let userSig: ReturnType<typeof signal<{ role: string; pages?: string[] } | null>>;
+  let userSig: ReturnType<typeof signal<{ role: string; pages?: string[]; username?: string } | null>>;
+  let dialog: { open: jest.Mock };
 
-  async function setup(url: string): Promise<void> {
+  async function setup(url: string, opts: { hasAny?: () => boolean } = {}): Promise<void> {
     jest.clearAllMocks();
     canGoBackSig = signal(true);
     canGoForwardSig = signal(true);
-    userSig = signal({ role: 'admin' });
+    userSig = signal({ role: 'admin', username: 'admin' });
+    dialog = { open: jest.fn() };
 
     await TestBed.configureTestingModule({
       imports: [AppShellComponent],
@@ -45,11 +49,13 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
             logout: jest.fn().mockResolvedValue(undefined),
           },
         },
-        { provide: CapabilitiesService, useValue: { hasAny: () => true } },
+        { provide: CapabilitiesService, useValue: { hasAny: opts.hasAny ?? (() => true) } },
         {
           provide: NavHistoryService,
           useValue: { canGoBack: canGoBackSig, canGoForward: canGoForwardSig, back, forward },
         },
+        { provide: PiDialogService, useValue: dialog },
+        { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
       ],
     })
       .overrideComponent(AppShellComponent, { set: { imports: [], schemas: [NO_ERRORS_SCHEMA] } })
@@ -94,9 +100,10 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     expect(header?.querySelector('[data-test="shell-nav-forward"]')).toBeNull();
   });
 
-  it('shows only existing-route header chips (admin, registries, docs, deals, production, clients) — no dead links', async () => {
+  it('shows only existing-route header chips (admin, registries, docs, deals, production, clients, supply, warehouse) — no dead links', async () => {
     await setup('/admin/devices');
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(6);
+    // TZD-72 cleanup: W1 (warehouse) + S1 (supply) added chips without updating this pin (6 -> 8).
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(8);
     expect(adminQuickNav()).toBeTruthy();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
@@ -196,7 +203,8 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     userSig.set({ role: 'user' });
     fixture.detectChanges();
     // `registries`, `docs` and `clients` deliberately carry no `systemRoles`/`capabilities`.
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(5);
+    // TZD-72 cleanup: warehouse + supply chips remain for user (6 + 2 wave chips -> 7).
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(7);
     expect(adminQuickNav()).toBeNull();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
@@ -228,5 +236,31 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     userSig.set({ role: 'manager', pages: ['orders'] });
     fixture.detectChanges();
     expect(registriesQuickNav()?.getAttribute('aria-current')).toBe('page');
+  });
+
+  describe('TZD-72 — desktop pairing button RBAC', () => {
+    const pairingBtn = (): HTMLButtonElement | null =>
+      fixture.nativeElement.querySelector('[data-test="desktop-pairing-button"]');
+
+    it('renders when caps.hasAny(["desktop:admin"]) is true', async () => {
+      await setup('/admin/devices', { hasAny: () => true });
+      expect(pairingBtn()).toBeTruthy();
+    });
+
+    it('is absent when the user lacks desktop:admin', async () => {
+      await setup('/admin/devices', { hasAny: () => false });
+      expect(pairingBtn()).toBeNull();
+    });
+
+    it('opens PairingDialogComponent with the resolved apiBaseUrl + username on click', async () => {
+      await setup('/admin/devices', { hasAny: () => true });
+      pairingBtn()!.click();
+      expect(dialog.open).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({
+          data: expect.objectContaining({ username: 'admin' }),
+        }),
+      );
+    });
   });
 });

@@ -5,6 +5,7 @@ import {
   PLATFORM_ID,
   computed,
   inject,
+  isDevMode,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
@@ -21,10 +22,18 @@ import {
   ArrowRight,
   Bell,
   LogOut,
+  Monitor,
 } from 'lucide-angular';
 import { AuthService } from '@kppdf/data-access/auth';
 import { CapabilitiesService } from '@kppdf/data-access/capabilities';
+import { API_BASE_URL } from '@kppdf/util-http';
+import { PiDialogService } from '@kppdf/ui/dialog';
+import { PiToastService } from '@kppdf/ui/toast';
 import { ThemeToggleComponent } from './theme-toggle.component';
+import {
+  PairingDialogComponent,
+  type PairingDialogData,
+} from '../pages/desktop/pairing-dialog.component';
 import { NavHistoryService } from './nav-history.service';
 import { NAV_CATEGORIES, filterNavCategories, matchActiveCategoryId } from './nav-categories';
 import { collectPageRoutePaths } from './route-paths';
@@ -108,6 +117,18 @@ import {
             </button>
             <app-theme-toggle />
             @if (isAuthenticated()) {
+              @if (canPairDesktop()) {
+                <button
+                  type="button"
+                  class="pi-icon-btn pi-focus-ring"
+                  aria-label="Подключить десктоп"
+                  title="Подключить десктоп"
+                  (click)="onDesktopPairing()"
+                  data-test="desktop-pairing-button"
+                >
+                  <lucide-angular [img]="monitorIcon" [size]="14" aria-hidden="true" />
+                </button>
+              }
               <span
                 class="text-sm text-muted-foreground hidden md:inline truncate max-w-[8rem]"
                 [attr.title]="user()?.displayName || user()?.username || 'Сессия'"
@@ -332,6 +353,7 @@ export class AppShellComponent {
   protected readonly forwardIcon = ArrowRight;
   protected readonly logOutIcon = LogOut;
   protected readonly bellIcon = Bell;
+  protected readonly monitorIcon = Monitor;
 
   private readonly shellTools = inject(ShellToolRailService);
   protected readonly leftTools = this.shellTools.leftTools;
@@ -345,9 +367,15 @@ export class AppShellComponent {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
+  private readonly apiBaseUrlToken = inject(API_BASE_URL);
 
   protected readonly user = this.auth.user;
   protected readonly isAuthenticated = this.auth.isAuthenticated;
+
+  /** TZD-72 — RBAC: only desktop:admin (or admin wildcard) sees the pairing button. */
+  protected readonly canPairDesktop = computed(() => this.caps.hasAny(['desktop:admin']));
 
   private readonly existingPaths = collectPageRoutePaths(this.router.config);
 
@@ -395,5 +423,49 @@ export class AppShellComponent {
   protected async onLogout(): Promise<void> {
     await this.auth.logout();
     await this.router.navigateByUrl('/login');
+  }
+
+  /**
+   * TZD-72 — NX port of legacy `onDesktopPairing()`. Gated by `canPairDesktop()`
+   * in the template; issue/list/revoke are also gated server-side by
+   * `@Permissions('desktop:admin')` — the button hide is UX only.
+   */
+  protected onDesktopPairing(): void {
+    const user = this.user();
+    if (!user?.username) {
+      this.toast.error('Профиль пользователя ещё не загружен — подождите и попробуйте снова.');
+      return;
+    }
+
+    this.dialog.open<void, PairingDialogData>(PairingDialogComponent, {
+      data: {
+        apiBaseUrl: this.resolveApiBaseUrl(),
+        username: user.username,
+      },
+      width: 'lg',
+      ariaLabel: 'Паринг десктопа',
+      parentDestroyRef: this.destroyRef,
+    });
+  }
+
+  /**
+   * Resolve the backend origin for pairing.
+   * - Prod: window.location.origin (same-origin serving).
+   * - Dev:  http://127.0.0.1:3000 (Nest default; matches proxy.conf.json target).
+   * - If API_BASE_URL is an absolute URL, use its origin instead.
+   */
+  private resolveApiBaseUrl(): string {
+    const token = this.apiBaseUrlToken;
+    if (/^https?:\/\//.test(token)) {
+      try {
+        return new URL(token).origin;
+      } catch {
+        // fall through
+      }
+    }
+    if (isDevMode()) {
+      return 'http://127.0.0.1:3000';
+    }
+    return window.location.origin;
   }
 }

@@ -70,6 +70,7 @@ const GROUP_ORDER = [
   'document',
   'finance',
   'system',
+  'desktop',
 ] as const;
 
 const SECTION_TO_GROUP: Record<string, string> = {
@@ -85,6 +86,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
   document: 'document',
   finance: 'finance',
   system: 'system',
+  desktop: 'desktop',
 };
 
 /**

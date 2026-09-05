@@ -25,7 +25,7 @@
 | **Documents / Studio** | `document-template`, `text-block`, `table-template`, `generated-document`, `registry`, … | `/doc-constructor/*`, `/builder/:id` | `/studio`, `/studio/:id` (Doc Studio) | `templates`, `documents`, `texts`, `tables`, `builder`, `document-studio` | builder/studio page.md, FIC | Template ≠ TableTemplate |
 | **Production** | `production-order`, `work-order`, `work-type`, … | `/production`, `/work-types` | `/production` (**Gantt SoT NX**, WAVE G0–G7) | `production-cockpit`, `work-types` | SECTION-READINESS, `COUPLING-MAP` | `production-order` ≠ sales `order` |
 | **Supply** | `supply`, `purchase-order`, `purchase-request`, `tender` | `/supply` | **Live (S1 DONE):** `/supply` — SupplyTask registry, no mock; S2 (hub confirm) pending | `supply` | same warehouse audit | Purchase* = LEGACY; NX = Supply* + kit confirm |
-| **Desktop / Import** | `desktop`, `mutation-journal`, `import-*` | `/import-todos` | **gap** (Desktop app) | `import-todos` | `desktop/docs/MCP.md` | propose/confirm ≠ прямой SoT write |
+| **Desktop / Import** | `desktop`, `mutation-journal`, `import-*` | `/import-todos` | **Live (TZD-72):** pairing/download — chrome action в AppShell (только `desktop:admin`), dialog + `PiDesktopPairingService` + meta `kppdf-desktop-download-url`; import-todos — gap | `import-todos` | `desktop/docs/MCP.md` | propose/confirm ≠ прямой SoT write |
 | **Admin / Settings** | `admin`, `setting`, `feature-flag`, `form-profiles`, `counter`, `site` | `/admin/*`, form-profiles | `/admin/devices`, `/admin/roles` (+ kit вне бизнеса) | `form-profiles`, `admin-*` | RBAC | FE admin ≠ BE `admin` module |
 | **Cost** | `actual-cost`, `cost-calculation`, … | — | — | N/A | data-model, TZ-COST-* | actual ≠ calculation |
 | **Dictionaries / Registries** | `unit`, `color-reference`, `attribute-definition`, … | `/dictionaries/*`, `/categories`, … | `/registries`, `/registries/:registryKey` (**NX-only**) | `units`, `categories`, `registries`, … | SECTION-READINESS §4, registries.page.md | `Unit` ≠ группа «Измерения» |
@@ -57,6 +57,7 @@
 | `/supply` | `supply` | S1 live: SupplyTask registry (no mock), `?orderId=`, transitions, explode/create |
 
 **NX gaps (ещё нет route):** catalog lists, desk/combine, organizations/people, work-types, import-todos. Warehouse W1–W3 are DONE and live (WAVE-NX-WAREHOUSE); W4 is docs-only closeout.
+Desktop: NX pairing/download UI is a **chrome action** (AppShell button, no route) — TZD-72 live; import-todos remains a gap.
 Детали TZ: `docs/pages/PAGE-TZ-INDEX.md` (секции frontend-nx).
 
 ---

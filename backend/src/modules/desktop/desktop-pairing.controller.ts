@@ -5,6 +5,7 @@ import {
   AuthenticatedUser,
 } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { DesktopCompatService } from './desktop-compat.service';
 import {
   DesktopPairingKeyService,
@@ -41,6 +42,8 @@ export class DesktopPairingController {
     return this.compat.compat();
   }
 
+  /** TZD-72: only desktop:admin (or admin role wildcard) may issue keys. */
+  @Permissions('desktop:admin')
   @Post('pairing-keys')
   issue(@CurrentUser() user: AuthenticatedUser, @Body() dto: IssuePairingKeyDto) {
     return this.keys.issue(user, {
@@ -51,6 +54,7 @@ export class DesktopPairingController {
   }
 
   /** Convenience alias: same as POST pairing-keys (TZD-21 packet helper). */
+  @Permissions('desktop:admin')
   @Post('pairing')
   issuePairing(@CurrentUser() user: AuthenticatedUser, @Body() dto: IssuePairingKeyDto) {
     return this.keys.issue(user, {
@@ -60,11 +64,13 @@ export class DesktopPairingController {
     });
   }
 
+  @Permissions('desktop:admin')
   @Get('pairing-keys')
   list(@CurrentUser() user: AuthenticatedUser) {
     return this.keys.listForUser(user.id);
   }
 
+  @Permissions('desktop:admin')
   @Post('pairing-keys/:id/revoke')
   async revoke(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     await this.keys.revoke(user.id, id);

@@ -38,6 +38,8 @@ export const PERMISSIONS = [
   { key: 'finance:write', section: 'finance', action: 'write', description: 'Create reconciliation acts' },
   { key: 'system:read', section: 'system', action: 'read', description: 'View system settings' },
   { key: 'system:write', section: 'system', action: 'write', description: 'Edit system settings / flags' },
+  /** TZD-72: gates pairing-key issue/list/revoke + the NX shell download/pairing button. */
+  { key: 'desktop:admin', section: 'desktop', action: 'admin', description: 'Download Desktop / issue pairing keys' },
 ] as const;
 
 export const PAGE_KEYS = [
