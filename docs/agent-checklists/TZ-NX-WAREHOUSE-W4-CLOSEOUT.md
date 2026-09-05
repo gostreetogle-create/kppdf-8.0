@@ -54,7 +54,7 @@
 - [x] Archive + remove active marker
 - [x] Status = DONE
 - closed_at: 2026-09-05T21:20:00+03:00
-- commit SHA: see git log
+- commit SHA: `b28bb0a8` (primary W4 closeout commit)
 
 ## Wave status
 

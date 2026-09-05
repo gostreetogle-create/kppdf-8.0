@@ -11,7 +11,7 @@
 - Delete uses Paper & Ink destructive confirmation and the existing soft-delete API.
 - API payload fixes `type: 'main'` and `zoneNames: []`; type, zones, address, and role fields are not shown.
 - Route capability: `warehouse:read`; write actions follow the existing backend role policy.
-- Related routes: `/storage-items` (W2 placeholder) and `/stock-movements` (W3 placeholder).
+- Related routes: `/storage-items` (W2 live balances) and `/stock-movements` (W3 live journal + in/out).
 
 ## NX implementation
 

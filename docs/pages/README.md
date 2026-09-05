@@ -32,8 +32,8 @@
 | 12 | **Categories** | `categories.page.md` | `/categories` | Категории (tree) |
 | 12a | **Doc-Template Categories** | `document-template-categories.page.md` | `/doc-template-categories` | Категории шаблонов (DOC-308) |
 | 12b | **Text-Block Categories** | `text-block-categories.page.md` | `/dictionaries/text-block-categories` | Категории текстов (DOC-334) |
-| 13 | **Storage Items** | `storage-items.page.md` | `/storage-items` | Остатки (NX W2 placeholder) |
-| 14 | **Stock Movements** | `stock-movements.page.md` | `/stock-movements` | Движения (NX W3 placeholder) |
+| 13 | **Storage Items** | `storage-items.page.md` | `/storage-items` | Остатки (NX W2 balances) |
+| 14 | **Stock Movements** | `stock-movements.page.md` | `/stock-movements` | Движения (NX W3 journal + in/out) |
 | 15 | **Documents** | `documents.page.md` | `/doc-constructor/documents` | Сформированные документы |
 | 16 | **Texts** | `texts.page.md` | `/doc-constructor/texts` | Текстовые блоки |
 | 17 | **Tables** | `tables.page.md` | `/doc-constructor/tables` | Шаблоны таблиц |
