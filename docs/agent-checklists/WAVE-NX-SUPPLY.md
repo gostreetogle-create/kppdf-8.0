@@ -8,8 +8,8 @@
 | # | SIZE | TZ | Path | Status |
 |---|------|-----|------|--------|
 | S0 | L | BE: availability + reserve + shortage→SupplyRequest | `tasks/_archive/2026-09/TZ-NX-SUPPLY-S0-KIT-RESERVE-BE.done.md` | **DONE** |
-| S1 | L | NX `/supply` реестр (без mock quick) | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S1-PAGE.md` | READY (blocked on W1 DONE) |
-| S2 | L | Order hub: confirm материалов / deep-link supply | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S2-HUB-CONFIRM.md` | READY (blocked on S1) |
+| S1 | L | NX `/supply` реестр (без mock quick) | `tasks/_archive/2026-09/TZ-NX-SUPPLY-S1-PAGE.done.md` | **DONE** |
+| S2 | L | Order hub: confirm материалов / deep-link supply | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S2-HUB-CONFIRM.md` | IN PROGRESS |
 
-**Порядок:** S0 DONE (∥ Freebuff W1/W2) → после W1 archive: S1 → S2.  
+**Порядок:** S0 DONE (∥ Freebuff W1/W2) → после W1 archive: S1 DONE → S2 (текущая).  
 **Не порт:** Supply quick mock как SoT; Purchase*/Tender UI; жёсткий стоп производства при нехватке.

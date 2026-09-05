@@ -116,7 +116,7 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
     shortLabel: 'Снабж.',
     icon: ShoppingCart,
     entryPath: '/supply',
-    items: [{ path: '/supply', pageKey: 'supply', label: 'Закупки' }],
+    items: [{ path: '/supply', pageKey: 'supply', label: 'Закупки', capabilities: ['procurement:read'] }],
   },
   {
     id: 'production',

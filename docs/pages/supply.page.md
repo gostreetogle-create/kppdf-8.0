@@ -84,3 +84,50 @@ Query `orderId` **сохраняется** при переключении Бы�
 - **Быстрый заказ:** F5 теряет правки; фото upload — stub
 - Автосоздание из состава заказа — только в реестре (SUPPLY-302)
 - Data bind API → `TZ-SUPPLY-305`
+
+## NX (`frontend-nx`) — TZ-NX-SUPPLY-S1-PAGE
+
+**Route:** `/supply` (`app.routes.ts`, `canMatch: [capabilityRouteGuard]`, `data: { pageKey: 'supply', capabilities: ['procurement:read'] }`). Nav item «Закупки» под категорией «Снабжение» (`nav-categories.ts`), same capability.
+
+Единственный режим — **живой реестр SupplyTask**, без mock. Легаси «Быстрый заказ» (in-memory, F5 сбрасывает) **сознательно не портирован** в NX — реестр остаётся единственным продуктовым путём `/supply`.
+
+### Data access
+
+`@kppdf/data-access` → `PiSupplyTasksService` (`libs/data-access/src/lib/supply/pi-supply-tasks.service.ts`), 1:1 зеркало легаси `SupplyTaskService`, на `SilentResult<T>`:
+
+| Метод | Endpoint |
+|-------|----------|
+| `list({orderId?, status?})` | `GET /supply-tasks` |
+| `create(payload)` | `POST /supply-tasks` |
+| `explode({orderId, moduleId?})` | `POST /supply-tasks/explode` |
+| `update(id, payload)` | `PATCH /supply-tasks/:id` |
+| `confirm(id)` | `POST /supply-tasks/:id/confirm` |
+| `markOrdered(id)` | `POST /supply-tasks/:id/ordered` |
+| `markReceived(id)` | `POST /supply-tasks/:id/received` |
+| `remove(id)` | `DELETE /supply-tasks/:id` |
+
+`SupplyRequest` (отдельная сущность, ad-hoc quick-order из S0 kit-reserve shortfall) в S1 **не используется** — это предмет S2 (hub confirm).
+
+### UI (`supply.page.ts`)
+
+Ручная CSS-grid таблица (текущая NX-конвенция, как `storage-items.page.ts`, без `<app-pi-table>`): позиция/линия, заказ (`routerLink` на `/orders/:id`), qty, статус, действие по статусу (draft→Подтвердить, confirmed→Заказано, ordered→Получено).
+
+- Фильтр по статусу (`<select>`), фильтр `?orderId=` (query-param, deep-link) с chip + «Сбросить» (`router.navigate` с `queryParamsHandling: 'merge'`)
+- «+ Задача»: explode из состава заказа ИЛИ ручное создание (заказ + название + qty)
+- `data-test` атрибуты на всех интерактивных элементах для тестов
+
+### Known limitation (унаследовано от backend, не изобретено во фронтенде)
+
+`SupplyTaskService.markReceived` (и `SupplyRequestService.markReceived`) **не пишут `StockMovement`** — получение задачи снабжения не отражается в складском журнале. Это существующий backend-разрыв, задокументирован здесь, а не воспроизведён/замаскирован в NX-фронтенде.
+
+### Tests
+
+- `pi-supply-tasks.service.spec.ts` — 8 tests (все методы, HTTP mock)
+- `supply.page.spec.ts` — 9 tests (фильтры, transitions, explode, create, no-mock-UI assertion, router-based filter clear)
+
+### TZ reference (NX)
+
+| TZ | Что сделано |
+|----|------------|
+| TZ-NX-SUPPLY-S0-KIT-RESERVE-BE | Backend kit-availability/kit-reserve API (не в этом файле — см. warehouse/kit docs) |
+| **TZ-NX-SUPPLY-S1-PAGE** | `/supply` живой реестр SupplyTask (без mock), `?orderId=`, transitions, explode/create |

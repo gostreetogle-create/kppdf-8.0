@@ -58,6 +58,13 @@ export const appRoutes: Route[] = [
         ],
       },
       {
+        // TZ-NX-SUPPLY-S1 — live SupplyTask registry only (no quick-order mock port).
+        path: 'supply',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'supply', capabilities: ['procurement:read'] },
+        loadComponent: () => import('./pages/supply/supply.page').then((m) => m.SupplyPage),
+      },
+      {
         // TZ-NX-GANTT-G1-SHELL-ROUTE — production Gantt L0 shell; capabilities
         // `production:read` already declared in capabilities metadata.
         // TZ-NX-GANTT-G3 — ProductionReadFacade lives on the route (singleton per
