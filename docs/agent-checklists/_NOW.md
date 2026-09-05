@@ -1,27 +1,28 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T08:20:00+03:00
+updated_at: 2026-09-05T08:30:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff** → polish P1–P5 (`PROMPT-FREEBUFF-NX-GANTT-POLISH.md`); **P6 снят**
-- **Claude HARDEN DONE** — `TZ-BACKEND-ORDER-ORG-SCOPE-HARDEN.md`: 5 методов
-  (`update`/`setItemStatus`/`patchLineBoardLane`/`patchModuleLane`/`setLineReady`)
-  теперь отклоняют cross-org caller до save(); `reserveStock`/`ship`/`cancel`/
-  `remove` остаются known_limitation (session-transaction-wrapped, отдельный TZ
-  если PO захочет полное покрытие). Claude terminal free.
+- **Freebuff:** WAVE polish P2→P5 (P1 DONE). Промпт уже выдан ранее.  
+- **Claude TX DONE** — `TZ-BACKEND-ORDER-ORG-SCOPE-TX.md`: `reserveStock`/`ship`/
+  `cancel`/`remove` теперь отклоняют cross-org caller до side-effect (save/
+  reservation/shipment/soft-delete). Весь known_limitation после HARDEN закрыт —
+  `OrderService` полностью org-scoped на запись. Claude terminal free.
 
-Смысл cutover: `docs/PO-PLAIN-LANGUAGE-CHANGES.md` (один NX в финале; старый frontend — эталон до конца).
+Канон режима: `docs/PO-SHARED-UNDERSTANDING.md` §5.  
+Ревью TZ: `docs/audits/2026-09-05-tz-queue-necessity-review.md`.
 
 ## NEXT
 
-Ждать closeout Freebuff polish. Новые TZ для Claude — после отчётов PO / новых скринов,
-или явная команда на `reserveStock`/`ship`/`cancel`/`remove` org-scope (не начинать самому).
+1. Freebuff: добить Gantt polish P2–P5  
+2. **Готово заранее (не стартовать до P5):** Doc Studio Data IA D50–D54 — `WAVE-DOCSTUDIO-DATA-IA.md` / `PROMPT-FREEBUFF-DOCSTUDIO-DATA-IA.md`  
+3. Дальше модули — только по команде/скрину PO
 
 ## DONE
 
-Gantt L0 · peer review · **org-scope harden (5 методов Order)** · Doc Studio FINISH
+Gantt L0 · peer review · HARDEN · TX (org-scope Order writes fully closed) · P1 catalog-spec · shared-understanding docs
 
 ## PARK
 
-Полный снос `frontend/` — только на cutover NX · contracts · Invoice · L1+
+Полный снос `frontend/` на cutover · contracts · Invoice · Gantt L1+

@@ -974,10 +974,12 @@ export class OrderService {
     id: string,
     warehouseId: string,
     zoneName?: string,
+    organizationId?: string | null,
   ): Promise<{ order: OrderDocument; reservationIds: string[] }> {
     return this.sessionRunner.run(async (session) => {
       const order = await this.model.findById(id).session(session).exec();
       if (!order) throw new NotFoundException(`Order ${id} not found`);
+      this.assertOrgAccess(order, organizationId);
       const reservationIds: string[] = [];
       for (const item of order.items) {
         const reservation = await this.reservationService.create(
@@ -1015,6 +1017,7 @@ export class OrderService {
     return this.sessionRunner.run(async (session) => {
       const order = await this.model.findById(id).session(session).exec();
       if (!order) throw new NotFoundException(`Order ${id} not found`);
+      this.assertOrgAccess(order, organizationId);
       if (
         order.status === 'cancelled' ||
         order.status === 'shipped' ||
@@ -1139,10 +1142,11 @@ export class OrderService {
     });
   }
 
-  async cancel(id: string): Promise<OrderDocument> {
+  async cancel(id: string, organizationId?: string | null): Promise<OrderDocument> {
     return this.sessionRunner.run(async (session) => {
       const order = await this.model.findById(id).session(session).exec();
       if (!order) throw new NotFoundException(`Order ${id} not found`);
+      this.assertOrgAccess(order, organizationId);
       const failures: string[] = [];
       for (const rid of order.reservationIds ?? []) {
         try {
@@ -1167,8 +1171,9 @@ export class OrderService {
     });
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, organizationId?: string | null): Promise<void> {
     const doc = await this.findById(id);
+    this.assertOrgAccess(doc, organizationId);
     await this.model
       .updateOne(
         { _id: doc._id },

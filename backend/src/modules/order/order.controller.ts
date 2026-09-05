@@ -223,8 +223,12 @@ export class OrderController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  reserveStock(@Param('id') id: string, @Body() dto: ReserveStockDto) {
-    return this.service.reserveStock(id, dto.warehouseId, dto.zoneName);
+  reserveStock(
+    @Param('id') id: string,
+    @Body() dto: ReserveStockDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.reserveStock(id, dto.warehouseId, dto.zoneName, user.organizationId);
   }
 
   @Post(':id/ship')
@@ -259,8 +263,8 @@ export class OrderController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  cancel(@Param('id') id: string) {
-    return this.service.cancel(id);
+  cancel(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.cancel(id, user.organizationId);
   }
 
   @Delete(':id')
@@ -271,7 +275,7 @@ export class OrderController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.remove(id, user.organizationId);
   }
 }

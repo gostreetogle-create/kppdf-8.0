@@ -1937,4 +1937,152 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.items[0].readyForWork).toBe(true);
     });
   });
+
+  /**
+   * TZ-BACKEND-ORDER-ORG-SCOPE-TX — same defect class as HARDEN (`448af9d9`),
+   * on the four transaction/session-wrapped methods that still fetched via a
+   * raw `this.model.findById(id)` (reserveStock/ship/cancel inside
+   * `sessionRunner.run`, remove via the public `findById`). `assertOrgAccess`
+   * is called immediately after the order loads, before any side-effect
+   * (reservation create, shipment create, reservation release, soft-delete).
+   * ship() already took an `organizationId` parameter before this TZ but
+   * never used it — looked guarded, wasn't.
+   */
+  describe('org-scope hardening — transactional writes (TZ-BACKEND-ORDER-ORG-SCOPE-TX)', () => {
+    it('reserveStock: rejects a cross-org caller before creating reservations', async () => {
+      const reservationService = { create: jest.fn(), release: jest.fn() };
+      const { service, model, sessionRunner } = createService({ reservationService });
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', items: [], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+      sessionRunner.run.mockImplementation(async (fn: (s: unknown) => Promise<unknown>) => fn({}));
+
+      await expect(
+        service.reserveStock(doc._id.toString(), 'wh-1', undefined, new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(reservationService.create).not.toHaveBeenCalled();
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('reserveStock: allows the matching-org caller', async () => {
+      const { service, model, sessionRunner } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', items: [], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+      sessionRunner.run.mockImplementation(async (fn: (s: unknown) => Promise<unknown>) => fn({}));
+
+      const { order } = await service.reserveStock(
+        doc._id.toString(),
+        'wh-1',
+        undefined,
+        ownerOrgId.toString(),
+      );
+      expect(order.status).toBe('confirmed');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('ship: rejects a cross-org caller before creating a shipment', async () => {
+      const { service, model, sessionRunner, shipmentModel } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({
+        status: 'ready',
+        items: [{ productId: new Types.ObjectId(PRODUCT), quantity: 1, unitPrice: 0, total: 0 }],
+        organizationId: ownerOrgId,
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+      sessionRunner.run.mockImplementation(async (fn: (s: unknown) => Promise<unknown>) => fn({}));
+
+      await expect(
+        service.ship(
+          doc._id.toString(),
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          new Types.ObjectId().toString(),
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(shipmentModel.create).not.toHaveBeenCalled();
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('ship: allows the matching-org caller', async () => {
+      const { service, model, sessionRunner, shipmentModel } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({
+        status: 'ready',
+        items: [{ productId: new Types.ObjectId(PRODUCT), quantity: 1, unitPrice: 0, total: 0 }],
+        organizationId: ownerOrgId,
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+      sessionRunner.run.mockImplementation(async (fn: (s: unknown) => Promise<unknown>) => fn({}));
+      shipmentModel.create.mockResolvedValue([{ _id: new Types.ObjectId() }]);
+
+      const { order } = await service.ship(
+        doc._id.toString(),
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        ownerOrgId.toString(),
+      );
+      expect(order.status).toBe('shipped');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('cancel: rejects a cross-org caller before releasing reservations', async () => {
+      const reservationService = { create: jest.fn(), release: jest.fn() };
+      const { service, model, sessionRunner } = createService({ reservationService });
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', reservationIds: [], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+      sessionRunner.run.mockImplementation(async (fn: (s: unknown) => Promise<unknown>) => fn({}));
+
+      await expect(
+        service.cancel(doc._id.toString(), new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(reservationService.release).not.toHaveBeenCalled();
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('cancel: allows the matching-org caller', async () => {
+      const { service, model, sessionRunner } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'confirmed', reservationIds: [], organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+      sessionRunner.run.mockImplementation(async (fn: (s: unknown) => Promise<unknown>) => fn({}));
+
+      const order = await service.cancel(doc._id.toString(), ownerOrgId.toString());
+      expect(order.status).toBe('cancelled');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('remove: rejects a cross-org caller before soft-deleting', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.remove(doc._id.toString(), new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(model.updateOne).not.toHaveBeenCalled();
+    });
+
+    it('remove: allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderDoc({ organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+      model.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+
+      await service.remove(doc._id.toString(), ownerOrgId.toString());
+      expect(model.updateOne).toHaveBeenCalledWith(
+        { _id: doc._id },
+        { $set: { deletedAt: expect.any(Date), isActive: false } },
+      );
+    });
+  });
 });
