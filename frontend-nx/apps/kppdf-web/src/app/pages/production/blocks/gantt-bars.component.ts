@@ -860,14 +860,6 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         </div>
       </div>
 
-      <div
-        class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
-        data-test="gantt-legend"
-      >
-        Красная линия = сегодня · сводная полоса = срок заказа · ▸ = изделие / модуль / виды работ ·
-        клик вида работ = дни и люди · номер заказа = статус и даты · цвет = вид работ · правый край
-        состава = дни оценки · тело сводной = начало заказа · тело состава = сдвиг вида
-      </div>
     </div>
   `,
   styles: `

@@ -60,6 +60,13 @@ describe('GanttBarsComponent (TZ-NX-GANTT-G4 pan/zoom)', () => {
     expect(GANTT_PX_PER_DAY['month']).toBe(12);
   });
 
+  it('removes the obsolete lower legend while keeping the upper Work Type legend', async () => {
+    const fixture = await setup([makeBar({})], '2026-09-01', '2026-09-21');
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-test="gantt-legend"]')).toBeNull();
+    expect(root.querySelector('[data-test="gantt-worktype-legend"]')).toBeTruthy();
+  });
+
   it('keeps the calendar pane separate from the sticky label pane', async () => {
     const fixture = await setup([makeBar({})], '2026-09-01', '2026-09-21');
     const root = fixture.nativeElement as HTMLElement;
