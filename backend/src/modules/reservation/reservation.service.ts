@@ -22,20 +22,30 @@ export class ReservationService {
     private readonly movementModel: Model<StockMovementDocument>,
   ) {}
 
+  /** Exactly one of productId/materialId — mirrors the StorageItem discriminator. */
+  private refFilter(dto: Pick<CreateReservationDto, 'productId' | 'materialId'>): Record<string, unknown> {
+    if (dto.productId && dto.materialId) {
+      throw new BadRequestException('Reservation: only one of productId/materialId is allowed');
+    }
+    if (dto.productId) return { productId: new Types.ObjectId(dto.productId) };
+    if (dto.materialId) return { materialId: new Types.ObjectId(dto.materialId) };
+    throw new BadRequestException('Reservation: one of productId/materialId is required');
+  }
+
   async create(dto: CreateReservationDto, externalSession?: ClientSession): Promise<ReservationDocument> {
+    const refFilter = this.refFilter(dto);
     const filter: Record<string, unknown> = {
       warehouseId: new Types.ObjectId(dto.warehouseId),
-      productId: new Types.ObjectId(dto.productId),
+      ...refFilter,
     };
     if (dto.zoneName) filter.zoneName = dto.zoneName;
     else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
+    const refLabel = dto.materialId ? `material ${dto.materialId}` : `product ${dto.productId}`;
 
-    if (externalSession) {
-      const item = await this.storageModel.findOne(filter).session(externalSession).exec();
+    const doCreate = async (session: ClientSession): Promise<ReservationDocument> => {
+      const item = await this.storageModel.findOne(filter).session(session).exec();
       if (!item) {
-        throw new NotFoundException(
-          `No storage item for product ${dto.productId} in warehouse ${dto.warehouseId}`,
-        );
+        throw new NotFoundException(`No storage item for ${refLabel} in warehouse ${dto.warehouseId}`);
       }
       const available = (item.quantity ?? 0) - (item.reservedQty ?? 0);
       if (available < dto.qty) {
@@ -44,65 +54,35 @@ export class ReservationService {
         );
       }
       item.reservedQty = (item.reservedQty ?? 0) + dto.qty;
-      await item.save({ session: externalSession });
+      await item.save({ session });
       const [doc] = await this.model.create(
         [
           {
             orderId: dto.orderId,
-            productId: new Types.ObjectId(dto.productId),
+            ...refFilter,
             warehouseId: new Types.ObjectId(dto.warehouseId),
             qty: dto.qty,
             zoneName: dto.zoneName,
+            orderItemIndex: dto.orderItemIndex,
             status: 'active',
             isActive: true,
             notes: dto.notes,
             expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
           },
         ],
-        { session: externalSession },
+        { session },
       );
       if (!doc) throw new BadRequestException('Reservation failed');
       return doc;
-    }
+    };
+
+    if (externalSession) return doCreate(externalSession);
 
     const session = await this.connection.startSession();
     let result: ReservationDocument | undefined;
     try {
       await session.withTransaction(async () => {
-        const item = await this.storageModel
-          .findOne(filter)
-          .session(session)
-          .exec();
-        if (!item) {
-          throw new NotFoundException(
-            `No storage item for product ${dto.productId} in warehouse ${dto.warehouseId}`,
-          );
-        }
-        const available = (item.quantity ?? 0) - (item.reservedQty ?? 0);
-        if (available < dto.qty) {
-          throw new BadRequestException(
-            `Insufficient available stock: have ${available}, requested ${dto.qty}`,
-          );
-        }
-        item.reservedQty = (item.reservedQty ?? 0) + dto.qty;
-        await item.save({ session });
-        const [doc] = await this.model.create(
-          [
-            {
-              orderId: dto.orderId,
-              productId: new Types.ObjectId(dto.productId),
-              warehouseId: new Types.ObjectId(dto.warehouseId),
-              qty: dto.qty,
-              zoneName: dto.zoneName,
-              status: 'active',
-              isActive: true,
-              notes: dto.notes,
-              expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
-            },
-          ],
-          { session },
-        );
-        result = doc;
+        result = await doCreate(session);
       });
     } finally {
       await session.endSession();
@@ -117,6 +97,7 @@ export class ReservationService {
     return this.model
       .find(filter)
       .populate('productId')
+      .populate('materialId')
       .populate('warehouseId')
       .sort({ createdAt: -1 })
       .exec();
@@ -142,7 +123,7 @@ export class ReservationService {
         }
         const filter: Record<string, unknown> = {
           warehouseId: doc.warehouseId,
-          productId: doc.productId,
+          ...(doc.materialId ? { materialId: doc.materialId } : { productId: doc.productId }),
         };
         if (doc.zoneName) filter.zoneName = doc.zoneName;
         else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
@@ -179,48 +160,8 @@ export class ReservationService {
     let result: ReservationDocument | undefined;
     try {
       session.startTransaction();
-      const filter: Record<string, unknown> = {
-        warehouseId: doc.warehouseId,
-        productId: doc.productId,
-      };
-      if (doc.zoneName) filter.zoneName = doc.zoneName;
-      else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
-      const item = await this.storageModel.findOne(filter).session(session).exec();
-      if (!item) {
-        throw new NotFoundException(
-          `No storage item for product ${doc.productId} in warehouse ${doc.warehouseId}`,
-        );
-      }
-      if ((item.quantity ?? 0) < doc.qty) {
-        throw new BadRequestException(
-          `Insufficient stock: have ${item.quantity}, requested ${doc.qty}`,
-        );
-      }
-      item.quantity = (item.quantity ?? 0) - doc.qty;
-      item.reservedQty = Math.max(0, (item.reservedQty ?? 0) - doc.qty);
-      await item.save({ session });
-      // Inline movement creation via Mongoose model in the same session
-      await this.movementModel.create(
-        [
-          {
-            type: 'out',
-            date: new Date(),
-            productId: doc.productId,
-            warehouseId: doc.warehouseId,
-            zoneName: doc.zoneName,
-            qty: doc.qty,
-            cost: 0,
-            orderId: doc.orderId,
-            documentRef: `RES:${id}`,
-          },
-        ],
-        { session },
-      );
-      doc.status = 'fulfilled';
-      doc.isActive = false;
-      const saved = await doc.save({ session });
+      result = await this.runFulfillOnSession(doc, id, session);
       await session.commitTransaction();
-      result = saved;
     } catch (err) {
       await session.abortTransaction();
       throw err;
@@ -231,23 +172,22 @@ export class ReservationService {
     return result;
   }
 
-
   private async runFulfillOnSession(
     doc: ReservationDocument,
     id: string,
     session: ClientSession,
   ): Promise<ReservationDocument> {
+    const refFilter = doc.materialId ? { materialId: doc.materialId } : { productId: doc.productId };
+    const refLabel = doc.materialId ? `material ${doc.materialId}` : `product ${doc.productId}`;
     const filter: Record<string, unknown> = {
       warehouseId: doc.warehouseId,
-      productId: doc.productId,
+      ...refFilter,
     };
     if (doc.zoneName) filter.zoneName = doc.zoneName;
     else filter.$or = [{ zoneName: { $exists: false } }, { zoneName: null }];
     const item = await this.storageModel.findOne(filter).session(session).exec();
     if (!item) {
-      throw new NotFoundException(
-        `No storage item for product ${doc.productId} in warehouse ${doc.warehouseId}`,
-      );
+      throw new NotFoundException(`No storage item for ${refLabel} in warehouse ${doc.warehouseId}`);
     }
     if ((item.quantity ?? 0) < doc.qty) {
       throw new BadRequestException(
@@ -262,7 +202,7 @@ export class ReservationService {
         {
           type: 'out',
           date: new Date(),
-          productId: doc.productId,
+          ...refFilter,
           warehouseId: doc.warehouseId,
           zoneName: doc.zoneName,
           qty: doc.qty,

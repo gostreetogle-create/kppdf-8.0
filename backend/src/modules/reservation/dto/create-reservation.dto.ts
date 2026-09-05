@@ -6,8 +6,15 @@ export class CreateReservationDto {
   @IsNotEmpty()
   orderId!: string;
 
+  /** Exactly one of productId/materialId is required — validated in ReservationService. */
+  @IsOptional()
   @IsObjectId()
-  productId!: string;
+  productId?: string;
+
+  /** TZ-NX-SUPPLY-S0: kit-reserve holds materials, not finished products. */
+  @IsOptional()
+  @IsObjectId()
+  materialId?: string;
 
   @IsObjectId()
   warehouseId!: string;
@@ -19,4 +26,5 @@ export class CreateReservationDto {
   @IsOptional() @IsString() zoneName?: string;
   @IsOptional() @IsString() notes?: string;
   @IsOptional() expiresAt?: Date;
+  @IsOptional() @IsNumber() @Min(0) orderItemIndex?: number;
 }

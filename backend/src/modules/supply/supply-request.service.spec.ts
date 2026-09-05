@@ -46,31 +46,35 @@ describe('SupplyRequestService (TZ-SUPPLY-305)', () => {
     model.db.collection.mockReturnValue({
       findOne: jest.fn().mockResolvedValue({ name: 'Подшипник', article: '6205', unit: 'шт' }),
     });
-    model.create.mockResolvedValue(savedDoc());
+    model.create.mockResolvedValue([savedDoc()]);
 
     await service.create({ materialId: materialId.toString(), qty: 4 });
 
     expect(model.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        materialId,
-        title: 'Подшипник',
-        article: '6205',
-        unit: 'шт',
-        qty: 4,
-        status: 'in_progress',
-        priority: 'normal',
-      }),
+      [
+        expect.objectContaining({
+          materialId,
+          title: 'Подшипник',
+          article: '6205',
+          unit: 'шт',
+          qty: 4,
+          status: 'in_progress',
+          priority: 'normal',
+        }),
+      ],
+      { session: undefined },
     );
   });
 
   it('create allows an empty draft for the quick-order form', async () => {
     const { service, model } = createService();
-    model.create.mockResolvedValue(savedDoc({ qty: 1 }));
+    model.create.mockResolvedValue([savedDoc({ qty: 1 })]);
 
     await service.create({ qty: 1 });
 
     expect(model.create).toHaveBeenCalledWith(
-      expect.objectContaining({ qty: 1, status: 'in_progress', priority: 'normal' }),
+      [expect.objectContaining({ qty: 1, status: 'in_progress', priority: 'normal' })],
+      { session: undefined },
     );
   });
 

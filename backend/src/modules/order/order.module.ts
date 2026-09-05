@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Order, OrderSchema } from './order.schema';
 import { OrderService } from './order.service';
+import { KitReserveService } from './kit-reserve.service';
 import { OrderController } from './order.controller';
 import { CounterModule } from '../counter/counter.module';
 import { ReservationModule } from '../reservation/reservation.module';
@@ -13,6 +14,9 @@ import { OrganizationModule } from '../organization/organization.module';
 import { Product, ProductSchema } from '../product/product.schema';
 import { ProductModule, ProductModuleSchema } from '../product-module/product-module.schema';
 import { WorkType, WorkTypeSchema } from '../work-type/work-type.schema';
+import { Material, MaterialSchema } from '../material/material.schema';
+import { StorageItemModule } from '../storage-item/storage-item.module';
+import { SupplyRequestModule } from '../supply/supply-request.module';
 
 @Module({
   imports: [
@@ -25,14 +29,18 @@ import { WorkType, WorkTypeSchema } from '../work-type/work-type.schema';
     MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
     MongooseModule.forFeature([{ name: ProductModule.name, schema: ProductModuleSchema }]),
     MongooseModule.forFeature([{ name: WorkType.name, schema: WorkTypeSchema }]),
+    // TZ-NX-SUPPLY-S0: kit-reserve walks composition → Material catalog + warehouse stock.
+    MongooseModule.forFeature([{ name: Material.name, schema: MaterialSchema }]),
     CounterModule,
     ReservationModule,
     ShipmentModule,
     SiteModule,
     OrganizationModule,
+    StorageItemModule,
+    SupplyRequestModule,
   ],
   controllers: [OrderController],
-  providers: [OrderService, SessionRunner],
+  providers: [OrderService, SessionRunner, KitReserveService],
   exports: [OrderService, MongooseModule],
 })
 export class OrderModule {}

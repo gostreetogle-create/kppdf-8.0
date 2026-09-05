@@ -14,7 +14,8 @@ function buildController() {
     patchLineBoardLane: jest.fn(),
     patchModuleLane: jest.fn(),
   };
-  return { controller: new OrderController(service as never), service };
+  const kitReserve = { getAvailability: jest.fn(), confirmReserve: jest.fn() };
+  return { controller: new OrderController(service as never, kitReserve as never), service, kitReserve };
 }
 
 describe('OrderController PATCH /orders/:id/lines/:lineId/lane', () => {

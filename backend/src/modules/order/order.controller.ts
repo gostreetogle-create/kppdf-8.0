@@ -14,6 +14,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { OrderService } from './order.service';
+import { KitReserveService } from './kit-reserve.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { ShipOrderDto } from './dto/ship-order.dto';
@@ -33,7 +34,10 @@ import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.in
 @UseInterceptors(OrgScopeGuardInterceptor)
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly service: OrderService) {}
+  constructor(
+    private readonly service: OrderService,
+    private readonly kitReserve: KitReserveService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List all orders with optional filters' })
@@ -236,6 +240,45 @@ export class OrderController {
   @ApiResponse({ status: 404, description: 'Order not found' })
   update(@Param('id') id: string, @Body() dto: UpdateOrderDto, @CurrentUser() user: AuthenticatedUser) {
     return this.service.update(id, dto, user.organizationId);
+  }
+
+  @Get(':id/items/:itemIndex/kit-availability')
+  @Roles('admin', 'manager')
+  @ApiOperation({
+    summary: 'Проверить комплектацию изделия в заказе (материалы из состава: модуль/продукт)',
+    description:
+      'Материалы берутся из существующего снимка состава (dual-read composition/legacy), ' +
+      'не из отдельной BOM-модели. Доступность агрегируется по складским остаткам материала.',
+  })
+  @ApiResponse({ status: 200, description: 'Список материалов need/available/status + summary' })
+  @ApiResponse({ status: 400, description: 'Нет состава для комплектации' })
+  @ApiResponse({ status: 404, description: 'Order or line not found' })
+  getKitAvailability(
+    @Param('id') id: string,
+    @Param('itemIndex') itemIndex: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.kitReserve.getAvailability(id, Number(itemIndex), user.organizationId);
+  }
+
+  @Post(':id/items/:itemIndex/kit-reserve')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'kit_reserve', entityType: 'Order', idParam: 'id' })
+  @ApiOperation({
+    summary: 'Подтвердить комплектацию: reserve ok-материалы атомарно; short → SupplyRequest (не hard-stop)',
+    description:
+      'Soft shortage: line с нехваткой не резервируется частично — вместо этого создаётся ' +
+      'SupplyRequest на дефицит. Не списывает со склада (OUT) — это successor TZ.',
+  })
+  @ApiResponse({ status: 200, description: '{ reserved, supplyRequestIds, warnings }' })
+  @ApiResponse({ status: 400, description: 'Нет состава для комплектации' })
+  @ApiResponse({ status: 404, description: 'Order or line not found' })
+  confirmKitReserve(
+    @Param('id') id: string,
+    @Param('itemIndex') itemIndex: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.kitReserve.confirmReserve(id, Number(itemIndex), user.organizationId);
   }
 
   @Post(':id/reserve-stock')

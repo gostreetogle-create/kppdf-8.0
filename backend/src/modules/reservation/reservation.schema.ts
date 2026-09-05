@@ -9,11 +9,20 @@ export class Reservation {
   @Prop({ required: true, index: true })
   orderId!: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Product', required: true, index: true })
-  productId!: Types.ObjectId;
+  /** Exactly one of productId/materialId is required (enforced in ReservationService, mirrors StorageItem). */
+  @Prop({ type: Types.ObjectId, ref: 'Product', index: true })
+  productId?: Types.ObjectId;
+
+  /** TZ-NX-SUPPLY-S0: kit-reserve holds materials, not finished products. */
+  @Prop({ type: Types.ObjectId, ref: 'Material', index: true })
+  materialId?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Warehouse', required: true, index: true })
   warehouseId!: Types.ObjectId;
+
+  /** TZ-NX-SUPPLY-S0: which order line this kit-reserve materialized for (traceability for S1/S2). */
+  @Prop({ min: 0 })
+  orderItemIndex?: number;
 
   @Prop({ required: true, default: 0 })
   qty!: number;

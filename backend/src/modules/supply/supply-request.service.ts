@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { ClientSession, Model, Types } from 'mongoose';
 import {
   CreateSupplyRequestDto,
   UpdateSupplyRequestDto,
@@ -92,6 +92,7 @@ export class SupplyRequestService {
   async create(
     dto: CreateSupplyRequestDto,
     organizationId?: string | null,
+    session?: ClientSession,
   ): Promise<SupplyRequestDocument> {
     const title = dto.title?.trim() || undefined;
     const article = dto.article?.trim() || undefined;
@@ -99,40 +100,46 @@ export class SupplyRequestService {
     const material = dto.materialId
       ? await this.model.db
           .collection('materials')
-          .findOne({ _id: new Types.ObjectId(dto.materialId) })
+          .findOne({ _id: new Types.ObjectId(dto.materialId) }, { session })
       : null;
 
     // Quick-order creates an empty draft first and fills it from the form.
     // The schema intentionally allows both fields to be empty until the user
     // selects a material or enters a title.
-    return this.model.create({
-      ...this.organizationWrite(organizationId),
-      title: title ?? material?.name ?? undefined,
-      categoryId: dto.categoryId ? new Types.ObjectId(dto.categoryId) : undefined,
-      materialId: dto.materialId ? new Types.ObjectId(dto.materialId) : undefined,
-      article: article ?? material?.article ?? undefined,
-      color: dto.color?.trim() || undefined,
-      productUrl: dto.productUrl?.trim() || undefined,
-      supplierId: dto.supplierId ? new Types.ObjectId(dto.supplierId) : undefined,
-      supplierContactId: dto.supplierContactId
-        ? new Types.ObjectId(dto.supplierContactId)
-        : undefined,
-      companyId: dto.companyId ? new Types.ObjectId(dto.companyId) : undefined,
-      requestedBy: dto.requestedBy?.trim() || undefined,
-      orderId: dto.orderId ? new Types.ObjectId(dto.orderId) : undefined,
-      qty: dto.qty ?? 1,
-      unit: unit ?? material?.unit ?? undefined,
-      neededBy: dto.neededBy ? new Date(dto.neededBy) : undefined,
-      status: dto.status ?? 'in_progress',
-      priority: dto.priority ?? 'normal',
-      notes: dto.notes?.trim() || undefined,
-      priceHint: dto.priceHint,
-      lineTotal: dto.lineTotal,
-      supplierOrderDate: dto.supplierOrderDate
-        ? new Date(dto.supplierOrderDate)
-        : undefined,
-      responsible: dto.responsible?.trim() || undefined,
-    });
+    const [doc] = await this.model.create(
+      [
+        {
+          ...this.organizationWrite(organizationId),
+          title: title ?? material?.name ?? undefined,
+          categoryId: dto.categoryId ? new Types.ObjectId(dto.categoryId) : undefined,
+          materialId: dto.materialId ? new Types.ObjectId(dto.materialId) : undefined,
+          article: article ?? material?.article ?? undefined,
+          color: dto.color?.trim() || undefined,
+          productUrl: dto.productUrl?.trim() || undefined,
+          supplierId: dto.supplierId ? new Types.ObjectId(dto.supplierId) : undefined,
+          supplierContactId: dto.supplierContactId
+            ? new Types.ObjectId(dto.supplierContactId)
+            : undefined,
+          companyId: dto.companyId ? new Types.ObjectId(dto.companyId) : undefined,
+          requestedBy: dto.requestedBy?.trim() || undefined,
+          orderId: dto.orderId ? new Types.ObjectId(dto.orderId) : undefined,
+          qty: dto.qty ?? 1,
+          unit: unit ?? material?.unit ?? undefined,
+          neededBy: dto.neededBy ? new Date(dto.neededBy) : undefined,
+          status: dto.status ?? 'in_progress',
+          priority: dto.priority ?? 'normal',
+          notes: dto.notes?.trim() || undefined,
+          priceHint: dto.priceHint,
+          lineTotal: dto.lineTotal,
+          supplierOrderDate: dto.supplierOrderDate
+            ? new Date(dto.supplierOrderDate)
+            : undefined,
+          responsible: dto.responsible?.trim() || undefined,
+        },
+      ],
+      { session },
+    );
+    return doc;
   }
 
   async update(
