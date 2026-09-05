@@ -10,3 +10,4 @@ export * from './lib/doc-studio';
 export * from './lib/submit-guard';
 export * from './lib/sales';
 export * from './lib/people';
+export * from './lib/warehouse';

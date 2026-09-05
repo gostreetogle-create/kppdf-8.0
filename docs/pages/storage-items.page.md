@@ -2,7 +2,7 @@
 
 **Краткое описание:** Текущие остатки по складам. Фильтр по складу и по материалу, pi-table с сортировкой.
 
-## Route
+**NX W2 note:** `/storage-items` is reserved by W1 as a live route with a narrow placeholder. W2 replaces that page in place with the `StorageItem` balances list, preserving the API and `?materialId=` deep-link contract below. The NX shell exposes it under **Склад → Остатки**.
 
 ```
 /storage-items — «KPPDF — Остатки на складе»

@@ -69,6 +69,25 @@ export const appRoutes: Route[] = [
         loadComponent: () => import('./pages/production/production-cockpit.page').then((m) => m.ProductionCockpitPage),
       },
       {
+        // TZ-NX-WAREHOUSE-W1 — one named-warehouse registry plus sequential ledger pages.
+        path: 'warehouses',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'inventory', capabilities: ['warehouse:read'] },
+        loadComponent: () => import('./pages/warehouse/warehouses.page').then((m) => m.WarehousesPage),
+      },
+      {
+        path: 'storage-items',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'storage-items', capabilities: ['warehouse:read'] },
+        loadComponent: () => import('./pages/warehouse/storage-items.page').then((m) => m.StorageItemsPage),
+      },
+      {
+        path: 'stock-movements',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'stock-movements', capabilities: ['warehouse:read'] },
+        loadComponent: () => import('./pages/warehouse/stock-movements.page').then((m) => m.StockMovementsPage),
+      },
+      {
         path: 'orders',
         children: [
           { path: '', pathMatch: 'full', loadComponent: () => import('./pages/orders/orders-list.page').then((m) => m.OrdersListPage) },

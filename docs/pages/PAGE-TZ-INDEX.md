@@ -108,9 +108,9 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | Route | Page doc | TZs |
 |-------|----------|-----|
 | `/inventory` | inventory-dashboard.page.md | **UX-301 DONE**; **WAREHOUSE-UX-301 DONE** (dedupe TOC buttons); **UX-342 DONE** drop dead pager total |
-| `/storage-items` | storage-items.page.md | **UX-301 DONE**, **UX-305 DONE**, **MATERIALS-308 DONE** (фильтр склада ✅); **UX-342 DONE** drop dead pager total · **WAVE-NX-WAREHOUSE READY** (W2) |
-| `/stock-movements` | stock-movements.page.md | type filter ✅; **WAREHOUSE-UX-301 DONE** (+warehouse filter); **UX-342 DONE** drop dead pager total · **WAVE-NX-WAREHOUSE READY** (W3) |
-| `/warehouses` | warehouses.page.md | CRUD; **WAREHOUSE-UX-301 DONE** (type default main + hint; page doc created); **UX-342 DONE** drop dead pager total · **WAVE-NX-WAREHOUSE READY** (W1 thin name+active) |
+| `/storage-items` | storage-items.page.md | **UX-301 DONE**, **UX-305 DONE**, **MATERIALS-308 DONE** (фильтр склада ✅); **UX-342 DONE** drop dead pager total · **WAVE-NX-WAREHOUSE W1** live route placeholder → W2 balances |
+| `/stock-movements` | stock-movements.page.md | type filter ✅; **WAREHOUSE-UX-301 DONE** (+warehouse filter); **UX-342 DONE** drop dead pager total · **WAVE-NX-WAREHOUSE W1** live route placeholder → W3 movements |
+| `/warehouses` | warehouses.page.md | legacy CRUD reference; **WAVE-NX-WAREHOUSE W1** live thin name+active+description (type/zones hidden) |
 
 ## Admin / auth
 

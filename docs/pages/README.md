@@ -32,8 +32,8 @@
 | 12 | **Categories** | `categories.page.md` | `/categories` | Категории (tree) |
 | 12a | **Doc-Template Categories** | `document-template-categories.page.md` | `/doc-template-categories` | Категории шаблонов (DOC-308) |
 | 12b | **Text-Block Categories** | `text-block-categories.page.md` | `/dictionaries/text-block-categories` | Категории текстов (DOC-334) |
-| 13 | **Storage Items** | `storage-items.page.md` | `/storage-items` | Предметы хранения |
-| 14 | **Stock Movements** | `stock-movements.page.md` | `/stock-movements` | Движения остатков |
+| 13 | **Storage Items** | `storage-items.page.md` | `/storage-items` | Остатки (NX W2 placeholder) |
+| 14 | **Stock Movements** | `stock-movements.page.md` | `/stock-movements` | Движения (NX W3 placeholder) |
 | 15 | **Documents** | `documents.page.md` | `/doc-constructor/documents` | Сформированные документы |
 | 16 | **Texts** | `texts.page.md` | `/doc-constructor/texts` | Текстовые блоки |
 | 17 | **Tables** | `tables.page.md` | `/doc-constructor/tables` | Шаблоны таблиц |
@@ -46,7 +46,7 @@
 | 24 | **Admin Roles** | `admin-roles.page.md` | `/admin/roles` | Роли и права (RBAC) |
 | 25 | **Material Detail** | `material-detail.page.md` | `/materials/:id` | Карточка материала (312) |
 | 26 | **Counterparties** | `counterparties.page.md` | `/counterparties` | Заказчики (PARTY-301/303) |
-| 27 | **Warehouses** | `warehouses.page.md` | `/warehouses` | Склады (WAREHOUSE-UX-301) |
+| 27 | **Warehouses** | `warehouses.page.md` | `/warehouses` | Склады — NX W1 live thin registry |
 | 28 | **Supply** | `supply.page.md` | `/supply` | Снабжение |
 | 29 | **Design** | `design.page.md` | `/design` | Очередь доукомплектования (stub NAV-301) |
 | 30 | **Shipping** | `shipping.page.md` | `/shipping` | Частичные отгрузки (stub NAV-301) |

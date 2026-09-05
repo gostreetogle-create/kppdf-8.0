@@ -1,68 +1,54 @@
-# Страница: Склады (WarehousesPage) + форма (WarehouseFormDialogComponent)
+# Страница: Склады — NX Warehouse registry
 
-**Краткое описание:** Реестр складов цеха (W1 READY gate): создание / переименование / тип / зоны / активность. Тип — фиксированная классификация (как status), не справочник для переименования.
+**NX route:** `/warehouses` — live W1 route inside the operational NX shell.
+**Legacy route:** `/warehouses` remains the reference until cutover.
+**Scope:** named warehouse sections such as «Металл» and «Метизы», not a warehouse-type or zone editor.
 
-## Route
+## NX W1 surface
 
-```
-/warehouses — «KPPDF — Склады»
-```
+- List and client-side search by name.
+- Create/edit: **Название** (required), **Описание** (optional), **Активен**.
+- Delete uses Paper & Ink destructive confirmation and the existing soft-delete API.
+- API payload fixes `type: 'main'` and `zoneNames: []`; type, zones, address, and role fields are not shown.
+- Route capability: `warehouse:read`; write actions follow the existing backend role policy.
+- Related routes: `/storage-items` (W2 placeholder) and `/stock-movements` (W3 placeholder).
 
-## API endpoints
+## NX implementation
+
+| Surface | Path |
+|---------|------|
+| Page | `frontend-nx/apps/kppdf-web/src/app/pages/warehouse/warehouses.page.ts` |
+| Dialog | `frontend-nx/apps/kppdf-web/src/app/pages/warehouse/warehouse-form-dialog.component.ts` |
+| Client | `frontend-nx/libs/data-access/src/lib/warehouse/pi-warehouses.service.ts` |
+| Nav/routes | `frontend-nx/apps/kppdf-web/src/app/layout/nav-categories.ts`; `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` |
+
+## API contract
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/warehouses` | Список складов |
-| POST | `/api/warehouses` | Создать склад |
+| POST | `/api/warehouses` | Создать склад; NX sends `type: main`, `zoneNames: []` |
 | PATCH | `/api/warehouses/:id` | Обновить склад |
-| DELETE | `/api/warehouses/:id` | Удалить склад |
+| DELETE | `/api/warehouses/:id` | Мягко удалить склад |
 
-## Dialogs
+## Legacy reference
 
-| Компонент | Режим | Данные |
-|-----------|-------|--------|
-| `WarehouseFormDialogComponent` | create / edit | `null` / `Warehouse` |
-| `AlertDialogComponent` | confirm delete | `{ title, message, confirmLabel, variant: destructive }` |
+The former legacy screen exposed additional classification fields. Those remain documented by its implementation but are deliberately out of the NX W1 form:
 
-## Services
+- legacy `type` values: `main`, `production`, `branch`, `transit`, `other`;
+- legacy address, zones, and role access fields;
+- client-side list and destructive delete confirmation.
 
-| Сервис | Методы |
-|--------|--------|
-| `WarehousesService` | `list()`, `create()`, `update()`, `remove()` (silent-http) |
-
-## State (signals)
-
-| Сигнал | Тип | Назначение |
-|--------|-----|-----------|
-| `searchQuery` | `Signal<string>` | Клиентский поиск по названию |
-| `listRes` | `HttpResource<Warehouse[]>` | GET /api/warehouses |
-| `filtered` | `computed` | Фильтр по `searchQuery` (lowercase includes) |
-
-## Поля формы (create/edit)
-
-| Поле | Контрол | Примечание |
-|------|---------|-----------|
-| Название | `name` | required, max 128 |
-| Тип | `type` | select из `WAREHOUSE_TYPES`; **default create = `main`** (совпадает с BE); RU-подсказка под полем |
-| Адрес | `address` | опционально |
-| Зоны | `zonesText` | строка «через запятую: А, Б», парсится в `zoneNames` |
-| Описание | `description` | опционально, max 512 |
-| Активен | `isActive` | switch |
-
-## Особенности
-
-- **Тип склада — фиксированная классификация** (TZ-WAREHOUSE-UX-301): `main / production / branch / transit / other`; не редактируемый словарь типов; поле нужно для CRUD-schema и будущих подписей/workshop ACL
-- **RU-подсказка** под `type`: «Основной — главный склад; Производство/цех — запасы в цехе; Транзит — перевалочная точка; Филиал — удалённый склад; Другой — прочее. На движения не влияет.»
-- **Табличные labels** — `TYPE_LABELS`: Производство / Основной / Филиал / Транзит / Другой
-- Client-side поиск; delete с confirm-диалогом; OnPush + signals
+Quantity SoT is not part of this page: it remains `StorageItem` / stock movements for W2–W3.
 
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
-| Warehouse pack B | Реестр CRUD (W1) |
-| **TZ-WAREHOUSE-UX-301** | **Default type=main + RU hint под полем type; page doc создан** |
+| **TZ-NX-WAREHOUSE-W1-SHELL** | **NX route + nav «Склад» (Склады · Остатки · Движения) + thin named-warehouse CRUD** |
+| Warehouse pack B | Legacy registry CRUD reference |
+| **TZ-WAREHOUSE-UX-301** | Legacy type default/hint; not exposed in NX W1 |
 
 ---
 
-_Создано: 2026-08-06 (TZ-WAREHOUSE-UX-301)._
+_Обновлено: 2026-09-05 (TZ-NX-WAREHOUSE-W1-SHELL). Legacy details retained as cutover reference._

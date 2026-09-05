@@ -2,7 +2,7 @@
 
 **Краткое описание:** Журнал приходов, расходов и перемещений. Фильтр по типу движения и по складу (как на Остатках).
 
-## Route
+**NX W3 note:** `/stock-movements` is reserved by W1 as a live route with a narrow placeholder. W3 replaces that page in place with the `StockMovement` journal and in/out actions, preserving the API contract below. The NX shell exposes it under **Склад → Движения**.
 
 ```
 /stock-movements — «KPPDF — Движения на складе»

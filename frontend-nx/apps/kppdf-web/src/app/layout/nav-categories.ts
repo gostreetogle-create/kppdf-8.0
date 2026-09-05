@@ -134,13 +134,11 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
     label: 'Склад',
     shortLabel: 'Склад',
     icon: Warehouse,
-    entryPath: '/storage-items',
+    entryPath: '/warehouses',
     items: [
-      { path: '/inventory', pageKey: 'inventory', label: 'Дашборд' },
-      { path: '/storage-items', pageKey: 'storage-items', label: 'Остатки' },
-      { path: '/stock-movements', pageKey: 'stock-movements', label: 'Движения' },
-      { path: '/warehouses', pageKey: 'inventory', label: 'Склады' },
-      { path: '/shipping', pageKey: 'shipping', label: 'Отгрузка' },
+      { path: '/warehouses', pageKey: 'inventory', label: 'Склады', capabilities: ['warehouse:read'] },
+      { path: '/storage-items', pageKey: 'storage-items', label: 'Остатки', capabilities: ['warehouse:read'] },
+      { path: '/stock-movements', pageKey: 'stock-movements', label: 'Движения', capabilities: ['warehouse:read'] },
     ],
   },
   {
