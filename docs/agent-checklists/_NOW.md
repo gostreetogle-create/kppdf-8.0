@@ -1,25 +1,24 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T00:10:00+03:00
+updated_at: 2026-09-05T12:30:00+03:00
 
 ## ACTIVE / LIVE
 
-**S42 DONE** — mongoose plain-spread audit нашёл и исправил ещё один случай
-(`cloneBlock` в `studio-multipage.utils.ts`, multipage table overflow).
-Claude terminal free.
-
-Freebuff → Gantt G3…G7 продолжается независимо (не пересекались — BE vs FE).
+S42 DONE (`7e673953`).  
+**Gantt NX-волна ЗАКРЫТА** (G0–G7 DONE, live smoke PASS, `docs/audits/2026-09-05-gantt-nx-smoke.md`).  
+Claude → peer review G3–G6 (`PROMPT-19`) — если ещё не сдан.
 
 ## NEXT
 
-1. PO: выбрать следующую тему для Claude — A contracts / B Invoice / C auto-reserve,
-   или ждать (см. PARK)  
-2. Freebuff: Gantt RESUME продолжается  
-3. Новые модули — только по команде PO
+1. Freebuff: G7 → **G8** (календарь + TOC chips) → при свободном FE-слоте **S43** title wrap  
+   `PROMPT-G8-CALENDAR-WASH.md` · `PROMPT-20-S43-VITRINA-TITLE-WRAP.md`  
+2. Claude: peer review G3–G6 если ещё не сдан (`PROMPT-19`)  
+3. Мелкие скрин-правки PO → тонкая TZ; кардинальное → полная TZ  
+4. Новые модули — по команде PO
 
 ## DONE
 
-S27–S41 + S37/S37B/S37C + **S42** · Gantt G0–G2
+Doc Studio FINISH · S42 · **Gantt NX G0–G7** (порт production-cockpit в `frontend-nx`)
 
 ## PARK
 

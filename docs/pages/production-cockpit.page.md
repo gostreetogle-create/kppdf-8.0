@@ -1,8 +1,8 @@
 # Страница: Производство / Cockpit (`ProductionCockpitPage`)
 
-**Статус:** `STUDIO ESTIMATE PASS` — tools in app chrome (TZ-UX-323); fact production out of readiness.
+**Статус:** `NX PORT DONE` (TZ-NX-GANTT G0–G7, 2026-09-05) — см. [NX-порт](#nx-порт-tz-nx-gantt-g0g7) ниже. Legacy: `STUDIO ESTIMATE PASS`; fact production out of readiness (L1–L6).
 
-**Краткое описание:** `/production` — студия план-оценки Ганта по `WorkType.days`. Shell: `PiGroupWorkspace` → full-width `production-studio-body` + overlay flyouts; page tools в **app-chrome-rail** (`PiChromeToolsService`). Не факт цеха; без ProductionOrder/OrderTask.
+**Краткое описание:** `/production` — студия план-оценки Ганта по `WorkType.days`. **Актуальный код (NX):** `frontend-nx/apps/kppdf-web/src/app/pages/production/**`; tools в **shell rails** (`ShellToolRailService`). Секции ниже с путями `frontend/` — исторический legacy-эталон порта (не удалять до отдельного решения PO о delete legacy). Не факт цеха; без ProductionOrder/OrderTask.
 
 **SoT:** [`production-gantt-studio-spec.md`](../ux/production-gantt-studio-spec.md) · аудит [`2026-08-15-production-studio-plan-review.md`](../audits/2026-08-15-production-studio-plan-review.md) · cascade [`2026-08-15-gantt-cascade-no-bottom-card.md`](../audits/2026-08-15-gantt-cascade-no-bottom-card.md)
 
@@ -29,7 +29,8 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 /production — KPPDF — Производство
 ```
 
-`data.pageKey = production`, `data.capabilities = ['production:read']`
+Legacy: `data.pageKey = production`, `data.capabilities = ['production:read']`.
+NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` → `ProductionCockpitPage` (lazy), `data.pageKey = production`, capability `production:read`; `ProductionReadFacade` предоставлен на route-уровне (не в component `providers` — иначе DI затеняет override'ы). Чип «Производство/Цех» в шапке включён через `collectPageRoutePaths` (G1).
 
 ### Query params
 
@@ -61,12 +62,34 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 
 ### Blocks
 
+Пути ниже — legacy (`frontend/src/app/pages/production/`); NX-эквиваленты — в [NX-порт](#nx-порт-tz-nx-gantt-g0g7).
+
 | Block | Файл | Роль |
 |-------|------|------|
 | orders-rail | `blocks/orders-rail.component.ts` | Список / поиск по номеру; Фильтры: Заказчик (Counterparty select), приоритет, даты, «Все активные», Сброс |
 | gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/month (day ≈36px); order-meta + work-detail cascade; `groupByWorkers` input → worker-grouped read-only tree |
 | order-inspector helpers | `blocks/order-inspector.component.ts` | Shared `promptCatalogDaysChange` (sheet host removed in 322) |
 | scale controls | `blocks/production-scale-controls.component.ts` | Horizontal toolbar in Gantt header; emits `zoomChange` / `fit` / `groupByChange` |
+
+### NX-порт (TZ-NX-GANTT G0–G7)
+
+**Актуальный SoT-код:** `frontend-nx/apps/kppdf-web/src/app/pages/production/`. Волна: `WAVE-NX-PRODUCTION-GANTT` (checklist + archive `tasks/_archive/2026-09/TZ-NX-GANTT-G*.done.md`); аудит порта `docs/audits/2026-09-04-gantt-nx-port-audit.md`; live smoke `docs/audits/2026-09-05-gantt-nx-smoke.md`.
+
+| NX файл | Роль | G |
+|---------|------|---|
+| `pages/production/production-cockpit.page.ts` | Smart shell: bootstrap, chrome tools (`ShellToolRailService`), фильтры, PATCH-оркестрация, range/fit/today + refit после сдвигов | G1→G5 |
+| `pages/production/production-read.facade.ts` | Чтение через `@kppdf/data-access`: orders + products/modules **bulk** + work-types + workers; retry 429/503; warnings | G2 |
+| `pages/production/gantt-bar.model.ts` | Pure-модель 1:1 (статусы A/C, sequential pack, estimate math, worker-группировка) | G2 |
+| `pages/production/production-cockpit.context.ts` | Локальные UI-сигналы (1:1) | G2 |
+| `pages/production/blocks/gantt-bars.component.ts` | Timeline 1:1: дерево, каскад, drag/resize, zoom; viewport re-anchor после сдвигов (G4) | G3–G6 |
+| `pages/production/blocks/orders-rail.component.ts` | Rail + фильтры (1:1; `o.status` optional-safe) | G3 |
+| `pages/production/blocks/production-scale-controls.component.ts` | Toolbar группировка/масштаб (1:1) | G3 |
+| `pages/production/blocks/order-inspector.component.ts` | `promptCatalogDaysChange` helper | G3/G5 |
+| `libs/data-access`: `sales/order.types.ts` + `pi-orders.service.ts` | `estimateDays/estimateStartOffsets/estimateDayOverrides` + `patchEstimateDays/patchEstimateStart` | G2 |
+| `libs/data-access`: `catalog/work-type.types.ts`, `pi-work-types.service.ts` | WorkTypes read + `update` (catalog days, G5) | G2/G5 |
+| `libs/data-access`: `people/person.types.ts`, `pi-people.service.ts` | Workers (`/workers?limit=100&isActive=true`) | G2 |
+
+Спецификации NX: model/facade/page/bars/rail/workers + write-path (`*.spec.ts` рядом). G3 выравнял `anyComponentStyle` budget NX до legacy 8/16kB (Гант style-heavy by design). Данные: bulk hydrate `POST /products/bulk` + `POST /modules/batch` (aliases `GET /api/products/bulk?ids=`, `/api/modules/bulk?ids=`), как в legacy TZ-PRODUCTION-338/341.
 
 ### Smart / dumb boundary (TZ-PRODUCTION-327)
 
@@ -230,6 +253,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 
 ### Known limitations
 
+**L1–L6 (вне волны NX-порта, как и legacy):** факт цеха (check-in, статусы работ), табель %/часов, авто-назначение исполнителей, уведомления, ProductionSchedule/ProductionOrder/OrderTask — планирование остаётся оценкой по `WorkType.days`.
+
 - Полная keyboard-семантика grid — 310+.
 - Drag-resize UI — TZ-PRODUCTION-311 (после 309 SoT).
 - Нет assign writes / ProductionSchedule SoT.
@@ -245,6 +270,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-345:** изделие без модулей остаётся ineligible (336), если нет WT; pseudo-module `moduleId=productId` → одна строка модуля «Изделие · целиком» под изделием (order/worker trees 342–344).
 - **TZ-PRODUCTION-343:** RU labels/frames for product/module DONE («По заказам» ok).
 - **TZ-PRODUCTION-344:** worker lens Module+context DONE (default collapsed).
+- **NX known gaps vs legacy (порт G0–G7):** photo-URL resolution из legacy facade не портирован (в NX-шелле нет photo-клиента; thumb'ы rail работают без него); live smoke выполнялся на admin (директор/менеджер-роли с `production` page — как в legacy). Pre-existing (не из волны): 2 failing tests в `registries.catalog.spec.ts` (`59bcf499`, другой агент; вне conflict keys).
 
 ### Final interaction contract (TZ-PRODUCTION-328)
 

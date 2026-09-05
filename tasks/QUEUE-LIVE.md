@@ -2,16 +2,14 @@
 
 | Slot | Волна | Статус |
 |------|-------|--------|
-| **#1** | Claude S42 | **DONE** — `cloneBlock` fixed + regression test + live sanity |
-| **#2** | Freebuff Gantt L0 | **G3…G7** (FE) — параллель ОК |
+| **#1** | Claude | S42 DONE → **Gantt L0 peer review** (`PROMPT-19`) |
+| **#2** | Freebuff Gantt | **DONE — волна закрыта** (G0–G7, live smoke PASS) |
 
 ## NEXT
 
-1. PO: выбрать следующую тему для Claude (A contracts / B Invoice / C auto-reserve) или ждать
-2. Freebuff: `tasks/PROMPT-FREEBUFF-NX-GANTT-RESUME.md` (G3→G7) продолжается
+1. Claude: `tasks/_ready/docstudio-finish/prompts/PROMPT-19-GANTT-L0-PEER-REVIEW.md`
+2. Свободен FE-слот → S43 title wrap (`PROMPT-20-S43-VITRINA-TITLE-WRAP.md`) — по команде PO
 
-## DONE (недавно)
+## DONE
 
-- S42 — `docs/audits/2026-09-05-mongoose-plain-spread-audit.md`: audit нашёл и
-  исправил `cloneBlock` (multipage table overflow), тот же класс бага что S37C
-- Doc Studio FINISH CLOSED · Gantt G0–G2  
+S42 `7e673953` · Doc Studio FINISH · **Gantt NX G0–G7** (smoke `2026-09-05-gantt-nx-smoke.md`)  
