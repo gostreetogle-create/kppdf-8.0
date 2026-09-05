@@ -43,4 +43,4 @@ Neither `SupplyTaskService.markReceived` nor `SupplyRequestService.markReceived`
 
 ## Commit
 
-- see git log
+- `9680c441`
