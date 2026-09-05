@@ -27,8 +27,12 @@ prompt: `tasks/PROMPT-CLAUDE-CONTINUOUS-S44-REGISTRIES.md`
 | ID | Status |
 |----|--------|
 | S44 | DONE |
-| REG-SCROLL | CLAIMING |
+| REG-SCROLL | DONE |
 
 ## Done when
 
 Оба archived + Executor report (auto) + `_NOW.md` = Claude IDLE + Freebuff IDLE.
+
+**DONE 2026-09-05.** S44 → commit d5b7dcd8. REG-SCROLL → round 2 (см. archive
+`.done.md` — reopened by PO после свежих скриншотов, round 1 e1a6451c закрыл
+только часть A неполно). Оба запушены в `origin/main`.

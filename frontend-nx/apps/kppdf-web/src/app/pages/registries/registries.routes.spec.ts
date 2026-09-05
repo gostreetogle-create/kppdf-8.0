@@ -131,6 +131,27 @@ describe('Registries routing — master table + inline panel URL sync (TZ-NX-REG
     );
   });
 
+  it('reuses the SAME RegistriesPage instance across expand/collapse navigation (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE — root cause of the scroll jump was destroy/recreate on route change)', async () => {
+    const harness = await RouterTestingHarness.create('/registries');
+    await settle(harness);
+    const beforeExpand = harness.routeDebugElement?.componentInstance;
+    expect(beforeExpand).toBeInstanceOf(RegistriesPage);
+
+    const row = harness.routeNativeElement?.querySelector(
+      '[data-test="table-row-alpha"]',
+    ) as HTMLElement;
+    row.click();
+    await settle(harness);
+    expect(harness.routeDebugElement?.componentInstance).toBe(beforeExpand);
+
+    const collapseRow = harness.routeNativeElement?.querySelector(
+      '[data-test="table-row-alpha"]',
+    ) as HTMLElement;
+    collapseRow.click();
+    await settle(harness);
+    expect(harness.routeDebugElement?.componentInstance).toBe(beforeExpand);
+  });
+
   it('an unknown registry key renders the not-found state while the master table stays visible', async () => {
     const harness = await RouterTestingHarness.create('/registries/ghost');
     await settle(harness);

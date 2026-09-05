@@ -141,6 +141,15 @@ export function restoreRegistryScrollPosition(
     }
     </div>
   `,
+  styles: [`
+    /* TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE: master tables here never bind
+       total/page/pageSize/caption/footer — app-pi-table's own footer bar
+       (hairline + py-3 padding, unconditional) renders empty under every
+       category group, most visible as dead white space under the last one. */
+    :host ::ng-deep app-pi-table .pi-table-footer {
+      display: none;
+    }
+  `],
 })
 export class RegistriesPage implements OnInit {
   private readonly catalog = inject(REGISTRIES_CATALOG);

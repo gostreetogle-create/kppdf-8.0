@@ -1,22 +1,21 @@
 # QUEUE-LIVE
 
-| Slot | Волна | Статус |
-|------|-------|--------|
-| **#1** | Freebuff | polish **P2→P5** (`PROMPT-FREEBUFF-NX-GANTT-POLISH.md`); P1 DONE |
-| **#2** | Claude | **IDLE — TX DONE** (`TZ-BACKEND-ORDER-ORG-SCOPE-TX.done.md`) |
-
-Режим: отчёт в Cursor → сразу промпт (`docs/PO-SHARED-UNDERSTANDING.md` §5).
-
-## NEXT (спеки)
-
-- После P5 Freebuff: Data IA D50–D54 (`PROMPT-FREEBUFF-DOCSTUDIO-DATA-IA.md`) — уже в `_ready`  
-- Claude: ждать новую TZ / PO команду  
-- Модули сверх этого — только PO
-
-## НЕ ставить
-
-Partial legacy `frontend/` delete · contracts/Invoice/L1+ без PO
+| Slot | Статус |
+|------|--------|
+| Freebuff | IDLE |
+| Claude | IDLE — S44→REG DONE |
 
 ## DONE
 
-Gantt G0–G7 · Doc Studio FINISH · peer review · org-scope HARDEN + TX (Order writes fully org-scoped) · P1 catalog-spec
+Deals · Registries CRUD · WAVE-S · G14 · Data IA D50–D56 · S44 table canvas select (d5b7dcd8) ·
+Registries expand-scroll round 2 (route matcher + footer fix)
+
+## NEXT (Claude continuous)
+
+LIVE-очередь пуста — ждём скрин/ТЗ PO.
+
+WAVE: `docs/agent-checklists/WAVE-CLAUDE-S44-REGISTRIES.md`
+
+## NOTE
+
+Это вся текущая LIVE-очередь. `_backlog/` не клеить в этот промпт.

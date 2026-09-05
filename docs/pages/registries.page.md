@@ -24,13 +24,27 @@ refresh/back/forward. `units` — **реальный backend API** (`GET /units`
 ```
 
 Только `frontend-nx` (`apps/kppdf-web/src/app/pages/registries/**`). Оба пути
-в `REGISTRIES_ROUTES` (`registries.routes.ts`) резолвятся в **один и тот же**
+резолвятся в **один и тот же**
 `loadComponent: () => import('./registries-page').then(m => m.RegistriesPage)`
 — `:registryKey` не отдельная страница, а параметр, решающий, какая
 master-строка раскрыта. Вложен в `AppShellComponent`
 (`canMatch: [authGuard]`), **без** `capabilityRouteGuard` — ни у `units`, ни
 у `departments`, ни у самого `'registries'` нет backend-seeded permission
 key, задача явно запрещает его придумывать.
+
+**`REGISTRIES_ROUTES` — один `UrlMatcher`-route, не два `path`-route
+(TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE):** до этой TZ здесь были ДВА разных
+объекта `Route` (`path: ''` и `path: ':registryKey'`), оба резолвящих в тот же
+компонент. Angular's default `RouteReuseStrategy` сравнивает
+`future.routeConfig === curr.routeConfig` — у двух разных объектов это всегда
+`false`, поэтому КАЖДЫЙ клик master-строки (навигация между этими путями)
+уничтожал и пересоздавал весь `RegistriesPage` целиком, вместе с DOM
+master-таблиц под `.shell-main`. Это была настоящая причина «прыжка» скролла,
+а не просто отсутствие restore. Теперь `registries.routes.ts` экспортирует
+ОДИН route с `matcher` (0 сегментов → `/registries`, 1 сегмент → `registryKey`
+как posParam) — один и тот же объект `Route`, поэтому Angular переиспользует
+инстанс компонента между навигациями; меняется только
+`ActivatedRoute.paramMap`.
 
 ## Master table (`registries-page.ts`)
 
@@ -177,7 +191,8 @@ Row actions и toolbar create — **icon-only** Lucide через app-layer ко
   (`POST /modules/:id/composition` / `POST /products/:id/composition`), не в root.
 - **`focusComposition`:** row action «Открыть состав» прокручивает composition block в видимую область
   (`scrollIntoView` + focus), без изменения layout shell.
-- **Master expand scroll (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE):** clicking a master row preserves the `.shell-main` scrollTop across the route navigation and restores it after two render frames. The URL-driven single-expand model remains unchanged; no `scrollIntoView` is used for master expansion. The page wrapper has no vertical padding/min-height beyond the normal category gap and panel content.
+- **Master expand scroll (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE):** the real fix is the single-`matcher` route in `registries.routes.ts` (see «Route» above) — Angular reuses the SAME `RegistriesPage` instance across expand/collapse instead of destroying/recreating it, so `.shell-main`'s scrollTop is never disturbed by navigation in the first place. The pre-existing two-frame scrollTop capture/restore in `onMasterRowClick` stays as defense-in-depth but is no longer load-bearing. The URL-driven single-expand model is unchanged; no `scrollIntoView` is used for master expansion.
+- **Trailing white space under the last master table (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE):** `app-pi-table`'s own `.pi-table-footer` bar (hairline + `py-3` padding) renders unconditionally, even with no pager/caption/footer content — which the registries master tables never provide. `registries-page.ts` hides it via a scoped `::ng-deep app-pi-table .pi-table-footer { display: none; }` (component-local, does not touch the shared `pi-table.component.ts`).
 - **Edit loading:** перед открытием edit dialog для module/product/material вызывается `getById`;
   при ошибке — toast, dialog не открывается (list row может быть неполным).
 - **Details filter:** пустое значение фильтра «Вид» = только `part` (дефолтный запрос), не «все виды»;

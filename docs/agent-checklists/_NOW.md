@@ -1,22 +1,23 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T13:22:00+03:00
+updated_at: 2026-09-05T15:49:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** DONE — Data IA-2 D55→D56 archived
-  (D55 `97d72e9f`; D56 `efb647b8` + `3792c773`)
-- **Claude:** WAIT — S44 после archive D56 · TZ `tasks/TZ-NX-DOCSTUDIO-S44-TABLE-CANVAS-SELECT-FIX.md` · промпт `tasks/PROMPT-CLAUDE-DOCSTUDIO-S44.md`
+- **Freebuff:** IDLE  
+- **Claude:** IDLE — S44 → Registries scroll цепочка DONE  
+  · WAVE `docs/agent-checklists/WAVE-CLAUDE-S44-REGISTRIES.md`
 
 ## DONE (эта сессия)
 
-Deals · Registries R1–R3 · WAVE-S · G10 · G14 · Data IA D50–D54 · D55 · D56
+Deals · Registries R1–R3 · WAVE-S · G10 · G14 · Data IA D50–D56 ·
+S44 table canvas select (d5b7dcd8) · Registries expand-scroll round 2 (route matcher + footer fix)
 
 ## NEXT
 
-1. Claude → S44 (table canvas select + token highlight)
-3. Потом (отдельный слот): `TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE` — тоже `kppdf-web`, не параллелить с S44
+После Claude-цепочки: LIVE пуст — ждём скрин/ТЗ PO.  
+Backlog (`G12`, legacy decommission, density) — **не** выдавать без команды.
 
 ## PARK
 
-Cutover · Invoice · L1+ · `/desk`
+Cutover · Invoice · L1+ · `/desk` · G12 unassigned filter
