@@ -312,7 +312,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
             в
           </span>
           <a
-            routerLink="/people"
+            routerLink="/registries/workers"
             class="font-medium text-hint-warn underline underline-offset-2 shrink-0"
             data-test="gantt-unassigned-people-link"
             >Люди</a

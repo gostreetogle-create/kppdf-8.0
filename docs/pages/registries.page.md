@@ -118,6 +118,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `text-blocks` | Тексты | `api` (`GET/POST/PATCH/DELETE /text-blocks`) | client pagination; search client-side, categoryId/isActive API filters; create/edit/archive dialogs |
 | `table-templates` | Виды таблиц | `api` (`GET/POST/PATCH/DELETE /table-templates`) | client pagination; search/category client-side; column editor and data-source picker |
 | `work-types` | Виды работ | `api` (`GET/POST/PATCH/DELETE /work-types`) | client pagination; search по названию/секции/отделу/описанию; create/edit/soft archive; поля days, hourlyRate, accentHue и isActive |
+| `workers` | Люди | `api` (`GET/POST/PATCH/DELETE /workers`) | server pagination; search/status filters; create/edit/soft archive; workTypeIds skills used by Gantt labels |
 
 Каталог — `createRegistriesCatalog()` / `provideRegistriesCatalog()` на `RegistriesPage`
 (`REGISTRIES_CATALOG`, `data/registries.catalog.ts`). Dialog hosts получают **page-scoped**
@@ -147,6 +148,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `text-blocks` | `search` (client), `categoryId`, `isActive` | `client` | GET /text-blocks returns full list; no server pagination |
 | `table-templates` | `search`, `category` (client) | `client` | GET /table-templates returns full list; no server pagination |
 | `work-types` | `search` (client) | `client` | GET /work-types returns full list; no server pagination |
+| `workers` | `search`, `status` | `server` | GET /workers page/limit/search/isActive; max limit 100 |
 
 ### Icon row actions (TZ-NX-REGISTRIES-FULL-CLOSEOUT)
 
@@ -294,7 +296,8 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
   `PiMaterialsService` write methods в data-access.
 - **TZ-NX-REGISTRIES-FILTERS-PAGINATION-CONSISTENCY (2026-08-29)** — unified toolbar: filters left, pagination + create right; `paginationMode` on definitions.
 - **TZ-NX-REGISTRIES-WORK-TYPES (2026-09-05)** — API-backed «Виды работ» registry with typed CRUD and client-side list controls.
+- **TZ-NX-REGISTRIES-WORKERS (2026-09-05)** — API-backed «Люди» registry with typed CRUD, `workTypeIds[]` skill selection, and a Gantt link to `/registries/workers`.
 
 ---
 
-_Обновлено: 2026-09-05 (TZ-NX-REGISTRIES-WORK-TYPES)._
+_Обновлено: 2026-09-05 (TZ-NX-REGISTRIES-WORKERS)._

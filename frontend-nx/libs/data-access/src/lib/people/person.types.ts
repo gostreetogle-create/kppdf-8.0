@@ -35,6 +35,24 @@ export interface PersonListParams {
   workTypeId?: string;
 }
 
+export interface PersonWritePayload {
+  lastName: string;
+  firstName: string;
+  patronymic?: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  department?: string;
+  grade?: string;
+  ratePerHour?: number;
+  supplierId?: string;
+  workTypeIds?: string[];
+  notes?: string;
+  isActive?: boolean;
+}
+
+export type PersonUpdatePayload = Partial<PersonWritePayload>;
+
 /** Full display name (lastName + firstName + patronymic). */
 export function personDisplayName(
   p: Pick<Person, 'lastName' | 'firstName' | 'patronymic'>,

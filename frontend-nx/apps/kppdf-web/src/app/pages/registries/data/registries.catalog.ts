@@ -14,6 +14,7 @@ import {
   PiTableTemplatesService,
   PiRegistryDataSourcesService,
   PiWorkTypesService,
+  PiPeopleService,
 } from '@kppdf/data-access';
 import { collectPageRoutePaths } from '../../../layout/route-paths';
 import type { RegistryDefinition, RegistryRow } from '../model/registry.types';
@@ -36,6 +37,9 @@ import { createFormulasRegistry } from './formulas.registry';
 import { createWorkTypesRegistry } from './work-types.registry';
 import type { WorkTypeRegistryDeps } from './work-type-registry-actions';
 import { createWorkTypeRegistryDialogHost } from './work-type-registry-dialog-host';
+import { createWorkersRegistry } from './workers.registry';
+import type { WorkerRegistryDeps } from './worker-registry-actions';
+import { createWorkerRegistryDialogHost } from './worker-registry-dialog-host';
 
 export function buildMaterialRegistryDeps(
   materialsService: PiMaterialsService,
@@ -89,6 +93,8 @@ export function buildRegistriesCatalogDefault(
   docStudioDeps?: DocStudioDialogDeps,
   workTypesService?: PiWorkTypesService,
   workTypeDialogHost?: WorkTypeRegistryDeps['dialogHost'],
+  peopleService?: PiPeopleService,
+  workerDialogHost?: WorkerRegistryDeps['dialogHost'],
 ): readonly RegistryDefinition<RegistryRow>[] {
   const materialDeps = buildMaterialRegistryDeps(materialsService, router, materialDialogHost);
   const moduleDeps = buildModuleRegistryDeps(modulesService, catalogDialogHost);
@@ -107,6 +113,9 @@ export function buildRegistriesCatalogDefault(
     createFormulasRegistry(),
     ...(workTypesService && workTypeDialogHost
       ? [createWorkTypesRegistry({ workTypesService, dialogHost: workTypeDialogHost })]
+      : []),
+    ...(peopleService && workerDialogHost
+      ? [createWorkersRegistry({ peopleService, dialogHost: workerDialogHost })]
       : []),
     createProductPassportsRegistry(productPassportsService, registryDialog ?? undefined),
     ...(studio ? [createTextBlocksRegistry(studio), createTableTemplatesRegistry(studio)] : []).map((definition) => definition as RegistryDefinition<RegistryRow>),
@@ -135,6 +144,7 @@ export function createRegistriesCatalog(
   const tableTemplatesService = inject(PiTableTemplatesService);
   const dataSourcesService = inject(PiRegistryDataSourcesService);
   const workTypesService = inject(PiWorkTypesService);
+  const peopleService = inject(PiPeopleService);
 
   const materialDialogHost = createMaterialRegistryDialogHost({
     dialog,
@@ -156,6 +166,12 @@ export function createRegistriesCatalog(
     destroyRef,
     injector,
     workTypesService,
+  });
+  const workerDialogHost = createWorkerRegistryDialogHost({
+    dialog,
+    destroyRef,
+    injector,
+    peopleService,
   });
 
   const docStudioDeps = createDocStudioDialogDeps(dialog, destroyRef, injector);
@@ -179,6 +195,8 @@ export function createRegistriesCatalog(
     docStudioDeps,
     workTypesService,
     workTypeDialogHost,
+    peopleService,
+    workerDialogHost,
   );
 }
 

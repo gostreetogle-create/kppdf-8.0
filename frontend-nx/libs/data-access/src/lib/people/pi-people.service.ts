@@ -3,17 +3,21 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   API_BASE_URL,
+  silentDelete,
   silentGet,
+  silentPatch,
+  silentPost,
   type SilentResult,
 } from '@kppdf/util-http';
-import type { Person, PersonListParams, PersonListResponse } from './person.types';
+import type {
+  Person,
+  PersonListParams,
+  PersonListResponse,
+  PersonUpdatePayload,
+  PersonWritePayload,
+} from './person.types';
 
-/**
- * TZ-NX-GANTT-G2 — read-only People client against `/workers` (the «Люди»
- * справочник; legacy `PiWorkersService`). Used by the production facade for
- * work-type → person labels (Gantt worker view later in G6). Backend caps
- * `limit` at 100 (`@Max(100)`, TZ-PRODUCTION-334).
- */
+/** API client for the org-scoped Worker/People registry and Gantt labels. */
 @Injectable({ providedIn: 'root' })
 export class PiPeopleService {
   private readonly http = inject(HttpClient);
@@ -32,5 +36,18 @@ export class PiPeopleService {
 
   getById(id: string): Observable<SilentResult<Person>> {
     return silentGet<Person>(this.http, `${this.baseUrl}/workers/${id}`);
+  }
+
+  create(payload: PersonWritePayload): Observable<SilentResult<Person>> {
+    return silentPost<Person>(this.http, `${this.baseUrl}/workers`, payload);
+  }
+
+  update(id: string, payload: PersonUpdatePayload): Observable<SilentResult<Person>> {
+    return silentPatch<Person>(this.http, `${this.baseUrl}/workers/${id}`, payload);
+  }
+
+  /** Soft-delete (`DELETE /workers/:id`). */
+  archive(id: string): Observable<SilentResult<void>> {
+    return silentDelete<void>(this.http, `${this.baseUrl}/workers/${id}`);
   }
 }
