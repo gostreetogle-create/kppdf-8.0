@@ -90,9 +90,6 @@ export interface WorkerFormDialogData {
                       [attr.data-test]="'worker-work-type-' + workType._id"
                     />
                     <span>{{ workType.name }}</span>
-                    @if (workType.days != null) {
-                      <span class="text-[11px] text-muted-foreground">{{ workType.days }}д</span>
-                    }
                   </label>
                 }
               </div>

@@ -1,23 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T15:49:00+03:00
+updated_at: 2026-09-05T18:10:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** IDLE  
-- **Claude:** IDLE — S44 → Registries scroll цепочка DONE  
-  · WAVE `docs/agent-checklists/WAVE-CLAUDE-S44-REGISTRIES.md`
+- **Claude:** CLAIMED / IN PROGRESS — Module↔WT days SoT · `tasks/PROMPT-CLAUDE-MODULE-WT-DAYS.md`  
+  S: `TZ-NX-REGISTRIES-WORKER-SKILLS-NO-DAYS` DONE → L: `TZ-NX-MODULE-WT-DAYS-SOT` IN PROGRESS
+- **Freebuff:** IDLE (Orders hub tray inset → NEXT после Claude)
 
 ## DONE (эта сессия)
 
-Deals · Registries R1–R3 · WAVE-S · G10 · G14 · Data IA D50–D56 ·
-S44 table canvas select (d5b7dcd8) · Registries expand-scroll round 2 (route matcher + footer fix)
+Deals D1–D5 · Registries · Gantt polish · Data IA D50–D56 · S44 · REG-SCROLL · TZ-NX-REGISTRIES-WORKER-SKILLS-NO-DAYS
 
 ## NEXT
 
-После Claude-цепочки: LIVE пуст — ждём скрин/ТЗ PO.  
-Backlog (`G12`, legacy decommission, density) — **не** выдавать без команды.
+После Claude days: Freebuff `tasks/PROMPT-FREEBUFF-ORDERS-HUB-TRAY-INSET.md` · глазами PO `/orders` expand.
 
 ## PARK
 
-Cutover · Invoice · L1+ · `/desk` · G12 unassigned filter
+Cutover · Invoice · L1+ · `/desk` · G12

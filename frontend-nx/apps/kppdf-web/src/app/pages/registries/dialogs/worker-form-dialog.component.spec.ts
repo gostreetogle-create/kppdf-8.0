@@ -50,6 +50,12 @@ describe('WorkerFormDialogComponent (TZ-NX-REGISTRIES-WORKERS)', () => {
     expect(el.querySelector('[data-test="worker-work-type-wt-1"]')).toBeTruthy();
   });
 
+  it('does not show a days suffix next to a work type skill', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const label = el.querySelector('[data-test="worker-work-type-wt-1"]')?.closest('label');
+    expect(label?.textContent ?? '').not.toMatch(/\d+\s*д/);
+  });
+
   it('does not submit without both required identity fields', async () => {
     await fixture.componentInstance['onSubmit']();
     expect(create).not.toHaveBeenCalled();
