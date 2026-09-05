@@ -1,19 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-05T13:15:00+03:00
+updated_at: 2026-09-05T13:22:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** G14-FE DONE → production assignment wave complete.
-- **Claude Slot C DONE:** `WAVE-DOCSTUDIO-DATA-IA` D50–D54 полностью archived (TOC панели «Данные», буфер «Выбрано», «Вставить на лист», party-copy, docs). Claude terminal free.
+- **Freebuff:** DONE — Data IA-2 D55→D56 archived
+  (D55 `97d72e9f`; D56 `efb647b8` + `3792c773`)
+- **Claude:** WAIT — S44 после archive D56 · TZ `tasks/TZ-NX-DOCSTUDIO-S44-TABLE-CANVAS-SELECT-FIX.md` · промпт `tasks/PROMPT-CLAUDE-DOCSTUDIO-S44.md`
 
-## DONE
+## DONE (эта сессия)
 
-Registries R1–R3 · WAVE-S · Deals D1–D5 · G10 · G14-BE · Docstudio Data IA D50–D54
+Deals · Registries R1–R3 · WAVE-S · G10 · G14 · Data IA D50–D54 · D55 · D56
 
 ## NEXT
 
-После G14-FE + Data IA — промптов нет / скрин PO
+1. Claude → S44 (table canvas select + token highlight)
+3. Потом (отдельный слот): `TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE` — тоже `kppdf-web`, не параллелить с S44
 
 ## PARK
 

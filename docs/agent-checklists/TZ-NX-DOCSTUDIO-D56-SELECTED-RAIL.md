@@ -61,7 +61,7 @@
 - The left shell rail registers Data then Selected and mirrors the selected-count badge.
 - Data TOC now contains only Products, Whom, Links, and More; A4 shell geometry is unchanged.
 - Foreign dirty workspace files, backend, Properties, right rail, product rail, and legacy `frontend/` remain excluded.
-- Implementation commit: `efb647b8`; closeout metadata commit follows.
+- Implementation commit: `efb647b8`; closeout metadata commit: `3792c773`.
 
 ## Closeout
 
