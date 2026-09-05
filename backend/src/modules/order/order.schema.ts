@@ -142,6 +142,29 @@ export class EstimateStartOffset {
 
 const EstimateStartOffsetSchema = SchemaFactory.createForClass(EstimateStartOffset);
 
+/**
+ * TZ-NX-GANTT-G14 — per-order work assignment override (job assignment, not skills).
+ * Composite key: (orderItemIndex, moduleId, workTypeId).
+ * Does not mutate `Worker.workTypeIds` (skills stay the catalog of "who can").
+ */
+@Schema({ _id: false })
+export class EstimateWorkerOverride {
+  @Prop({ required: true, min: 0 })
+  orderItemIndex!: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'ProductModule', required: true })
+  moduleId!: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'WorkType', required: true })
+  workTypeId!: Types.ObjectId;
+
+  /** Empty array = «Не назначен» on the Gantt (no auto-fill from skills). */
+  @Prop({ type: [Types.ObjectId], ref: 'Worker', default: [] })
+  workerIds!: Types.ObjectId[];
+}
+
+const EstimateWorkerOverrideSchema = SchemaFactory.createForClass(EstimateWorkerOverride);
+
 export type OrderStatus = 'draft' | 'confirmed' | 'in_production' | 'ready' | 'shipped' | 'delivered' | 'cancelled';
 export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
 /** TZD-ORDER-IMPORT-01: провенанс заказа — вручную в вебе или через Excel/MCP импорт. */
@@ -236,6 +259,13 @@ export class Order {
   /** TZ-PRODUCTION-316: per-bar start offset from visualAnchor (parallel OK). */
   @Prop({ type: [EstimateStartOffsetSchema], default: [] })
   estimateStartOffsets!: EstimateStartOffset[];
+
+  /**
+   * TZ-NX-GANTT-G14: job assignment override (who does this work on THIS order).
+   * Separate from `Worker.workTypeIds` (skills = "who can"). Empty/absent → «Не назначен».
+   */
+  @Prop({ type: [EstimateWorkerOverrideSchema], default: [] })
+  estimateWorkerOverrides!: EstimateWorkerOverride[];
 
   /**
    * TZ-ORDERS-308: soft-delete marker. Was written by `remove()` before this TZ

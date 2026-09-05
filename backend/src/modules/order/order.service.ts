@@ -12,6 +12,7 @@ import {
   BoardLane,
   EstimateDayOverride,
   EstimateStartOffset,
+  EstimateWorkerOverride,
   ModuleLane,
   Order,
   OrderDocument,
@@ -30,6 +31,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { ShipOrderItemDto } from './dto/ship-order.dto';
 import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
 import { PatchEstimateStartDto } from './dto/patch-estimate-start.dto';
+import { PatchEstimateWorkerDto } from './dto/patch-estimate-worker.dto';
 import { CounterService } from '../counter/counter.service';
 import { ReservationService } from '../reservation/reservation.service';
 import { ShipmentService } from '../shipment/shipment.service';
@@ -828,6 +830,67 @@ export class OrderService {
     }
 
     doc.estimateStartOffsets = offsets;
+    await this.healMissingSiteId(doc);
+    await doc.save();
+    return this.findById(id);
+  }
+
+  /**
+   * TZ-NX-GANTT-G14 — upsert or clear job-assignment override for one WT line.
+   * Composite key: (orderItemIndex, moduleId, workTypeId).
+   * `workerIds: []` clears the override (Gantt falls back to «Не назначен»,
+   * never auto-fills from `Worker.workTypeIds` skills).
+   */
+  async patchEstimateWorker(
+    id: string,
+    dto: PatchEstimateWorkerDto,
+    organizationId?: string | null,
+  ): Promise<OrderDocument> {
+    const doc = await this.findByIdRaw(id);
+    this.assertOrgAccess(doc, organizationId);
+    if (!Types.ObjectId.isValid(dto.moduleId) || !Types.ObjectId.isValid(dto.workTypeId)) {
+      throw new BadRequestException('moduleId and workTypeId must be valid ObjectIds');
+    }
+    if (!Number.isInteger(dto.orderItemIndex) || dto.orderItemIndex < 0) {
+      throw new BadRequestException('orderItemIndex must be an integer ≥ 0');
+    }
+    if (dto.orderItemIndex >= doc.items.length) {
+      throw new NotFoundException(`Order line ${dto.orderItemIndex} not found`);
+    }
+    if (!dto.workerIds.every((w) => Types.ObjectId.isValid(w))) {
+      throw new BadRequestException('workerIds must be valid ObjectIds');
+    }
+
+    const moduleId = new Types.ObjectId(dto.moduleId);
+    const workTypeId = new Types.ObjectId(dto.workTypeId);
+    const workerIds = dto.workerIds.map((w) => new Types.ObjectId(w));
+    const overrides: EstimateWorkerOverride[] = [...(doc.estimateWorkerOverrides ?? [])];
+    const matchIndex = overrides.findIndex(
+      (row) =>
+        row.orderItemIndex === dto.orderItemIndex &&
+        row.moduleId.equals(moduleId) &&
+        row.workTypeId.equals(workTypeId),
+    );
+
+    if (workerIds.length === 0) {
+      if (matchIndex >= 0) {
+        overrides.splice(matchIndex, 1);
+      }
+    } else {
+      const next: EstimateWorkerOverride = {
+        orderItemIndex: dto.orderItemIndex,
+        moduleId,
+        workTypeId,
+        workerIds,
+      };
+      if (matchIndex >= 0) {
+        overrides[matchIndex] = next;
+      } else {
+        overrides.push(next);
+      }
+    }
+
+    doc.estimateWorkerOverrides = overrides;
     await this.healMissingSiteId(doc);
     await doc.save();
     return this.findById(id);

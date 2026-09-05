@@ -58,6 +58,12 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
       workTypeId: Types.ObjectId;
       offsetDays: number;
     }>,
+    estimateWorkerOverrides: [] as Array<{
+      orderItemIndex: number;
+      moduleId: Types.ObjectId;
+      workTypeId: Types.ObjectId;
+      workerIds: Types.ObjectId[];
+    }>,
     moduleLanes: [] as Array<{
       lineId: string;
       moduleId: Types.ObjectId;
@@ -1251,6 +1257,162 @@ describe('OrderService — TZ-ORDERS-301', () => {
       );
 
       expect(doc.estimateStartOffsets).toHaveLength(1);
+      expect(doc.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('patchEstimateWorker (TZ-NX-GANTT-G14)', () => {
+    const MODULE = new Types.ObjectId();
+    const WORK_TYPE = new Types.ObjectId();
+    const WORKER_A = new Types.ObjectId();
+    const WORKER_B = new Types.ObjectId();
+
+    function orderWithItem(overrides: Record<string, unknown> = {}) {
+      return orderDoc({
+        items: [
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            unitPrice: 0,
+            total: 0,
+          },
+        ],
+        estimateWorkerOverrides: [],
+        ...overrides,
+      });
+    }
+
+    it('upserts an override by composite key', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem();
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateWorker(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: MODULE.toString(),
+        workTypeId: WORK_TYPE.toString(),
+        workerIds: [WORKER_A.toString(), WORKER_B.toString()],
+      });
+
+      expect(doc.estimateWorkerOverrides).toHaveLength(1);
+      expect(doc.estimateWorkerOverrides[0]).toEqual(
+        expect.objectContaining({ orderItemIndex: 0 }),
+      );
+      expect(doc.estimateWorkerOverrides[0].moduleId.equals(MODULE)).toBe(true);
+      expect(doc.estimateWorkerOverrides[0].workTypeId.equals(WORK_TYPE)).toBe(true);
+      expect(
+        doc.estimateWorkerOverrides[0].workerIds.map((w: Types.ObjectId) => w.toString()),
+      ).toEqual([WORKER_A.toString(), WORKER_B.toString()]);
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('updates existing override on same composite key', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({
+        estimateWorkerOverrides: [
+          {
+            orderItemIndex: 0,
+            moduleId: MODULE,
+            workTypeId: WORK_TYPE,
+            workerIds: [WORKER_A],
+          },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateWorker(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: MODULE.toString(),
+        workTypeId: WORK_TYPE.toString(),
+        workerIds: [WORKER_B.toString()],
+      });
+
+      expect(doc.estimateWorkerOverrides).toHaveLength(1);
+      expect(
+        doc.estimateWorkerOverrides[0].workerIds.map((w: Types.ObjectId) => w.toString()),
+      ).toEqual([WORKER_B.toString()]);
+    });
+
+    it('clears override when workerIds is empty (falls back to «Не назначен», not skills)', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({
+        estimateWorkerOverrides: [
+          {
+            orderItemIndex: 0,
+            moduleId: MODULE,
+            workTypeId: WORK_TYPE,
+            workerIds: [WORKER_A],
+          },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateWorker(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: MODULE.toString(),
+        workTypeId: WORK_TYPE.toString(),
+        workerIds: [],
+      });
+
+      expect(doc.estimateWorkerOverrides).toHaveLength(0);
+    });
+
+    it('rejects unknown order line index', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem();
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchEstimateWorker(doc._id.toString(), {
+          orderItemIndex: 9,
+          moduleId: MODULE.toString(),
+          workTypeId: WORK_TYPE.toString(),
+          workerIds: [WORKER_A.toString()],
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    /** TZ-NX-GANTT-L0-PEER-REVIEW — same org-leak class as patchEstimateDays above. */
+    it('rejects a cross-org caller before saving (org leak)', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderWithItem({ organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchEstimateWorker(
+          doc._id.toString(),
+          {
+            orderItemIndex: 0,
+            moduleId: MODULE.toString(),
+            workTypeId: WORK_TYPE.toString(),
+            workerIds: [WORKER_A.toString()],
+          },
+          new Types.ObjectId().toString(), // different org
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.estimateWorkerOverrides).toHaveLength(0);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('allows the matching-org caller', async () => {
+      const { service, model } = createService();
+      const ownerOrgId = new Types.ObjectId();
+      const doc = orderWithItem({ organizationId: ownerOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateWorker(
+        doc._id.toString(),
+        {
+          orderItemIndex: 0,
+          moduleId: MODULE.toString(),
+          workTypeId: WORK_TYPE.toString(),
+          workerIds: [WORKER_A.toString()],
+        },
+        ownerOrgId.toString(),
+      );
+
+      expect(doc.estimateWorkerOverrides).toHaveLength(1);
       expect(doc.save).toHaveBeenCalled();
     });
   });

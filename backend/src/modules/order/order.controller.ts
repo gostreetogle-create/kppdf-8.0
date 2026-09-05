@@ -20,6 +20,7 @@ import { ShipOrderDto } from './dto/ship-order.dto';
 import { SetOrderLineReadyDto } from './dto/set-order-line-ready.dto';
 import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
 import { PatchEstimateStartDto } from './dto/patch-estimate-start.dto';
+import { PatchEstimateWorkerDto } from './dto/patch-estimate-worker.dto';
 import { PatchLineBoardLaneDto } from './dto/patch-line-board-lane.dto';
 import { PatchModuleLaneDto } from './dto/patch-module-lane.dto';
 import { ReserveStockDto } from './dto/reserve-stock.dto';
@@ -201,6 +202,28 @@ export class OrderController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.service.patchEstimateStart(id, dto, user.organizationId);
+  }
+
+  @Patch(':id/estimate-worker')
+  @Permissions('production:write')
+  @AuditAction({ action: 'estimate_worker', entityType: 'Order', idParam: 'id' })
+  @ApiOperation({
+    summary: 'Upsert or clear job-assignment override for one WT line (Gantt)',
+    description:
+      'Composite key (orderItemIndex, moduleId, workTypeId). workerIds: [] clears the override ' +
+      '(falls back to «Не назначен», never auto-fills from Worker.workTypeIds skills). ' +
+      'Requires production:write (admin * passes).',
+  })
+  @ApiResponse({ status: 200, description: 'Order with updated estimateWorkerOverrides' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden — missing production:write' })
+  @ApiResponse({ status: 404, description: 'Order or line not found' })
+  patchEstimateWorker(
+    @Param('id') id: string,
+    @Body() dto: PatchEstimateWorkerDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.patchEstimateWorker(id, dto, user.organizationId);
   }
 
   @Patch(':id')
