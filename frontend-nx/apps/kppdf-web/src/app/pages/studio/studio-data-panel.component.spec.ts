@@ -30,11 +30,12 @@ describe('StudioDataPanelComponent', () => {
     expect(el.querySelector('[data-test="studio-data-panel"]')).toBeTruthy();
   });
 
-  it('renders the 5 TOC categories with Товары active by default (TZ-NX-DOCSTUDIO-D50)', () => {
+  it('renders the 4 Data TOC categories with Товары active by default (TZ-NX-DOCSTUDIO-D56)', () => {
     const el = fixture.nativeElement as HTMLElement;
     const toc = el.querySelector('[data-test="studio-data-toc"]') as HTMLElement;
     expect(toc.textContent).toContain('Товары');
-    expect(toc.textContent).toContain('Выбрано');
+    expect(toc.textContent).not.toContain('Выбрано');
+    expect(toc.querySelector('[data-test="studio-data-toc-selected"]')).toBeFalsy();
     expect(toc.textContent).toContain('Кому');
     expect(toc.textContent).toContain('Связи');
     expect(toc.textContent).toContain('Ещё');
@@ -117,16 +118,15 @@ describe('StudioDataPanelComponent', () => {
   it('does not render the duplicate inner Данные heading (TZ-NX-DOCSTUDIO-D55)', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.heading')).toBeFalsy();
-    expect(el.querySelector('[data-test="studio-data-panel"]')?.textContent).not.toContain('Данные');
-    expect(el.querySelector('.heading')).toBeFalsy();
   });
 
-  it('shows a muted empty state on «Выбрано» when nothing is selected (TZ-NX-DOCSTUDIO-D51)', () => {
-    tocButton('selected').click();
+  it('renders the selected buffer in fixed mode without a TOC (TZ-NX-DOCSTUDIO-D56)', () => {
+    fixture.componentRef.setInput('mode', 'selected');
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="studio-data-panel"]')?.getAttribute('data-panel-mode')).toBe('selected');
+    expect(el.querySelector('[data-test="studio-data-toc"]')).toBeFalsy();
     expect(el.querySelector('[data-test="studio-selected-empty"]')?.textContent).toContain('Ничего не выбрано');
-    expect(el.querySelector('[data-test="studio-data-toc-badge"]')).toBeFalsy();
   });
 
   it('shows chips + a TOC badge count once anchors/catalog are selected (TZ-NX-DOCSTUDIO-D51)', () => {
@@ -135,9 +135,7 @@ describe('StudioDataPanelComponent', () => {
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
-    expect(tocButton('selected').querySelector('[data-test="studio-data-toc-badge"]')?.textContent?.trim()).toBe('3');
-
-    tocButton('selected').click();
+    fixture.componentRef.setInput('mode', 'selected');
     fixture.detectChanges();
     expect(el.querySelector('[data-test="studio-selected-empty"]')).toBeFalsy();
     expect(el.querySelector('[data-test="studio-selected-anchors"]')?.textContent).toContain('ООО Альфа');
@@ -150,7 +148,7 @@ describe('StudioDataPanelComponent', () => {
     fixture.componentRef.setInput('catalogChips', [{ key: 'products', label: 'изделия', count: 2 }]);
     fixture.componentRef.setInput('catalogSelections', { products: ['p1', 'p2'], modules: [], parts: [], materials: [] });
     fixture.detectChanges();
-    tocButton('selected').click();
+    fixture.componentRef.setInput('mode', 'selected');
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
@@ -166,7 +164,7 @@ describe('StudioDataPanelComponent', () => {
   it('shows a disabled CTA + hint when the buffer has anchors but no catalog selections (TZ-NX-DOCSTUDIO-D52)', () => {
     fixture.componentRef.setInput('selectedAnchors', [{ key: 'client', label: 'Клиент', name: 'ООО Альфа' }]);
     fixture.detectChanges();
-    tocButton('selected').click();
+    fixture.componentRef.setInput('mode', 'selected');
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;

@@ -18,6 +18,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   Database,
   FileStack,
   FileText,
@@ -280,6 +281,17 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
                 (quotationChange)="onQuotationChange($event)"
                 (quotationStatusChange)="onQuotationStatusChange($event)"
                 (orderChange)="onOrderChange($event)"
+              />
+            }
+            @case ('selected') {
+              <pi-studio-data-panel
+                mode="selected"
+                [selectedAnchors]="selectedAnchorLabels()"
+                [catalogChips]="catalogChipLabels()"
+                [catalogSelections]="catalogSelections()"
+                [catalogWriteBusy]="catalogWriteBusy()"
+                (catalogRemove)="removeCatalogChip($event)"
+                (insertTable)="insertCatalogTable($event)"
               />
             }
             @case ('template') {
@@ -604,6 +616,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   });
   readonly linkedQuotationStatus = signal<QuotationStatus>('draft');
 
+  readonly selectedBufferCount = computed(() =>
+    this.selectedAnchorLabels().length + this.catalogChipLabels().reduce((sum, chip) => sum + chip.count, 0),
+  );
+
   readonly panelSide = computed(() => studioPanelSide(this.activeSection()));
 
   readonly pageNumbering = computed(() => this.document()?.pageNumbering === true);
@@ -638,6 +654,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (section === 'elements') return 'Элементы';
     if (section === 'pages') return 'Страницы';
     if (section === 'data') return 'Данные';
+    if (section === 'selected') return 'Выбрано';
     if (section === 'template') return 'Шаблон';
     return studioPanelTitle(section);
   });
@@ -741,10 +758,17 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       const section = this.activeSection();
       const collapsed = this.panelCollapsed();
       this.shellTools.setTools(STUDIO_TOOL_OWNER, {
-        left: [{
-          id: 'data', side: 'left', ariaLabel: 'Данные', title: 'Данные', icon: Database,
-          active: !collapsed && section === 'data', onClick: () => this.onSection('data'),
-        }],
+        left: [
+          {
+            id: 'data', side: 'left', ariaLabel: 'Данные', title: 'Данные', icon: Database,
+            active: !collapsed && section === 'data', onClick: () => this.onSection('data'),
+          },
+          {
+            id: 'selected', side: 'left', ariaLabel: 'Выбрано', title: 'Выбрано', icon: ClipboardList,
+            badge: this.selectedBufferCount() > 0 ? this.selectedBufferCount() : undefined,
+            active: !collapsed && section === 'selected', onClick: () => this.onSection('selected'),
+          },
+        ],
         right: [
           { id: 'elements', side: 'right', ariaLabel: 'Элементы', title: 'Элементы', icon: FileText, active: !collapsed && section === 'elements', onClick: () => this.onSection('elements') },
           { id: 'layers', side: 'right', ariaLabel: 'Слои', title: 'Слои', icon: Layers, active: !collapsed && section === 'layers', onClick: () => this.onSection('layers') },

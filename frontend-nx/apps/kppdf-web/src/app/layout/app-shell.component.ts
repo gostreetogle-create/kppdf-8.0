@@ -167,6 +167,9 @@ import {
               (click)="onShellToolClick(tool)"
             >
               <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
+              @if (tool.badge && tool.badge > 0) {
+                <span class="shell-tool-badge" data-test="shell-tool-badge" aria-hidden="true">{{ tool.badge }}</span>
+              }
             </button>
           }
         </aside>
@@ -209,6 +212,9 @@ import {
               (click)="onShellToolClick(tool)"
             >
               <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
+              @if (tool.badge && tool.badge > 0) {
+                <span class="shell-tool-badge" data-test="shell-tool-badge" aria-hidden="true">{{ tool.badge }}</span>
+              }
             </button>
           }
         </aside>
@@ -243,6 +249,7 @@ import {
     }
 
     .shell-rail-button {
+      position: relative;
       display: inline-flex;
       flex: 0 0 32px;
       align-items: center;
@@ -284,6 +291,24 @@ import {
       color: var(--color-on-gold);
       background: var(--color-gold);
       border-color: var(--color-gold-deep);
+    }
+
+    .shell-tool-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 15px;
+      height: 15px;
+      padding: 0 3px;
+      border: 1px solid var(--color-paper-raised);
+      border-radius: 999px;
+      background: var(--color-gold-deep);
+      color: var(--color-ink);
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 13px;
+      text-align: center;
+      pointer-events: none;
     }
 
     .shell-main {

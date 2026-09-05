@@ -10,6 +10,7 @@ export interface ShellToolRailItem {
   readonly icon: LucideIcon;
   readonly active?: boolean;
   readonly disabled?: boolean;
+  readonly badge?: number;
   readonly onClick: () => void;
 }
 

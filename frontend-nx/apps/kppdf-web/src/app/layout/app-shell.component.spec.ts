@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { of } from 'rxjs';
 
 import { AppShellComponent } from './app-shell.component';
+import { ShellToolRailService } from './shell-tool-rail.service';
 import { NavHistoryService } from './nav-history.service';
 import { AuthService } from '@kppdf/data-access/auth';
 import { CapabilitiesService } from '@kppdf/data-access/capabilities';
@@ -165,6 +166,29 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     await setup('/admin/devices');
     const main = fixture.nativeElement.querySelector('.shell-main');
     expect(main?.querySelector('router-outlet')).toBeTruthy();
+  });
+
+  it('renders a selected-buffer rail tool after Data with its count badge (TZ-NX-DOCSTUDIO-D56)', async () => {
+    await setup('/studio/doc-1');
+    const rail = TestBed.inject(ShellToolRailService);
+    rail.setTools('studio-editor', {
+      left: [
+        { id: 'data', side: 'left', ariaLabel: 'Данные', title: 'Данные', icon: {} as never, onClick: jest.fn() },
+        { id: 'selected', side: 'left', ariaLabel: 'Выбрано', title: 'Выбрано', icon: {} as never, badge: 15, onClick: jest.fn() },
+      ],
+      right: [],
+    });
+    fixture.detectChanges();
+
+    const left = fixture.nativeElement.querySelector('[data-test="shell-rail-left"]') as HTMLElement;
+    const tools = Array.from(left.querySelectorAll('[data-test^="shell-tool-left-"]')) as HTMLButtonElement[];
+    expect(tools.map((tool) => tool.getAttribute('data-test'))).toEqual([
+      'shell-tool-left-data',
+      'shell-tool-left-selected',
+    ]);
+    expect(tools[1].getAttribute('aria-label')).toBe('Выбрано');
+    expect(tools[1].querySelector('[data-test="shell-tool-badge"]')?.textContent?.trim()).toBe('15');
+    rail.clear('studio-editor');
   });
 
   it('hides admin header chip when role gate fails, but Реестры and Документы have no such gate', async () => {

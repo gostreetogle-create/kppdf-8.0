@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import {
@@ -14,6 +16,8 @@ import {
 } from '@kppdf/data-access';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
+import { API_BASE_URL } from '@kppdf/util-http';
+import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
 import { StudioEditorPage } from './studio-editor.page';
 
 /**
@@ -90,6 +94,9 @@ describe('StudioEditorPage — catalog write queue (TZ-NX-DOCSTUDIO-S41)', () =>
     TestBed.configureTestingModule({
       imports: [StudioEditorPage],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
         { provide: PiStudioDocumentsService, useValue: documentsService },
         { provide: PiStudioBlocksService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
         { provide: PiCounterpartiesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })) } },
@@ -147,5 +154,18 @@ describe('StudioEditorPage — catalog write queue (TZ-NX-DOCSTUDIO-S41)', () =>
 
     expect(dialog.open).toHaveBeenCalledTimes(1);
     expect(component.catalogWriteBusy()).toBe(false);
+  });
+
+  it('registers Data then Selected on the left rail and mirrors the buffer count as a badge (TZ-NX-DOCSTUDIO-D56)', () => {
+    const fixture = TestBed.createComponent(StudioEditorPage);
+    const component = fixture.componentInstance as unknown as TestableEditor;
+    component.document.set(BASE_DOC);
+    component.catalogSelections.set({ products: ['p1', 'p2'], modules: [], parts: [], materials: [] });
+    fixture.detectChanges();
+
+    const leftTools = TestBed.inject(ShellToolRailService).leftTools();
+    expect(leftTools.map((tool) => tool.id)).toEqual(['data', 'selected']);
+    expect(leftTools[1]?.ariaLabel).toBe('Выбрано');
+    expect(leftTools[1]?.badge).toBe(2);
   });
 });

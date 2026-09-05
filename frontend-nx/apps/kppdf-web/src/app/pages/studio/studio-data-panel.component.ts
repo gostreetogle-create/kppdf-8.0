@@ -5,11 +5,11 @@ import type { Counterparty, Order, Quotation, QuotationStatus } from '@kppdf/dat
 import { StudioDataVitrinaComponent, type StudioCatalogSelections, type StudioShowcaseKind } from './studio-data-vitrina.component';
 
 /** TOC categories inside the wide «Данные» panel (TZ-NX-DOCSTUDIO-D50). */
-export type StudioDataCategory = 'products' | 'selected' | 'whom' | 'links' | 'more';
+export type StudioDataCategory = 'products' | 'whom' | 'links' | 'more';
+export type StudioDataPanelMode = 'data' | 'selected';
 
 const DATA_CATEGORIES: readonly { key: StudioDataCategory; label: string }[] = [
   { key: 'products', label: 'Товары' },
-  { key: 'selected', label: 'Выбрано' },
   { key: 'whom', label: 'Кому' },
   { key: 'links', label: 'Связи' },
   { key: 'more', label: 'Ещё' },
@@ -28,10 +28,11 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormFieldComponent, SelectComponent, SelectOptionComponent, StudioDataVitrinaComponent],
   template: `
-    <div data-test="studio-data-panel">
-      <nav class="data-toc" data-test="studio-data-toc" aria-label="Категории данных">
-        @for (cat of categories; track cat.key) {
-          <button
+    <div data-test="studio-data-panel" [attr.data-panel-mode]="mode()">
+      @if (mode() === 'data') {
+        <nav class="data-toc" data-test="studio-data-toc" aria-label="Категории данных">
+          @for (cat of categories; track cat.key) {
+            <button
             type="button"
             class="toc-tab"
             [class.active]="activeCategory() === cat.key"
@@ -40,14 +41,12 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
             (click)="activeCategory.set(cat.key)"
           >
             {{ cat.label }}
-            @if (cat.key === 'selected' && selectedCount() > 0) {
-              <span class="toc-badge" data-test="studio-data-toc-badge">{{ selectedCount() }}</span>
-            }
           </button>
-        }
-      </nav>
+          }
+        </nav>
+      }
 
-      @switch (activeCategory()) {
+      @switch (mode() === 'selected' ? 'selected' : activeCategory()) {
         @case ('products') {
           <div data-test="studio-data-section-products">
             <pi-studio-data-vitrina [selected]="catalogSelections()" [busy]="catalogWriteBusy()" (catalogChange)="catalogChange.emit($event)" />
@@ -359,6 +358,7 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
   ],
 })
 export class StudioDataPanelComponent {
+  readonly mode = input<StudioDataPanelMode>('data');
   readonly issuerOrgName = input('');
   readonly counterpartyId = input('');
   readonly quotationId = input('');

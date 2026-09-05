@@ -1,12 +1,13 @@
-import { Database, FileStack, FileText, Layers, LayoutTemplate, Settings2 } from 'lucide-angular';
+import { Database, FileStack, FileText, Layers, LayoutTemplate, Settings2, ClipboardList } from 'lucide-angular';
 import type { StudioWsRailItem } from './studio-workspace-shell.component';
 
-export type StudioWorkspaceSection = 'elements' | 'layers' | 'pages' | 'data' | 'template' | 'properties';
+export type StudioWorkspaceSection = 'elements' | 'layers' | 'pages' | 'data' | 'selected' | 'template' | 'properties';
 
 // studio-editor.page.ts renders its own rail (showDesktopRail=false, railItems=[]);
 // this list only backs studioPanelTitle() below for the panel header text.
 export const STUDIO_RAIL_ITEMS: readonly StudioWsRailItem[] = [
   { id: 'data', title: 'Данные', short: 'Dt', icon: Database },
+  { id: 'selected', title: 'Выбрано', short: 'Sel', icon: ClipboardList },
   { id: 'elements', title: 'Элементы', short: 'El', icon: FileText },
   { id: 'layers', title: 'Слои', short: 'Ly', icon: Layers },
   { id: 'pages', title: 'Страницы', short: 'Pg', icon: FileStack },
@@ -19,7 +20,7 @@ export function studioPanelTitle(section: string | null): string {
 }
 
 export function studioPanelSide(section: string | null): 'left' | 'right' {
-  return section === 'data' ? 'left' : 'right';
+  return section === 'data' || section === 'selected' ? 'left' : 'right';
 }
 
 export function onStudioSectionClick(
