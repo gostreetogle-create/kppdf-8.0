@@ -1,6 +1,6 @@
 # TZ-OPS-DESKTOP-INSTALLER-LOCAL checklist
 
-> Status: **READY FOR REVIEW** (автоматизированная часть PASS; финальный GUI-smoke — за PO)
+> Status: **DONE**
 > Marker: `tasks/_active/TZ-OPS-DESKTOP-INSTALLER-LOCAL.md`
 > Commit/push: по `docs/GIT-POLICY.md`
 
@@ -23,8 +23,8 @@
 
 - [x] Alias zip на диске в `frontend/downloads/`
 - [x] HEAD/GET `:3000` и `:4201` `/downloads/kppdf-desktop-setup.zip` = 200
-- [ ] Скачивание из NX pairing dialog работает — **требует ручной проверки PO** (GUI-браузер, CLI-агент выполнить не может)
-- [ ] Desktop установлен локально; краткий smoke start — **требует ручной проверки PO** (установка .exe + GUI pairing)
+- [x] Скачивание из NX pairing dialog работает — **PO PASS**: скрин v0.5.7, Connected admin
+- [x] Desktop установлен локально; краткий smoke start — **PO PASS**: установлен, запущен, pairing к local API прошёл (Connected admin)
 - [x] Бинарники не в git commit (подтверждено `.gitignore`, см. Gates)
 
 ## Integrity slot (до READY / archive)
@@ -77,18 +77,15 @@ git check-ignore -v ...
 **Изменённые файлы (docs/claim only):** `tasks/_active/TZ-OPS-DESKTOP-INSTALLER-LOCAL.md` (новый), `docs/agent-checklists/TZ-OPS-DESKTOP-INSTALLER-LOCAL.md` (новый), `docs/agent-checklists/_NOW.md` (статус Claude). Продуктовый код НЕ менялся — только пересборка существующего `release-installer` pipeline.
 **Known limits / что осталось:** GUI-часть smoke (скачивание из NX pairing dialog в браузере, установка `.exe`, короткий старт Desktop + pairing к local API) требует ручных действий человека — CLI-агент не может кликать в браузере/GUI-инсталляторе. HTTP-уровень (то, что реально отдаёт 404→200) полностью проверен и подтверждён; по решению PO GUI-smoke выполняет PO самостоятельно.
 
-**PO smoke steps (осталось выполнить вручную):**
-1. Открыть NX (`http://127.0.0.1:4201`), войти admin/desktop:admin, открыть pairing dialog → «Скачать Desktop» → убедиться, что `kppdf-desktop-setup.zip` скачался (не HTML/JSON).
-2. Распаковать/запустить `KPPDF Desktop_0.5.7_x64-setup.exe`, установить.
-3. Запустить Desktop, выполнить pairing к локальному API (`http://127.0.0.1:3000`), убедиться, что футер Desktop показывает `0.5.7`.
-4. Отметить PASS/FAIL в этом checklist и в audit `docs/audits/2026-09-06-nx-desktop-download-404-audit.md`, после чего задачу можно archive.
+**PO smoke — PASS (2026-09-06):** скачано с NX pairing dialog, Desktop установлен и запущен,
+pairing к local API прошёл — скрин показывает вкладку «ИИ», Connected: admin, версия v0.5.7.
 
 ## Review handoff
 
-- [ ] READY FOR REVIEW — не требуется отдельный wave-review (ops task); финальная приёмка = PO smoke (см. выше)
+- [x] Отдельный wave-review не требуется (ops task); финальная приёмка = PO GUI-smoke — PASS
 
 ## Closeout (после PASS)
 
-- [ ] archive + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-09-06T07:45:00Z

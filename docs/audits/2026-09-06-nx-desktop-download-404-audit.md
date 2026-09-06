@@ -47,3 +47,6 @@ HTTP-уровень 404 закрыт кодом/данными, без изме�
 подтверждает исходный диагноз аудита. GUI-smoke (скачивание из pairing dialog,
 установка `.exe`, старт + pairing к local API) — выполняет PO вручную,
 см. checklist `docs/agent-checklists/TZ-OPS-DESKTOP-INSTALLER-LOCAL.md` §Executor report.
+
+**PO GUI-smoke — PASS (2026-09-06):** скрин Desktop v0.5.7, вкладка «ИИ», Connected: admin.
+Скачивание/установка/pairing подтверждены. TZ archived: `tasks/_archive/2026-09/TZ-OPS-DESKTOP-INSTALLER-LOCAL.done.md`.
