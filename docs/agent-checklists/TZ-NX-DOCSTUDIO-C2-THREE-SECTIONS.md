@@ -55,5 +55,5 @@
 ## Executor report
 
 - **Outcome:** C2 DONE — three live sections: `/studio` (Документы), `/studio/templates` (Шаблоны), `/studio/:id` (Студия, ribbon still C3).
-- **Implementation commit:** pending focused commit
+- **Implementation commit:** `85f1dc8e41d546c1b380ad8ad463310d8024c2a4` (pushed to origin/main; pre-push typecheck OK)
 - **No backend/desktop/legacy frontend/Data IA/warehouse/S45/S46 changes; `pi-page-chrome` consumed only, API untouched.**
