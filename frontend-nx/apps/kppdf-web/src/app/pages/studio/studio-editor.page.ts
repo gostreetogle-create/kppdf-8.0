@@ -91,6 +91,7 @@ import {
   studioBlockIsPassportBackground,
   studioImageSettingsForUpdate,
   studioMergeBlockSettings,
+  studioPreserveClientBlockSettings,
 } from './studio-block-helpers';
 import {
   coerceStudioBlockLayout,
@@ -2236,16 +2237,43 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     ).then((r) => {
       if (r.ok) {
         this.layoutsDirty = false;
-        const normalized = r.data.map((block) =>
-          block.layout ? { ...block, layout: coerceStudioBlockLayout(block.layout) } : block,
-        );
+        // TZ-NX-DOCSTUDIO-S46 — the layout response never carries ephemeral
+        // client settings (liveRows from putDataSet hydrate), so merge each
+        // server block with the local one by id instead of a naked replace.
+        const localById = new Map(this.blocks().map((b) => [b._id, b]));
+        const normalized = r.data.map((block) => {
+          const merged = studioPreserveClientBlockSettings(localById.get(block._id), block);
+          return merged.layout
+            ? { ...merged, layout: coerceStudioBlockLayout(merged.layout) }
+            : merged;
+        });
         this.blocks.set(normalized);
         this.document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x));
+        this.ensureLiveRowsAfterLayoutSave(normalized);
         return true;
       }
       this.conflict();
       return false;
     });
+  }
+
+  /**
+   * Safety net (TZ-NX-DOCSTUDIO-S46): after a layout save, if a live-source
+   * table still has no liveRows while a dataSet entry exists, re-hydrate once
+   * via the existing on-load path (no loop — it only runs when rows are empty).
+   */
+  private ensureLiveRowsAfterLayoutSave(blocks: readonly StudioBlock[]): void {
+    const doc = this.document();
+    if (!doc) return;
+    const needsHydrate = blocks.some((block) => {
+      if (block.type !== 'table') return false;
+      const rows = block.settings?.['liveRows'];
+      if (Array.isArray(rows) && rows.length > 0) return false;
+      const sourceType = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+      if (!sourceType || !STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)) return false;
+      return Boolean(doc.dataSets?.some((entry) => entry['key'] === `table-${block._id}`));
+    });
+    if (needsHydrate) this.refreshLiveDataSetsOnLoad(blocks);
   }
 
   private conflict(): void {

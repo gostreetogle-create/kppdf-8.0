@@ -84,3 +84,35 @@ export function studioMergeBlockSettings(
   return { ...(local ?? {}), ...(remote ?? {}), ...patch };
 }
 
+/**
+ * Client-only settings that live in FE memory between writes and must survive
+ * an API block replace. The backend never returns them (S28 hydrate does not
+ * persist `liveRows`; `imageUrl` may be a local blob until upload completes),
+ * so a naive `blocks.set(apiResponse)` would silently wipe them.
+ */
+export const STUDIO_EPHEMERAL_SETTING_KEYS = ['liveRows', 'imageUrl'] as const;
+
+/**
+ * TZ-NX-DOCSTUDIO-S46 — merge a server-returned block with the local one:
+ * server fields win (layout, content, persisted settings), but ephemeral
+ * client-only settings (`liveRows`, local `imageUrl`) are carried over from
+ * the local block so a layout save / block replace can't erase hydrated rows.
+ */
+export function studioPreserveClientBlockSettings(
+  local: StudioBlock | undefined,
+  remote: StudioBlock,
+): StudioBlock {
+  if (!local) return remote;
+  const localSettings = local.settings ?? {};
+  const remoteSettings = remote.settings ?? {};
+  const restored: Record<string, unknown> = {};
+  for (const key of STUDIO_EPHEMERAL_SETTING_KEYS) {
+    const value = localSettings[key];
+    if (value !== undefined && remoteSettings[key] === undefined) {
+      restored[key] = value;
+    }
+  }
+  if (Object.keys(restored).length === 0) return remote;
+  return { ...remote, settings: { ...remoteSettings, ...restored } };
+}
+

@@ -1,10 +1,10 @@
 ﻿# NOW
 
-updated_at: 2026-09-06T18:55:00+03:00
+updated_at: 2026-09-06T22:35:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** **RESUME** → `tasks/PROMPT-FREEBUFF-CONTINUE-S46-S45.md` (S46 WIP mid-gates; не паузить)
+- **Freebuff:** S46 DONE (liveRows merge-preserve в `saveLayouts`, 15/15 tests, build green) → сразу S45 (table → Свойства)
 - **Claude:** IDLE. `TZD-77-AI-CHAT-INBOX-BRIDGE` DONE (`tasks/_archive/2026-09/TZD-77-AI-CHAT-INBOX-BRIDGE.done.md`) — чат растянут на всю высоту, Inbox строка на вкладке ИИ, read-only снимок Inbox в промпте, 0.5.9 built+published+HEAD 200, gates PASS.
 
 Доска потоков: [`STREAM-QUEUE.md`](./STREAM-QUEUE.md)

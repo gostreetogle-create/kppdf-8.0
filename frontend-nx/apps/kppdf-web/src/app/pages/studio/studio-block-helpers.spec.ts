@@ -6,6 +6,7 @@ import {
   studioBlockIsPassportBackground,
   studioImageSettingsForUpdate,
   studioMergeBlockSettings,
+  studioPreserveClientBlockSettings,
 } from './studio-block-helpers';
 
 function block(id: string, page = 1, zIndex = 1): StudioBlock {
@@ -96,5 +97,53 @@ describe('studioMergeBlockSettings', () => {
       imageUrl: '/uploads/template-blocks/x/a.png',
       overlay: true,
     });
+  });
+});
+
+describe('studioPreserveClientBlockSettings (TZ-NX-DOCSTUDIO-S46)', () => {
+  const table = (overrides: Partial<StudioBlock>): StudioBlock => ({
+    _id: 'tbl-1',
+    type: 'table',
+    order: 0,
+    title: 'Таблица',
+    content: '',
+    ...overrides,
+  });
+
+  it('carries local liveRows onto a server block that omits them', () => {
+    const local = table({
+      settings: { dataSource: { type: 'catalog-products' }, liveRows: [['Кровать', '2'], ['Стол', '1']] },
+    });
+    const remote = table({
+      layout: { page: 1, x: 0.2, y: 0.3, width: 0.4, height: 0.3, zIndex: 7, rotation: 0 },
+      settings: { dataSource: { type: 'catalog-products' } },
+    });
+    const merged = studioPreserveClientBlockSettings(local, remote);
+    expect(merged.settings?.['liveRows']).toEqual([['Кровать', '2'], ['Стол', '1']]);
+    expect(merged.layout).toEqual(remote.layout); // server layout wins
+  });
+
+  it('lets the server win when the response does carry liveRows', () => {
+    const local = table({ settings: { liveRows: [['local']] } });
+    const remote = table({ settings: { liveRows: [['server']] } });
+    expect(studioPreserveClientBlockSettings(local, remote).settings?.['liveRows']).toEqual([['server']]);
+  });
+
+  it('keeps a local blob imageUrl when the response omits it', () => {
+    const local: StudioBlock = {
+      ...table({}),
+      type: 'image',
+      settings: { imageUrl: 'blob:http://local/x' },
+    };
+    const remote: StudioBlock = { ...local, settings: {} };
+    expect(studioPreserveClientBlockSettings(local, remote).settings?.['imageUrl']).toBe('blob:http://local/x');
+  });
+
+  it('returns the remote block untouched without local state or nothing to restore', () => {
+    const remote = table({ settings: { liveRows: [['server']] } });
+    expect(studioPreserveClientBlockSettings(undefined, remote)).toBe(remote);
+    const local = table({ settings: { dataSource: { type: 'manual' } } });
+    const remote2 = table({ settings: {} });
+    expect(studioPreserveClientBlockSettings(local, remote2)).toBe(remote2);
   });
 });
