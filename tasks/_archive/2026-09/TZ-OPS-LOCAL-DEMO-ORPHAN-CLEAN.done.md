@@ -22,9 +22,9 @@ commit_sha: 6b1e949210415a8c3bf85b45a85d60f444afddb7
 
 ```text
 before dry-run: supply=5, movements=6, studio_image_refs=7
-first apply:    supply=5, movements=6, studio_refs=6 (one array-index residual remained)
-second apply:   supply=0, movements=0, studio_refs=1
-final apply:    supply=0, movements=0, studio_refs=0
+first apply:    reported supply=5, movements=6, studio_refs_fixed=7; post-check found 1 residual array entry
+second apply:   supply=0, movements=0, studio_refs_fixed=1
+final apply:    supply=0, movements=0, studio_refs_fixed=0
 final dry-run:  supply=0, movements=0, studio_image_refs=0
 ```
 
