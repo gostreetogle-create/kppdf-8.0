@@ -39,4 +39,4 @@
 
 - **Outcome:** C4 DONE — docs = код: page.md/PAGE-TZ-INDEX/DOMAIN-MAP/FIC/WAVE/audit all reflect the three-section Chrome IA; `_NOW` shows wave DONE + Freebuff IDLE.
 - **No product TS changes** — docs drift check found no bug requiring code edits.
-- **Implementation commit:** pending focused commit
+- **Implementation commit:** `2b295bf98f990f714e2901530be76a5f7d0a4847` (pushed to origin/main; pre-push typecheck OK)
