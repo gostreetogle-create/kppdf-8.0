@@ -31,7 +31,7 @@ The NX table renders:
 
 1. **Дата** — `date`, formatted as `DD.MM.YYYY` for Russian locale.
 2. **Тип** — `Приход`, `Расход`, `Корректировка`, or `Перемещение`.
-3. **Материал / продукт** — populated material/product reference.
+3. **Материал / продукт** — populated material/product reference. List populate must pass `includeSoftDeleted: true` (soft-delete plugin otherwise blanks archived catalog rows → «—» in the journal). Hard-deleted refs may still show «—».
 4. **Склад** — populated warehouse reference.
 5. **Количество** — positive `qty`.
 6. **Документ / заказ** — `documentRef`, falling back to `orderId`.

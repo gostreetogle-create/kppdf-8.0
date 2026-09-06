@@ -32,8 +32,8 @@
 
 The balances table renders these fields for every row:
 
-1. **Продукт / Материал** — populated `productId` or `materialId`, via `storageItemName()`.
-2. **Склад** — populated `warehouseId` / `warehouse`, via `storageItemWarehouseName()`.
+1. **Продукт / Материал** — populated `productId` or `materialId`, via `storageItemName()`. Populate uses `includeSoftDeleted: true` so archived catalog rows still name the physical balance.
+2. **Склад** — populated `warehouseId` / `warehouse`, via `storageItemWarehouseName()` (same soft-delete escape hatch).
 3. **Количество** — `quantity`.
 4. **Резерв** — `reservedQty`.
 5. **Минимум** — `minQuantity`.

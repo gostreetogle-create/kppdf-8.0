@@ -14,6 +14,8 @@ The application uses a full-width header and a three-column workspace grid:
 
 This is intentionally not a conventional navigation sidebar.
 
+**Header bleed (2026-09-06):** root `AppShell` / `KitLayout` header must **not** use `pi-edge-bleed`. That utility assumes a parent with `--space-page-x` padding; on the root shell it shifts the header left and clips the «KPPDF» brand. Bleed remains correct for in-page chrome (`pi-page-chrome`) inside a padded frame.
+
 ## Extension rules
 
 - Primary route navigation belongs in the header.

@@ -55,7 +55,7 @@ import {
   imports: [RouterOutlet, RouterLink, LucideAngularModule, ThemeToggleComponent],
   template: `
     <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
-      <header class="shrink-0 z-30 bg-paper hairline-b pi-edge-bleed">
+      <header class="shrink-0 z-30 bg-paper hairline-b">
         <div class="h-header-h px-page-x flex items-center justify-between gap-2 min-w-0">
           <a
             routerLink="/"

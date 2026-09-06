@@ -56,11 +56,16 @@ export class StorageItemService {
     }
     if (lowStock) filter.$expr = { $lt: ['$quantity', '$minQuantity'] };
 
+    // A warehouse balance can outlive the catalog record it points to (product
+    // archived while stock still sits on the shelf) — resolve it anyway so the
+    // operator still sees what's physically there, per the soft-delete plugin's
+    // `includeSoftDeleted` escape hatch.
+    const includeSoftDeleted = { options: { includeSoftDeleted: true } };
     return this.model
       .find(filter)
-      .populate('productId')
-      .populate('materialId')
-      .populate('warehouseId')
+      .populate({ path: 'productId', ...includeSoftDeleted })
+      .populate({ path: 'materialId', ...includeSoftDeleted })
+      .populate({ path: 'warehouseId', ...includeSoftDeleted })
       .sort({ name: 1 })
       .exec();
   }
@@ -69,7 +74,12 @@ export class StorageItemService {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`StorageItem ${id} not found`);
     }
-    const doc = await this.model.findById(id).populate('productId').populate('materialId').exec();
+    const doc = await this.model
+      .findById(id)
+      .populate({ path: 'productId', options: { includeSoftDeleted: true } })
+      .populate({ path: 'materialId', options: { includeSoftDeleted: true } })
+      .populate({ path: 'warehouseId', options: { includeSoftDeleted: true } })
+      .exec();
     if (!doc) throw new NotFoundException(`StorageItem ${id} not found`);
     return doc;
   }

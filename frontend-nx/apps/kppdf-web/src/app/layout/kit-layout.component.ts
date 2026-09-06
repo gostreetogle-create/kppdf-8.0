@@ -56,7 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
  *    · "Компоненты" → /basics, /forms, /overlays, /navigation
  *    · Active link inverted: `bg-ink text-paper`
  *  - Main: `<router-outlet />`
- *  - Footer: `© 2026 Paper & Ink · Syne · Plus Jakarta Sans` (mono, uppercase)
+ *  - Footer: `© 2026 Paper & Ink · Hanken Grotesk · Inter · JetBrains Mono` (mono, uppercase)
  *
  * ResizeObserver for `isMobile` (< 768px), via DestroyRef cleanup.
  * ⌘K binding: window-level keydown listener, opens command palette
@@ -73,7 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
     <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
       <header
         class="sticky top-0 z-30 hairline-b
-               bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm pi-edge-bleed"
+               bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm"
       >
         <div class="px-page-x sm:px-10 lg:px-16 h-14 flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
@@ -174,7 +174,7 @@ const NAV_GROUPS: NavGroup[] = [
                text-muted-foreground flex flex-wrap justify-between gap-2"
       >
         <span>© 2026 Paper &amp; Ink</span>
-        <span>Syne · Plus Jakarta Sans · Lucide Angular · @angular/cdk</span>
+        <span>Hanken Grotesk · Inter · JetBrains Mono · Lucide Angular · @angular/cdk</span>
       </footer>
     </div>
   `,

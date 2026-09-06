@@ -183,12 +183,17 @@ export class StockMovementService {
       if (to) range.$lte = to;
       filter.date = range;
     }
+    // Journal is a historical record: resolve refs even if the product/material/
+    // warehouse was archived or soft-deleted since — otherwise the soft-delete
+    // plugin's default `deletedAt: null` filter (applied inside populate's own
+    // find) silently blanks out the entry for anything archived after the fact.
+    const includeSoftDeleted = { options: { includeSoftDeleted: true } };
     return this.model
       .find(filter)
-      .populate('productId')
-      .populate('materialId')
-      .populate('warehouseId')
-      .populate('toWarehouseId')
+      .populate({ path: 'productId', ...includeSoftDeleted })
+      .populate({ path: 'materialId', ...includeSoftDeleted })
+      .populate({ path: 'warehouseId', ...includeSoftDeleted })
+      .populate({ path: 'toWarehouseId', ...includeSoftDeleted })
       .sort({ date: -1 })
       .exec();
   }
