@@ -1,10 +1,10 @@
 ﻿# NOW
 
-updated_at: 2026-09-06T11:30:00+03:00
+updated_at: 2026-09-06T12:15:42+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** RESUME B → `tasks/PROMPT-FREEBUFF-RESUME-B-ORPHAN-CLEAN.md` (скрипт+dry-run есть; apply/archive нет; loop → новый промпт)
+- **Freebuff:** IDLE → B `TZ-OPS-LOCAL-DEMO-ORPHAN-CLEAN` DONE; next `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md` (не стартовать в этой сессии)
 - **Claude:** IDLE. `TZD-75-AI-TAB-SOON-AND-0.5.8` DONE (`tasks/_archive/2026-09/TZD-75-AI-TAB-SOON-AND-0.5.8.done.md`) — «Управление моделью» карточка удалена, честное «Чат на этом компьютере — скоро», v0.5.8 built+published+HEAD 200, gates PASS.
 
 Доска потоков: [`STREAM-QUEUE.md`](./STREAM-QUEUE.md)
@@ -23,7 +23,7 @@ updated_at: 2026-09-06T11:30:00+03:00
 ## NEXT
 
 1. **Сейчас:** Claude → IDLE, ждёт следующий TZ (TZD-76 — PARK до PO acceptance)  
-2. Freebuff после отчёта B → `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md`  
+2. Freebuff после B → `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md` (следующая сессия)
 3. После C4 → `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S45-S46.md` (сначала S46)
 
 ## PARK
