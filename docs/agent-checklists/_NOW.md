@@ -1,10 +1,10 @@
 ﻿# NOW
 
-updated_at: 2026-09-06T13:26:09+03:00
+updated_at: 2026-09-06T17:30:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** C1 `TZ-NX-DOCSTUDIO-C1-LANDING-LIST` DONE → C2 next; B DONE `6b1e9492`
+- **Freebuff:** WAVE-DOCSTUDIO-CHROME-IA → C2 `TZ-NX-DOCSTUDIO-C2-THREE-SECTIONS` DONE; C3 next
 - **Claude:** IDLE (TZD-75 DONE; TZD-76 PARK)
 
 Доска потоков: [`STREAM-QUEUE.md`](./STREAM-QUEUE.md)
@@ -22,7 +22,7 @@ updated_at: 2026-09-06T13:26:09+03:00
 
 ## NEXT
 
-1. **Сейчас:** Freebuff → C2 `tasks/_ready/doc-studio/TZ-NX-DOCSTUDIO-C2-THREE-SECTIONS.md` после C1 push; затем C3→C4 continuous
+1. **Сейчас:** Freebuff → C3 `tasks/_ready/doc-studio/TZ-NX-DOCSTUDIO-C3-RIBBON-TO-RAILS.md` (C2 DONE, continuous wave)
 2. Claude → IDLE (TZD-76 PARK)
 3. После C4 → `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S45-S46.md` (сначала S46)
 

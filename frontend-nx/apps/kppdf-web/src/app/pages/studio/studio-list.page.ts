@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
 import { findKpDocType } from './studio-kp-doc-type';
 import { rememberStudioDocument } from './studio-session';
@@ -15,16 +16,15 @@ import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData,
   selector: 'pi-studio-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, PiPageChromeComponent, RouterLink],
   template: `
     <main class="px-panel-inset py-6" data-test="studio-list">
-      <div class="flex items-center justify-between gap-4 mb-6">
-        <div><div class="eyebrow">Документы</div><h1 class="font-display text-2xl m-0">Студия документов</h1></div>
-        <div class="flex items-center gap-2">
-          <button class="pi-button pi-button-secondary" type="button" data-test="studio-create-from-template" (click)="createFromTemplate()">Из шаблона</button>
-          <button class="pi-button pi-button-secondary" type="button" data-test="studio-create-kp" (click)="createKp()">Новое КП</button>
-          <button class="pi-button pi-button-primary" type="button" data-test="studio-create" (click)="create()">Создать документ</button>
-        </div>
+      <app-pi-page-chrome [crumbs]="[{ label: 'Документы' }]" />
+      <div class="flex items-center justify-end gap-2 mb-4">
+        <a class="pi-button pi-button-ghost" routerLink="/studio/templates" data-test="studio-templates-link">Шаблоны</a>
+        <button class="pi-button pi-button-secondary" type="button" data-test="studio-create-from-template" (click)="createFromTemplate()">Из шаблона</button>
+        <button class="pi-button pi-button-secondary" type="button" data-test="studio-create-kp" (click)="createKp()">Новое КП</button>
+        <button class="pi-button pi-button-primary" type="button" data-test="studio-create" (click)="create()">Создать документ</button>
       </div>
       @if (status() === 'loading') { <div class="text-sm text-muted-foreground">Загрузка…</div> }
       @if (status() === 'error') { <app-pi-status-banner tone="destructive" [message]="error()" actionLabel="Повторить" (action)="load()" /> }

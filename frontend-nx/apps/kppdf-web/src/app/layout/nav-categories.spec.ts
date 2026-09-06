@@ -18,15 +18,23 @@ describe('NAV_CATEGORIES (ported from legacy frontend/src/app/layout/app-layout.
   });
 });
 
-describe('studio category (TZ-NX-DOCSTUDIO-C1-LANDING-LIST)', () => {
-  it('uses /studio as the explicit docs entry and keeps the live studio item', () => {
+describe('studio category (TZ-NX-DOCSTUDIO-C2-THREE-SECTIONS)', () => {
+  it('uses /studio as the explicit docs entry with Документы + Шаблоны items only', () => {
     const docs = NAV_CATEGORIES.find((c) => c.id === 'docs');
     expect(docs).toBeTruthy();
     expect(docs!.entryPath).toBe('/studio');
-    const studio = docs!.items.find((i) => i.path === '/studio');
-    expect(studio).toBeTruthy();
-    expect(studio!.pageKey).toBe('doc-studio');
-    expect(studio!.label).toContain('Студия');
+    expect(docs!.items.map((i) => ({ path: i.path, pageKey: i.pageKey, label: i.label }))).toEqual([
+      { path: '/studio', pageKey: 'doc-studio', label: 'Документы' },
+      { path: '/studio/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
+    ]);
+  });
+
+  it('keeps zero dead legacy docs links (/doc-constructor/*, /import-todos)', () => {
+    const docs = NAV_CATEGORIES.find((c) => c.id === 'docs');
+    const dead = docs!.items.filter(
+      (i) => i.path.startsWith('/doc-constructor/') || i.path === '/import-todos',
+    );
+    expect(dead).toEqual([]);
   });
 
   it('shows studio item under docs when its pageKey is in the pages[] allow-list', () => {

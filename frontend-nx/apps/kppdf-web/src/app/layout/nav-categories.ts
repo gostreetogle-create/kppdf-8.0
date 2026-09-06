@@ -147,13 +147,14 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
     shortLabel: 'Докум.',
     icon: FileText,
     entryPath: '/studio',
+    // TZ-NX-DOCSTUDIO-C2-THREE-SECTIONS — only live NX routes remain:
+    // /studio (Документы) and /studio/templates (Шаблоны). Dead legacy
+    // /doc-constructor/* and /import-todos items are removed from NX nav
+    // (pageKey seeds `doc-templates` / `doc-studio` already exist in the
+    // backend permissions seed and are reused, no new RBAC keys).
     items: [
-      { path: '/doc-constructor/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
-      { path: '/doc-constructor/texts', pageKey: 'doc-texts', label: 'Текстовые блоки' },
-      { path: '/doc-constructor/tables', pageKey: 'doc-tables', label: 'Шаблоны таблиц' },
-      { path: '/doc-constructor/documents', pageKey: 'doc-documents', label: 'Архив документов' },
-      { path: '/studio', pageKey: 'doc-studio', label: 'Студия документов' },
-      { path: '/import-todos', pageKey: 'import-todos', label: 'Задачи импорта' },
+      { path: '/studio', pageKey: 'doc-studio', label: 'Документы' },
+      { path: '/studio/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
     ],
   },
   {

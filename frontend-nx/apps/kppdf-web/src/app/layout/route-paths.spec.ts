@@ -36,12 +36,24 @@ describe('collectPageRoutePaths', () => {
     expect(paths.has('/kit')).toBe(false);
     expect(paths.has('/kit/overview')).toBe(true);
     expect(paths.has('/studio')).toBe(true);
+    expect(paths.has('/studio/templates')).toBe(true);
+    expect(paths.has('/studio/:id')).toBe(true);
     expect(paths.has('/orders')).toBe(true);
     expect(paths.has('/orders/create')).toBe(true);
     expect(paths.has('/orders/:id')).toBe(true);
     expect(paths.has('/production')).toBe(true);
     expect(paths.has('/work-types')).toBe(false);
     expect(paths.has('/products')).toBe(false);
+  });
+
+  it('registers /studio/templates before :id in STUDIO_ROUTES (TZ-NX-DOCSTUDIO-C2-THREE-SECTIONS)', () => {
+    const shell = appRoutes.find((r) => r.path === '' && !!r.children);
+    const studioGroup = shell?.children?.find((r) => r.path === 'studio');
+    expect(studioGroup).toBeTruthy();
+    const order = studioGroup!.children!.map((c) => c.path);
+    expect(order.indexOf('templates')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf(':id')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf('templates')).toBeLessThan(order.indexOf(':id'));
   });
 
   it('isolates /kit from operational AppShell (separate top-level layout route)', () => {
