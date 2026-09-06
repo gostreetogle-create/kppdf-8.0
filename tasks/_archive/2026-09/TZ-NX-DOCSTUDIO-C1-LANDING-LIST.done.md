@@ -6,7 +6,7 @@ closed_at: 2026-09-06T13:20:30+03:00
 closed_by: freebuff
 agent_id: freebuff
 workspace: `D:\\kppdf-8.0`
-implementation_sha: pending focused commit
+implementation_sha: 42b4df0f9dd463b1dc687845b0cc5e0b59e20863
 
 ## Outcome
 

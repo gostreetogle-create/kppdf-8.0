@@ -72,4 +72,4 @@
 - **Known limitation:** C2 still owns `/studio/templates` and removal of dead docs nav items; C3 owns editor crumbs/right-rail actions; C4 owns final page/index/integrity docs.
 - **Archive:** `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-C1-LANDING-LIST.done.md`
 - **Lock:** `.mimocode/locks/TZ-NX-DOCSTUDIO-C1-LANDING-LIST.done.lock`
-- **Implementation commit:** pending until focused commit
+- **Implementation commit:** `42b4df0f9dd463b1dc687845b0cc5e0b59e20863` (pushed to origin/main; pre-push typecheck OK)
