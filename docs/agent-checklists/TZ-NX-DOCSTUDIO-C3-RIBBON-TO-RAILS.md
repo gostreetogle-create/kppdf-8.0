@@ -54,5 +54,5 @@
 ## Executor report
 
 - **Outcome:** C3 DONE — editor ribbon = breadcrumbs only; lifecycle actions on right chrome-rail; «Сохранить как…» only in Шаблон panel; dirty-guarded crumb navigation.
-- **Implementation commit:** pending focused commit
+- **Implementation commit:** `45d7e6b89827ba9bd8bafd75a21c961a416c4f16` (pushed to origin/main; pre-push typecheck OK)
 - **known_limitation:** icon polish / rail order tunable by successor; generated-documents archive out of scope (per TZ).
