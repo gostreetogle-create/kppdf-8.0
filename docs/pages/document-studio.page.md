@@ -16,6 +16,8 @@
 
 **Live-данные таблиц (S46):** строки таблиц с живым источником (`catalog-*`, ERP) живут в клиенте (`settings.liveRows`, ephemeral — **не** пишутся в Mongo); после сохранения layout (drag/resize) клиентские строки восстанавливаются merge'ем ответа API с локальным блоком, иначе — one-shot re-hydrate через `putDataSet`. Аудит: [`../audits/2026-09-06-docstudio-live-data-hydrate-audit.md`](../audits/2026-09-06-docstudio-live-data-hydrate-audit.md).
 
+**Таблицы на холсте (S45):** холст — print-like: клик по таблице = **выделение** + авто-открытие панели **«Свойства»** справа; на листе — только preview-таблица (никаких inline-редакторов). Редактирование строк (Вкл / ячейки / × / **+ Строка**) — только в «Свойствах», секция «Строки таблицы»; пустая таблица показывает строку-подсказку «Нет строк», а не голый thead. ERP-токены (`{{…}}`) имеют гарантированный зазор справа — текст после чипа не прилипает. Аудит: [`../audits/2026-09-06-docstudio-table-select-vs-properties-audit.md`](../audits/2026-09-06-docstudio-table-select-vs-properties-audit.md).
+
 `pageKey`: `doc-studio` · D56: «Выбрано» — отдельный левый rail-инструмент с badge, без reflow A4 · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
 **Статус волны:** S2–S26 закрыты на бумаге, но операторский контур (витрина/Save/Preview/live rows) был честно исправлен только FINISH-волной **S27–S35, S38–S40 DONE**; S37 (smoke) — последний, после S36. Дорожная карта v2: [`../architecture/nx-doc-studio-roadmap-v2.md`](../architecture/nx-doc-studio-roadmap-v2.md).

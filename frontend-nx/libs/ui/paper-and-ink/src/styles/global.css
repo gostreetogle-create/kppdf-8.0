@@ -1514,3 +1514,13 @@
     background: var(--color-sunrise-soft);
   }
 }
+
+/* =============================================================================
+ * TZ-NX-DOCSTUDIO-S45 — ERP substitution tokens keep a guaranteed right gap so
+ * text typed after a chip never sticks to it (single mechanism — content never
+ * gets double spaces). Declared globally because jsdom tests strip component
+ * styles; the canvas mirrors the same rule via ::ng-deep for the A4 preview.
+ * ============================================================================= */
+.substitution-token {
+  margin-right: 4px;
+}

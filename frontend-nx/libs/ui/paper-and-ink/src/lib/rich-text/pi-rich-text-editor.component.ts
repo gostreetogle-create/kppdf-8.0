@@ -350,7 +350,8 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
       :host ::ng-deep .substitution-token {
         display: inline-block;
         padding: 1px 6px;
-        margin: 0 1px;
+        /* TZ-NX-DOCSTUDIO-S45: guaranteed gap token↔next text (no double spaces). */
+        margin: 0 4px 0 1px;
         font-family: ui-monospace, monospace;
         font-size: 11px;
         font-weight: 600;

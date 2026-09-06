@@ -9,12 +9,8 @@ import {
   studioImageUrl,
 } from './studio-block-helpers';
 import {
-  studioTableColumns,
   studioTableDisabledRowIndices,
-  studioTableRows,
-  studioTableRowSource,
   studioTableTransparentBackground,
-  studioVisibleColumnIndices,
   studioVisibleTableColumns,
   studioVisibleTableRows,
 } from './studio-table-defaults';
@@ -115,7 +111,6 @@ import {
             <article
               class="studio-block studio-block--table"
               [class.studio-block--table-transparent]="tableTransparent(block)"
-              [class.studio-block--table-editing]="selectedId === block._id && !block.locked && !readOnly"
               [class.selected]="selectedId === block._id"
               [class.studio-block--editable]="selectedId === block._id && !block.locked"
               [class.studio-block--passive]="selectedId !== block._id || block.locked"
@@ -129,74 +124,7 @@ import {
               (click)="selectBlock($event, block)"
               (pointerdown)="startDrag($event, block)"
             >
-              @if (selectedId === block._id && !block.locked && !readOnly && tableRowSource(block) === 'manual') {
-                <div
-                  class="table-edit"
-                  data-test="studio-table-rows-editor"
-                  (pointerdown)="$event.stopPropagation()"
-                  (click)="$event.stopPropagation()"
-                >
-                  <div class="table-edit__scroll">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th class="col-enable" title="Включить строку">Вкл</th>
-                          @for (col of tableColumns(block); track col.key) {
-                            <th [style.text-align]="col.align">{{ col.label }}</th>
-                          }
-                          <th class="col-actions" aria-hidden="true"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (row of tableRowsAll(block); track $index; let rowIdx = $index) {
-                          <tr [class.row-disabled]="!isTableRowEnabled(block, rowIdx)">
-                            <td class="col-enable">
-                              <input
-                                type="checkbox"
-                                [checked]="isTableRowEnabled(block, rowIdx)"
-                                (change)="toggleTableRow(block, rowIdx, $event)"
-                                [attr.data-test]="'studio-table-row-toggle-' + rowIdx"
-                              />
-                            </td>
-                            @for (colIdx of visibleColumnIndices(block); track colIdx) {
-                              <td>
-                                <input
-                                  type="text"
-                                  class="cell-input"
-                                  [ngModel]="row[colIdx] ?? ''"
-                                  (ngModelChange)="onTableCell(block, rowIdx, colIdx, $event)"
-                                  [disabled]="!isTableRowEnabled(block, rowIdx)"
-                                  [attr.data-test]="'studio-table-cell-' + rowIdx + '-' + colIdx"
-                                />
-                              </td>
-                            }
-                            <td class="col-actions">
-                              <button
-                                type="button"
-                                class="row-remove pi-focus-ring"
-                                aria-label="Удалить строку"
-                                [disabled]="tableRowsAll(block).length <= 1"
-                                (click)="removeTableRow(block, rowIdx)"
-                              >
-                                ×
-                              </button>
-                            </td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                  <button
-                    type="button"
-                    class="table-edit__add pi-focus-ring"
-                    data-test="studio-table-add-row"
-                    (click)="addTableRow(block)"
-                  >
-                    + Строка
-                  </button>
-                </div>
-              } @else {
-                <div class="table-preview">
+              <div class="table-preview">
                   <table>
                     <thead>
                       <tr>
@@ -212,11 +140,15 @@ import {
                             <td>{{ cell || ' ' }}</td>
                           }
                         </tr>
+                      } @empty {
+                        <!-- TZ-NX-DOCSTUDIO-S45: empty manual table = placeholder row, not a bare thead. -->
+                        <tr class="table-preview__empty">
+                          <td [attr.colspan]="tableColumns(block).length || 1">Нет строк — добавьте в Свойствах</td>
+                        </tr>
                       }
                     </tbody>
                   </table>
                 </div>
-              }
               @if (selectedId === block._id && !block.locked && !readOnly) {
                 <span class="selection-frame" aria-hidden="true"></span>
                 <button class="resize-handle" type="button" aria-label="Изменить размер" (pointerdown)="startResize($event, block)"></button>
@@ -262,6 +194,8 @@ import {
     }
     :host ::ng-deep .studio-block__text-body .substitution-token {
       color: oklch(var(--color-info));
+      /* TZ-NX-DOCSTUDIO-S45: guaranteed gap token↔next text (no double spaces). */
+      margin-right: 4px;
     }
     .studio-block--text.studio-block--editable.selected {
       background: transparent;
@@ -291,70 +225,12 @@ import {
       display: flex;
       flex-direction: column;
     }
-    .table-edit {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
-      width: 100%;
-      pointer-events: auto;
-    }
-    .table-edit__scroll {
-      flex: 1;
-      min-height: 0;
-      overflow: auto;
-    }
-    .table-edit table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: clamp(7px, 1.1cqw, 11px);
-    }
-    .table-edit th, .table-edit td {
-      border: 1px solid var(--color-rule);
-      padding: 0;
-      vertical-align: middle;
-    }
-    .table-edit th {
-      padding: 2px 4px;
-      font-weight: 600;
-      background: var(--color-paper-2);
+    .table-preview__empty td {
+      text-align: center;
       color: var(--color-muted-foreground);
-      white-space: nowrap;
-    }
-    .table-edit .col-enable { width: 22px; text-align: center; padding: 2px; }
-    .table-edit .col-actions { width: 20px; text-align: center; }
-    .table-edit .row-disabled .cell-input { opacity: 0.45; }
-    .table-edit .cell-input {
-      width: 100%;
-      min-width: 0;
-      border: none;
-      padding: 2px 4px;
-      font-size: inherit;
-      background: transparent;
-      color: var(--color-ink);
-      box-sizing: border-box;
-    }
-    .table-edit .cell-input:focus {
-      outline: 2px solid var(--color-gold);
-      outline-offset: -2px;
-      background: #fff;
-    }
-    .table-edit .row-remove {
-      width: 18px; height: 18px; padding: 0; border: none; background: transparent;
-      color: var(--color-destructive); cursor: pointer; font-size: 14px; line-height: 1;
-    }
-    .table-edit__add {
-      flex-shrink: 0;
-      margin-top: 2px;
-      padding: 2px 6px;
-      border: 1px solid var(--color-rule-strong);
-      border-radius: var(--radius-sm);
+      font-style: italic;
       background: var(--color-paper-2);
-      font-size: clamp(7px, 1cqw, 10px);
-      cursor: pointer;
-      align-self: flex-start;
     }
-    .table-edit__add:hover { background: var(--color-paper-3); }
     .studio-block--table { container-type: inline-size; }
     .table-preview table {
       width: 100%; border-collapse: collapse; font-size: 9px;
@@ -416,12 +292,11 @@ export class StudioBlocksCanvasComponent {
   @Input() readOnly = false;
   @Output() selected = new EventEmitter<string>();
   @Output() layoutChanged = new EventEmitter<{ id: string; layout: StudioBlockLayout }>();
-  /** Fired after drag/resize ends so the editor can persist layout immediately. */
   @Output() layoutCommit = new EventEmitter<void>();
   @Output() contentChanged = new EventEmitter<{ id: string; content: string }>();
   @Output() textDoubleClick = new EventEmitter<string>();
-  @Output() tableRowsChange = new EventEmitter<string[][]>();
-  @Output() tableDisabledRowsChange = new EventEmitter<number[]>();
+  /** TZ-NX-DOCSTUDIO-S45: canvas never edits rows; emit so the host can open Свойства. */
+  @Output() tableEditRequest = new EventEmitter<string>();
 
   snappingId: string | null = null;
   private suppressNextClick = false;
@@ -452,55 +327,8 @@ export class StudioBlocksCanvasComponent {
     return studioVisibleTableRows(block);
   }
 
-  tableRowsAll(block: StudioBlock): string[][] {
-    return studioTableRows(block);
-  }
-
-  tableRowSource(block: StudioBlock): string {
-    return studioTableRowSource(block);
-  }
-
-  visibleColumnIndices(block: StudioBlock): number[] {
-    return studioVisibleColumnIndices(block);
-  }
-
   isTableRowEnabled(block: StudioBlock, rowIdx: number): boolean {
     return !studioTableDisabledRowIndices(block).includes(rowIdx);
-  }
-
-  onTableCell(block: StudioBlock, rowIdx: number, colIdx: number, value: string): void {
-    if (block._id !== this.selectedId) return;
-    const rows = studioTableRows(block);
-    const next = rows.map((r, ri) =>
-      ri === rowIdx ? r.map((c, ci) => (ci === colIdx ? value : c)) : [...r],
-    );
-    this.tableRowsChange.emit(next);
-  }
-
-  toggleTableRow(block: StudioBlock, rowIdx: number, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    const disabled = new Set(studioTableDisabledRowIndices(block));
-    if (checked) {
-      disabled.delete(rowIdx);
-    } else {
-      disabled.add(rowIdx);
-    }
-    this.tableDisabledRowsChange.emit([...disabled].sort((a, b) => a - b));
-  }
-
-  addTableRow(block: StudioBlock): void {
-    const colCount = studioTableColumns(block).length;
-    this.tableRowsChange.emit([...studioTableRows(block), Array(colCount).fill('')]);
-  }
-
-  removeTableRow(block: StudioBlock, rowIdx: number): void {
-    const rows = studioTableRows(block);
-    if (rows.length <= 1) return;
-    const disabled = studioTableDisabledRowIndices(block)
-      .filter((i) => i !== rowIdx)
-      .map((i) => (i > rowIdx ? i - 1 : i));
-    this.tableDisabledRowsChange.emit(disabled);
-    this.tableRowsChange.emit(rows.filter((_, i) => i !== rowIdx));
   }
 
   tableTransparent(block: StudioBlock): boolean {
@@ -533,6 +361,8 @@ export class StudioBlocksCanvasComponent {
       return;
     }
     this.selected.emit(block._id);
+    // TZ-NX-DOCSTUDIO-S45: a table click opens Свойства (row editing moved off the canvas).
+    if (block.type === 'table') this.tableEditRequest.emit(block._id);
   }
 
   startDrag(event: PointerEvent, block: StudioBlock): void {

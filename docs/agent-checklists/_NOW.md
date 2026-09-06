@@ -4,8 +4,8 @@ updated_at: 2026-09-06T22:35:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** S46 DONE (liveRows merge-preserve в `saveLayouts`, 15/15 tests, build green) → сразу S45 (table → Свойства)
-- **Claude:** IDLE. `TZD-77-AI-CHAT-INBOX-BRIDGE` DONE (`tasks/_archive/2026-09/TZD-77-AI-CHAT-INBOX-BRIDGE.done.md`) — чат растянут на всю высоту, Inbox строка на вкладке ИИ, read-only снимок Inbox в промпте, 0.5.9 built+published+HEAD 200, gates PASS.
+- **Freebuff:** **IDLE** — S46 DONE (`bf90a214` liveRows merge-preserve) + S45 DONE (клик по таблице = выделение + авторские Свойства; строки только в панели). Волна закрыта, _active пуст.
+- **Claude:** IDLE (TZD-77 DONE 0.5.9)
 
 Доска потоков: [`STREAM-QUEUE.md`](./STREAM-QUEUE.md)
 
@@ -20,8 +20,8 @@ updated_at: 2026-09-06T22:35:00+03:00
 ## NEXT
 
 1. **Сейчас:** Claude → IDLE, ждёт следующий TZ (TZD-78/TZD-76 — PARK до PO)
-2. Freebuff → дожать S46→S45 (уже claimed S46)
-3. После S45 IDLE
+2. ~~Freebuff → дожать S46→S45~~ DONE (S46 `bf90a214` + S45 в архиве)
+3. ~~После S45 IDLE~~ — Freebuff IDLE
 
 ## PARK
 

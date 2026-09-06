@@ -304,6 +304,8 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
                 (tableSettingsChange)="patchTableSettings($event)"
                 (tableSourceChange)="onTableSourceChange($event)"
                 (saveTableTemplate)="openSaveTableTemplateDialog()"
+                (tableRowsChange)="patchTableRows($event)"
+                (tableDisabledRowsChange)="patchTableDisabledRows($event)"
                 (applyLibraryText)="applyLibraryText($event)"
                 (saveTextBlock)="openSaveTextBlockDialog()"
               />
@@ -339,8 +341,7 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
               (layoutCommit)="onLayoutCommit()"
               (contentChanged)="patchBlockContentFromCanvas($event.id, $event.content)"
               (textDoubleClick)="openLayerProperties($event)"
-              (tableRowsChange)="patchTableRows($event)"
-              (tableDisabledRowsChange)="patchTableDisabledRows($event)"
+              (tableEditRequest)="openLayerProperties($event)"
             />
           }
         </div>

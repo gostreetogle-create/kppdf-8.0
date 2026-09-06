@@ -33,6 +33,9 @@ import {
   studioTableTransparentBackground,
   studioTableRows,
   studioTableRowSource,
+  studioTableDisabledRowIndices,
+  studioVisibleColumnIndices,
+  studioVisibleTableColumns,
   remapRowsForColumnChange,
   filterHiddenColumnKeysForColumns,
   createStudioTableColumn,
@@ -215,6 +218,78 @@ import {
         </div>
       }
 
+      <!-- TZ-NX-DOCSTUDIO-S45: row editing moved off the A4 canvas into Свойства. -->
+      @if (rowSource() === 'manual') {
+        <div class="table-props__rows" data-test="studio-table-rows-editor">
+          <div class="table-props__rows-head">
+            <span class="table-props__label">Строки таблицы</span>
+            <app-pi-button
+              type="button"
+              variant="outline"
+              size="sm"
+              [disabled]="disabled"
+              data-test="studio-table-add-row"
+              (click)="addTableRow()"
+            >
+              + Строка
+            </app-pi-button>
+          </div>
+          <div class="table-props__rows-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-enable" title="Включить строку">Вкл</th>
+                  @for (col of visibleColumns(); track col.key) {
+                    <th [style.text-align]="col.align">{{ col.label }}</th>
+                  }
+                  <th class="col-actions" aria-hidden="true"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of rowsAll(); track $index; let rowIdx = $index) {
+                  <tr [class.row-disabled]="!isRowEnabled(rowIdx)">
+                    <td class="col-enable">
+                      <input
+                        type="checkbox"
+                        [checked]="isRowEnabled(rowIdx)"
+                        (change)="toggleTableRow(rowIdx, $event)"
+                        [attr.data-test]="'studio-table-row-toggle-' + rowIdx"
+                      />
+                    </td>
+                    @for (colIdx of visibleColumnIndices(); track colIdx) {
+                      <td>
+                        <input
+                          type="text"
+                          class="cell-input"
+                          [ngModel]="row[colIdx] ?? ''"
+                          (ngModelChange)="onTableCell(rowIdx, colIdx, $event)"
+                          [disabled]="!isRowEnabled(rowIdx)"
+                          [attr.data-test]="'studio-table-cell-' + rowIdx + '-' + colIdx"
+                        />
+                      </td>
+                    }
+                    <td class="col-actions">
+                      <button
+                        type="button"
+                        class="row-remove pi-focus-ring"
+                        aria-label="Удалить строку"
+                        [disabled]="rowsAll().length <= 1"
+                        (click)="removeTableRow(rowIdx)"
+                        [attr.data-test]="'studio-table-row-remove-' + rowIdx"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      } @else {
+        <p class="table-props__hint" data-test="studio-table-rows-live-hint">Строки приходят из раздела «Данные» или КП — редактирование в источнике.</p>
+      }
+
       <label class="table-props__field" data-test="studio-table-source-field">
         <span class="table-props__label">Источник строк</span>
         <select
@@ -261,7 +336,7 @@ import {
       >
         Сохранить как вид таблицы
       </app-pi-button>
-      <p class="table-props__hint">Строки редактируйте на листе A4. Реестр видов — «Справочники → Виды таблиц».</p>
+      <p class="table-props__hint">Реестр видов — «Справочники → Виды таблиц».</p>
     </div>
   `,
   styles: [`
@@ -398,6 +473,62 @@ import {
       line-height: 1.4;
       color: var(--color-muted-foreground);
     }
+
+    /* TZ-NX-DOCSTUDIO-S45 — rows editor (moved from the A4 canvas) */
+    .table-props__rows { display: flex; flex-direction: column; gap: 6px; }
+    .table-props__rows-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .table-props__rows-scroll {
+      max-height: 240px;
+      overflow: auto;
+      border: 1px solid var(--color-rule);
+      border-radius: var(--radius-sm);
+    }
+    .table-props__rows table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .table-props__rows th,
+    .table-props__rows td {
+      border-bottom: 1px solid var(--color-rule);
+      padding: 3px 6px;
+      vertical-align: middle;
+    }
+    .table-props__rows th {
+      position: sticky;
+      top: 0;
+      background: var(--color-paper-2);
+      font-weight: 600;
+      color: var(--color-muted-foreground);
+      white-space: nowrap;
+      text-align: left;
+    }
+    .table-props__rows .col-enable { width: 32px; text-align: center; }
+    .table-props__rows .col-actions { width: 28px; text-align: center; }
+    .table-props__rows .row-disabled .cell-input { opacity: 0.45; }
+    .table-props__rows .cell-input {
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      border: 1px solid transparent;
+      padding: 3px 5px;
+      font-size: inherit;
+      background: transparent;
+      color: var(--color-ink);
+    }
+    .table-props__rows .cell-input:hover:not(:disabled) { border-color: var(--color-rule); }
+    .table-props__rows .cell-input:focus {
+      outline: 2px solid var(--color-gold);
+      outline-offset: -2px;
+      background: var(--color-paper-raised);
+    }
+    .table-props__rows .row-remove {
+      width: 20px; height: 20px; padding: 0; border: none; background: transparent;
+      color: var(--color-destructive); cursor: pointer; font-size: 14px; line-height: 1;
+    }
+    .table-props__rows input[type='checkbox'] { accent-color: var(--color-gold-deep); }
   `],
 })
 export class StudioTablePropertiesComponent implements OnInit, OnChanges {
@@ -412,6 +543,9 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   @Output() readonly sourceChange = new EventEmitter<'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'>();
   @Output() readonly saveTemplate = new EventEmitter<void>();
   @Output() readonly templatesLoaded = new EventEmitter<readonly TableTemplate[]>();
+  /** TZ-NX-DOCSTUDIO-S45: row editing moved here from the canvas. */
+  @Output() readonly rowsChange = new EventEmitter<string[][]>();
+  @Output() readonly disabledRowsChange = new EventEmitter<number[]>();
 
   protected readonly templates = signal<readonly TableTemplate[]>([]);
   protected readonly loading = signal(false);
@@ -430,6 +564,56 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
 
   protected rowSource(): string {
     return studioTableRowSource(this.block);
+  }
+
+  /** Full row matrix (incl. disabled rows) for the editor grid. */
+  protected rowsAll(): string[][] {
+    return studioTableRows(this.block);
+  }
+
+  protected visibleColumns(): StudioTableColumn[] {
+    return studioVisibleTableColumns(this.block);
+  }
+
+  protected visibleColumnIndices(): number[] {
+    return studioVisibleColumnIndices(this.block);
+  }
+
+  protected isRowEnabled(rowIdx: number): boolean {
+    return !studioTableDisabledRowIndices(this.block).includes(rowIdx);
+  }
+
+  protected onTableCell(rowIdx: number, colIdx: number, value: string): void {
+    const rows = studioTableRows(this.block).map((r, ri) =>
+      ri === rowIdx ? r.map((c, ci) => (ci === colIdx ? value : c)) : [...r],
+    );
+    this.rowsChange.emit(rows);
+  }
+
+  protected toggleTableRow(rowIdx: number, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const disabled = new Set(studioTableDisabledRowIndices(this.block));
+    if (checked) {
+      disabled.delete(rowIdx);
+    } else {
+      disabled.add(rowIdx);
+    }
+    this.disabledRowsChange.emit([...disabled].sort((a, b) => a - b));
+  }
+
+  protected addTableRow(): void {
+    const colCount = studioTableColumns(this.block).length;
+    this.rowsChange.emit([...studioTableRows(this.block), Array(colCount).fill('')]);
+  }
+
+  protected removeTableRow(rowIdx: number): void {
+    const rows = studioTableRows(this.block);
+    if (rows.length <= 1) return;
+    const disabled = studioTableDisabledRowIndices(this.block)
+      .filter((i) => i !== rowIdx)
+      .map((i) => (i > rowIdx ? i - 1 : i));
+    this.disabledRowsChange.emit(disabled);
+    this.rowsChange.emit(rows.filter((_, i) => i !== rowIdx));
   }
 
   protected onRowSourceChange(source: 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'): void {
