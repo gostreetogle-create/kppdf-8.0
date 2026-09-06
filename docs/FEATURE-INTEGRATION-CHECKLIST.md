@@ -51,6 +51,8 @@
 
 **WAVE-NX-WAREHOUSE W1–W4 (2026-09-05) — §A N/A (port, not new pages):** `/warehouses`, `/storage-items`, `/stock-movements` route/nav/`PAGE_KEYS`/permissions/seed already existed pre-wave (legacy `frontend/`); W1–W3 replaced their `frontend-nx` implementations end-to-end (thin CRUD → balances → journal), no new route/permission/seed row was added. `docs/pages/{warehouses,storage-items,stock-movements}.page.md` and `PAGE-TZ-INDEX.md` updated with NX SoT notes; `docs/DOMAIN-MAP.md` Warehouse row/route table updated to live (was gap/placeholder).
 
+**WAVE-DOCSTUDIO-CHROME-IA C1–C4 (2026-09-06) — §A done for `/studio/templates`:** new NX route registered before `:id` in `studio.routes.ts`; nav `docs` category re-pointed to live items only — `/studio` (`doc-studio`, label «Документы») + `/studio/templates` (`doc-templates`, label «Шаблоны»), dead legacy `/doc-constructor/*` + `/import-todos` removed from NX nav; pageKeys `doc-studio`/`doc-templates` already in `permissions.constants.ts` + `admin.seed.ts` (no new RBAC keys); `document-studio.page.md` routes table + PAGE-TZ-INDEX/DOMAIN-MAP updated. `entryPath` stays `/studio` (C1).
+
 ## B. Новое право (`section:action`)
 
 - [ ] Запись в `PERMISSIONS` (`permissions.constants.ts`) — ключ ASCII

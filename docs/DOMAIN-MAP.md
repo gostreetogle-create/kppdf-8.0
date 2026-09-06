@@ -22,7 +22,7 @@
 | **Catalog** | `product`, `product-module`, `material`, `bom`, `category`, … `catalog-graph` | `/products`, `/modules`, `/materials`, `/categories`, `/catalog/appearance` | **gap** (shell `/constructor` не в live routes) | `products`, `modules`, `materials`, … | `docs/data-model.md`, `product-vision-lite.md` | composition ≠ warehouse stock |
 | **Warehouse** | `warehouse`, `storage-item`, `stock-movement`, `reservation`, `inventory` | `/inventory`, `/storage-items`, `/stock-movements`, `/warehouses` | **Live (W1–W3 DONE):** `/warehouses`, `/storage-items` (balances), `/stock-movements` (journal + in/out) | `warehouses`, `storage-items`, `stock-movements`, … | audit `2026-09-05-warehouse-nx-port-audit.md` | SoT qty = `StorageItem`/movements; NX без dashboard/types/zones/transfer-create |
 | **Sales / КП / Orders** | `quotation`, `order`, `contract`, `shipment`, `invoice`, `order-closing` | `/dashboard`, `/desk`, `/proposals*`, `/orders*`, `/contracts`, `/shipping` | `/proposals`, `/orders`, `/orders/create`, `/orders/:id`, `/contracts`, `/contracts/:id` | `dashboard`, `manager-desk`, `proposals*`, `orders`, `contracts`, `shipping` | sales-to-shop canon, `COUPLING-MAP` | **КП ≠ Order**; desk ≠ inventory |
-| **Documents / Studio** | `document-template`, `text-block`, `table-template`, `generated-document`, `registry`, … | `/doc-constructor/*`, `/builder/:id` | `/studio`, `/studio/:id` (Doc Studio) | `templates`, `documents`, `texts`, `tables`, `builder`, `document-studio` | builder/studio page.md, FIC | Template ≠ TableTemplate |
+| **Documents / Studio** | `document-template`, `text-block`, `table-template`, `generated-document`, `registry`, … | `/doc-constructor/*`, `/builder/:id` | `/studio`, `/studio/templates`, `/studio/:id` (Doc Studio) | `templates`, `documents`, `texts`, `tables`, `builder`, `document-studio` | builder/studio page.md, FIC | Template ≠ TableTemplate |
 | **Production** | `production-order`, `work-order`, `work-type`, … | `/production`, `/work-types` | `/production` (**Gantt SoT NX**, WAVE G0–G7) | `production-cockpit`, `work-types` | SECTION-READINESS, `COUPLING-MAP` | `production-order` ≠ sales `order` |
 | **Supply** | `supply`, `purchase-order`, `purchase-request`, `tender` | `/supply` | **Live (S1 DONE):** `/supply` — SupplyTask registry, no mock; S2 (hub confirm) pending | `supply` | same warehouse audit | Purchase* = LEGACY; NX = Supply* + kit confirm |
 | **Desktop / Import** | `desktop`, `mutation-journal`, `import-*` | `/import-todos` | **Live (TZD-72):** pairing/download — chrome action в AppShell (только `desktop:admin`), dialog + `PiDesktopPairingService` + meta `kppdf-desktop-download-url`; import-todos — gap | `import-todos` | `desktop/docs/MCP.md` | propose/confirm ≠ прямой SoT write |
@@ -46,7 +46,7 @@
 | `/login`, `/enroll/:token`, `/forbidden` | `login` (+ enroll note) | Auth platform F3 |
 | `/admin/devices`, `/admin/roles` | `admin-users`, `admin-roles` | NX admin |
 | `/registries`, `/registries/:registryKey` | `registries` | NX-only platform |
-| `/studio`, `/studio/:id` | `document-studio` | Doc Studio волны |
+| `/studio`, `/studio/templates`, `/studio/:id` | `document-studio` | Chrome IA C1–C4: Документы / Шаблоны / Студия |
 | `/proposals`, `/proposals/list` (`create`→`/studio`) | `proposals` | NX KP family |
 | `/production` | `production-cockpit` | Gantt SoT NX |
 | `/orders`, `/orders/create`, `/orders/:id` | `orders` | NX deals/orders |

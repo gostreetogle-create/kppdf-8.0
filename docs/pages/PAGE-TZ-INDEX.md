@@ -41,7 +41,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY; **UX-342 DONE** drop dead pager total |
 | `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons; **UX-342 DONE** drop dead pager total; **TZ-UI-417 READY** counter 11px |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE**; **UX-342 DONE** remove unused Показано helpers |
-| `/doc-constructor/studio`, `/studio/:id` | **document-studio.page.md** | **WAVE-DOC-STUDIO** Wave 0 DONE (ADR); **101 READY** extract; 201a…1101 planned |
+| `/studio`, `/studio/templates`, `/studio/:id` | **document-studio.page.md** | **WAVE-DOC-STUDIO** Wave 0 DONE (ADR); **101 READY** extract; 201a…1101 planned; **WAVE-DOCSTUDIO-CHROME-IA C1–C4 DONE (2026-09-06)** — три раздела, крошки, rail-действия |
 | `/import-todos` | import-todos.page.md | **TZD-29 DONE** (manager finish-list after import) |
 
 ## Catalog / production
@@ -225,6 +225,8 @@ Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`
 | TZ-NX-DOCSTUDIO-S2-SHELL DONE (NX studio shell) | `/studio` list + `/studio/:id` A4 shell (рельсы/панель/ribbon), современный A4-landscape (≈1.414), PATCH-ориентация | archive: `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S2-SHELL.done.md` · evidence: `docs/agent-checklists/evidence/TZ-NX-DOCSTUDIO-S2-SHELL/` |
 
 | TZ-NX-DOCSTUDIO-D55 + D56 READY (Data IA-2) | Связи: label «КП» + clear options + без double «Данные»; «Выбрано» → left chrome-rail | WAVE: `WAVE-DOCSTUDIO-DATA-IA-2.md` · TZ: `tasks/_ready/doc-studio/TZ-NX-DOCSTUDIO-D55-*.md`, `D56-*.md` · PROMPT: `tasks/PROMPT-FREEBUFF-DOCSTUDIO-D55-D56.md` |
+
+| TZ-NX-DOCSTUDIO-C1…C4 DONE (Chrome IA, 2026-09-06) | `/studio` = список Документы без auto-resume (`42b4df0f`); `/studio/templates` = Шаблоны, nav только живые NX пути (`85f1dc8e`); ribbon = крошки `Документы/Студия/{name}`, Save/PDF/режим/архив → right chrome-rail (`45d7e6b8`); docs/FIC/DOMAIN-MAP closeout (C4) | Аудит: `docs/audits/2026-09-06-docstudio-chrome-ia-audit.md` · WAVE: `WAVE-DOCSTUDIO-CHROME-IA.md` · archives: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-{C1-LANDING-LIST,C2-THREE-SECTIONS,C3-RIBBON-TO-RAILS,C4-DOCS-CLOSEOUT}.done.md` · PROMPT: `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md` |
 
 | TZ-NX-DOCSTUDIO-S44 READY (после D56) | Canvas: table-edit только для manual; ERP-токен `--color-info` на холсте; драг data-table с 1 клика | TZ: `tasks/TZ-NX-DOCSTUDIO-S44-TABLE-CANVAS-SELECT-FIX.md` · PROMPT: `tasks/PROMPT-CLAUDE-DOCSTUDIO-S44.md` |
 
