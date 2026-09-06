@@ -3,7 +3,7 @@
 > Режим PO 2026-09-06: скрин + слова → Cursor кладёт TZ в поток → отчёт агента → Cursor сразу следующий промпт в чат.  
 > Живой статус слотов: [`_NOW.md`](./_NOW.md). Этот файл — **очередь волн**, не claim.
 
-updated_at: 2026-09-06T11:00:00+03:00
+updated_at: 2026-09-06T11:30:00+03:00
 
 ## Правила
 
@@ -18,9 +18,10 @@ updated_at: 2026-09-06T11:00:00+03:00
 
 | Порядок | WAVE / TZ | PROMPT | Статус |
 |---------|-----------|--------|--------|
-| 1 | Hotfix shell+warehouse (+ demo clean) | `tasks/PROMPT-FREEBUFF-HOTFIX-THEN-DEMO-CLEAN.md` | IN PROGRESS / claim |
-| 2 | WAVE-DOCSTUDIO-CHROME-IA C1→C4 | `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md` | NEXT после hotfix |
-| 3 | S46 liveRows после drag → S45 table→Свойства | `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S45-S46.md` | READY (после C4) |
+| 1a | Hotfix shell+warehouse | — | **DONE** `c413bef7` on origin |
+| 1b | Local demo orphan clean | `tasks/PROMPT-FREEBUFF-RESUME-B-ORPHAN-CLEAN.md` | **RESUME** (dry-run done; apply/archive pending; prior session loop) |
+| 2 | WAVE-DOCSTUDIO-CHROME-IA C1→C4 | `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md` | после B |
+| 3 | S46→S45 DocStudio tables | `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S45-S46.md` | после C4 |
 
 ---
 
@@ -28,13 +29,15 @@ updated_at: 2026-09-06T11:00:00+03:00
 
 | Порядок | WAVE / TZ | PROMPT | Статус |
 |---------|-----------|--------|--------|
-| 1 | Desktop installer v0.5.7 | `PROMPT-CLAUDE-DESKTOP-INSTALLER-LOCAL.md` | **DONE** — archived `tasks/_archive/2026-09/TZ-OPS-DESKTOP-INSTALLER-LOCAL.done.md` |
-| 2 | TZD-74 AI tab honesty | `tasks/PROMPT-CLAUDE-DESKTOP-AI-TAB-HONESTY.md` | **DONE** — archived `tasks/_archive/2026-09/TZD-74-AI-TAB-HONESTY.done.md`, gates PASS, PO visual smoke on next launch |
+| 1 | Desktop installer v0.5.7 | — | **DONE** |
+| 2 | TZD-74 AI tab honesty | — | **DONE** |
+| 3 | TZD-75 hide local chat + 0.5.8 installer | `tasks/PROMPT-CLAUDE-TZD-75-DESKTOP-0.5.8.md` | **DONE** — archived `tasks/_archive/2026-09/TZD-75-AI-TAB-SOON-AND-0.5.8.done.md` |
+| 4 | TZD-76 real local helper (NSIS) | — | PARK до PO + acceptance |
 
 ---
 
 ## Inbox
 
 - Gemini peer: `docs/agents/GEMINI-BROWSER-NOTEBOOK.md`
-- Desktop «ИИ» → Claude #2 TZD-74
-- **Снабжение Google→NX:** аудит `docs/audits/2026-09-06-supply-google-sheets-to-nx-audit.md` · WAVE `WAVE-NX-SUPPLY-OPS` — **PARK** до ответов PO + свободного Freebuff после DocStudio
+- **Desktop AI:** design accepted → `docs/peer/gemini-desktop-ai-ux-design.md`; runner plan → `gemini-desktop-ai-runner-plan.md`; TZD-75 NEXT (MCP layout + «Скоро», не полный чат)
+- **Снабжение Google→NX:** `WAVE-NX-SUPPLY-OPS` — PARK (решения locked)

@@ -2791,207 +2791,31 @@
       <p class="card--chat__eyebrow">Локальный помощник</p>
       <h2>Чат</h2>
       {#if providerMode === 'local'}
-        <p class="hint">
-          Нажмите «Открыть чат» — если модель уже на диске, она загрузится в память и можно сразу писать.
-          Внешние AI-клиенты (Cursor, LM Studio) — отдельный контур: карточка «Подключение агентов (MCP)» выше.
+        <!-- TZD-75: локальный движок (скачивание/старт/порт) ненадёжен на 0.5.7 —
+             честно «скоро» вместо кнопок, которые вели к спаму ошибок (PO + audit). -->
+        <p class="hint" data-test="ai-local-soon">
+          <strong>Чат на этом компьютере — скоро.</strong> Сейчас надёжно работает MCP для Cursor
+          и LM Studio — карточка «Подключение агентов (MCP)» выше. Нужен чат уже сейчас — откройте
+          «Подключить облачную модель (по API)» ниже.
         </p>
-        <button
-          class="btn btn--primary"
-          type="button"
-          data-test="ai-open-chat"
-          onclick={openChat}
-          disabled={aiBusy}
-          onmouseenter={() => showHint(HINTS.openChat)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.openChat)}
-          onblur={clearHint}
-        >
-          {aiBusy ? 'Открываем…' : 'Открыть чат'}
-        </button>
-        {#if localHelperAlert}
-          <p class="errors" role="alert" data-test="ai-open-chat-message">{localHelperAlert}</p>
-        {:else if aiMessage}
-          <p class="hint" role="status" data-test="ai-open-chat-message">{aiMessage}</p>
-        {/if}
       {:else}
         <p class="hint" data-test="ai-api-privacy">
           Режим «По API»: сообщения чата уходят на сервер внешнего провайдера (не на этот ПК и не на kppdf).
           Бесплатный слот может обрываться. Не вставляйте ФИО, ИНН и другие данные клиентов — настройте
-          ключ и проверьте связь в карточке «Модель по API» ниже.
+          ключ и проверьте связь в карточке «Подключить облачную модель (по API)» ниже.
         </p>
         {#if providerCheckMessage}
           <p class="hint" role="status">{providerCheckMessage}</p>
         {/if}
+        <ChatPanel
+          baseUrl={chatBaseUrl}
+          apiKey={chatApiKey}
+          modelName={chatModelName}
+          systemPrompt={desktopChatSystemPrompt}
+          ready={chatReady}
+          disabledReason={chatDisabledReason}
+        />
       {/if}
-      <ChatPanel
-        baseUrl={chatBaseUrl}
-        apiKey={chatApiKey}
-        modelName={chatModelName}
-        systemPrompt={desktopChatSystemPrompt}
-        ready={chatReady}
-        disabledReason={chatDisabledReason}
-      />
-    </article>
-
-    <article class="card">
-      <h2>Управление моделью</h2>
-      <p class="hint">
-        Модель скачивается один раз (~2 ГБ) и работает офлайн. Подбор колонок при импорте работает и без
-        неё — модель нужна только для чата и подсказок по нестандартным заголовкам.
-      </p>
-
-      <div class="mcp-status">
-        <span class="mcp-badge mcp-badge--{aiState.status}" aria-live="polite">
-          {AI_STATUS_LABEL[aiState.status]}
-        </span>
-        {#if aiState.modelLoaded && aiState.modelName}
-          <span class="mcp-badge mcp-badge--running">модель загружена: {aiState.modelName}</span>
-        {/if}
-      </div>
-
-      {#if aiState.download.active}
-        <progress
-          class="ai-download-bar"
-          data-test="ai-download-progress"
-          value={aiState.download.total > 0 ? aiState.download.received : undefined}
-          max={aiState.download.total > 0 ? aiState.download.total : undefined}
-        ></progress>
-      {/if}
-      {#if formatDownload(aiState.download)}
-        <p class="hint" role="status">{formatDownload(aiState.download)}</p>
-      {/if}
-
-      <div class="mcp-actions">
-        {#if aiState.status === 'running' || aiState.status === 'starting'}
-          <button
-            class="btn"
-            type="button"
-            onclick={stopAi}
-            disabled={aiState.status === 'starting'}
-            onmouseenter={() => showHint(HINTS.stopAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.stopAi)}
-            onblur={clearHint}
-          >
-            Остановить
-          </button>
-        {/if}
-        {#if aiState.status === 'stopped' || aiState.status === 'error'}
-          <button
-            class="btn btn--primary"
-            type="button"
-            onclick={startAi}
-            disabled={aiBusy}
-            onmouseenter={() => showHint(HINTS.startAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.startAi)}
-            onblur={clearHint}
-          >
-            Запустить
-          </button>
-        {/if}
-        {#if aiState.status === 'running'}
-          <button
-            class="btn"
-            type="button"
-            onclick={startAi}
-            disabled={aiBusy}
-            onmouseenter={() => showHint(HINTS.startAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.startAi)}
-            onblur={clearHint}
-          >
-            Перезапустить
-          </button>
-        {/if}
-        <button
-          class="btn btn--small"
-          type="button"
-          onclick={downloadSelectedModel}
-          disabled={aiState.download.active || aiBusy}
-          onmouseenter={() => showHint(HINTS.downloadModel)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.downloadModel)}
-          onblur={clearHint}
-        >
-          {aiState.download.active ? 'Скачивается…' : 'Скачать модель'}
-        </button>
-        <button
-          class="btn btn--small"
-          type="button"
-          onclick={openModelFolder}
-          onmouseenter={() => showHint(HINTS.openModelFolder)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.openModelFolder)}
-          onblur={clearHint}
-        >
-          Открыть папку моделей
-        </button>
-      </div>
-
-      <details class="mcp-advanced">
-        <summary>Подробнее (модель, ПК, файлы на диске)</summary>
-        {#if aiState.specs}
-          <p class="hint">
-            Ваш ПК: ОЗУ {formatRamGb(aiState.specs.totalMemoryGb)} · свободно
-            {formatRamGb(aiState.specs.freeMemoryGb)} · ядер CPU: {aiState.specs.cpus}
-            {#if selectedModelId && modelById(selectedModelId)}
-              → рекомендация: <strong>{modelById(selectedModelId)!.name}</strong>
-            {/if}
-          </p>
-        {/if}
-
-        <label class="field">
-          <span>Модель из каталога (для «Скачать»)</span>
-          <select class="input" bind:value={selectedModelId} aria-label="Выбор модели">
-            {#each LOCAL_MODELS as model (model.id)}
-              <option value={model.id}>
-                {model.name} — {formatBytes(model.sizeBytes)}
-              </option>
-            {/each}
-          </select>
-        </label>
-
-        <div class="mcp-status">
-          <span class="hint">Файлы .gguf в папке моделей: {diskModels.length}</span>
-          <button
-            class="btn btn--small"
-            type="button"
-            data-test="ai-rescan-models"
-            onclick={rescanModels}
-            disabled={aiBusy}
-          >
-            Обновить список
-          </button>
-        </div>
-        {#if diskModels.length > 0}
-          <label class="field">
-            <span>Файл на диске (любое имя — с флешки тоже)</span>
-            <select
-              class="input"
-              bind:value={selectedDiskFileName}
-              aria-label="Выбор файла модели с диска"
-              data-test="ai-disk-model-select"
-            >
-              <option value="">— взять из каталога выше —</option>
-              {#each diskModels as diskModel (diskModel.fileName)}
-                <option value={diskModel.fileName}>{diskModel.fileName} — {formatBytes(diskModel.sizeBytes)}</option>
-              {/each}
-            </select>
-          </label>
-        {/if}
-        {#if diskModelsRejected.length > 0}
-          <p class="hint" data-test="ai-disk-models-rejected">
-            Пропущено (не похоже на модель):
-            {#each diskModelsRejected as rej, i (rej.fileName)}{i > 0 ? '; ' : ' '}{rej.fileName} — {rej.reason}{/each}
-          </p>
-        {/if}
-        <p class="hint">
-          Можно скачать кнопкой «Скачать модель» (помощник поднимется сам, если ещё не запущен) или
-          скопировать `.gguf` с флешки в папку моделей и нажать «Обновить список» — обязательного порядка
-          «Запустить → Скачать → Перезапустить» больше нет: «Открыть чат» выше делает всё сама.
-        </p>
-      </details>
     </article>
 
     <article class="card" data-test="ai-api-card">
