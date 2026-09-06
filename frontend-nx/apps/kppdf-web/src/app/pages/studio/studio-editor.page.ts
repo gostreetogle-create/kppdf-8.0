@@ -16,15 +16,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
+  Archive,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   Database,
+  Eye,
+  FileDown,
   FileStack,
   FileText,
   Layers,
   LayoutTemplate,
   LucideAngularModule,
+  PenLine,
+  Save,
   Settings2,
 } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
@@ -149,8 +154,8 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
         [panelTitle]="panelTitle()"
         [railItems]="[]"
         [showDesktopRail]="false"
-        [badgeText]="doc.name"
-        [totalText]="'Страниц: ' + pageCount()"
+        [badgeText]="''"
+        [totalText]="''"
         [statusText]="statusText()"
         [pageLabel]="currentPage() + ' / ' + pageCount()"
         [sheetHost]="false"
@@ -162,64 +167,31 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
         (panelToggle)="togglePanel()"
         (sheetClick)="onSheetClick()"
       >
-        <div kpWsRibbonExtra class="studio-ribbon-extra">
+        <!-- TZ-NX-DOCSTUDIO-C3: ribbon = breadcrumbs only (Документы / Студия / {name}).
+             Lifecycle actions live on the right chrome-rail (shellTools); «Сохранить как…»
+             stays in the Шаблон panel. Crumb «Документы» routes through openDocumentList()
+             so the S38 dirty dialog still guards the leave. -->
+        <div kpWsRibbonExtra class="studio-ribbon-crumbs" data-test="studio-ribbon-crumbs">
           <button
             type="button"
-            class="ribbon-label ribbon-label--rename"
+            class="studio-crumb studio-crumb--link"
+            data-test="studio-crumb-documents"
+            title="К списку документов"
+            (click)="openDocumentList()"
+          >
+            Документы
+          </button>
+          <span class="studio-crumb-sep" aria-hidden="true">/</span>
+          <span class="studio-crumb">Студия</span>
+          <span class="studio-crumb-sep" aria-hidden="true">/</span>
+          <button
+            type="button"
+            class="studio-crumb studio-crumb--current"
             data-test="studio-rename"
             title="Переименовать"
             (click)="openRenameDialog()"
           >
             {{ doc.name }}
-          </button>
-        </div>
-
-        <div kpWsRibbonActions class="studio-ribbon-actions">
-          <button
-            type="button"
-            class="kp-ws-ribbon-btn"
-            data-test="studio-open-list"
-            (click)="openDocumentList()"
-          >
-            К списку
-          </button>
-          <button
-            type="button"
-            class="kp-ws-ribbon-btn"
-            [class.kp-ws-ribbon-btn--active]="viewMode() === 'editor'"
-            (click)="setViewMode('editor')"
-          >
-            Редактор
-          </button>
-          <button type="button" class="kp-ws-ribbon-btn" data-test="studio-save" [disabled]="saving()" (click)="saveDocument()">Сохранить</button>
-          <button type="button" class="kp-ws-ribbon-btn" data-test="studio-save-as" [disabled]="templateSaving()" (click)="openSaveAsTemplateDialog()">Сохранить как…</button>
-          <button
-            type="button"
-            class="kp-ws-ribbon-btn"
-            [class.kp-ws-ribbon-btn--active]="viewMode() === 'preview'"
-            data-test="studio-view-preview"
-            (click)="setViewMode('preview')"
-          >
-            Просмотр
-          </button>
-          <button
-            type="button"
-            class="kp-ws-ribbon-btn"
-            data-test="studio-download-pdf"
-            [disabled]="pdfLoading()"
-            (click)="onDownloadPdf()"
-          >
-            {{ pdfLoading() ? 'PDF…' : 'PDF' }}
-          </button>
-          <button
-            type="button"
-            class="kp-ws-ribbon-btn"
-            data-test="studio-finalize"
-            [disabled]="finalizing() || doc.status !== 'draft'"
-            [attr.title]="doc.status !== 'draft' ? 'Уже в архиве' : 'Отправить в архив'"
-            (click)="onFinalize()"
-          >
-            {{ finalizing() ? 'В архив…' : 'В архив' }}
           </button>
         </div>
 
@@ -386,39 +358,55 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
     .studio-editor-shell { flex: 1; min-height: 0; }
     .studio-loading { padding: 24px; color: var(--color-muted-foreground); }
     .studio-ribbon-extra,
-    .studio-ribbon-actions {
+    .studio-ribbon-crumbs {
       display: inline-flex;
       align-items: center;
       gap: var(--space-1, 4px);
       flex-shrink: 0;
       height: 100%;
     }
-    .studio-ribbon-extra {
+    .studio-ribbon-crumbs {
+      min-width: 0;
       padding-right: var(--space-1, 4px);
     }
-    .studio-ribbon-actions {
-      border-left: 1px solid var(--color-rule);
-      padding-left: var(--space-2, 8px);
-      margin-left: var(--space-1, 4px);
-    }
-    .ribbon-label {
+    .studio-crumb {
       font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--color-muted-foreground);
       line-height: 1;
+      color: var(--color-muted-foreground);
+      white-space: nowrap;
     }
-    .ribbon-label--rename {
+    .studio-crumb-sep {
+      color: var(--color-muted-foreground);
+      user-select: none;
+    }
+    .studio-crumb--link {
       background: none;
       border: none;
       padding: 0;
       margin: 0;
       cursor: pointer;
       font: inherit;
+      text-decoration: underline dotted;
+      text-underline-offset: 3px;
     }
-    .ribbon-label--rename:hover {
+    .studio-crumb--link:hover {
       color: var(--color-foreground);
+    }
+    .studio-crumb--current {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-foreground);
+      max-width: 40ch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .studio-crumb--current:hover {
       text-decoration: underline;
     }
     .page-nav {
@@ -757,6 +745,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     effect(() => {
       const section = this.activeSection();
       const collapsed = this.panelCollapsed();
+      const viewMode = this.viewMode();
+      const doc = this.document();
       this.shellTools.setTools(STUDIO_TOOL_OWNER, {
         left: [
           {
@@ -770,6 +760,32 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           },
         ],
         right: [
+          // TZ-NX-DOCSTUDIO-C3 — lifecycle actions live on the right chrome-rail
+          // (crumbs-only ribbon). Panel tools follow below, unchanged.
+          {
+            id: 'mode-editor', side: 'right', ariaLabel: 'Режим редактора', title: 'Режим редактора', icon: PenLine,
+            active: viewMode === 'editor', onClick: () => this.setViewMode('editor'),
+          },
+          {
+            id: 'mode-preview', side: 'right', ariaLabel: 'Просмотр', title: 'Просмотр', icon: Eye,
+            active: viewMode === 'preview', onClick: () => this.setViewMode('preview'),
+          },
+          {
+            id: 'save', side: 'right', ariaLabel: 'Сохранить', title: 'Сохранить', icon: Save,
+            disabled: this.saving(), onClick: () => void this.saveDocument(),
+          },
+          {
+            id: 'pdf', side: 'right', ariaLabel: 'Скачать PDF', title: 'Скачать PDF', icon: FileDown,
+            disabled: this.pdfLoading(), onClick: () => this.onDownloadPdf(),
+          },
+          {
+            id: 'archive', side: 'right',
+            ariaLabel: doc?.status === 'draft' ? 'В архив' : 'Уже в архиве',
+            title: doc?.status === 'draft' ? 'В архив' : 'Уже в архиве',
+            icon: Archive,
+            disabled: this.finalizing() || doc?.status !== 'draft',
+            onClick: () => this.onFinalize(),
+          },
           { id: 'elements', side: 'right', ariaLabel: 'Элементы', title: 'Элементы', icon: FileText, active: !collapsed && section === 'elements', onClick: () => this.onSection('elements') },
           { id: 'layers', side: 'right', ariaLabel: 'Слои', title: 'Слои', icon: Layers, active: !collapsed && section === 'layers', onClick: () => this.onSection('layers') },
           { id: 'pages', side: 'right', ariaLabel: 'Страницы', title: 'Страницы', icon: FileStack, active: !collapsed && section === 'pages', onClick: () => this.onSection('pages') },
