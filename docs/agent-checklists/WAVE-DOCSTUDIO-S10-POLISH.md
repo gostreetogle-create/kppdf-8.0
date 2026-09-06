@@ -7,7 +7,7 @@ closed_at: 2026-09-01
 
 ## Queue
 - [x] 1. S10 DATA-PANEL-POLISH — `87329b37`
-- [x] 2. S10 OPERATOR-DOCS-SYNC — pending closeout commit
+- [x] 2. S10 OPERATOR-DOCS-SYNC — `9b7da442`
 
 ## Closeout
 - [x] WAVE DONE

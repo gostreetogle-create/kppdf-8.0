@@ -36,7 +36,7 @@
 - [x] Backend tsc PASS
 - [x] Focused backend and NX shell tests PASS
 - [x] `nx build kppdf-web` PASS
-- [x] commit/push SHA: pending until the first commit; closeout metadata commit records the full SHA
+- [x] commit/push SHA: `c413bef7` (implementation + closeout commit)
 - [x] archive + lock created; `_active` cleared
 
 ## Integrity slot (до READY / archive)
@@ -65,7 +65,7 @@
 - Hotfix A verified and closed from the pre-existing WIP; added only the missing StorageItem detail `warehouseId` soft-delete populate required by the TZ acceptance criteria.
 - Conflict disclosure: the working tree contains unrelated dirty WIP; no unrelated paths are staged.
 - Known limitation: hard-deleted references can still render as `—`; local demo orphan cleanup is TZ-OPS-LOCAL-DEMO-ORPHAN-CLEAN (B).
-- Implementation commit SHA: pending until commit; a follow-up closeout metadata commit records the full SHA.
+- Implementation commit SHA: `c413bef7`.
 
 ## Closeout
 

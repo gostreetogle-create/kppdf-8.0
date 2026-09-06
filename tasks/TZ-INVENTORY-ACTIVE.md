@@ -1,25 +1,18 @@
-# TZ inventory — 2026-09-05 cleanup
+# TZ inventory — 2026-09-05
 
-## READY (1)
+## READY / LIVE (в Claude continuous)
 
-| TZ | Путь |
+| TZ | Path |
 |----|------|
-| Registries expand — scroll jump + white gap | `tasks/_ready/TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE.md` |
+| S44 table canvas select | `tasks/TZ-NX-DOCSTUDIO-S44-TABLE-CANVAS-SELECT-FIX.md` |
+| Registries expand scroll | `tasks/_ready/TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE.md` |
 
-## LIVE
+PROMPT: `tasks/PROMPT-CLAUDE-CONTINUOUS-S44-REGISTRIES.md`
 
-_пусто_ · `_active/` только `.gitkeep`
+## LIVE markers
 
-## Где лежит сделанное
-
-| Что | Куда |
-|-----|------|
-| `.done.md` | `tasks/_archive/2026-09/*.done.md` (+ август) |
-| Исходники spent TZ | `tasks/_archive/2026-09/sources-spent/` · `…/2026-08/sources-spent/` |
-| Spent промпты | `tasks/_archive/2026-09/prompts-spent/` |
-| Spent WAVE (копии в tasks/) | `tasks/_archive/2026-09/waves-spent/` |
-| Живые WAVE/чеклисты | `docs/agent-checklists/WAVE-*.md` |
+`_active/` — clear until Claude claims S44
 
 ## PARK / backlog
 
-`tasks/_backlog/` — не LIVE. Не выдавать пачкой.
+`tasks/_backlog/` — не LIVE. Не выдавать пачкой без PO.

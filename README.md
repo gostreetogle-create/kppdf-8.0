@@ -65,7 +65,7 @@ ERP для небольшого производства: менеджер ве�
 | **Identity** | Users, roles, RBAC, feature flags |
 
 Готовность разделов: [`docs/SECTION-READINESS.md`](docs/SECTION-READINESS.md).  
-Домен → модуль → route → page.md: [`docs/DOMAIN-MAP.md`](docs/DOMAIN-MAP.md).  
+Домен → модуль → legacy FE → **NX FE (target)** → page.md: [`docs/DOMAIN-MAP.md`](docs/DOMAIN-MAP.md) (вести параллельно с NX).  
 Север продаж→цех: [`docs/audits/2026-08-08-sales-to-shop-flow-canon.md`](docs/audits/2026-08-08-sales-to-shop-flow-canon.md).
 
 Модель (ориентир, может отставать): [`docs/data-model.md`](docs/data-model.md) — ~11 доменов / ~89 сущностей.

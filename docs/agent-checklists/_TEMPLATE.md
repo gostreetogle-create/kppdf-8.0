@@ -34,6 +34,7 @@
 - [ ] Тип изменения определён: page | permission | module | MCP | docs-only | other
 - [ ] FIC §A–E (и §F если общее поле) пройдены **или** N/A с причиной одной строкой
 - [ ] page.md / PAGE-TZ-INDEX обновлены **или** N/A (нет UI route)
+- [ ] DOMAIN-MAP: строка §1.2 / §1.4 обновлена **или** N/A (не менял module/route/page контур)
 - [ ] SECTION-READINESS обновлён **или** N/A
 - [ ] Чужой WIP не в коммите; conflict keys соблюдены
 - [ ] Coupling map: `docs/COUPLING-MAP.md` обновлён **или** N/A (не трогал общее поле/статус)

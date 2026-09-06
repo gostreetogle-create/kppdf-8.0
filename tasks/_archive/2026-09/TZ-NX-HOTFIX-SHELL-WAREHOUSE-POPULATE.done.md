@@ -6,7 +6,7 @@ closed_at: 2026-09-06
 closed_by: freebuff
 agent_id: freebuff
 workspace: `D:\\kppdf-8.0`
-implementation_sha: pending; recorded in the closeout metadata commit
+implementation_sha: c413bef7
 
 ## Outcome
 
@@ -24,6 +24,7 @@ implementation_sha: pending; recorded in the closeout metadata commit
 - changed-file backend/frontend ESLint: PASS
 - `git diff --check`: PASS
 - final `nx build kppdf-web`: PASS — exit 0; known pre-existing Studio NG8102 and Gantt style-budget warnings
+- pre-push focused supply/storage gate: PASS — 6 suites / 62 tests; local supply smoke 23 PASS / 0 FAIL
 - known build warnings: pre-existing Studio NG8102 and Gantt style-budget warning
 
 ## Scope integrity

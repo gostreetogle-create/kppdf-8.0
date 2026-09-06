@@ -12,14 +12,15 @@
 
 | Изменение | Обязательно обновить |
 |-----------|----------------------|
-| Route / nav / chips | FIC §A + `docs/pages/<x>.page.md` + `docs/pages/PAGE-TZ-INDEX.md` / `pages/README.md` |
+| Route / nav / chips (legacy **или** `frontend-nx`) | FIC §A + `docs/pages/<x>.page.md` + `docs/pages/PAGE-TZ-INDEX.md` / `pages/README.md` + строка `docs/DOMAIN-MAP.md` |
+| NX route / NX-only surface | `DOMAIN-MAP` §1.2 (колонка NX) + §1.4 inventory; цель UI = `frontend-nx` |
 | Permission / role seed | FIC §B + RU labels (`permission-labels.ru.ts`) |
 | Backend module / API | FIC §C (+ page.md, если есть UI) |
 | User-visible section status | `docs/SECTION-READINESS.md` |
 | MCP / desktop tool | FIC §E + `desktop/docs/MCP.md` |
 | Доменный SoT / write-path | page.md + при необходимости audit/vision; канон не менять молча |
 | Только refactor без UX/API | progress + checklist; page.md только если изменилось UX-поведение |
-| Доменная карта | строка в `docs/DOMAIN-MAP.md` при смене контура домена (module/route/page) |
+| Доменная карта | строка в `docs/DOMAIN-MAP.md` при смене контура (BE module / legacy route / **NX route** / page) — dual-track, не откладывать до cutover |
 | Auth / RBAC в `frontend-nx` | `docs/architecture/nx-auth-platform.md` + `docs/RBAC-CONTRACT.md` |
 | Общее поле / статус / фильтр «активные» (≥2 экрана) | строка в `docs/COUPLING-MAP.md` + Couplings в затронутых page.md |
 
@@ -33,6 +34,7 @@
 - [ ] Тип изменения определён: page | permission | module | MCP | docs-only | other
 - [ ] FIC §A–E (и §F если общее поле) пройдены **или** N/A с причиной одной строкой
 - [ ] page.md / PAGE-TZ-INDEX обновлены **или** N/A (нет UI route)
+- [ ] DOMAIN-MAP: строка §1.2 / §1.4 обновлена **или** N/A (не менял module/route/page контур)
 - [ ] SECTION-READINESS обновлён **или** N/A
 - [ ] Чужой WIP не в коммите; conflict keys соблюдены
 - [ ] Coupling map: строка в `docs/COUPLING-MAP.md` обновлена **или** N/A (не трогал общее поле/статус)

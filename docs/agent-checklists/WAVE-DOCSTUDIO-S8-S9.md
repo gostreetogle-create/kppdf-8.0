@@ -1,6 +1,6 @@
 # WAVE checklist — Doc Studio S8→S9
 
-Status: **DONE**
+Status: **PARTIAL** (S8 DONE; S9 archives overstated — см. S9-FINISH wave)
 agent_id: claude
 started_at: 2026-08-31T22:40:00+03:00
 closed_at: 2026-09-01

@@ -173,6 +173,15 @@ The shape language is "Soft Geometric." While the grid and borders are rigid and
 
 This specific radius (`rounded-md`) prevents the UI from feeling too aggressive or "brutalist," providing a modern touch to the otherwise traditional editorial aesthetic. Status dots and small icons may use a circular (pill) shape to provide a clear visual contrast to the rectangular structure of the document templates.
 
+## Hybrid adoption (external references)
+
+Paper & Ink остаётся primary canon. Паттерны из внешних спек (напр. Dark Control Interface, `data/DESIGN.zip`) допускаются **точечно**:
+
+- **Брать:** depth inset (dark), flow SVG, status pulse, focus-visible, scroll-snap carousel, tri-state segmented.
+- **Не брать:** violet/ice palette, Onest font, glassmorphism на рабочих экранах, marketing hero typography.
+
+Матрица и TZ-очередь: [`docs/audits/2026-08-31-dark-control-interface-audit.md`](./audits/2026-08-31-dark-control-interface-audit.md).
+
 ## Components
 
 - **Buttons:** Primary buttons use an `ink-solid` background with white text and no shadow. Secondary buttons use a 2px `ink-solid` border with a transparent background. Labels are in `body-sm` bold.

@@ -46,13 +46,14 @@
 | Очередь агентов / бронь | `docs/agent-checklists/_NOW.md` + `tasks/_active/` |
 | Север продаж → цех | `docs/audits/2026-08-08-sales-to-shop-flow-canon.md` |
 | Целостность docs (closeout) | `docs/DOCS-INTEGRITY.md` — протокол триггер→файлы + Integrity slot |
-| Карта домен↔модули↔страницы | `docs/DOMAIN-MAP.md` — домен → BE module → route → page.md → SoT |
+| Карта домен↔модули↔страницы | `docs/DOMAIN-MAP.md` — dual-track: BE → legacy FE → **NX FE (target)** → page.md → SoT |
 | Nx auth platform | `docs/architecture/nx-auth-platform.md` — interceptors, guards, device invite, lib map |
 | Общее поле на нескольких экранах | `docs/COUPLING-MAP.md` — смысл статуса/FK; не выдумывать локальный «активный» |
 
 ## 4. Не потерять при DONE (чеклист)
 
 - Страница/UI менялась → `docs/pages/<name>.page.md` + строка в `docs/pages/PAGE-TZ-INDEX.md`.
+- Контур домена / **NX или legacy route** → строка в `docs/DOMAIN-MAP.md` (§1.2 и при NX — §1.4) в той же TZ.
 - Новая страница/право/модуль/MCP → FIC §A–E по типу изменения.
 - Новая/снятая способность → `docs/CAPABILITY-LEDGER.md`.
 - Менялся user contour (роли/доступы/раздел) → `docs/SECTION-READINESS.md`.

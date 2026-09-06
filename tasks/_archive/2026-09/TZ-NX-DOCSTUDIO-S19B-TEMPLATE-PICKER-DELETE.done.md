@@ -7,9 +7,7 @@ closed_by: cursor-executor
 verification:
   - acceptance criteria: PASS
   - typecheck: PASS via nx build kppdf-web
-  - tests: N/A (UI picker; build gate)
+  - tests: NOT RUN
   - lint: NOT RUN
-  - checklist: ADDED
-  - status synchronization: PASS
 
-Template picker: per-row delete with AlertDialog, `onDeleted` callback refreshes templates via `studio-list.page.ts` `loadActiveTemplates()`.
+Template picker delete: row delete button → AlertDialog → PiDocumentTemplatesService.remove(); onDeleted callback refreshes parent list.

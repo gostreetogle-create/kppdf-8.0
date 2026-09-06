@@ -6,6 +6,10 @@
 > в `_archive/2026-08/specs-dup-root/`, сами задачи давно DONE).
 > Обновлено 2026-08-30: корневые TZ разложены по темам (TZ-NX-DOCPLAT-01 фаза A).
 
+## LIVE (2026-09-03)
+
+- NX Sales canon S30–S39 — `tasks/PROMPT-FREEBUFF-SALES-CANON-START.md`
+
 ## NX (готово к выдаче по команде PO)
 
 - [`nx/TZ-NX-REGISTRY-CRUD-UNIFY.md`](./nx/TZ-NX-REGISTRY-CRUD-UNIFY.md) — единый CRUD во всех реестрах (редактировать/копировать/удалить везде, поиск везде, units переименовываются, organizations/supply/passports получают формы) + снос раздела «Конструктор» + вывод демо-`departments` из каталога. Заказ PO 2026-08-30.

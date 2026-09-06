@@ -3,7 +3,7 @@
 > Режим PO 2026-09-06: скрин + слова → Cursor кладёт TZ в поток → отчёт агента → Cursor сразу следующий промпт в чат.  
 > Живой статус слотов: [`_NOW.md`](./_NOW.md). Этот файл — **очередь волн**, не claim.
 
-updated_at: 2026-09-06T18:05:00+03:00
+updated_at: 2026-09-06T23:45:00+03:00
 
 ## Правила
 
@@ -21,7 +21,7 @@ updated_at: 2026-09-06T18:05:00+03:00
 | 1a | Hotfix shell+warehouse | — | **DONE** `c413bef7` |
 | 1b | Local demo orphan clean | — | **DONE** `6b1e9492` |
 | 2 | WAVE-DOCSTUDIO-CHROME-IA C1→C4 | — | **DONE** `42b4df0f` / `85f1dc8e` / `45d7e6b8` / `2b295bf9` |
-| 3 | S46→S45 DocStudio tables | `tasks/PROMPT-FREEBUFF-CONTINUE-S46-S45.md` | **RESUME** — S46 code WIP, agent paused; finish S46 then S45 |
+| 3 | S46→S45 DocStudio tables | — | **DONE** `bf90a214` / `3e45e680` (meta `46c53e8b`) |
 
 ---
 
@@ -31,14 +31,15 @@ updated_at: 2026-09-06T18:05:00+03:00
 |---------|-----------|--------|--------|
 | 1 | Desktop installer v0.5.7 | — | **DONE** |
 | 2 | TZD-74 AI tab honesty | — | **DONE** |
-| 3 | TZD-75 hide local chat + 0.5.8 installer | `tasks/PROMPT-CLAUDE-TZD-75-DESKTOP-0.5.8.md` | **DONE** — archived `tasks/_archive/2026-09/TZD-75-AI-TAB-SOON-AND-0.5.8.done.md` |
+| 3 | TZD-75 hide local chat + 0.5.8 | — | **DONE** `702ab5f6` |
 | 4 | TZD-76 real local helper (NSIS) | — | PARK |
-| 5 | TZD-77 chat taller + Inbox read-only bridge | `tasks/PROMPT-CLAUDE-TZD-77-CHAT-INBOX.md` | **DONE** — archived `tasks/_archive/2026-09/TZD-77-AI-CHAT-INBOX-BRIDGE.done.md` |
+| 5 | TZD-77 chat + Inbox bridge + 0.5.9 | — | **DONE** `135a9407` |
+| 6 | TZD-78 chat→HITL propose mapping | — | PARK до PO |
 
 ---
 
-## Inbox
+## Inbox / PARK next
 
 - Gemini peer: `docs/agents/GEMINI-BROWSER-NOTEBOOK.md`
-- **Desktop AI:** TZD-77 DONE (чат↔Inbox bridge, 0.5.9); TZD-75 DONE; TZD-76/TZD-78 PARK
-- **Снабжение Google→NX:** `WAVE-NX-SUPPLY-OPS` — PARK (решения locked)
+- TZD-76 GGUF NSIS · TZD-78 mapping HITL · WAVE-NX-SUPPLY-OPS · WAVE-NX-CATALOG-PHOTOS · Orders inset · G12
+- Visual QA DocStudio chrome+tables (PO глазом) · lint debt production/gantt (не этой волны)

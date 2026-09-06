@@ -86,6 +86,22 @@ Dark — только через `--color-*-override` в `@variant dark`.
 - `frontend/src/styles.css` — tokens, elevation, border roles, paper-3/4 overrides
 - `frontend/src/app/styles.css` — `--dialog-shadow`
 
+## Borrowed depth patterns (DCI audit 2026-08-31)
+
+Источник: [`docs/audits/2026-08-31-dark-control-interface-audit.md`](./audits/2026-08-31-dark-control-interface-audit.md).
+Берём **технику**, не палитру DCI (violet/ice).
+
+| DCI pattern | kppdf mapping | Где |
+|-------------|---------------|-----|
+| Inset top highlight on panel | `--shadow-executive` inset `oklch(1 0 0 / 0.05)` | Elevated cards, cockpit |
+| Tri-state active (bg + border + text) | Segmented / chips — см. § Segmented | Pills, Редактор·Превью |
+| Status pulse ring | `@keyframes pi-status-pulse` + semantic success | Live production/shipping only |
+| Orthogonal SVG routes | `PiFlowDiagram` (TZ-UI-DCI-601) | Combine, cockpit, kit |
+| Focus-visible 2px + 4px offset | `--color-gold-deep` outline | Global `:focus-visible` (TZ-UI-DCI-602) |
+| Engineering grid (subtle) | `--color-rule` @ ≤4% opacity | Login / kit hero **only** |
+
+**Не переносить:** violet CTA, ice strokes, glassmorphism на body, canvas hero, H1 92px.
+
 ## Anti-goals
 
 - Не писать `--color-paper` только в `@layer base .dark`

@@ -1,6 +1,6 @@
 # TZ-NX-DOCSTUDIO-S19B-TEMPLATE-PICKER-DELETE checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **DONE**
 > Marker: `tasks/_active/TZ-NX-DOCSTUDIO-S19B-TEMPLATE-PICKER-DELETE.md`
 
 ## Claim slot
@@ -12,9 +12,9 @@
 
 ## Acceptance
 
-- [ ] Удалённый шаблон не в picker
-- [ ] `nx build kppdf-web` exit 0
+- [x] Удалённый шаблон не в picker
+- [x] `nx build kppdf-web` exit 0
 
 ## Gates
 
-- pending
+- nx build kppdf-web: PASS

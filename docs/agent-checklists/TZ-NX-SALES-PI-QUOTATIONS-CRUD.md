@@ -1,6 +1,6 @@
 # TZ-NX-SALES-PI-QUOTATIONS-CRUD checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **DONE**
 > Marker: `tasks/_active/TZ-NX-SALES-PI-QUOTATIONS-CRUD.md`
 
 ## Claim slot
@@ -12,9 +12,10 @@
 
 ## Acceptance
 
-- [ ] Service methods compile + spec PASS
-- [ ] `nx build kppdf-web` exit 0
+- [x] Service methods compile + spec PASS
+- [x] `nx build kppdf-web` exit 0
 
 ## Gates
 
-- pending
+- `nx test data-access --testPathPattern=pi-quotations` → 54 passed PASS
+- `nx build kppdf-web` → exit 0 PASS

@@ -10,6 +10,10 @@ docs/
 ├── README.md                      ← этот файл (индекс docs/)
 ├── AI-AGENT-GUIDE.md              ← онбординг ИИ-агента
 ├── PO-DIARY.md                    ← [канон] кто PO, планка качества, лог сессий
+├── PO-CANON.md                    ← короткий SoT характера PO + режим работы
+├── PO-SHARED-UNDERSTANDING.md     ← общий язык PO↔агенты: necessity + отчёт→промпт
+├── PO-PLAIN-LANGUAGE-CHANGES.md   ← кардинальные сдвиги простым русским
+
 ├── PROJECT-OPERATING-STRATEGY.md  ← [канон] ежедневный lifecycle TZ, audit и prompt strategy
 ├── SECTION-READINESS.md           ← [канон] какие разделы READY TO USE / что осталось
 ├── TZ-AUTHORING.md                ← [канон] как писать техзадачи (domain preflight)
@@ -70,7 +74,8 @@ docs/
 | **Архитектура** | `architecture-audit-2026-07.md` | Полный срез архитектуры |
 | **Модель данных** | `data-model.md`, `data-model-audit.md` | Entity-relationship model |
 | **Разработка** | `DEVELOPMENT-PATTERNS.md`, `add-new-page.md` | Как писать код |
-| **Дизайн** | `paper-and-ink.md`, `design-spec.md` | Design rationale + Design spec (2 файла, дополняют друг друга) |
+| **Дизайн** | `paper-and-ink.md`, `design-spec.md`, `DARK-THEME.md` | Design rationale + spec + theme canon |
+| **Design audit** | `audits/2026-08-31-dark-control-interface-audit.md` | Adoption matrix из `data/DESIGN.zip` |
 | **Страницы** | `pages/` (19 .page.md) | [TZ-141] Описание каждой бизнес-страницы |
 | **Миграции** | `pi-table-migration-recipe.md` | Рецепт pi-table |
 | **Референсы** | `reference/` (5 файлов) | HTML-прототипы, скриншоты, примеры документов |
@@ -97,7 +102,7 @@ docs/
 - `docs/TZ-AUTHORING.md` — если пишешь TZ
 - `docs/AUDIT-METHODOLOGY.md` — если аудитишь (≠ реализация)
 - `docs/agents/SKILLS-MAP.md` — внешние skills
-- `ARCHITECTURE.md`, `docs/DEVELOPMENT-PATTERNS.md`, `docs/DOMAIN-MAP.md`, `docs/data-model.md`
+- `ARCHITECTURE.md`, `docs/DEVELOPMENT-PATTERNS.md`, `docs/DOMAIN-MAP.md` (dual-track legacy+NX), `docs/data-model.md`
 - `docs/design-spec.md`, `docs/paper-and-ink.md` — дизайн
 - `docs/pages/README.md` → нужный `.page.md`
 

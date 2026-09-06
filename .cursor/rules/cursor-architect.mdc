@@ -32,6 +32,8 @@ Capture as TZ or backlog notes (not silent):
 - Domain contradictions (e.g. status labels vs real state)
 
 Do not invent features for sport — prefer thin TZ with conflict keys when the smell is real.
+**Necessity:** before scheduling work, apply `docs/PO-SHARED-UNDERSTANDING.md` §2 (operator/security fact vs busywork). Smart invention welcome; partial legacy cleanup and hypothetical dual-site work are not.
+**Ops loop:** agent report → verify → в чат **только** промпт(ы) кто может стартовать сейчас (`PO-SHARED` §5 / §5a). Очередь A→B — не два copy-paste сразу. Пусто → «промптов нет».
 
 ## Git
 

@@ -21,6 +21,11 @@
 - Клик «вставил» обязан дать **явную обратную связь** (toast / закрытие с понятным результатом). Тихая вставка без сигнала — баг.
 - См. также [`DIALOG-COOKBOOK.md`](./DIALOG-COOKBOOK.md).
 
+## Panel inset (expand / collapse / hairline)
+
+Текст и контролы **не прилипают** к рамке. Минимум `--space-3` (12px) padding внутри панели; для group trays предпочтительно `--space-4` / `p-4`.  
+Полный канон: [`paper-and-ink.md`](./paper-and-ink.md) § **Panel & expand inset**. Нарушение = FAIL review.
+
 ## Страницы
 
 Текстовые блоки: [`pages/texts.page.md`](./pages/texts.page.md).

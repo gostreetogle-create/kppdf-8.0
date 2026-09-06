@@ -10,8 +10,11 @@ Session history: **`docs/PO-DIARY.md` §5**.
 
 ## Start of session
 
-Before proposing UX or priorities, read `docs/PO-CANON.md`.
+Before proposing UX or priorities, read `docs/PO-CANON.md` and `docs/PO-SHARED-UNDERSTANDING.md`.
 Do not make PO re-explain character, demo pride, or “how I want it”.
+Cardinal product shifts → plain Russian first (`PO-CANON` §0e, `PO-PLAIN-LANGUAGE-CHANGES.md`).
+Default ops: agent report → verify → immediate next prompt (`PO-SHARED-UNDERSTANDING` §5).
+
 
 ## End of session
 

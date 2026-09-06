@@ -107,6 +107,22 @@ Material Design 3 рекомендует **4 variants × 3 sizes**. Paper & Ink:
 | `--space-header-y`     | 32px  | page-header vertical padding    |
 | `--space-footer-y`     | 48px  | footer vertical padding         |
 | `--touch-min`          | 32px  | w-8 h-8 (Apple a11y minimum)    |
+
+### Panel & expand inset (обязательно, 2026-09-05)
+
+**Запрещено:** текст / контролы **вплотную** к hairline-рамке, к краю `rounded-sm` панели, к бордеру expand/collapse (частый дефект legacy).
+
+| Правило | Минимум | Предпочтительно |
+|---------|---------|-----------------|
+| Padding **внутри** hairline / expand body до текста | `--space-3` (12px) / `p-3` | `--space-4` (16px) / `p-4` для group panels |
+| Зазор между смысловыми группами в tray | `--space-3` | `--space-4` / `gap-4`–`gap-5` |
+| Label → value внутри ячейки | `--space-1`–`2` | не 0 |
+
+**Где действует:** order hub tray, registries expand, Doc Studio panels, dialogs body, любые `hairline rounded-*` контейнеры с текстом.
+
+**Review:** прилипание к рамке = визуальный FAIL (как layout-thrash в формах). TZ на UI-panels обязаны явно ссылать этот § или `UX-FORM-CANON` «Panel inset».
+
+Эталон принятого воздуха на desk/orders: `p-4` / `gap-5` (DESK-428) — не ужимать при порте на NX.
 | `--touch-comfortable`  | 40px  | w-10 h-10 (Material 40)         |
 | `--touch-a11y`         | 44px  | w-11 h-11 (iOS HIG)             |
 
@@ -316,6 +332,49 @@ User's original audit also flagged "small text (футер, подписи) reco
 **Вывод:** все текстовые токены в обоих режимах проходят WCAG AA Large как минимум; body text (ink) — AAA (>7:1). Non-text токены ожидаемо ниже порогов — они не несут контент.
 
 ---
+
+## External design references (adoption matrix)
+
+> Полный аудит: [`docs/audits/2026-08-31-dark-control-interface-audit.md`](./audits/2026-08-31-dark-control-interface-audit.md)
+>
+> Исходник: [`docs/reference/dark-control-interface/DESIGN-FULL.md`](./reference/dark-control-interface/DESIGN-FULL.md)
+
+| Borrow | Status | kppdf rule |
+|--------|--------|------------|
+| Inset panel highlight (dark) | Shipped partial | `--shadow-executive` in `styles.css` |
+| Tri-state segmented active | TZ-UI-DCI-602 | bg + gold border + ink text |
+| Status pulse animation | TZ-UI-DCI-603 | success token; not on static badges |
+| Flow diagram (SVG routes) | **DONE — TZ-UI-DCI-601** | gold-deep pulse; ResizeObserver; `PiFlowDiagramComponent` |
+| Scroll-snap carousel | TZ-UI-DCI-605 | catalog cards; native scroll |
+| Engineering grid bg | TZ-UI-DCI-604 | login/kit only |
+| Onest font | **Rejected** | keep Inter + Hanken + JetBrains |
+| Violet accent | **Rejected** | gold canon |
+| Canvas particle hero | **Rejected** | marketing-only |
+| Pill buttons default | **Rejected** | `rounded-sm` interactive |
+
+## Motion canon (incl. DCI reduced-motion)
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .pi-route-pulse,
+  .pi-status-pulse,
+  .pi-hero-particles {
+    display: none;
+  }
+}
+```
+
+Правила:
+
+- Анимация объясняет **данные / состояние / результат** — иначе убрать.
+- ERP tables: **no** reveal-on-scroll.
+- Kit demos / cockpit: pulse и flow — ok с reduced-motion fallback.
+- Sync related animations to one cycle (~7s) when showing one process.
 
 ## Pi-* Architectural Utilities
 

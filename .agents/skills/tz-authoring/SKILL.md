@@ -57,6 +57,7 @@ description: >-
 - >7 шагов → несколько TZ с DEPENDENCIES
 - >1 Layer-3 hot file в конфликте с параллелью → отдельные TZ или DEFER note
 - **frontend-nx:** TZ >~1ч агента → серия с зелёным `nx build kppdf-web` после каждого куска
+- **SIZE S vs L** (обязательно): см. `docs/TZ-AUTHORING.md` §2a. Мелочи пакуй в WAVE-S + один continuous prompt; крупные — WAVE-L / одна L на сессию. PO «дай ТЗ» → таблица цепочки (SIZE · id · path) + PROMPT, без эссе.
 
 ## Build-integrity (frontend-nx, обязательно)
 
@@ -98,6 +99,13 @@ cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit
 cd backend && pnpm test -- <pattern>
 cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
 ```
+
+## One-shot PROMPT (rate limits)
+
+Исполнители с лимитом 5–10 req/h получают **один** исчерпывающий промпт на весь объём.
+Канон структуры и запрет placeholders: **`docs/TZ-AUTHORING.md` §8**.
+Обязательно: `[КОНТЕКСТ]` → `[ЗАДАЧА И ШАГИ]` → `[ОГРАНИЧЕНИЯ]` → `[ФОРМАТ]` + `<thinking>` + self-check.
+Не отдавать «набросок» — только полный handoff без итераций.
 
 ## Ответ PO после написания TZ
 

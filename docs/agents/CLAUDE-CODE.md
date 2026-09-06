@@ -28,6 +28,11 @@ Claude CLI: root `.mcp.json` (npx). Один ключ на оба клиента
 - `/model` Sonnet по умолчанию; Opus / `ultrathink` — только развилка.
 - `Esc` — стоп, контекст жив. Чекпоинты не откатывают bash/Mongo.
 - `/compact` с подсказкой: оставь TASK-ID, conflict keys, статус тестов.
+- **AFK / без тыков:** SoT [`CLAUDE-UNATTENDED.md`](./CLAUDE-UNATTENDED.md).  
+  Авто: `scripts/ensure-claude-unattended.mjs` (из `start.mjs` + task каждые 5 мин).  
+  PO **не** чеклист перед уходом. Handoff Cursor — блок UNATTENDED в PROMPT.  
+  CLI `--dangerously-skip-permissions` в алиасы репо — запрещён.
+- Desktop Dynamic workflows / Auto-PR / Remote Control — не для local continuous.
 
 ## Cursor → MCP Claude (промпт)
 
