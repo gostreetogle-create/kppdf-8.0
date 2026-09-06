@@ -57,7 +57,7 @@ describe('AppShellComponent studio quicknav (TZ-NX-DOCSTUDIO-S2-SHELL)', () => {
     }).compileComponents();
   });
 
-  it('shows the docs quicknav chip whose entry path falls back to /studio', async () => {
+  it('shows the docs quicknav chip with the explicit /studio entry path', async () => {
     const harness = await RouterTestingHarness.create('/admin/devices');
     harness.detectChanges();
     await harness.fixture.whenStable();
@@ -66,8 +66,7 @@ describe('AppShellComponent studio quicknav (TZ-NX-DOCSTUDIO-S2-SHELL)', () => {
       '[data-test="shell-quicknav-docs"]',
     ) as HTMLAnchorElement;
     expect(link).toBeTruthy();
-    // Default docs entryPath (/doc-constructor/templates) has no NX route, so the
-    // filter falls back to the first surviving item — the studio shell (/studio).
+    // The docs category explicitly enters the live NX studio landing.
     expect(link.getAttribute('href')).toBe('/studio');
   });
 

@@ -18,11 +18,12 @@ describe('NAV_CATEGORIES (ported from legacy frontend/src/app/layout/app-layout.
   });
 });
 
-describe('studio category (TZ-NX-DOCSTUDIO-S2-SHELL)', () => {
-  it('links the docs category to /studio with a doc-studio pageKey', () => {
+describe('studio category (TZ-NX-DOCSTUDIO-C1-LANDING-LIST)', () => {
+  it('uses /studio as the explicit docs entry and keeps the live studio item', () => {
     const docs = NAV_CATEGORIES.find((c) => c.id === 'docs');
     expect(docs).toBeTruthy();
-    const studio = docs!.items.find((i) => (i.path as string).endsWith('/studio'));
+    expect(docs!.entryPath).toBe('/studio');
+    const studio = docs!.items.find((i) => i.path === '/studio');
     expect(studio).toBeTruthy();
     expect(studio!.pageKey).toBe('doc-studio');
     expect(studio!.label).toContain('Студия');
@@ -53,8 +54,7 @@ describe('studio category (TZ-NX-DOCSTUDIO-S2-SHELL)', () => {
       'admin',
     );
     const docs = result.find((c) => c.id === 'docs');
-    // Studio is the only surviving docs route; with pageKey gated out the docs
-    // category shows nothing else, so it drops entirely.
+    // With the only currently live docs route gated out, the category drops entirely.
     expect(docs).toBeUndefined();
   });
 });

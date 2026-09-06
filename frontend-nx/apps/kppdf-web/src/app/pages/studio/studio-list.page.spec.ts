@@ -23,9 +23,9 @@ describe('StudioListPage — create КП (TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH)', 
   let toast: { error: jest.Mock };
   let router: { navigate: jest.Mock };
 
-  async function setup(): Promise<void> {
+  async function setup(documents: readonly StudioDocument[] = []): Promise<void> {
     service = {
-      list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)),
+      list: jest.fn().mockReturnValue(of({ ok: true, data: documents } satisfies SilentResult<StudioDocument[]>)),
       create: jest.fn(),
     };
     documentTemplates = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
@@ -65,6 +65,23 @@ describe('StudioListPage — create КП (TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH)', 
 
   afterEach(() => {
     TestBed.resetTestingModule();
+  });
+
+  it('keeps the landing on the documents list when drafts exist', async () => {
+    await setup([
+      {
+        _id: 'draft-1',
+        name: 'Сохранённый черновик',
+        status: 'draft',
+        orientation: 'portrait',
+        pageSize: 'A4',
+        updatedAt: '2026-09-06T10:00:00.000Z',
+      },
+    ]);
+
+    expect(fixture.nativeElement.querySelector('[data-test="studio-list"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="studio-row"]')).toBeTruthy();
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 
   it('creates a document with the КП doc type pre-selected and opens it', async () => {

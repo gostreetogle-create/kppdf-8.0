@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
@@ -7,7 +7,7 @@ import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
 import { findKpDocType } from './studio-kp-doc-type';
-import { pickResumeStudioDocument, rememberStudioDocument } from './studio-session';
+import { rememberStudioDocument } from './studio-session';
 import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogData } from './studio-template-picker-dialog.component';
 import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData, type StudioCreateDoctypeResult } from './studio-create-doctype-dialog.component';
 
@@ -61,7 +61,6 @@ export class StudioListPage implements OnInit {
   private readonly documentTemplates = inject(PiDocumentTemplatesService);
   private readonly docTypesApi = inject(PiDocTypesService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -87,14 +86,8 @@ export class StudioListPage implements OnInit {
       const rows = result.data;
       this.documents.set(rows);
 
-      const forceList = this.route.snapshot.queryParamMap.get('list') === '1';
-      const resume = !forceList ? pickResumeStudioDocument(rows) : null;
-      if (resume) {
-        rememberStudioDocument(resume._id);
-        void this.router.navigate(['/studio', resume._id]);
-        return;
-      }
-
+      // The module landing is always the documents list. Resume behavior is
+      // reserved for explicit editor/create flows, never the nav entry.
       this.status.set('success');
     });
   }

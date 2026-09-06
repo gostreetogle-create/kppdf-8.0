@@ -2,7 +2,7 @@ import type { StudioDocument } from '@kppdf/data-access';
 
 const LAST_DOC_KEY = 'kppdf:studio:last-doc-id';
 
-/** Persist last opened draft so «Документы» resumes editing instead of spawning new rows. */
+/** Persist the last explicit document flow; the `/studio` landing never consumes it. */
 export function rememberStudioDocument(id: string): void {
   try {
     localStorage.setItem(LAST_DOC_KEY, id);
@@ -19,6 +19,10 @@ export function readLastStudioDocumentId(): string | null {
   }
 }
 
+/**
+ * Choose a draft only for callers that explicitly enter an editor flow.
+ * The `/studio` landing list must not call this helper.
+ */
 export function pickResumeStudioDocument(
   documents: readonly StudioDocument[],
 ): StudioDocument | null {

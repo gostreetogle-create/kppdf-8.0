@@ -146,7 +146,7 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
     label: 'Документы',
     shortLabel: 'Докум.',
     icon: FileText,
-    entryPath: '/doc-constructor/templates',
+    entryPath: '/studio',
     items: [
       { path: '/doc-constructor/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
       { path: '/doc-constructor/texts', pageKey: 'doc-texts', label: 'Текстовые блоки' },

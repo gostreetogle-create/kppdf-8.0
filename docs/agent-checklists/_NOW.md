@@ -1,11 +1,11 @@
 ﻿# NOW
 
-updated_at: 2026-09-06T12:15:42+03:00
+updated_at: 2026-09-06T13:26:09+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** IDLE → B `TZ-OPS-LOCAL-DEMO-ORPHAN-CLEAN` DONE; next `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md` (не стартовать в этой сессии)
-- **Claude:** IDLE. `TZD-75-AI-TAB-SOON-AND-0.5.8` DONE (`tasks/_archive/2026-09/TZD-75-AI-TAB-SOON-AND-0.5.8.done.md`) — «Управление моделью» карточка удалена, честное «Чат на этом компьютере — скоро», v0.5.8 built+published+HEAD 200, gates PASS.
+- **Freebuff:** C1 `TZ-NX-DOCSTUDIO-C1-LANDING-LIST` DONE → C2 next; B DONE `6b1e9492`
+- **Claude:** IDLE (TZD-75 DONE; TZD-76 PARK)
 
 Доска потоков: [`STREAM-QUEUE.md`](./STREAM-QUEUE.md)
 
@@ -22,11 +22,12 @@ updated_at: 2026-09-06T12:15:42+03:00
 
 ## NEXT
 
-1. **Сейчас:** Claude → IDLE, ждёт следующий TZ (TZD-76 — PARK до PO acceptance)  
-2. Freebuff после B → `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md` (следующая сессия)
+1. **Сейчас:** Freebuff → C2 `tasks/_ready/doc-studio/TZ-NX-DOCSTUDIO-C2-THREE-SECTIONS.md` после C1 push; затем C3→C4 continuous
+2. Claude → IDLE (TZD-76 PARK)
 3. После C4 → `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S45-S46.md` (сначала S46)
 
 ## PARK
 
-- TZD-76 real local helper (NSIS + node-llama) — только после acceptance из `docs/peer/gemini-desktop-ai-runner-plan.md`
+- Harden cleanup tests (nice-to-have; не блокирует Chrome IA)
+- TZD-76 real local helper — только после acceptance из `docs/peer/gemini-desktop-ai-runner-plan.md`
 - WAVE-NX-CATALOG-PHOTOS · Orders inset · Cutover · `/desk` · G12 · WAVE-NX-SUPPLY-OPS
