@@ -120,6 +120,7 @@
     box-shadow: 0 1px 2px rgb(16 24 40 / 0.04);
     display: flex;
     flex-direction: column;
+    flex: 1;
     min-height: 0;
   }
 
@@ -186,7 +187,11 @@
   }
 
   .ai-chat-history {
-    max-height: 16rem;
+    /* TZD-77: заполняет всё свободное место в родительской «tall»-карточке
+       (audit evidence-desktop-ai/2026-09-06-chat-half-height.png), вместо
+       фиксированной высоты 16rem, оставлявшей пустоту снизу. */
+    flex: 1;
+    min-height: 8rem;
     overflow-y: auto;
     border: 1px solid #d9dee3;
     border-radius: 8px;
@@ -205,6 +210,7 @@
     display: flex;
     gap: 0.5rem;
     align-items: flex-end;
+    margin-top: auto;
   }
   .ai-chat-input-row textarea {
     flex: 1;

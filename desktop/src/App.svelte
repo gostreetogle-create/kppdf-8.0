@@ -785,6 +785,38 @@
   /** Файл из папки агента, открытый сейчас в студии (для финализации после отправки). */
   let activeInboxFile = $state('');
 
+  /**
+   * TZD-77: read-only снимок Inbox для контекста чата вкладки «ИИ» — имена,
+   * размер, дата изменения. НЕ читает содержимое файлов, НЕ пишет в API —
+   * только то, что уже показано пользователю на вкладке «Импорт».
+   */
+  let inboxChatSnapshot = $derived.by(() => {
+    if (!inboxDir) return 'Inbox агента ещё не инициализирован на этом ПК.';
+    if (inboxFiles.length === 0) {
+      return 'Inbox агента пуст. Подсказка пользователю: вкладка «Импорт» → «Открыть папку Inbox», положить туда Excel/CSV.';
+    }
+    const shown = inboxFiles.slice(0, 20);
+    const list = shown
+      .map(
+        (f) =>
+          `- ${f.name} (${formatBytes(f.size)}${f.modifiedAt ? `, изменён ${new Date(f.modifiedAt).toLocaleString('ru-RU')}` : ''})`,
+      )
+      .join('\n');
+    const rest =
+      inboxFiles.length > shown.length
+        ? `\n…и ещё ${inboxFiles.length - shown.length} файл(ов) — не показаны, чтобы не раздувать контекст.`
+        : '';
+    return `В Inbox агента (Desktop, вкладка «Импорт») сейчас ${inboxFiles.length} файл(ов):\n${list}${rest}`;
+  });
+
+  /** Базовый системный промпт + живой снимок Inbox — передаётся в ChatPanel вместо голого промпта. */
+  let desktopChatContextPrompt = $derived(
+    `${desktopChatSystemPrompt}\n\n---\nСнимок Inbox (собран Desktop локально, только для справки — НЕ отправлялся на сервер):\n${inboxChatSnapshot}\n\n` +
+      'Это единственные файлы, которые ты можешь «видеть» — не выдумывай другие файлы на компьютере пользователя. ' +
+      'Ты не можешь записать эти данные в базу из этого чата — только назвать файлы или предложить пользователю ' +
+      'открыть вкладку «Импорт» для разбора и подтверждения (HITL).',
+  );
+
   /** Инициализация: каталог + layout + первая выгрузка лога. */
   async function initInbox() {
     const cfg = await loadConfig();
@@ -2787,9 +2819,35 @@
       {/if}
     </article>
 
-    <article class="card" data-test="ai-chat-card">
+    <article class="card ai-chat-card--tall" data-test="ai-chat-card">
       <p class="card--chat__eyebrow">Локальный помощник</p>
       <h2>Чат</h2>
+
+      <div class="mcp-status" data-test="ai-inbox-status">
+        <span class="hint">
+          Inbox агента: {inboxFiles.length === 0 ? 'пусто' : `${inboxFiles.length} файл(ов)`}
+        </span>
+        <button
+          class="btn btn--small"
+          type="button"
+          data-test="ai-inbox-open"
+          onclick={openInboxFolder}
+          disabled={!inboxDir}
+          onmouseenter={() => showHint(HINTS.openInbox)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.openInbox)}
+          onblur={clearHint}
+        >
+          Открыть папку
+        </button>
+      </div>
+      {#if inboxDir}
+        <p class="hint" data-test="ai-inbox-path"><code>{inboxDir}</code></p>
+      {/if}
+      {#if inboxFiles.length === 0}
+        <p class="hint">Положите Excel во вкладке «Импорт» → «Открыть папку Inbox» — чат увидит имена файлов.</p>
+      {/if}
+
       {#if providerMode === 'local'}
         <!-- TZD-75: локальный движок (скачивание/старт/порт) ненадёжен на 0.5.7 —
              честно «скоро» вместо кнопок, которые вели к спаму ошибок (PO + audit). -->
@@ -2811,7 +2869,7 @@
           baseUrl={chatBaseUrl}
           apiKey={chatApiKey}
           modelName={chatModelName}
-          systemPrompt={desktopChatSystemPrompt}
+          systemPrompt={desktopChatContextPrompt}
           ready={chatReady}
           disabledReason={chatDisabledReason}
         />
@@ -3763,6 +3821,14 @@
 
   .cards--single {
     grid-template-columns: 1fr;
+  }
+
+  /* TZD-77: вкладка «ИИ» — MCP + API card стоят слева друг под другом
+     (auto rows), «Чат» справа должен занимать всю их суммарную высоту, а
+     не только первую строку (иначе под ним пустая ячейка грида — audit
+     evidence-desktop-ai/2026-09-06-chat-half-height.png). */
+  .ai-chat-card--tall {
+    grid-row: 1 / -1;
   }
 
   .card {
@@ -4892,6 +4958,10 @@
       grid-template-columns: 1fr;
       grid-template-rows: none;
       overflow: auto;
+    }
+
+    .ai-chat-card--tall {
+      grid-row: auto;
     }
 
     .shell {
