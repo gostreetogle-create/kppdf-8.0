@@ -2,12 +2,12 @@
 
 ARCHIVE_MARKER
 outcome: DONE
-closed_at: 2026-09-06T12:15:42+03:00
+closed_at: 2026-09-06T12:35:07+03:00
 closed_by: freebuff
 agent_id: freebuff
 workspace: `D:\\kppdf-8.0`
 implementation: `scripts/clean-local-demo-orphans.mjs`
-commit_sha: pending focused closeout commit
+commit_sha: 6b1e949210415a8c3bf85b45a85d60f444afddb7
 
 ## Outcome
 
@@ -49,4 +49,4 @@ Effective cleanup totals: `5` supply rows deleted, `6` movement rows deleted, `7
 
 ## Executor report (auto)
 
-TZ-OPS-LOCAL-DEMO-ORPHAN-CLEAN completed on local Docker Mongo. Counts and post-clean zero verification are recorded above and in `docs/agent-checklists/TZ-OPS-LOCAL-DEMO-ORPHAN-CLEAN.md`; the focused commit SHA is filled after commit.
+TZ-OPS-LOCAL-DEMO-ORPHAN-CLEAN completed on local Docker Mongo. Counts and post-clean zero verification are recorded above and in `docs/agent-checklists/TZ-OPS-LOCAL-DEMO-ORPHAN-CLEAN.md`; implementation commit: `6b1e949210415a8c3bf85b45a85d60f444afddb7`.

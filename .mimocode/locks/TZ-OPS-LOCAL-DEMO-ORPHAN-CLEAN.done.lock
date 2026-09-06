@@ -1,6 +1,6 @@
 task: TZ-OPS-LOCAL-DEMO-ORPHAN-CLEAN
 status: DONE
 agent_id: freebuff
-closed_at: 2026-09-06T12:15:42+03:00
+closed_at: 2026-09-06T12:35:07+03:00
 workspace: D:\\kppdf-8.0
-commit_sha: pending focused closeout commit
+commit_sha: 6b1e949210415a8c3bf85b45a85d60f444afddb7

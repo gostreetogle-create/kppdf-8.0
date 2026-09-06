@@ -8,7 +8,7 @@
 
 - agent_id: freebuff
 - claimed_at: 2026-09-06T11:27:46+03:00
-- closed_at: 2026-09-06T12:15:42+03:00
+- closed_at: 2026-09-06T12:35:07+03:00
 - workspace: D:\\kppdf-8.0
 - team_room_claim: unavailable (no Team Room CLI exposed in this executor)
 - mongo_target: `mongodb://localhost:27017/kppdf` from `.env` and `backend/.env` (local-only PASS)
@@ -53,7 +53,7 @@
 - [x] data-level screen smoke: orders and demo collections remain populated; no 404-producing orphan relation remains in the cleanup scope
 - [x] visual Chrome/DocStudio smoke: **not run by explicit closeout scope**; Chrome IA / DocStudio was not started
 - [x] `node --check scripts/clean-local-demo-orphans.mjs` and `git diff --check`: PASS
-- [ ] commit: filled in after the focused closeout commit
+- [x] commit: implementation `6b1e949210415a8c3bf85b45a85d60f444afddb7`; metadata closeout recorded in the follow-up docs commit
 
 ### Post-clean collection sanity
 
@@ -75,4 +75,4 @@ Direct local DB count after apply: `orders=132`, `supplyrequests=127`, `supplyta
 - **Applied:** `supply_deleted=5`, `movements_deleted=6`, `studio_refs_fixed=7`
 - **Counts after:** `supply=0`, `movements=0`, `studio_image_refs=0`
 - **Implementation:** `scripts/clean-local-demo-orphans.mjs` (dry-run default; `--apply` guarded by local Mongo URI allowlist)
-- **Commit:** pending focused closeout SHA
+- **Commit:** implementation `6b1e949210415a8c3bf85b45a85d60f444afddb7`
