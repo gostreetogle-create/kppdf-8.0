@@ -3,7 +3,7 @@
 > Режим PO 2026-09-06: скрин + слова → Cursor кладёт TZ в поток → отчёт агента → Cursor сразу следующий промпт в чат.  
 > Живой статус слотов: [`_NOW.md`](./_NOW.md). Этот файл — **очередь волн**, не claim.
 
-updated_at: 2026-09-06T10:45:00+03:00
+updated_at: 2026-09-06T11:00:00+03:00
 
 ## Правила
 
@@ -29,11 +29,12 @@ updated_at: 2026-09-06T10:45:00+03:00
 | Порядок | WAVE / TZ | PROMPT | Статус |
 |---------|-----------|--------|--------|
 | 1 | Desktop installer v0.5.7 | `PROMPT-CLAUDE-DESKTOP-INSTALLER-LOCAL.md` | **DONE** — archived `tasks/_archive/2026-09/TZ-OPS-DESKTOP-INSTALLER-LOCAL.done.md` |
-| 2 | TZD-74 AI tab honesty | `tasks/PROMPT-CLAUDE-DESKTOP-AI-TAB-HONESTY.md` | CLAIMED / IN PROGRESS |
+| 2 | TZD-74 AI tab honesty | `tasks/PROMPT-CLAUDE-DESKTOP-AI-TAB-HONESTY.md` | **DONE** — archived `tasks/_archive/2026-09/TZD-74-AI-TAB-HONESTY.done.md`, gates PASS, PO visual smoke on next launch |
 
 ---
 
 ## Inbox
 
 - Gemini peer: `docs/agents/GEMINI-BROWSER-NOTEBOOK.md`
-- Desktop «ИИ» → занесено в Claude #2 (не удалять вкладку)
+- Desktop «ИИ» → Claude #2 TZD-74
+- **Снабжение Google→NX:** аудит `docs/audits/2026-09-06-supply-google-sheets-to-nx-audit.md` · WAVE `WAVE-NX-SUPPLY-OPS` — **PARK** до ответов PO + свободного Freebuff после DocStudio

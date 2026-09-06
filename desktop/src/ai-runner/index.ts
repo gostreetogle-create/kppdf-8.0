@@ -334,7 +334,7 @@ const server = http.createServer(async (req, res) => {
     }
     json(res, 404, { error: 'Не найдено' });
   } catch (err) {
-    json(res, 500, { error: err instanceof Error ? err.message : 'Внутренняя ошибка раннера' });
+    json(res, 500, { error: err instanceof Error ? err.message : 'Внутренняя ошибка локального помощника' });
   }
 });
 

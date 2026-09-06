@@ -14,14 +14,14 @@ export function describeChatError(err: unknown): string {
     if (err.status === 429) return 'Лимит запросов исчерпан (429) — попробуйте позже.';
     return `Сервер ответил ${err.status} — проверьте URL и id модели.`;
   }
-  return 'Нет связи с моделью — раннер мог ещё не подняться или сменить порт. Нажмите «Перезапустить» и попробуйте снова.';
+  return 'Нет связи с моделью — локальный помощник мог ещё не подняться или сменить порт. Нажмите «Перезапустить» и попробуйте снова.';
 }
 
 /** Raw browser fetch to the local runner's own endpoints (download/health) failed to connect at all. */
 export function describeRunnerFetchError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
   if (/failed to fetch|networkerror|load failed|econnrefused/i.test(message)) {
-    return 'Не удалось связаться с локальным AI-раннером — он мог ещё не подняться или сменить порт. Нажмите «Перезапустить» и попробуйте снова.';
+    return 'Не удалось связаться с локальным помощником — он мог ещё не подняться или сменить порт. Нажмите «Перезапустить» и попробуйте снова.';
   }
   return message;
 }

@@ -173,12 +173,18 @@
   /** TZD-62: чат по локальному раннеру жив, только когда раннер работает и модель в памяти. */
   let localChatReady = $derived(aiState.status === 'running' && aiState.modelLoaded && !!aiState.port);
   let localChatDisabledReason = $derived.by(() => {
-    if (aiState.status === 'starting') return 'Раннер запускается — подождите…';
-    if (aiState.status === 'stopping') return 'Раннер останавливается — подождите…';
-    if (aiState.status !== 'running') return 'Раннер не запущен. Нажмите «Открыть чат».';
+    if (aiState.status === 'starting') return 'Локальный помощник запускается — подождите…';
+    if (aiState.status === 'stopping') return 'Локальный помощник останавливается — подождите…';
+    if (aiState.status !== 'running') return 'Локальный чат пока недоступен.';
     if (!aiState.modelLoaded) return 'Модель ещё не загружена в память.';
     return '';
   });
+  /**
+   * TZD-74: единая точка правды для «плохих новостей» локального помощника —
+   * раньше `aiState.lastError` / `aiState.modelError` / `aiMessage` рисовались
+   * в трёх разных местах карточки одновременно (audit: «тройной дубль»).
+   */
+  let localHelperAlert = $derived(aiState.modelError || (aiState.status === 'error' ? aiState.lastError : '') || '');
   let apiChatDisabledReason = $derived.by(() => {
     if (!providerApiUrl.trim() || !providerApiModel.trim()) {
       return 'Заполните URL и id модели в карточке «Модель по API», затем нажмите «Проверить».';
@@ -259,12 +265,12 @@
       'Скачает тот же файл, но лист «Данные» уже заполнен текущими строками из справочника сервера. Правьте нужные ячейки и загружайте обратно — форма распознается сама. Нужно подключение (аккаунт).',
     startAi:
       'Запустит встроенный движок llama.cpp. Если модель уже скачана — она загрузится в память.',
-    stopAi: 'Остановит встроенный AI-раннер. Скачанная модель останется на диске.',
-    downloadModel: 'Скачает выбранную модель (~2 ГБ) в папку приложения один раз. Нужен запущенный раннер.',
+    stopAi: 'Остановит локального помощника. Скачанная модель останется на диске.',
+    downloadModel: 'Скачает выбранную модель (~2 ГБ) в папку приложения один раз. Нужен запущенный локальный помощник.',
     openModelFolder:
       'Откроет папку с моделями. Сюда кладётся файл .gguf (~2 ГБ): можно скачать кнопкой или положить вручную с тем же именем, что в списке.',
     openChat:
-      'Если файл выбранной модели уже на диске — запустит раннер (если нужно) и откроет чат. Если файла нет — подскажет скачать или открыть папку моделей.',
+      'Если файл выбранной модели уже на диске — запустит локального помощника (если нужно) и откроет чат. Если файла нет — подскажет скачать или открыть папку моделей.',
   } as const;
 
   const MCP_STATUS_LABEL: Record<McpHostStatus, string> = {
@@ -433,7 +439,7 @@
       if (aiState.status !== 'running') {
         await aiRunner.start({ modelDir: aiModelDir });
         if (aiRunner.getState().status !== 'running') {
-          aiMessage = aiState.lastError || 'Не удалось запустить AI-раннер для скачивания.';
+          aiMessage = aiState.lastError || 'Не удалось запустить локального помощника для скачивания.';
           return;
         }
       }
@@ -529,7 +535,7 @@
         { model, messages: [{ role: 'user', content: 'ping' }], temperature: 0 },
       );
       providerReady = true;
-      providerCheckMessage = 'Готово — можно писать в чат выше, локальный раннер не нужен.';
+      providerCheckMessage = 'Готово — можно писать в чат выше, локальный помощник не нужен.';
       const cfg = await loadConfig();
       await saveConfig({ ...cfg, aiProvider: { type: 'remote', baseUrl: url, apiKey: key, model } });
     } catch (err) {
@@ -645,7 +651,7 @@
         }
       }
       if (aiRunner.getState().status !== 'running') {
-        aiMessage = aiState.lastError || 'Не удалось запустить AI-раннер.';
+        aiMessage = aiState.lastError || 'Не удалось запустить локального помощника.';
         return;
       }
       const loaded = await waitForModelLoaded(60_000);
@@ -665,7 +671,7 @@
     rows: RawRow[],
   ): Promise<Record<ImportTargetKey, MappingResult>> {
     const port = aiState.port;
-    if (!port) throw new Error('AI-раннер не готов: нет порта.');
+    if (!port) throw new Error('Локальный помощник не готов: нет порта.');
     const out = {} as Record<ImportTargetKey, MappingResult>;
     for (const block of importBlocks) {
       const { system, user } = buildMappingPrompt(headers, block.targetKey);
@@ -2616,356 +2622,11 @@
       Импорт и Excel-формы работают без модели и без MCP.
     </div>
 
-    <article class="card card--chat" data-test="ai-chat-card">
-      <p class="card--chat__eyebrow">Начните здесь</p>
-      <h2>Чат</h2>
-      {#if providerMode === 'local'}
-        <p class="hint">
-          Нажмите «Открыть чат» — если модель уже на диске, она загрузится в память и можно сразу писать.
-          Внешние AI-клиенты (Cursor, LM Studio) — отдельный контур: блок «MCP для агентов» ниже на этой же вкладке.
-        </p>
-        <button
-          class="btn btn--primary"
-          type="button"
-          data-test="ai-open-chat"
-          onclick={openChat}
-          disabled={aiBusy}
-          onmouseenter={() => showHint(HINTS.openChat)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.openChat)}
-          onblur={clearHint}
-        >
-          {aiBusy ? 'Открываем…' : 'Открыть чат'}
-        </button>
-        {#if aiMessage}
-          <p class="hint" role="status" data-test="ai-open-chat-message">{aiMessage}</p>
-        {/if}
-      {:else}
-        <p class="hint" data-test="ai-api-privacy">
-          Режим «По API»: сообщения чата уходят на сервер внешнего провайдера (не на этот ПК и не на kppdf).
-          Бесплатный слот может обрываться. Не вставляйте ФИО, ИНН и другие данные клиентов — настройте
-          ключ и проверьте связь в карточке «Модель по API» ниже.
-        </p>
-        {#if providerCheckMessage}
-          <p class="hint" role="status">{providerCheckMessage}</p>
-        {/if}
-      {/if}
-      <ChatPanel
-        baseUrl={chatBaseUrl}
-        apiKey={chatApiKey}
-        modelName={chatModelName}
-        systemPrompt={desktopChatSystemPrompt}
-        ready={chatReady}
-        disabledReason={chatDisabledReason}
-      />
-    </article>
-
-    <article class="card">
-      <h2>Локальная модель</h2>
-      <p class="hint">
-        Модель скачивается один раз (~2 ГБ) в папку приложения и работает офлайн — ничего больше ставить
-        не нужно. Подбор колонок работает и без модели (детерминированный классификатор), модель помогает
-        с нестандартными заголовками. Характеристики ПК определяются автоматически — рекомендация ниже.
-      </p>
-
-      <div class="mcp-status">
-        <span class="mcp-badge mcp-badge--{aiState.status}" aria-live="polite">
-          {AI_STATUS_LABEL[aiState.status]}
-        </span>
-        {#if aiState.modelLoaded && aiState.modelName}
-          <span class="mcp-badge mcp-badge--running">модель загружена: {aiState.modelName}</span>
-        {/if}
-      </div>
-
-      {#if aiState.lastError}
-        <p class="errors" role="alert">{aiState.lastError}</p>
-      {/if}
-      {#if aiMessage}
-        <p class="hint" role="status">{aiMessage}</p>
-      {/if}
-      {#if aiState.modelError}
-        <p class="errors" role="alert">{aiState.modelError}</p>
-      {/if}
-      {#if aiState.download.active}
-        <progress
-          class="ai-download-bar"
-          data-test="ai-download-progress"
-          value={aiState.download.total > 0 ? aiState.download.received : undefined}
-          max={aiState.download.total > 0 ? aiState.download.total : undefined}
-        ></progress>
-      {/if}
-      {#if formatDownload(aiState.download)}
-        <p class="hint" role="status">{formatDownload(aiState.download)}</p>
-      {/if}
-
-      {#if aiState.specs}
-        <p class="hint">
-          Ваш ПК: ОЗУ {formatRamGb(aiState.specs.totalMemoryGb)} · свободно
-          {formatRamGb(aiState.specs.freeMemoryGb)} · ядер CPU: {aiState.specs.cpus}
-          {#if selectedModelId && modelById(selectedModelId)}
-            → рекомендация: <strong>{modelById(selectedModelId)!.name}</strong>
-          {/if}
-        </p>
-      {/if}
-
-      <label class="field">
-        <span>Модель из каталога (для «Скачать»)</span>
-        <select class="input" bind:value={selectedModelId} aria-label="Выбор модели">
-          {#each LOCAL_MODELS as model (model.id)}
-            <option value={model.id}>
-              {model.name} — {formatBytes(model.sizeBytes)}
-            </option>
-          {/each}
-        </select>
-      </label>
-
-      <div class="mcp-status">
-        <span class="hint">Файлы .gguf в папке моделей: {diskModels.length}</span>
-        <button
-          class="btn btn--small"
-          type="button"
-          data-test="ai-rescan-models"
-          onclick={rescanModels}
-          disabled={aiBusy}
-        >
-          Обновить список
-        </button>
-      </div>
-      {#if diskModels.length > 0}
-        <label class="field">
-          <span>Файл на диске (любое имя — с флешки тоже)</span>
-          <select
-            class="input"
-            bind:value={selectedDiskFileName}
-            aria-label="Выбор файла модели с диска"
-            data-test="ai-disk-model-select"
-          >
-            <option value="">— взять из каталога выше —</option>
-            {#each diskModels as diskModel (diskModel.fileName)}
-              <option value={diskModel.fileName}>{diskModel.fileName} — {formatBytes(diskModel.sizeBytes)}</option>
-            {/each}
-          </select>
-        </label>
-      {/if}
-      {#if diskModelsRejected.length > 0}
-        <p class="hint" data-test="ai-disk-models-rejected">
-          Пропущено (не похоже на модель):
-          {#each diskModelsRejected as rej, i (rej.fileName)}{i > 0 ? '; ' : ' '}{rej.fileName} — {rej.reason}{/each}
-        </p>
-      {/if}
-
-      <div class="mcp-actions">
-        {#if aiState.status === 'running' || aiState.status === 'starting'}
-          <button
-            class="btn"
-            type="button"
-            onclick={stopAi}
-            disabled={aiState.status === 'starting'}
-            onmouseenter={() => showHint(HINTS.stopAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.stopAi)}
-            onblur={clearHint}
-          >
-            Остановить
-          </button>
-        {/if}
-        {#if aiState.status === 'stopped' || aiState.status === 'error'}
-          <button
-            class="btn btn--primary"
-            type="button"
-            onclick={startAi}
-            disabled={aiBusy}
-            onmouseenter={() => showHint(HINTS.startAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.startAi)}
-            onblur={clearHint}
-          >
-            Запустить раннер
-          </button>
-        {/if}
-        {#if aiState.status === 'running'}
-          <button
-            class="btn"
-            type="button"
-            onclick={startAi}
-            disabled={aiBusy}
-            onmouseenter={() => showHint(HINTS.startAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.startAi)}
-            onblur={clearHint}
-          >
-            Перезапустить
-          </button>
-        {/if}
-        <button
-          class="btn btn--small"
-          type="button"
-          onclick={downloadSelectedModel}
-          disabled={aiState.download.active || aiBusy}
-          onmouseenter={() => showHint(HINTS.downloadModel)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.downloadModel)}
-          onblur={clearHint}
-        >
-          {aiState.download.active ? 'Скачивается…' : 'Скачать модель'}
-        </button>
-        <button
-          class="btn btn--small"
-          type="button"
-          onclick={openModelFolder}
-          onmouseenter={() => showHint(HINTS.openModelFolder)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.openModelFolder)}
-          onblur={clearHint}
-        >
-          Открыть папку моделей
-        </button>
-      </div>
-      <p class="hint">
-        Можно скачать кнопкой «Скачать модель» (раннер поднимется сам, если ещё не запущен) или
-        скопировать `.gguf` с флешки в папку моделей и нажать «Обновить список» — обязательного порядка
-        «Запустить → Скачать → Перезапустить» больше нет: «Открыть чат» выше делает всё сама.
-      </p>
-    </article>
-
-    <article class="card" data-test="ai-api-card">
-      <h2>Модель по API</h2>
-      <p class="hint">
-        OpenAI-совместимый шлюз (например TokenRouter) — проверить чат без скачивания GGUF.
-        Ключ этого API — не ключ подключения к сайту kppdf (тот вводится на вкладке «Подключение»).
-      </p>
-
-      <div class="mcp-actions">
-        <button
-          class="btn{providerMode === 'local' ? ' btn--primary' : ''}"
-          type="button"
-          data-test="ai-api-mode-local"
-          onclick={() => setProviderMode('local')}
-        >
-          На этом компьютере
-        </button>
-        <button
-          class="btn{providerMode === 'api' ? ' btn--primary' : ''}"
-          type="button"
-          data-test="ai-api-mode-api"
-          onclick={() => setProviderMode('api')}
-        >
-          По API
-        </button>
-      </div>
-
-      {#if providerMode === 'api'}
-        <div class="mcp-actions">
-          {#each API_PRESETS as preset (preset.id)}
-            <button
-              class="btn btn--small"
-              type="button"
-              data-test="ai-api-preset-{preset.id}"
-              onclick={() => applyApiPreset(preset.id)}
-              onmouseenter={() => showHint(preset.keyHint)}
-              onmouseleave={clearHint}
-              onfocus={() => showHint(preset.keyHint)}
-              onblur={clearHint}
-            >
-              {preset.label}
-            </button>
-          {/each}
-        </div>
-
-        <label class="field">
-          <span>URL (base_url)</span>
-          <input
-            class="input"
-            type="text"
-            data-test="ai-api-url"
-            bind:value={providerApiUrl}
-            oninput={markProviderUnchecked}
-            placeholder="https://api.tokenrouter.com/v1"
-            autocomplete="off"
-            spellcheck="false"
-          />
-        </label>
-        <label class="field">
-          <span>Ключ API</span>
-          <input
-            class="input"
-            type="password"
-            data-test="ai-api-key"
-            bind:value={providerApiKey}
-            oninput={markProviderUnchecked}
-            placeholder="sk-…"
-            autocomplete="off"
-          />
-        </label>
-        <label class="field">
-          <span>Id модели</span>
-          <input
-            class="input"
-            type="text"
-            data-test="ai-api-model"
-            bind:value={providerApiModel}
-            oninput={markProviderUnchecked}
-            placeholder="qwen/qwen3.8-max-free"
-            autocomplete="off"
-            spellcheck="false"
-          />
-        </label>
-
-        <div class="mcp-actions">
-          <button
-            class="btn btn--primary"
-            type="button"
-            data-test="ai-api-check"
-            onclick={checkApiProvider}
-            disabled={aiBusy}
-          >
-            {aiBusy ? 'Проверяем…' : 'Проверить'}
-          </button>
-          {#if providerReady}
-            <span class="mcp-badge mcp-badge--running">готово</span>
-          {/if}
-        </div>
-        {#if providerCheckMessage}
-          <p
-            class={providerCheckError ? 'errors' : 'hint'}
-            role={providerCheckError ? 'alert' : 'status'}
-            data-test="ai-api-check-message"
-          >
-            {providerCheckMessage}
-          </p>
-        {/if}
-
-        <details class="mcp-advanced">
-          <summary>Вставить пример подключения с сайта провайдера</summary>
-          <label class="field">
-            <span>Пример (Python / JSON / curl)</span>
-            <textarea
-              class="input"
-              data-test="ai-api-snippet-input"
-              bind:value={providerSnippetText}
-              rows="4"
-              placeholder={'client = OpenAI(base_url="…", api_key="…")\nmodel="…"'}
-            ></textarea>
-          </label>
-          <button
-            class="btn btn--small"
-            type="button"
-            data-test="ai-api-snippet-parse"
-            onclick={parseAndApplySnippet}
-            disabled={!providerSnippetText.trim()}
-          >
-            Разобрать
-          </button>
-          {#if providerSnippetMessage}
-            <p class="hint" role="status" data-test="ai-api-snippet-message">{providerSnippetMessage}</p>
-          {/if}
-        </details>
-      {/if}
-    </article>
-
-    <article class="card">
-      <h2>MCP для агентов</h2>
-      <p class="hint">Нужен Cursor или LM Studio. Для обычного импорта Excel не обязателен.</p>
+    <!-- TZD-74: MCP — главное и уже рабочее — идёт первым, до локального помощника (honesty audit 2026-09-06). -->
+    <article class="card card--chat" data-test="ai-mcp-card">
+      <p class="card--chat__eyebrow">Для Cursor / Claude</p>
+      <h2>Подключение агентов (MCP)</h2>
+      <p class="hint">Мост к данным kppdf для Cursor и LM Studio. Для обычного импорта Excel не обязателен.</p>
 
       {#if !connected}
         <p>MCP не запущен: сначала подключите аккаунт (вкладка «Подключение»).</p>
@@ -3124,6 +2785,350 @@
           </div>
         </details>
       {/if}
+    </article>
+
+    <article class="card" data-test="ai-chat-card">
+      <p class="card--chat__eyebrow">Локальный помощник</p>
+      <h2>Чат</h2>
+      {#if providerMode === 'local'}
+        <p class="hint">
+          Нажмите «Открыть чат» — если модель уже на диске, она загрузится в память и можно сразу писать.
+          Внешние AI-клиенты (Cursor, LM Studio) — отдельный контур: карточка «Подключение агентов (MCP)» выше.
+        </p>
+        <button
+          class="btn btn--primary"
+          type="button"
+          data-test="ai-open-chat"
+          onclick={openChat}
+          disabled={aiBusy}
+          onmouseenter={() => showHint(HINTS.openChat)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.openChat)}
+          onblur={clearHint}
+        >
+          {aiBusy ? 'Открываем…' : 'Открыть чат'}
+        </button>
+        {#if localHelperAlert}
+          <p class="errors" role="alert" data-test="ai-open-chat-message">{localHelperAlert}</p>
+        {:else if aiMessage}
+          <p class="hint" role="status" data-test="ai-open-chat-message">{aiMessage}</p>
+        {/if}
+      {:else}
+        <p class="hint" data-test="ai-api-privacy">
+          Режим «По API»: сообщения чата уходят на сервер внешнего провайдера (не на этот ПК и не на kppdf).
+          Бесплатный слот может обрываться. Не вставляйте ФИО, ИНН и другие данные клиентов — настройте
+          ключ и проверьте связь в карточке «Модель по API» ниже.
+        </p>
+        {#if providerCheckMessage}
+          <p class="hint" role="status">{providerCheckMessage}</p>
+        {/if}
+      {/if}
+      <ChatPanel
+        baseUrl={chatBaseUrl}
+        apiKey={chatApiKey}
+        modelName={chatModelName}
+        systemPrompt={desktopChatSystemPrompt}
+        ready={chatReady}
+        disabledReason={chatDisabledReason}
+      />
+    </article>
+
+    <article class="card">
+      <h2>Управление моделью</h2>
+      <p class="hint">
+        Модель скачивается один раз (~2 ГБ) и работает офлайн. Подбор колонок при импорте работает и без
+        неё — модель нужна только для чата и подсказок по нестандартным заголовкам.
+      </p>
+
+      <div class="mcp-status">
+        <span class="mcp-badge mcp-badge--{aiState.status}" aria-live="polite">
+          {AI_STATUS_LABEL[aiState.status]}
+        </span>
+        {#if aiState.modelLoaded && aiState.modelName}
+          <span class="mcp-badge mcp-badge--running">модель загружена: {aiState.modelName}</span>
+        {/if}
+      </div>
+
+      {#if aiState.download.active}
+        <progress
+          class="ai-download-bar"
+          data-test="ai-download-progress"
+          value={aiState.download.total > 0 ? aiState.download.received : undefined}
+          max={aiState.download.total > 0 ? aiState.download.total : undefined}
+        ></progress>
+      {/if}
+      {#if formatDownload(aiState.download)}
+        <p class="hint" role="status">{formatDownload(aiState.download)}</p>
+      {/if}
+
+      <div class="mcp-actions">
+        {#if aiState.status === 'running' || aiState.status === 'starting'}
+          <button
+            class="btn"
+            type="button"
+            onclick={stopAi}
+            disabled={aiState.status === 'starting'}
+            onmouseenter={() => showHint(HINTS.stopAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.stopAi)}
+            onblur={clearHint}
+          >
+            Остановить
+          </button>
+        {/if}
+        {#if aiState.status === 'stopped' || aiState.status === 'error'}
+          <button
+            class="btn btn--primary"
+            type="button"
+            onclick={startAi}
+            disabled={aiBusy}
+            onmouseenter={() => showHint(HINTS.startAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.startAi)}
+            onblur={clearHint}
+          >
+            Запустить
+          </button>
+        {/if}
+        {#if aiState.status === 'running'}
+          <button
+            class="btn"
+            type="button"
+            onclick={startAi}
+            disabled={aiBusy}
+            onmouseenter={() => showHint(HINTS.startAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.startAi)}
+            onblur={clearHint}
+          >
+            Перезапустить
+          </button>
+        {/if}
+        <button
+          class="btn btn--small"
+          type="button"
+          onclick={downloadSelectedModel}
+          disabled={aiState.download.active || aiBusy}
+          onmouseenter={() => showHint(HINTS.downloadModel)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.downloadModel)}
+          onblur={clearHint}
+        >
+          {aiState.download.active ? 'Скачивается…' : 'Скачать модель'}
+        </button>
+        <button
+          class="btn btn--small"
+          type="button"
+          onclick={openModelFolder}
+          onmouseenter={() => showHint(HINTS.openModelFolder)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.openModelFolder)}
+          onblur={clearHint}
+        >
+          Открыть папку моделей
+        </button>
+      </div>
+
+      <details class="mcp-advanced">
+        <summary>Подробнее (модель, ПК, файлы на диске)</summary>
+        {#if aiState.specs}
+          <p class="hint">
+            Ваш ПК: ОЗУ {formatRamGb(aiState.specs.totalMemoryGb)} · свободно
+            {formatRamGb(aiState.specs.freeMemoryGb)} · ядер CPU: {aiState.specs.cpus}
+            {#if selectedModelId && modelById(selectedModelId)}
+              → рекомендация: <strong>{modelById(selectedModelId)!.name}</strong>
+            {/if}
+          </p>
+        {/if}
+
+        <label class="field">
+          <span>Модель из каталога (для «Скачать»)</span>
+          <select class="input" bind:value={selectedModelId} aria-label="Выбор модели">
+            {#each LOCAL_MODELS as model (model.id)}
+              <option value={model.id}>
+                {model.name} — {formatBytes(model.sizeBytes)}
+              </option>
+            {/each}
+          </select>
+        </label>
+
+        <div class="mcp-status">
+          <span class="hint">Файлы .gguf в папке моделей: {diskModels.length}</span>
+          <button
+            class="btn btn--small"
+            type="button"
+            data-test="ai-rescan-models"
+            onclick={rescanModels}
+            disabled={aiBusy}
+          >
+            Обновить список
+          </button>
+        </div>
+        {#if diskModels.length > 0}
+          <label class="field">
+            <span>Файл на диске (любое имя — с флешки тоже)</span>
+            <select
+              class="input"
+              bind:value={selectedDiskFileName}
+              aria-label="Выбор файла модели с диска"
+              data-test="ai-disk-model-select"
+            >
+              <option value="">— взять из каталога выше —</option>
+              {#each diskModels as diskModel (diskModel.fileName)}
+                <option value={diskModel.fileName}>{diskModel.fileName} — {formatBytes(diskModel.sizeBytes)}</option>
+              {/each}
+            </select>
+          </label>
+        {/if}
+        {#if diskModelsRejected.length > 0}
+          <p class="hint" data-test="ai-disk-models-rejected">
+            Пропущено (не похоже на модель):
+            {#each diskModelsRejected as rej, i (rej.fileName)}{i > 0 ? '; ' : ' '}{rej.fileName} — {rej.reason}{/each}
+          </p>
+        {/if}
+        <p class="hint">
+          Можно скачать кнопкой «Скачать модель» (помощник поднимется сам, если ещё не запущен) или
+          скопировать `.gguf` с флешки в папку моделей и нажать «Обновить список» — обязательного порядка
+          «Запустить → Скачать → Перезапустить» больше нет: «Открыть чат» выше делает всё сама.
+        </p>
+      </details>
+    </article>
+
+    <article class="card" data-test="ai-api-card">
+      <details class="mcp-advanced" open={providerMode === 'api'}>
+        <summary>Подключить облачную модель (по API)</summary>
+      <p class="hint">
+        OpenAI-совместимый шлюз (например TokenRouter) — проверить чат без скачивания GGUF.
+        Ключ этого API — не ключ подключения к сайту kppdf (тот вводится на вкладке «Подключение»).
+      </p>
+
+      <div class="mcp-actions">
+        <button
+          class="btn{providerMode === 'local' ? ' btn--primary' : ''}"
+          type="button"
+          data-test="ai-api-mode-local"
+          onclick={() => setProviderMode('local')}
+        >
+          На этом компьютере
+        </button>
+        <button
+          class="btn{providerMode === 'api' ? ' btn--primary' : ''}"
+          type="button"
+          data-test="ai-api-mode-api"
+          onclick={() => setProviderMode('api')}
+        >
+          По API
+        </button>
+      </div>
+
+      {#if providerMode === 'api'}
+        <div class="mcp-actions">
+          {#each API_PRESETS as preset (preset.id)}
+            <button
+              class="btn btn--small"
+              type="button"
+              data-test="ai-api-preset-{preset.id}"
+              onclick={() => applyApiPreset(preset.id)}
+              onmouseenter={() => showHint(preset.keyHint)}
+              onmouseleave={clearHint}
+              onfocus={() => showHint(preset.keyHint)}
+              onblur={clearHint}
+            >
+              {preset.label}
+            </button>
+          {/each}
+        </div>
+
+        <label class="field">
+          <span>URL (base_url)</span>
+          <input
+            class="input"
+            type="text"
+            data-test="ai-api-url"
+            bind:value={providerApiUrl}
+            oninput={markProviderUnchecked}
+            placeholder="https://api.tokenrouter.com/v1"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </label>
+        <label class="field">
+          <span>Ключ API</span>
+          <input
+            class="input"
+            type="password"
+            data-test="ai-api-key"
+            bind:value={providerApiKey}
+            oninput={markProviderUnchecked}
+            placeholder="sk-…"
+            autocomplete="off"
+          />
+        </label>
+        <label class="field">
+          <span>Id модели</span>
+          <input
+            class="input"
+            type="text"
+            data-test="ai-api-model"
+            bind:value={providerApiModel}
+            oninput={markProviderUnchecked}
+            placeholder="qwen/qwen3.8-max-free"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </label>
+
+        <div class="mcp-actions">
+          <button
+            class="btn btn--primary"
+            type="button"
+            data-test="ai-api-check"
+            onclick={checkApiProvider}
+            disabled={aiBusy}
+          >
+            {aiBusy ? 'Проверяем…' : 'Проверить'}
+          </button>
+          {#if providerReady}
+            <span class="mcp-badge mcp-badge--running">готово</span>
+          {/if}
+        </div>
+        {#if providerCheckMessage}
+          <p
+            class={providerCheckError ? 'errors' : 'hint'}
+            role={providerCheckError ? 'alert' : 'status'}
+            data-test="ai-api-check-message"
+          >
+            {providerCheckMessage}
+          </p>
+        {/if}
+
+        <details class="mcp-advanced">
+          <summary>Вставить пример подключения с сайта провайдера</summary>
+          <label class="field">
+            <span>Пример (Python / JSON / curl)</span>
+            <textarea
+              class="input"
+              data-test="ai-api-snippet-input"
+              bind:value={providerSnippetText}
+              rows="4"
+              placeholder={'client = OpenAI(base_url="…", api_key="…")\nmodel="…"'}
+            ></textarea>
+          </label>
+          <button
+            class="btn btn--small"
+            type="button"
+            data-test="ai-api-snippet-parse"
+            onclick={parseAndApplySnippet}
+            disabled={!providerSnippetText.trim()}
+          >
+            Разобрать
+          </button>
+          {#if providerSnippetMessage}
+            <p class="hint" role="status" data-test="ai-api-snippet-message">{providerSnippetMessage}</p>
+          {/if}
+        </details>
+      {/if}
+      </details>
     </article>
 
     {:else}

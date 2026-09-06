@@ -132,7 +132,7 @@ export type AiLaunchPlan =
   | { kind: 'bundled'; cwd: string; entry: string };
 
 export const BUNDLED_RUNNER_MISSING =
-  'AI-раннер не найден в этом билде. Обновите Desktop (0.5.6+) или задайте KPPDF_AI_RUNNER_DIR.';
+  'Локальный помощник не найден в этом билде. Обновите Desktop (0.5.6+) или задайте KPPDF_AI_RUNNER_DIR.';
 
 export function nodeArgsForPlan(plan: AiLaunchPlan, extra: string[] = []): string[] {
   if (plan.kind === 'dev') return [plan.tsxCli, plan.entry, ...extra];
@@ -404,7 +404,7 @@ export class AiRunnerController {
         this.setState({
           status: 'error',
           lastError:
-            `AI-раннер не поднялся за ${Math.round(HEALTHZ_WAIT_MS / 1000)} с. ` +
+            `Локальный помощник не поднялся за ${Math.round(HEALTHZ_WAIT_MS / 1000)} с. ` +
             (tail ? `Лог: ${tail}` : 'Проверьте Node.js в «C:\\Program Files\\nodejs».'),
         });
       }
@@ -445,7 +445,7 @@ export class AiRunnerController {
   async downloadModel(model: LocalModelEntry): Promise<boolean> {
     const port = this.state.port;
     if (this.state.status !== 'running' || !port) {
-      this.setState({ lastError: 'Сначала запустите AI-раннер.' });
+      this.setState({ lastError: 'Сначала запустите локального помощника.' });
       return false;
     }
     this.setState({ download: { active: true, fileName: model.fileName, received: 0, total: model.sizeBytes } });
@@ -497,7 +497,7 @@ export class AiRunnerController {
       } catch {
         this.setState({
           status: 'error',
-          lastError: 'Раннер перестал отвечать на этом порту. Нажмите «Перезапустить».',
+          lastError: 'Локальный помощник перестал отвечать на этом порту. Нажмите «Перезапустить».',
         });
       }
       return false;
@@ -567,18 +567,18 @@ export class AiRunnerController {
       return BUNDLED_RUNNER_MISSING;
     }
     if (lower.includes('not found') || lower.includes('notfound')) {
-      return 'AI-раннер не запущен: не найден Node.js (нужен установленный Node для десктопа).';
+      return 'Локальный помощник не запущен: не найден Node.js (нужен установленный Node для десктопа).';
     }
-    return `AI-раннер не запустился: ${raw}`;
+    return `Локальный помощник не запустился: ${raw}`;
   }
 
   private describeExit(code: number | null, stderrTail: string[]): string {
     const tail = stderrTail.join(' ');
     if (code === 0 && !tail) {
-      return 'AI-раннер закрыл процесс с кодом 0 (возможно ложный сигнал). Нажмите «Запустить» ещё раз.';
+      return 'Локальный помощник закрыл процесс с кодом 0 (возможно ложный сигнал). Нажмите «Запустить» ещё раз.';
     }
-    if (tail) return `AI-раннер завершился${code !== null ? ` (код ${code})` : ''}: ${tail.slice(0, 300)}`;
-    return `AI-раннер завершился неожиданно${code !== null ? ` (код ${code})` : ''}.`;
+    if (tail) return `Локальный помощник завершился${code !== null ? ` (код ${code})` : ''}: ${tail.slice(0, 300)}`;
+    return `Локальный помощник завершился неожиданно${code !== null ? ` (код ${code})` : ''}.`;
   }
 }
 
