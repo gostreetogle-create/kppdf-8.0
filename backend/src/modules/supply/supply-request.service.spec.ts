@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { SupplyRequestService } from './supply-request.service';
 
@@ -24,8 +24,19 @@ function createService() {
     create: jest.fn(),
     findOpenByOrderMaterial: jest.fn(),
   };
-  const service = new SupplyRequestService(model as never, supplyTasks as never);
-  return { service, model, supplyTasks };
+  const warehouses = {
+    findDefault: jest.fn(),
+  };
+  const stockMovements = {
+    create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }),
+  };
+  const service = new SupplyRequestService(
+    model as never,
+    supplyTasks as never,
+    warehouses as never,
+    stockMovements as never,
+  );
+  return { service, model, supplyTasks, warehouses, stockMovements };
 }
 
 const savedDoc = (overrides: Record<string, unknown> = {}) => ({
@@ -301,6 +312,84 @@ describe('SupplyRequestService (TZ-SUPPLY-305)', () => {
 
     const doc = await service.update(id.toString(), { orderLabel: 'Цех 2' });
     expect(doc.orderLabel).toBeUndefined();
+  });
+
+  it('receive posts a StockMovement IN with the default warehouse and marks the request received', async () => {
+    const { service, model, warehouses, stockMovements } = createService();
+    const id = new Types.ObjectId();
+    const materialId = new Types.ObjectId();
+    const orderId = new Types.ObjectId();
+    const defaultWarehouseId = new Types.ObjectId();
+    model.findOne.mockReturnValue(
+      mockQuery(savedDoc({ _id: id, materialId, orderId, status: 'ordered' })),
+    );
+    warehouses.findDefault.mockResolvedValue({ _id: defaultWarehouseId });
+
+    const res = await service.receive(id.toString(), { receivedQty: 8 });
+
+    expect(stockMovements.create).toHaveBeenCalledWith({
+      type: 'in',
+      materialId: materialId.toString(),
+      warehouseId: defaultWarehouseId.toString(),
+      qty: 8,
+      orderId: orderId.toString(),
+      documentRef: `SupplyRequest:${id.toString()}`,
+    });
+    expect(res.status).toBe('received');
+    expect(res.receivedQty).toBe(8);
+  });
+
+  it('receive uses an explicit warehouseId over the default', async () => {
+    const { service, model, warehouses, stockMovements } = createService();
+    const id = new Types.ObjectId();
+    const materialId = new Types.ObjectId();
+    const explicitWarehouseId = new Types.ObjectId();
+    model.findOne.mockReturnValue(mockQuery(savedDoc({ _id: id, materialId, status: 'in_progress' })));
+
+    await service.receive(id.toString(), { warehouseId: explicitWarehouseId.toString(), receivedQty: 3 });
+
+    expect(warehouses.findDefault).not.toHaveBeenCalled();
+    expect(stockMovements.create).toHaveBeenCalledWith(
+      expect.objectContaining({ warehouseId: explicitWarehouseId.toString() }),
+    );
+  });
+
+  it('receive rejects a repeat receive with 409, no reverse path', async () => {
+    const { service, model, stockMovements } = createService();
+    const id = new Types.ObjectId();
+    model.findOne.mockReturnValue(
+      mockQuery(savedDoc({ _id: id, materialId: new Types.ObjectId(), status: 'received' })),
+    );
+
+    await expect(service.receive(id.toString(), { receivedQty: 5 })).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(stockMovements.create).not.toHaveBeenCalled();
+  });
+
+  it('receive rejects a request with no linked material', async () => {
+    const { service, model, stockMovements } = createService();
+    const id = new Types.ObjectId();
+    model.findOne.mockReturnValue(mockQuery(savedDoc({ _id: id, status: 'in_progress' })));
+
+    await expect(service.receive(id.toString(), { receivedQty: 5 })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(stockMovements.create).not.toHaveBeenCalled();
+  });
+
+  it('receive rejects when no warehouseId is given and there is no default warehouse', async () => {
+    const { service, model, warehouses, stockMovements } = createService();
+    const id = new Types.ObjectId();
+    model.findOne.mockReturnValue(
+      mockQuery(savedDoc({ _id: id, materialId: new Types.ObjectId(), status: 'in_progress' })),
+    );
+    warehouses.findDefault.mockResolvedValue(null);
+
+    await expect(service.receive(id.toString(), { receivedQty: 5 })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(stockMovements.create).not.toHaveBeenCalled();
   });
 
   it('remove soft-deletes', async () => {

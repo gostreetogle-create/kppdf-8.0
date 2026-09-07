@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
 import {
   CreateSupplyRequestDto,
+  ReceiveSupplyRequestDto,
   UpdateSupplyRequestDto,
 } from './dto/supply-request.dto';
 import {
@@ -11,6 +17,8 @@ import {
   SupplyRequestPriority,
 } from './supply-request.schema';
 import { SupplyTaskService } from './supply-task.service';
+import { WarehouseService } from '../warehouse/warehouse.service';
+import { StockMovementService } from '../stock-movement/stock-movement.service';
 
 const PRIORITY_WEIGHT: Record<SupplyRequestPriority, number> = {
   urgent: 3,
@@ -37,6 +45,8 @@ export class SupplyRequestService {
     @InjectModel(SupplyRequest.name)
     private readonly model: Model<SupplyRequestDocument>,
     private readonly supplyTasks: SupplyTaskService,
+    private readonly warehouses: WarehouseService,
+    private readonly stockMovements: StockMovementService,
   ) {}
 
   async findAll(
@@ -264,12 +274,46 @@ export class SupplyRequestService {
     return doc.save();
   }
 
-  async markReceived(
+  /**
+   * TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK — HITL confirm: posts a single `StockMovement`
+   * IN (sole write-path, via `StockMovementService`) and marks the request received.
+   * Explicit 409 on a repeat receive — no silent no-op, no reverse-path here.
+   */
+  async receive(
     id: string,
+    dto: ReceiveSupplyRequestDto,
     organizationId?: string | null,
   ): Promise<SupplyRequestDocument> {
     const doc = await this.findById(id, organizationId);
+    if (doc.status === 'received') {
+      throw new ConflictException('Заявка уже отмечена как полученная');
+    }
+    if (!doc.materialId) {
+      throw new BadRequestException(
+        'У заявки нет привязанного материала — нельзя оприходовать на склад',
+      );
+    }
+
+    let warehouseId = dto.warehouseId;
+    if (!warehouseId) {
+      const defaultWarehouse = await this.warehouses.findDefault();
+      if (!defaultWarehouse) {
+        throw new BadRequestException('Нет склада по умолчанию — выберите склад');
+      }
+      warehouseId = defaultWarehouse._id.toString();
+    }
+
+    await this.stockMovements.create({
+      type: 'in',
+      materialId: doc.materialId.toString(),
+      warehouseId,
+      qty: dto.receivedQty,
+      ...(doc.orderId ? { orderId: doc.orderId.toString() } : {}),
+      documentRef: `SupplyRequest:${doc._id.toString()}`,
+    });
+
     doc.status = 'received';
+    doc.receivedQty = dto.receivedQty;
     return doc.save();
   }
 

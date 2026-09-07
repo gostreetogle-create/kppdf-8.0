@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL, silentDelete, silentGet, silentPatch, silentPost, type SilentResult } from '@kppdf/util-http';
-import type { CreateSupplyRequestPayload, SupplyRequest, SupplyRequestsListParams, UpdateSupplyRequestPayload } from './supply-request.types';
+import type { CreateSupplyRequestPayload, ReceiveSupplyRequestPayload, SupplyRequest, SupplyRequestsListParams, UpdateSupplyRequestPayload } from './supply-request.types';
 
 /** Backend `SupplyRequestService.findAll` hard cap — no page/limit query params. */
 export const SUPPLY_REQUESTS_LIST_CAP = 500;
@@ -41,5 +41,10 @@ export class PiSupplyRequestsService {
 
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/supply-requests/${id}`);
+  }
+
+  /** HITL confirm — posts a StockMovement IN server-side and marks the request received. */
+  receive(id: string, payload: ReceiveSupplyRequestPayload): Observable<SilentResult<SupplyRequest>> {
+    return silentPost<SupplyRequest>(this.http, `${this.baseUrl}/supply-requests/${id}/receive`, payload);
   }
 }

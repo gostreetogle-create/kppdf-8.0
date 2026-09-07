@@ -148,3 +148,16 @@ export class CreateSupplyRequestDto {
 }
 
 export class UpdateSupplyRequestDto extends PartialType(CreateSupplyRequestDto) {}
+
+/** TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK — confirm receipt → StockMovement IN. */
+export class ReceiveSupplyRequestDto {
+  /** Omit to use the default warehouse (`WarehouseService.findDefault`). */
+  @IsOptional()
+  @IsObjectId()
+  warehouseId?: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.0001)
+  receivedQty!: number;
+}

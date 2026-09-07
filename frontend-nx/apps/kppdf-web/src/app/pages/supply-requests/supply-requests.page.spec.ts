@@ -4,20 +4,24 @@ import {
   PiOrdersService,
   PiOrganizationsService,
   PiSupplyRequestsService,
+  PiWarehousesService,
   type Order,
   type Organization,
   type SupplyRequest,
+  type Warehouse,
 } from '@kppdf/data-access';
 import { AlertDialogComponent, PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { SupplyRequestsPage } from './supply-requests.page';
 import { SupplyRequestFormDialogComponent } from './supply-request-form-dialog.component';
+import { SupplyRequestReceiveDialogComponent } from './supply-request-receive-dialog.component';
 
 describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
   let fixture: ComponentFixture<SupplyRequestsPage>;
   let api: { list: jest.Mock; remove: jest.Mock };
   let ordersApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
+  let warehousesApi: { list: jest.Mock };
   let dialog: { open: jest.Mock };
 
   const rows: SupplyRequest[] = [
@@ -31,6 +35,7 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
       paid: false,
       supplierId: 's1',
       orderId: 'o1',
+      materialId: 'm1',
     },
     {
       _id: 'r2',
@@ -42,10 +47,12 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
       paid: true,
       invoiceNo: 'INV-1',
       orderLabel: 'Цех 2',
+      materialId: 'm2',
     },
   ];
   const orders: Order[] = [{ _id: 'o1', number: 'ORD-1' } as Order];
   const suppliers: Organization[] = [{ _id: 's1', name: 'ООО Металл', inn: '123', type: ['supplier'] }];
+  const warehouses: Warehouse[] = [{ _id: 'w1', name: 'Основной', isActive: true, isDefault: true }];
 
   async function setup(): Promise<void> {
     api = {
@@ -56,6 +63,7 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: suppliers, total: 1, page: 1, limit: 100 } })),
     };
+    warehousesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: warehouses })) };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [SupplyRequestsPage],
@@ -63,6 +71,7 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
         { provide: PiSupplyRequestsService, useValue: api },
         { provide: PiOrdersService, useValue: ordersApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiWarehousesService, useValue: warehousesApi },
         { provide: PiDialogService, useValue: dialog },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
       ],
@@ -116,6 +125,23 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
     expect(dialog.open).toHaveBeenCalledWith(
       SupplyRequestFormDialogComponent,
       expect.objectContaining({ data: expect.objectContaining({ orders, suppliers: expect.any(Array) }) }),
+    );
+  });
+
+  it('shows «Получено» only for receivable rows and opens the receive dialog with preloaded warehouses', async () => {
+    await setup();
+    const receiveButtons = fixture.nativeElement.querySelectorAll('[data-test="supply-request-receive"]');
+    expect(receiveButtons.length).toBe(1);
+
+    const ref = { closed: () => undefined } as unknown as DialogRef<unknown>;
+    dialog.open.mockReturnValue(ref);
+    (receiveButtons[0] as HTMLButtonElement).click();
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      SupplyRequestReceiveDialogComponent,
+      expect.objectContaining({
+        data: expect.objectContaining({ request: expect.objectContaining({ _id: 'r1' }), warehouses }),
+      }),
     );
   });
 

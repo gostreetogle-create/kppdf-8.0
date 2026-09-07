@@ -4,6 +4,8 @@ import { SupplyRequest, SupplyRequestSchema } from './supply-request.schema';
 import { SupplyRequestController } from './supply-request.controller';
 import { SupplyRequestService } from './supply-request.service';
 import { SupplyModule } from './supply.module';
+import { WarehouseModule } from '../warehouse/warehouse.module';
+import { StockMovementModule } from '../stock-movement/stock-movement.module';
 
 @Module({
   imports: [
@@ -12,6 +14,9 @@ import { SupplyModule } from './supply.module';
     ]),
     // SupplyTaskService для spawn'а задачи реестра при «Заказано».
     SupplyModule,
+    // TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK — default warehouse + StockMovement IN.
+    WarehouseModule,
+    StockMovementModule,
   ],
   controllers: [SupplyRequestController],
   providers: [SupplyRequestService],

@@ -15,6 +15,7 @@ import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import {
   CreateSupplyRequestDto,
+  ReceiveSupplyRequestDto,
   UpdateSupplyRequestDto,
 } from './dto/supply-request.dto';
 import { SupplyRequestService } from './supply-request.service';
@@ -75,14 +76,15 @@ export class SupplyRequestController {
     return this.service.markOrdered(id, user.organizationId);
   }
 
-  @Post(':id/received')
+  @Post(':id/receive')
   @Roles('admin', 'manager')
-  @AuditAction({ action: 'received', entityType: 'SupplyRequest', idParam: 'id' })
-  markReceived(
+  @AuditAction({ action: 'receive', entityType: 'SupplyRequest', idParam: 'id' })
+  receive(
     @Param('id') id: string,
+    @Body() dto: ReceiveSupplyRequestDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.markReceived(id, user.organizationId);
+    return this.service.receive(id, dto, user.organizationId);
   }
 
   @Post(':id/cancel')

@@ -54,6 +54,8 @@ export interface SupplyRequest {
   readonly lineTotal?: number;
   readonly neededBy?: string;
   readonly supplierOrderDate?: string;
+  /** TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK — actual received qty (may differ from planned `qty`). */
+  readonly receivedQty?: number;
   readonly invoiceNo?: string;
   readonly deliveryNote?: string;
   readonly paid: boolean;
@@ -62,6 +64,12 @@ export interface SupplyRequest {
   readonly createdBy?: string;
   readonly createdAt?: string;
   readonly updatedAt?: string;
+}
+
+export interface ReceiveSupplyRequestPayload {
+  /** Omit to use the default warehouse (server resolves via `WarehouseService.findDefault`). */
+  readonly warehouseId?: string;
+  readonly receivedQty: number;
 }
 
 export interface SupplyRequestsListParams {

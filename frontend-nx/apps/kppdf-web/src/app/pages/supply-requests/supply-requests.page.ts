@@ -4,10 +4,12 @@ import {
   PiOrdersService,
   PiOrganizationsService,
   PiSupplyRequestsService,
+  PiWarehousesService,
   type Order,
   type Organization,
   type SupplyRequest,
   type SupplyRequestStatus,
+  type Warehouse,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
@@ -22,6 +24,12 @@ import {
   SupplyRequestFormDialogComponent,
   type SupplyRequestFormDialogData,
 } from './supply-request-form-dialog.component';
+import {
+  SupplyRequestReceiveDialogComponent,
+  type SupplyRequestReceiveDialogData,
+} from './supply-request-receive-dialog.component';
+
+const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progress', 'requested', 'ordered']);
 
 /**
  * TZ-NX-SUPPLY-S3-REQUEST-JOURNAL — single SoT for `SupplyRequest` (журнал заявок
@@ -132,6 +140,9 @@ import {
                 <div role="cell" class="truncate">{{ orderLabel(row) }}</div>
                 <div role="cell" class="truncate" [attr.title]="row.createdBy">{{ createdByLabel(row.createdBy) }}</div>
                 <div class="flex items-center gap-2 justify-end" role="cell">
+                  @if (isReceivable(row)) {
+                    <button class="pi-button pi-button-primary" type="button" (click)="openReceive(row)" data-test="supply-request-receive">Получено</button>
+                  }
                   <button class="pi-button pi-button-secondary" type="button" (click)="openEdit(row)" data-test="supply-request-edit">Изменить</button>
                   <button class="pi-button pi-button-secondary" type="button" (click)="confirmDelete(row)" data-test="supply-request-delete">Удалить</button>
                 </div>
@@ -147,6 +158,7 @@ export class SupplyRequestsPage {
   private readonly api = inject(PiSupplyRequestsService);
   private readonly ordersApi = inject(PiOrdersService);
   private readonly organizationsApi = inject(PiOrganizationsService);
+  private readonly warehousesApi = inject(PiWarehousesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -158,6 +170,7 @@ export class SupplyRequestsPage {
   protected readonly rows = signal<readonly SupplyRequest[]>([]);
   protected readonly orders = signal<readonly Order[]>([]);
   protected readonly suppliers = signal<readonly Organization[]>([]);
+  protected readonly warehouses = signal<readonly Warehouse[]>([]);
   protected readonly status = signal<'loading' | 'success' | 'error'>('loading');
   protected readonly error = signal('Не удалось загрузить заявки.');
   protected readonly search = signal('');
@@ -235,6 +248,28 @@ export class SupplyRequestsPage {
     this.openForm(row);
   }
 
+  protected isReceivable(row: SupplyRequest): boolean {
+    return RECEIVABLE_STATUSES.has(row.status) && Boolean(row.materialId);
+  }
+
+  openReceive(row: SupplyRequest): void {
+    const ref = this.dialog.open<SupplyRequest | undefined, SupplyRequestReceiveDialogData>(
+      SupplyRequestReceiveDialogComponent,
+      {
+        data: { request: row, warehouses: this.warehouses() },
+        width: 'sm',
+        ariaLabel: 'Подтвердить получение',
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (received) => {
+      if (received) {
+        this.toast.success('Получение проведено — остаток на складе обновлён');
+        this.load();
+      }
+    });
+  }
+
   confirmDelete(row: SupplyRequest): void {
     const ref = this.dialog.open<boolean>(AlertDialogComponent, {
       data: {
@@ -281,11 +316,13 @@ export class SupplyRequestsPage {
   }
 
   private async loadLookups(): Promise<void> {
-    const [orders, suppliers] = await Promise.all([
+    const [orders, suppliers, warehouses] = await Promise.all([
       firstValueFrom(this.ordersApi.list()),
       firstValueFrom(this.organizationsApi.list({ type: 'supplier', limit: 100 })),
+      firstValueFrom(this.warehousesApi.list()),
     ]);
     if (orders.ok) this.orders.set(orders.data ?? []);
     if (suppliers.ok) this.suppliers.set(suppliers.data.items);
+    if (warehouses.ok) this.warehouses.set(warehouses.data ?? []);
   }
 }

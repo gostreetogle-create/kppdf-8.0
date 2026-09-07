@@ -74,6 +74,10 @@ export class SupplyRequest {
   @Prop({ required: true, default: 1, min: 0 })
   qty!: number;
 
+  /** TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK — actual received qty (may differ from planned `qty`). */
+  @Prop({ min: 0 })
+  receivedQty?: number;
+
   @Prop({ trim: true })
   unit?: string;
 

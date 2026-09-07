@@ -118,7 +118,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 
 ### Known limitation (унаследовано от backend, не изобретено во фронтенде)
 
-`SupplyTaskService.markReceived` (и `SupplyRequestService.markReceived`) **не пишут `StockMovement`** — получение задачи снабжения не отражается в складском журнале. Это существующий backend-разрыв, задокументирован здесь, а не воспроизведён/замаскирован в NX-фронтенде.
+`SupplyTaskService.markReceived` **не пишет `StockMovement`** — получение задачи снабжения (`/supply`, `SupplyTask`) не отражается в складском журнале. `SupplyRequestService` больше не в этом списке: `markReceived` заменён на `receive()` (TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK, §ниже), который создаёт `StockMovement` IN. `SupplyTask` receive остаётся backend-разрывом, задокументирован здесь, а не воспроизведён/замаскирован в NX-фронтенде.
 
 ### Tests
 
@@ -177,6 +177,24 @@ Nav «Снабжение» теперь два пункта: **«Заявки»*
 на NX ещё нет Users-lookup сервиса (только Person/Worker для производства, не
 login-аккаунты). Резолюция в отображаемое имя — отдельная будущая задача.
 
+## NX — TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK («Получено» → confirm + склад IN)
+
+HITL confirm, не silent auto-IN: кнопка «Получено» на `/supply-requests` (не
+`/supply` — SoT для `SupplyRequest` это журнал S3) открывает
+`supply-request-receive-dialog.component.ts` — склад (`<select>`, prefilled
+на `Warehouse.isDefault`, можно сменить) + количество факт (`receivedQty`,
+prefilled план `qty`, можно поправить). Кнопка видна только для строк со
+статусом `in_progress`/`requested`/`ordered` **и** привязанным `materialId`
+(без материала — некуда постить остаток, единый write-path не завести).
+
+**Единственный write-path склада:** `POST /supply-requests/:id/receive` →
+`SupplyRequestService.receive()` → `StockMovementService.create({type:'in', …})`
+(тот же сервис, что и ручные приходы на `/stock-movements`) → `status='received'`
++ `receivedQty` сохраняются на `SupplyRequest`. Повторный «Получено» на уже
+`received` заявке — явный `409 Conflict` (reverse-path не заводился, «без
+слова PO»); без `warehouseId` в запросе и без `Warehouse.isDefault` — `400`
+(«сначала выберите склад», PO lock §6).
+
 ### TZ reference (NX)
 
 | TZ | Что сделано |
@@ -186,3 +204,4 @@ login-аккаунты). Резолюция в отображаемое имя �
 | **TZ-SUPPLY-BE-INVOICE-DELIVERY** | `SupplyRequest`: `invoiceNo`/`deliveryNote`/`orderLabel` (XOR `orderId`) + отдельный флаг `paid`/`paidAt` (не связан со `status`) + `createdBy` (сервер проставляет из auth user на create, с клиента не меняется) |
 | **TZ-NX-WAREHOUSE-DEFAULT** | `Warehouse.isDefault` — нужен для следующего S4 (receive→stock), не в этом файле — см. `docs/pages/warehouses.page.md` |
 | **TZ-NX-SUPPLY-S3-REQUEST-JOURNAL** | `/supply-requests` — полный журнал заявок (Sheets parity), заменил truncated registries dialog |
+| **TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK** | «Получено» на `/supply-requests` → confirm dialog → `StockMovement` IN (единый write-path) + `status='received'`; 409 на повтор |
