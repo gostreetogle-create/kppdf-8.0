@@ -1,6 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDateString,
   IsIn,
   IsNumber,
@@ -75,6 +76,12 @@ export class CreateSupplyRequestDto {
   @IsObjectId()
   orderId?: string;
 
+  /** Free-text заказчик/участок when no matching Order — XOR with `orderId` (service clears it when orderId is set). */
+  @IsOptional()
+  @IsString()
+  @Length(0, 256)
+  orderLabel?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -123,6 +130,21 @@ export class CreateSupplyRequestDto {
   @IsString()
   @Length(0, 128)
   responsible?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 128)
+  invoiceNo?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  deliveryNote?: string;
+
+  /** Отдельный флаг — не связан со `status`; сервер сам проставляет/чистит `paidAt`. */
+  @IsOptional()
+  @IsBoolean()
+  paid?: boolean;
 }
 
 export class UpdateSupplyRequestDto extends PartialType(CreateSupplyRequestDto) {}

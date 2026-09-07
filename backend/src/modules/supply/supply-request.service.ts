@@ -93,6 +93,7 @@ export class SupplyRequestService {
     dto: CreateSupplyRequestDto,
     organizationId?: string | null,
     session?: ClientSession,
+    createdByUserId?: string | null,
   ): Promise<SupplyRequestDocument> {
     const title = dto.title?.trim() || undefined;
     const article = dto.article?.trim() || undefined;
@@ -102,6 +103,9 @@ export class SupplyRequestService {
           .collection('materials')
           .findOne({ _id: new Types.ObjectId(dto.materialId) }, { session })
       : null;
+    // orderId XOR orderLabel — a matched Order always wins over free text.
+    const orderId = dto.orderId ? new Types.ObjectId(dto.orderId) : undefined;
+    const orderLabel = orderId ? undefined : dto.orderLabel?.trim() || undefined;
 
     // Quick-order creates an empty draft first and fills it from the form.
     // The schema intentionally allows both fields to be empty until the user
@@ -122,7 +126,8 @@ export class SupplyRequestService {
             : undefined,
           companyId: dto.companyId ? new Types.ObjectId(dto.companyId) : undefined,
           requestedBy: dto.requestedBy?.trim() || undefined,
-          orderId: dto.orderId ? new Types.ObjectId(dto.orderId) : undefined,
+          orderId,
+          orderLabel,
           qty: dto.qty ?? 1,
           unit: unit ?? material?.unit ?? undefined,
           neededBy: dto.neededBy ? new Date(dto.neededBy) : undefined,
@@ -135,6 +140,14 @@ export class SupplyRequestService {
             ? new Date(dto.supplierOrderDate)
             : undefined,
           responsible: dto.responsible?.trim() || undefined,
+          invoiceNo: dto.invoiceNo?.trim() || undefined,
+          deliveryNote: dto.deliveryNote?.trim() || undefined,
+          paid: dto.paid ?? false,
+          paidAt: dto.paid ? new Date() : undefined,
+          createdBy:
+            createdByUserId && Types.ObjectId.isValid(createdByUserId)
+              ? new Types.ObjectId(createdByUserId)
+              : undefined,
         },
       ],
       { session },
@@ -194,8 +207,22 @@ export class SupplyRequestService {
         : undefined;
     if (dto.companyId !== undefined)
       doc.companyId = dto.companyId ? new Types.ObjectId(dto.companyId) : undefined;
-    if (dto.orderId !== undefined)
+    if (dto.orderId !== undefined) {
       doc.orderId = dto.orderId ? new Types.ObjectId(dto.orderId) : undefined;
+      // A matched Order always wins over free text — clear stale orderLabel.
+      if (doc.orderId) doc.orderLabel = undefined;
+    }
+    if (dto.orderLabel !== undefined && !doc.orderId) {
+      doc.orderLabel = dto.orderLabel?.trim() || undefined;
+    }
+
+    if (dto.invoiceNo !== undefined) doc.invoiceNo = dto.invoiceNo?.trim() || undefined;
+    if (dto.deliveryNote !== undefined)
+      doc.deliveryNote = dto.deliveryNote?.trim() || undefined;
+    if (dto.paid !== undefined && dto.paid !== doc.paid) {
+      doc.paid = dto.paid;
+      doc.paidAt = dto.paid ? new Date() : undefined;
+    }
 
     return doc.save();
   }

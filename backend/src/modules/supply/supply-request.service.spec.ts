@@ -185,6 +185,124 @@ describe('SupplyRequestService (TZ-SUPPLY-305)', () => {
     expect(res.status).toBe('ordered');
   });
 
+  it('create sets createdBy from the request user and defaults paid=false', async () => {
+    const { service, model } = createService();
+    model.create.mockResolvedValue([savedDoc()]);
+    const userId = new Types.ObjectId();
+
+    await service.create({ qty: 1 }, null, undefined, userId.toString());
+
+    expect(model.create).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          createdBy: userId,
+          paid: false,
+          paidAt: undefined,
+        }),
+      ],
+      { session: undefined },
+    );
+  });
+
+  it('create leaves createdBy unset without an authenticated user (system-spawned request)', async () => {
+    const { service, model } = createService();
+    model.create.mockResolvedValue([savedDoc()]);
+
+    await service.create({ qty: 1 });
+
+    expect(model.create).toHaveBeenCalledWith(
+      [expect.objectContaining({ createdBy: undefined })],
+      { session: undefined },
+    );
+  });
+
+  it('create prefers orderId over orderLabel (XOR)', async () => {
+    const { service, model } = createService();
+    model.create.mockResolvedValue([savedDoc()]);
+    const orderId = new Types.ObjectId();
+
+    await service.create({ qty: 1, orderId: orderId.toString(), orderLabel: 'Цех 2' });
+
+    expect(model.create).toHaveBeenCalledWith(
+      [expect.objectContaining({ orderId, orderLabel: undefined })],
+      { session: undefined },
+    );
+  });
+
+  it('create keeps orderLabel when there is no orderId', async () => {
+    const { service, model } = createService();
+    model.create.mockResolvedValue([savedDoc()]);
+
+    await service.create({ qty: 1, orderLabel: 'Цех 2' });
+
+    expect(model.create).toHaveBeenCalledWith(
+      [expect.objectContaining({ orderId: undefined, orderLabel: 'Цех 2' })],
+      { session: undefined },
+    );
+  });
+
+  it('create stores invoiceNo/deliveryNote and honors an initial paid=true', async () => {
+    const { service, model } = createService();
+    model.create.mockResolvedValue([savedDoc()]);
+
+    await service.create({ qty: 1, invoiceNo: 'INV-1', deliveryNote: 'ТК Деловые линии', paid: true });
+
+    expect(model.create).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          invoiceNo: 'INV-1',
+          deliveryNote: 'ТК Деловые линии',
+          paid: true,
+          paidAt: expect.any(Date),
+        }),
+      ],
+      { session: undefined },
+    );
+  });
+
+  it('update toggles paid independently of status and stamps/clears paidAt', async () => {
+    const { service, model } = createService();
+    const id = new Types.ObjectId();
+    model.findOne.mockReturnValue(mockQuery(savedDoc({ _id: id, paid: false })));
+
+    const paidDoc = await service.update(id.toString(), { paid: true });
+    expect(paidDoc.paid).toBe(true);
+    expect(paidDoc.paidAt).toBeInstanceOf(Date);
+
+    model.findOne.mockReturnValue(
+      mockQuery(savedDoc({ _id: id, paid: true, paidAt: new Date() })),
+    );
+    const unpaidDoc = await service.update(id.toString(), { paid: false });
+    expect(unpaidDoc.paid).toBe(false);
+    expect(unpaidDoc.paidAt).toBeUndefined();
+
+    // status stays independent — no status field touched by the paid toggle.
+    expect(paidDoc.status).toBe('in_progress');
+  });
+
+  it('update clears orderLabel once a matching Order is set, and vice versa is XOR', async () => {
+    const { service, model } = createService();
+    const id = new Types.ObjectId();
+    const orderId = new Types.ObjectId();
+    model.findOne.mockReturnValue(
+      mockQuery(savedDoc({ _id: id, orderLabel: 'Цех 2' })),
+    );
+
+    const doc = await service.update(id.toString(), { orderId: orderId.toString() });
+    expect(doc.orderId).toEqual(orderId);
+    expect(doc.orderLabel).toBeUndefined();
+  });
+
+  it('update ignores orderLabel while an orderId is already set', async () => {
+    const { service, model } = createService();
+    const id = new Types.ObjectId();
+    const orderId = new Types.ObjectId();
+    model.findOne.mockReturnValue(mockQuery(savedDoc({ _id: id, orderId })));
+
+    const doc = await service.update(id.toString(), { orderLabel: 'Цех 2' });
+    expect(doc.orderLabel).toBeUndefined();
+  });
+
   it('remove soft-deletes', async () => {
     const { service, model } = createService();
     const id = new Types.ObjectId();

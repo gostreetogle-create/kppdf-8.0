@@ -51,7 +51,7 @@ export class SupplyRequestController {
     @Body() dto: CreateSupplyRequestDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.create(dto, user.organizationId);
+    return this.service.create(dto, user.organizationId, undefined, user.id);
   }
 
   @Patch(':id')

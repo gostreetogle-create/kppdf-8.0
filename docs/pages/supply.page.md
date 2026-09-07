@@ -143,3 +143,4 @@ S2 не трогает `/supply` саму по себе — это точка в
 |----|------------|
 | TZ-NX-SUPPLY-S0-KIT-RESERVE-BE | Backend kit-availability/kit-reserve API (не в этом файле — см. warehouse/kit docs) |
 | **TZ-NX-SUPPLY-S1-PAGE** | `/supply` живой реестр SupplyTask (без mock), `?orderId=`, transitions, explode/create |
+| **TZ-SUPPLY-BE-INVOICE-DELIVERY** | `SupplyRequest`: `invoiceNo`/`deliveryNote`/`orderLabel` (XOR `orderId`) + отдельный флаг `paid`/`paidAt` (не связан со `status`) + `createdBy` (сервер проставляет из auth user на create, с клиента не меняется) |

@@ -67,6 +67,10 @@ export class SupplyRequest {
   @Prop({ type: Types.ObjectId, ref: 'Order', index: true })
   orderId?: Types.ObjectId;
 
+  /** Free-text «заказчик/участок» when no matching Order — XOR with `orderId`. */
+  @Prop({ trim: true })
+  orderLabel?: string;
+
   @Prop({ required: true, default: 1, min: 0 })
   qty!: number;
 
@@ -100,6 +104,24 @@ export class SupplyRequest {
 
   @Prop({ trim: true })
   responsible?: string;
+
+  /** TZ-SUPPLY-BE-INVOICE-DELIVERY — счёт/доставка, независимы от status. */
+  @Prop({ trim: true })
+  invoiceNo?: string;
+
+  @Prop({ trim: true })
+  deliveryNote?: string;
+
+  /** Отдельный флаг оплаты — не совпадает со `status` (received ≠ paid). */
+  @Prop({ default: false })
+  paid!: boolean;
+
+  @Prop({ type: Date })
+  paidAt?: Date;
+
+  /** Кто создал заявку — проставляется сервером на create, с клиента не меняется. */
+  @Prop({ type: Types.ObjectId, ref: 'User', index: true })
+  createdBy?: Types.ObjectId;
 
   /** При статусе «Заказано» и наличии orderId+materialId — spawn'нутая задача реестра. */
   @Prop({ type: Types.ObjectId, ref: 'SupplyTask', index: true })
