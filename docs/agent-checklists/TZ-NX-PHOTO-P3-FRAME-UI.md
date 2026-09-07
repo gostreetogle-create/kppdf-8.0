@@ -79,4 +79,5 @@
 
 - [x] archive + DONE lock + progress + remove `_active` marker
 - [x] Status = DONE
-- closed_at: 2026-09-07T20:00:00+03:00 (see `tasks/_archive/2026-09/TZ-NX-PHOTO-P3-FRAME-UI.done.md` for implementation SHA)
+- closed_at: 2026-09-07T20:00:00+03:00
+- implementation_sha: 2bfb22dc

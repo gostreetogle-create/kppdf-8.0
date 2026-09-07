@@ -1,7 +1,7 @@
 # TZ-NX-PHOTO-P3-FRAME-UI — DONE
 
 - **agent_id:** claude (closeout; claimed by freebuff at 2026-09-07T07:05:00+03:00, free-session cutoff mid-gates)
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** 2bfb22dc
 - **TZ:** tasks/_ready/nx-photos/TZ-NX-PHOTO-P3-FRAME-UI.md
 - **Deps:** P0 `7c9d1071`, P1 `c0b675a7`, P2 `f2707641` — closed before start, not reworked.
 
