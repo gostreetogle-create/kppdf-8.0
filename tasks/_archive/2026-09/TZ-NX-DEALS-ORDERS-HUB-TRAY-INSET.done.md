@@ -1,7 +1,7 @@
 # TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET — DONE
 
 - **agent_id:** claude
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** b770e802
 - **TZ:** tasks/_ready/TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET.md
 
 ## Что сделано
