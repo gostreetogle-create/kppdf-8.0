@@ -55,7 +55,7 @@ openssl rand -hex 32   # JWT_REFRESH_SECRET
 5. `CORS_ORIGIN=https://kppdf-crm.ru` (канон).
 6. SSH: `DEPLOY_SSH_KEY` (предпочтительно) или `DEPLOY_PASSWORD`.
 7. `WIPE=false` после первой чистой установки (не сносить живые данные).
-8. FE artifact: `pnpm --dir frontend build` → `frontend/browser/` (делает `deploy.py`).
+8. FE artifact: `cd frontend-nx && pnpm exec nx build kppdf-web` → `frontend/browser/` (делает `deploy.py`; prod static = NX).
 9. Compose health URL: `/api/health/ready`.
 10. Первый логин: `admin` + пароль из CREDENTIALS (не admin123).  
     Снаружи ещё Basic Auth (`CREDENTIALS.md` § HTTP Basic Auth).

@@ -105,8 +105,8 @@ Preflight: `.\deploy\synology\preflight.ps1`
 
 ### Как устроен быстрый путь (канон)
 
-1. **NX собирается локально** (`cd frontend-nx && pnpm exec nx build kppdf-web` → copy в `frontend/browser/`).  
-   До закрытия `TZ-OPS-DEPLOY-NX-STATIC` скрипт ещё может собирать legacy — не деплоить.
+1. **NX собирается `deploy.py`** (`cd frontend-nx && pnpm exec nx build kppdf-web` → copy в `frontend/browser/`).  
+   `TZ-OPS-DEPLOY-NX-STATIC` закрыт — `build_frontend()` больше не вызывает legacy `pnpm --dir frontend build`.
 2. В tar уходит: `backend/` + `frontend/browser/` + `docker-compose.prod.yml`.
 3. На VM: `docker compose build backend` **с кэшем** → `up -d` (mount `frontend/browser` без смены).
 4. **Не** два деплоя параллельно; `--no-cache` — исключение.

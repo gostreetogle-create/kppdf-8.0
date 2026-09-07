@@ -237,7 +237,7 @@ cd /opt/kppdf-8.0 && sudo docker compose -f docker-compose.prod.yml up -d --forc
 
 > **Prod UI target = NX.** Канон cutover: [`docs/ops/DEPLOY-NX-PROD.md`](../../docs/ops/DEPLOY-NX-PROD.md).  
 > Штамп: [`docs/agent-checklists/DEPLOY-READY.md`](../../docs/agent-checklists/DEPLOY-READY.md).  
-> Пока `deploy.py` не переключён на `nx build kppdf-web` — не деплоить «по документации».
+> `deploy.py` уже собирает `nx build kppdf-web` — деплоить «по документации» только когда штамп `status: READY` + `frontend_target: nx`.
 
 ### 9.1 Первичная настройка (один раз)
 
@@ -271,8 +271,8 @@ python deploy/synology/deploy.py
 
 ### 9.3 Что делает деплой
 
-1. Сборка FE: **после TZ-OPS-DEPLOY-NX-STATIC** — `nx build kppdf-web` → копия в `frontend/browser/`  
-   (до cutover скрипт ещё мог собирать legacy — не использовать для NX-прод).
+1. Сборка FE: `cd frontend-nx && pnpm exec nx build kppdf-web` → копия в `frontend/browser/`  
+   (prod static = NX; legacy `pnpm --dir frontend build` больше не вызывается deploy.py, TZ-OPS-DEPLOY-NX-STATIC закрыт).
 2. Архив: `backend/`, `frontend/browser/`, `docker-compose.prod.yml`, `backup.sh`
 3. SSH (ключ или пароль) → upload в `/opt/kppdf-8.0/`
 4. Запись `.env` из `config.env`
@@ -333,7 +333,7 @@ certbot renew --dry-run
 | 4 | **CORS error** | URL нет в CORS_ORIGIN | Добавить в `.env` на VM + `--force-recreate backend` |
 | 5 | MongoDB AVX error | CPU Synology без AVX | `mongo:4.4` (уже используется) |
 | 6 | `no replset config` | RS не инициализирован | `docker exec kppdf-mongo mongo --eval "rs.initiate(...)"` |
-| 7 | Frontend пуст | `browser/` пуст | `cp -r frontend/dist/kppdf-frontend/browser/* frontend/browser/` |
+| 7 | Frontend пуст | `browser/` пуст | `cd frontend-nx && pnpm exec nx build kppdf-web && cp -r dist/apps/kppdf-web/browser/* ../frontend/browser/` |
 | 8 | Сертификат истёк | certbot не обновился | `certbot renew --force-renewal` |
 | 9 | Туннель не переподключается | autossh завис | `sudo systemctl restart kppdf-tunnel` на VM |
 
@@ -369,7 +369,7 @@ certbot renew --dry-run
 |---|-----------|-----------|
 | API prefix | `/api/v1/` | `/api/` |
 | Health | `/api/v1/health` | `/api/health` |
-| Frontend dist | `dist/kppdf-3.0/browser` | `frontend/dist/kppdf-frontend/browser` |
+| Frontend dist | `dist/kppdf-3.0/browser` | `frontend-nx/dist/apps/kppdf-web/browser` (staged → `frontend/browser/`) |
 | Data dir | `/var/lib/kppdf` | `/var/lib/kppdf80` |
 | Remote dir | `/opt/kppdf-3.0` | `/opt/kppdf-8.0` |
 | Mongo | 7.x (AVX required) | **4.4** (AVX-free) |

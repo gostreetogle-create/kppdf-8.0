@@ -11,7 +11,7 @@ Config: deploy/synology/config.env (copy from config.env.example)
 
 Steps:
     1. Load config.env
-    2. Build Angular frontend (pnpm --dir frontend build)
+    2. Build NX kppdf-web (cd frontend-nx && pnpm exec nx build kppdf-web) -> frontend/browser/
     3. Create archive (backend/ + frontend/browser + docker-compose.prod.yml)
     4. Connect via paramiko (password or DEPLOY_SSH_KEY)
     5. Optional wipe of REMOTE_DIR + mongo data
@@ -349,9 +349,10 @@ def _desktop_meta_replacement(configured_url):
 def inject_desktop_download_url(project_root, configured_url):
     """Inject DESKTOP_DOWNLOAD_URL into built SPA via CSP-safe meta (no inline script).
 
-    TZD-71: mirrors the injection into the NX build (frontend-nx/dist/apps/kppdf-web)
-    when present — NX artifacts are not shipped by deploy.py yet, so the mirror is
-    optional (warn, not fail). Legacy frontend/browser/index.html stays mandatory.
+    TZ-OPS-DEPLOY-NX-STATIC: frontend/browser/index.html is now the NX (kppdf-web)
+    build copied there by build_frontend() — injection there is mandatory since it
+    is the artifact that ships to prod. The frontend-nx/dist mirror is optional
+    (warn, not fail) so re-running with a stale/absent NX dist doesn't block deploy.
     """
     index_path = project_root / "frontend" / "browser" / "index.html"
     if not index_path.exists():
@@ -367,8 +368,8 @@ def inject_desktop_download_url(project_root, configured_url):
         _inject_meta_into(nx_index, meta_name, replacement, configured_url, required=False)
     else:
         warn(
-            "frontend-nx/dist/apps/kppdf-web/browser/index.html not found — NX download meta "
-            "injection skipped (NX not built/deployed by this script yet)"
+            "frontend-nx/dist/apps/kppdf-web/browser/index.html not found — NX dist mirror "
+            "injection skipped (frontend/browser/ already has it)"
         )
 
 
@@ -404,38 +405,39 @@ def _inject_meta_into(index_path, meta_name, replacement, configured_url, requir
 
 
 def build_frontend(project_root):
-    log("Building Angular frontend (pnpm)...")
-    # Prefer workspace root: pnpm --dir frontend build
+    log("Building NX kppdf-web (pnpm exec nx build)...")
+    # TZ-OPS-DEPLOY-NX-STATIC: prod static = frontend-nx / kppdf-web, not legacy frontend/.
     result = subprocess.run(
-        ["pnpm", "--dir", "frontend", "build"],
-        cwd=str(project_root),
-        capture_output=True, text=True, timeout=600,
+        ["pnpm", "exec", "nx", "build", "kppdf-web"],
+        cwd=str(project_root / "frontend-nx"),
+        capture_output=True, text=True, timeout=900,
         shell=(os.name == "nt"))
     if result.returncode != 0:
         err_lines = (result.stderr or result.stdout or "").strip().split("\n")
         for line in err_lines[-12:]:
             print("   " + line)
-        fail("Angular build failed")
-    ok("Angular build OK")
+        fail("NX build failed")
+    ok("NX build OK")
 
-    dist_browser = project_root / "frontend" / "dist" / "kppdf-frontend" / "browser" / "index.html"
+    nx_dist_browser = project_root / "frontend-nx" / "dist" / "apps" / "kppdf-web" / "browser"
+    dist_browser = nx_dist_browser / "index.html"
     if not dist_browser.exists():
-        fail("frontend/dist/kppdf-frontend/browser/index.html not found after build")
+        fail("frontend-nx/dist/apps/kppdf-web/browser/index.html not found after build")
 
     frontend_dir = project_root / "frontend" / "browser"
     if frontend_dir.exists():
         shutil.rmtree(str(frontend_dir))
     frontend_dir.mkdir(parents=True, exist_ok=True)
-    for item in (project_root / "frontend" / "dist" / "kppdf-frontend" / "browser").iterdir():
+    for item in nx_dist_browser.iterdir():
         dest = frontend_dir / item.name
         if item.is_dir():
             shutil.copytree(item, dest, dirs_exist_ok=True)
         else:
             shutil.copy2(item, dest)
-    ok("Frontend copied to frontend/browser/")
+    ok("NX kppdf-web copied to frontend/browser/")
 
     # Desktop installer (TZD-16/24): ensure /downloads/*.exe + .zip exist
-    # even if Angular assets folder was empty during build.
+    # even if NX assets folder was empty during build.
     return publish_desktop_installer(project_root, frontend_dir)
 
 
@@ -788,7 +790,7 @@ def main():
 
     if not args.skip_build:
         print()
-        print("Step 2/8: Build Angular frontend...")
+        print("Step 2/8: Build NX kppdf-web...")
         desktop_semver = build_frontend(project_root)
         inject_desktop_download_url(project_root, settings.get("desktop_download_url"))
     else:

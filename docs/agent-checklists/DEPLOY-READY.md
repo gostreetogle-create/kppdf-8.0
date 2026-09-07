@@ -5,21 +5,20 @@
 > Читает любой ИИ по `deploy/synology/README.md` → «сделай деплой по документации».
 >
 > Prod last warm: `4d55d0ea` 2026-08-27.  
-> **NX cutover:** канон `docs/ops/DEPLOY-NX-PROD.md`. До закрытия `TZ-OPS-DEPLOY-NX-STATIC` — **не** деплоить.
+> **NX cutover:** канон `docs/ops/DEPLOY-NX-PROD.md`. `TZ-OPS-DEPLOY-NX-STATIC` закрыт — деплой разрешён по документации.
 
 ```yaml
-status: BLOCKED
+status: READY
 frontend_target: nx
 wipe_default: false
 wipe_reason: "same Nest API; additive schemas since 4d55d0ea — keep Mongo/uploads (warm)"
-deploy_sha_target: null
-blocked_reason: "deploy.py still builds legacy frontend; TZ-OPS-DEPLOY-NX-STATIC + full gates pending"
-prepared_at: 2026-09-07T22:30:00+03:00
-prepared_by: cursor-architect
+deploy_sha_target: pending (filled at closeout — see follow-up commit)
+prepared_at: 2026-09-08T04:00:00+03:00
+prepared_by: claude-executor
 evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-07-NX.md
 prep_prompt: tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md
 debt: []
-desktop_zip: accept-stale
+desktop_zip: fresh (v0.5.10, republished by local build_frontend() run; accept-stale remains canon if it drifts before actual deploy)
 mixed_commit: no
 ```
 
@@ -29,5 +28,5 @@ mixed_commit: no
 2. Если `READY` и `frontend_target: nx` → `git fetch` && `git checkout main` && `git pull --ff-only`.
 3. `git merge-base --is-ancestor <deploy_sha_target> HEAD` must succeed; deploy from **tip HEAD**.
 4. VPN **off**. `config.env` + `CREDENTIALS.md` на машине деплоя (не в git).
-5. Warm only: `.\deploy\synology\deploy.ps1` (**no** `-Wipe`), unless PO separately `да, разрешаю wipe после бэкапа`.
-6. Smoke: `docs/ops/DEPLOY-NX-PROD.md` §4 + `deploy/synology/README.md`. Затем `INVALID` + commit.
+5. **Warm only**, без флагов: `.\deploy\synology\deploy.ps1` (**no** `-Wipe`) — `wipe_default: false` в штампе выше; `-Wipe` только после бэкапа и явной фразы PO `да, разрешаю wipe после бэкапа` (`docs/ops/DANGEROUS-OPS.md`).
+6. Smoke: `docs/ops/DEPLOY-NX-PROD.md` §4 (health/ready, login, NX shell `/desk` или `/orders`, `/registries`, `/studio`, нет TS overlay, desktop download meta опционально) + `deploy/synology/README.md`. Затем `status: INVALID` + `why_invalid: deployed <sha> <date>` + commit.
