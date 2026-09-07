@@ -12,3 +12,4 @@ export * from './lib/sales';
 export * from './lib/people';
 export * from './lib/warehouse';
 export * from './lib/desktop';
+export * from './lib/photos';

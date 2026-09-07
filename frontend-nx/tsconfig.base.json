@@ -147,6 +147,9 @@
       "@kppdf/ui/popover": [
         "libs/ui/paper-and-ink/src/lib/popover/index.ts"
       ],
+      "@kppdf/ui/photo": [
+        "libs/ui/paper-and-ink/src/lib/photo/index.ts"
+      ],
       "@kppdf/ui/hover-card": [
         "libs/ui/paper-and-ink/src/lib/hover-card/index.ts"
       ]
