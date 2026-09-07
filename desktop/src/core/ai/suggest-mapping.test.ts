@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildMappingPrompt, parseMappingJson } from './suggest-mapping';
+import { analyzeTables } from '../multi-import';
+import { buildInboxMappingSummary, buildMappingPrompt, parseMappingJson, pickBestTableSuggestion } from './suggest-mapping';
 
 test('prompt lists target fields with Russian labels and file headers', () => {
   const { system, user } = buildMappingPrompt(['Контрагент', 'ИНН'], 'counterparty');
@@ -29,4 +30,32 @@ test('returns empty map on garbage or missing JSON', () => {
   assert.deepEqual(parseMappingJson('не JSON', 'material'), {});
   assert.deepEqual(parseMappingJson('[1,2,3]', 'material'), {});
   assert.deepEqual(parseMappingJson('', 'material'), {});
+});
+
+test('TZD-78 pickBestTableSuggestion: picks the suggestion with the most ready columns', () => {
+  const headers = ['Наименование', 'Артикул', 'Ед. изм.', 'Кол-во'];
+  const best = pickBestTableSuggestion(analyzeTables(headers));
+  assert.equal(best?.targetKey, 'material');
+});
+
+test('TZD-78 pickBestTableSuggestion: empty suggestions → undefined', () => {
+  assert.equal(pickBestTableSuggestion([]), undefined);
+});
+
+test('TZD-78 buildInboxMappingSummary: names the table and ready/needCheck counts', () => {
+  const best = pickBestTableSuggestion(analyzeTables(['Наименование', 'Артикул']));
+  const summary = buildInboxMappingSummary('Материалы.xlsx', 10, best);
+  assert.match(summary, /«Материалы\.xlsx»/);
+  assert.match(summary, /Материалы/);
+  assert.match(summary, /Открою в Импорте/);
+});
+
+test('TZD-78 buildInboxMappingSummary: no table guess → manual-mapping hint, no fabricated table name', () => {
+  const summary = buildInboxMappingSummary('странный.csv', 3, undefined);
+  assert.match(summary, /не похожи на известные поля/);
+});
+
+test('TZD-78 buildInboxMappingSummary: zero rows → distinct "empty file" message', () => {
+  const summary = buildInboxMappingSummary('пусто.csv', 0, undefined);
+  assert.match(summary, /строк с данными не нашлось/);
 });

@@ -1,35 +1,30 @@
 ﻿# NOW
 
-updated_at: 2026-09-08T01:30:00+03:00
+updated_at: 2026-09-08T02:45:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** IDLE (PARK, не использовать)
-- **Claude:** IDLE — WAVE-NX-SUPPLY-OPS DONE (7/7). Executor report ниже; ждёт промпт следующей волны от Cursor.
+- **Freebuff:** PARK
+- **Claude:** IDLE — TZD-78 DONE. Executor report ниже; ждёт промпт следующей задачи от Cursor.
 
 Очередь: [`CLAUDE-ONLY-QUEUE.md`](./CLAUDE-ONLY-QUEUE.md)
 
-## Executor report (WAVE-NX-SUPPLY-OPS, 7/7)
+## Executor report (TZD-78-CHAT-HITL-MAPPING)
 
-- 1/7 BE invoice/delivery/paid/createdBy — `1c4c381a`
-- 2/7 Warehouse `isDefault` — `08149e8e`
-- 3/7 S3 request journal (`/supply-requests`) — `a11234ee`
-- 4/7 S4 receive→stock (StockMovement IN) — `78ab5690`
-- 5/7 S5 material create/copy — `4e54034d`
-- 6/7 Desktop Excel path A (match-by-name) — `541ac855`
-- 7/7 S6 chrome (filters/order link/empty states) — `7b1db538`
-- Итог/детали: `tasks/_archive/2026-09/TZ-NX-SUPPLY-S6-CHROME.done.md`
-- Gates зелёные на каждом шаге (backend jest/tsc, frontend-nx jest/lint/build, desktop tsx --test/tsc/svelte-check, architecture:check)
+- Чат: команда «разбери файл X» / кнопка с именем файла → read-only аудит + RU-сводка сопоставления (без обращения к модели) → CTA «Открыть в Импорте» (переиспользует существующий `auditFile()`). Запись в БД — только через HITL-подтверждение на вкладке «Импорт», как раньше.
+- Version 0.5.9 → 0.5.10; `release-installer` опубликован; HEAD `/downloads/kppdf-desktop-setup.zip` → 200.
+- Gates зелёные: `tsc --noEmit`, `svelte-check` (397/0/0), `tsx --test` 135/135 (+11).
+- Детали: `tasks/_archive/2026-09/TZD-78-CHAT-HITL-MAPPING.done.md`
 
 ## DONE
 
-- WAVE-NX-CATALOG-PHOTOS — P0 `7c9d1071` · P1 `c0b675a7` · P2 `f2707641` · P3 `2bfb22dc`
-- WAVE-NX-SUPPLY-OPS — DONE (7/7, SHA above)
+- WAVE-NX-CATALOG-PHOTOS — P0…P3
+- WAVE-NX-SUPPLY-OPS 7/7 — `1c4c381a` · `08149e8e` · `a11234ee` · `78ab5690` · `4e54034d` · `541ac855` · `7b1db538` (meta `37ccb6d9`)
+- TZD-78-CHAT-HITL-MAPPING — 0.5.10
 
 ## NEXT (Claude-only)
 
-1. TZD-78  
-2. Orders tray inset  
+1. Orders tray inset
 
 ## PARK
 

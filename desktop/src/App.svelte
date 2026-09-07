@@ -116,7 +116,12 @@
     parseApiSnippet,
     isEmptySnippetResult,
   } from './core/ai';
-  import { buildMappingPrompt, parseMappingJson } from './core/ai/suggest-mapping';
+  import {
+    buildInboxMappingSummary,
+    buildMappingPrompt,
+    parseMappingJson,
+    pickBestTableSuggestion,
+  } from './core/ai/suggest-mapping';
   import ChatPanel from './ChatPanel.svelte';
 
   // Placeholder вынесен в JS: фигурные скобки в атрибуте Svelte парсит как выражение.
@@ -997,6 +1002,27 @@
     } finally {
       inboxBusy = false;
     }
+  }
+
+  /**
+   * TZD-78 — read-only аудит файла Inbox из чата: та же логика, что и кнопка
+   * «Разобрать» на вкладке «Импорт» (`auditFile`), но без открытия студии —
+   * только короткая RU-сводка для чата. Никогда не пишет в API kppdf.
+   */
+  async function auditInboxFileForChat(fileName: string): Promise<string> {
+    const audit = await auditInboxFile(inboxDir, fileName);
+    if (audit.error) return `Файл «${fileName}»: ${audit.error}`;
+    const headers = Object.keys(audit.rows[0] ?? {});
+    const best = pickBestTableSuggestion(analyzeTables(headers));
+    return buildInboxMappingSummary(fileName, audit.rows.length, best);
+  }
+
+  /** CTA «Открыть в Импорте» из чата — переиспользует `auditFile` (audit + prepareMapping). */
+  function openInboxFileFromChat(fileName: string): void {
+    const file = inboxFiles.find((f) => f.name === fileName);
+    if (!file) return;
+    activeTab = 'import';
+    void auditFile(file);
   }
 
   /** TZD-22: файл → ImportTask (ready_for_ai), 0 journal proposals. */
@@ -2938,6 +2964,9 @@
           systemPrompt={desktopChatContextPrompt}
           ready={chatReady}
           disabledReason={chatDisabledReason}
+          inboxFileNames={inboxFiles.map((f) => f.name)}
+          onInboxAudit={auditInboxFileForChat}
+          onOpenInboxFile={openInboxFileFromChat}
         />
       {/if}
     </article>

@@ -1,4 +1,5 @@
 import { IMPORT_TARGETS, type ImportTargetKey } from '../import-targets';
+import type { TableSuggestion } from '../multi-import';
 
 /**
  * Промпт для локальной модели: сопоставить заголовки колонок файла с полями
@@ -52,4 +53,48 @@ export function parseMappingJson(
     out[header] = typeof value === 'string' && validKeys.has(value) ? value : null;
   }
   return out;
+}
+
+/**
+ * TZD-78 — лучшая догадка целевой таблицы среди `analyzeTables()` (без AI):
+ * максимум готовых (`ready`) колонок; при равенстве — первая по порядку
+ * (уже приоритезирована `IMPORT_TARGET_ORDER` в `multi-import.ts`).
+ */
+export function pickBestTableSuggestion(
+  suggestions: readonly TableSuggestion[],
+): TableSuggestion | undefined {
+  return suggestions.reduce<TableSuggestion | undefined>(
+    (best, suggestion) => (!best || suggestion.readyCount > best.readyCount ? suggestion : best),
+    undefined,
+  );
+}
+
+/**
+ * TZD-78 — короткая RU-сводка для чата: файл Inbox → таблица + готовые/на
+ * проверку колонки. Детерминирована (без обращения к модели) — чат-команда
+ * «разбери файл X» работает даже без настроенного AI-провайдера.
+ */
+export function buildInboxMappingSummary(
+  fileName: string,
+  rowCount: number,
+  best: TableSuggestion | undefined,
+): string {
+  if (rowCount === 0) {
+    return `Файл «${fileName}» прочитан, но строк с данными не нашлось.`;
+  }
+  if (!best) {
+    return (
+      `Файл «${fileName}» (${rowCount} строк): колонки не похожи на известные поля. ` +
+      'Откройте в Импорте и сопоставьте вручную — кнопка ниже.'
+    );
+  }
+  const label = IMPORT_TARGETS[best.targetKey].label;
+  const needCheck = best.mapping.rows.filter(
+    (row) => row.state !== 'ready' && row.state !== 'ignored',
+  ).length;
+  return (
+    `Файл «${fileName}» (${rowCount} строк) похож на таблицу «${label}»: ` +
+    `колонок распознано ${best.readyCount}, требует проверки ${needCheck}. ` +
+    'Открою в Импорте — запись в базу только после вашего подтверждения там.'
+  );
 }

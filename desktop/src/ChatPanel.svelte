@@ -8,6 +8,12 @@
    * Персона — `buildDesktopChatSystemPrompt()` (LIMITED_HELPER, TZD-64 расширил глоссарием).
    */
   import { chatCompletion, describeChatError, type ChatMessage } from './core/ai';
+  import { matchInboxIntent } from './core/ai/chat-inbox-intent';
+
+  /** TZD-78 — сообщение с опциональной карточкой файла Inbox (CTA «Открыть в Импорте»). */
+  interface DisplayMessage extends ChatMessage {
+    inboxFile?: string;
+  }
 
   let {
     baseUrl,
@@ -16,6 +22,9 @@
     systemPrompt,
     ready,
     disabledReason,
+    inboxFileNames = [],
+    onInboxAudit,
+    onOpenInboxFile,
   }: {
     /** Готовый endpoint чат-API: `aiEndpoint(port)` (локально) или API `baseUrl` (TZD-65). */
     baseUrl: string | undefined;
@@ -25,17 +34,57 @@
     systemPrompt: string;
     ready: boolean;
     disabledReason: string;
+    /** TZD-78 — известные имена файлов Inbox (для распознавания команды + быстрых кнопок). */
+    inboxFileNames?: readonly string[];
+    /** Read-only аудит + сводка сопоставления одного файла Inbox. Никогда не пишет в API. */
+    onInboxAudit?: (fileName: string) => Promise<string>;
+    /** Открывает файл во вкладке «Импорт» — запись в базу только там, после HITL «Записать». */
+    onOpenInboxFile?: (fileName: string) => void;
   } = $props();
 
-  let history = $state<ChatMessage[]>([]);
+  let history = $state<DisplayMessage[]>([]);
   let draft = $state('');
   let sending = $state(false);
   let error = $state('');
 
+  /**
+   * TZD-78 — локальная команда «разбери файл X»: читает Inbox через родителя
+   * (`onInboxAudit`, только чтение) и показывает готовую RU-сводку без
+   * обращения к модели — работает даже без настроенного AI-провайдера.
+   */
+  async function pushInboxAudit(fileName: string, userMessage: string): Promise<void> {
+    history = [...history, { role: 'user', content: userMessage }];
+    error = '';
+    sending = true;
+    try {
+      const summary = await onInboxAudit!(fileName);
+      history = [...history, { role: 'assistant', content: summary, inboxFile: fileName }];
+    } catch (err) {
+      error = describeChatError(err);
+    } finally {
+      sending = false;
+    }
+  }
+
+  /** Быстрая кнопка по имени файла — тот же путь, что и текстовая команда. */
+  function runInboxAudit(fileName: string): void {
+    if (sending || !onInboxAudit) return;
+    void pushInboxAudit(fileName, `Разбери файл «${fileName}»`);
+  }
+
   async function send() {
     const text = draft.trim();
-    if (!text || sending || !ready || !baseUrl) return;
+    if (!text || sending || !ready) return;
     error = '';
+
+    const matched = matchInboxIntent(text, inboxFileNames);
+    if (matched && onInboxAudit) {
+      draft = '';
+      await pushInboxAudit(matched, text);
+      return;
+    }
+
+    if (!baseUrl) return;
     const nextHistory = [...history, { role: 'user', content: text } satisfies ChatMessage];
     history = nextHistory;
     draft = '';
@@ -72,6 +121,23 @@
     <p class="hint" data-test="ai-chat-disabled-reason">{disabledReason}</p>
   {/if}
 
+  {#if onInboxAudit && inboxFileNames.length > 0}
+    <div class="ai-chat-inbox-picks" data-test="ai-chat-inbox-picks">
+      <span class="hint" style="margin:0">Разобрать файл:</span>
+      {#each inboxFileNames as fileName (fileName)}
+        <button
+          class="btn btn--small"
+          type="button"
+          data-test="ai-chat-inbox-pick"
+          disabled={sending}
+          onclick={() => runInboxAudit(fileName)}
+        >
+          {fileName}
+        </button>
+      {/each}
+    </div>
+  {/if}
+
   {#if history.length > 0}
     <div class="ai-chat-history" role="log" aria-live="polite" data-test="ai-chat-history">
       {#each history as msg, i (i)}
@@ -79,6 +145,16 @@
           <strong>{msg.role === 'user' ? 'Вы' : 'Модель'}:</strong>
           {msg.content}
         </p>
+        {#if msg.inboxFile && onOpenInboxFile}
+          <button
+            class="btn btn--small btn--primary"
+            type="button"
+            data-test="ai-chat-open-import"
+            onclick={() => onOpenInboxFile?.(msg.inboxFile ?? '')}
+          >
+            Открыть в Импорте
+          </button>
+        {/if}
       {/each}
     </div>
   {/if}
@@ -179,6 +255,20 @@
     background: #2c3a49;
   }
 
+  .btn--small {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  /* TZD-78 — быстрые кнопки «разобрать файл X» над историей чата. */
+  .ai-chat-inbox-picks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
   .input {
     font: inherit;
     padding: 0.4rem 0.6rem;
@@ -205,6 +295,9 @@
   }
   .ai-chat-msg--assistant {
     color: #1c2733;
+  }
+  .ai-chat-history .btn {
+    margin: 0 0 0.6rem 1.3rem;
   }
   .ai-chat-input-row {
     display: flex;
