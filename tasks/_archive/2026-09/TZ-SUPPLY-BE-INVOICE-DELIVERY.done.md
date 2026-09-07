@@ -1,7 +1,7 @@
 # TZ-SUPPLY-BE-INVOICE-DELIVERY — DONE
 
 - **agent_id:** claude
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** 1c4c381a
 - **TZ:** tasks/_ready/nx-supply/TZ-SUPPLY-BE-INVOICE-DELIVERY.md
 - **WAVE:** WAVE-NX-SUPPLY-OPS (1/7)
 
