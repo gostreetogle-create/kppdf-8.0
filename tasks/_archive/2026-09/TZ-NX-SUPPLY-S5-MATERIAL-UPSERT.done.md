@@ -1,7 +1,7 @@
 # TZ-NX-SUPPLY-S5-MATERIAL-UPSERT — DONE
 
 - **agent_id:** claude
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** 4e54034d
 - **TZ:** tasks/_ready/nx-supply/TZ-NX-SUPPLY-S5-MATERIAL-UPSERT.md
 - **WAVE:** WAVE-NX-SUPPLY-OPS (5/7)
 - **Deps:** S3 journal (`a11234ee`)
