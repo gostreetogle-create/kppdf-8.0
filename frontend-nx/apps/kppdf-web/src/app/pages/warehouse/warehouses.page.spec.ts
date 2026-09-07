@@ -8,11 +8,11 @@ import { WarehouseFormDialogComponent } from './warehouse-form-dialog.component'
 
 describe('WarehousesPage (W1)', () => {
   let fixture: ComponentFixture<WarehousesPage>;
-  let api: { list: jest.Mock; create: jest.Mock; update: jest.Mock; remove: jest.Mock };
+  let api: { list: jest.Mock; create: jest.Mock; update: jest.Mock; remove: jest.Mock; setDefault: jest.Mock };
   let dialog: { open: jest.Mock };
 
   const rows: Warehouse[] = [
-    { _id: 'w1', name: 'Металл', type: 'main', isActive: true },
+    { _id: 'w1', name: 'Металл', type: 'main', isActive: true, isDefault: true },
     { _id: 'w2', name: 'Дерево', type: 'main', isActive: false, description: 'Листовые материалы' },
   ];
 
@@ -22,6 +22,7 @@ describe('WarehousesPage (W1)', () => {
       create: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
+      setDefault: jest.fn().mockReturnValue(of({ ok: true, data: rows[1] })),
     };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
@@ -55,5 +56,19 @@ describe('WarehousesPage (W1)', () => {
     expect(dialog.open).toHaveBeenCalledWith(WarehouseFormDialogComponent, expect.objectContaining({ data: {} }));
     (fixture.nativeElement.querySelector('[data-test="warehouse-delete"]') as HTMLButtonElement).click();
     expect(dialog.open).toHaveBeenCalledWith(AlertDialogComponent, expect.any(Object));
+  });
+
+  it('shows the default badge only for the default row and makes another row default on click', async () => {
+    expect(fixture.nativeElement.querySelectorAll('[data-test="warehouse-default-badge"]').length).toBe(1);
+    const makeDefaultButtons = fixture.nativeElement.querySelectorAll(
+      '[data-test="warehouse-make-default"]',
+    );
+    expect(makeDefaultButtons.length).toBe(1);
+
+    (makeDefaultButtons[0] as HTMLButtonElement).click();
+    await fixture.whenStable();
+
+    expect(api.setDefault).toHaveBeenCalledWith('w2');
+    expect(api.list).toHaveBeenCalledTimes(2);
   });
 });

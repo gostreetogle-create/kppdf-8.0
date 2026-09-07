@@ -55,6 +55,16 @@ export interface WarehouseFormDialogData {
           />
           <span>Активен</span>
         </label>
+        <label class="inline-flex items-center gap-2 text-sm" for="warehouse-default">
+          <input
+            id="warehouse-default"
+            type="checkbox"
+            [checked]="isDefault()"
+            (change)="onDefaultChange($event)"
+            data-test="warehouse-form-default"
+          />
+          <span>Склад по умолчанию</span>
+        </label>
         @if (error()) {
           <p class="text-sm text-destructive" role="alert" data-test="warehouse-form-error">{{ error() }}</p>
         }
@@ -82,6 +92,7 @@ export class WarehouseFormDialogComponent {
   readonly name = signal(this.data.warehouse?.name ?? '');
   readonly description = signal(this.data.warehouse?.description ?? '');
   readonly isActive = signal(this.data.warehouse?.isActive ?? true);
+  readonly isDefault = signal(this.data.warehouse?.isDefault ?? false);
   readonly saving = signal(false);
   readonly error = signal('');
 
@@ -97,6 +108,10 @@ export class WarehouseFormDialogComponent {
     this.isActive.set((event.target as HTMLInputElement).checked);
   }
 
+  onDefaultChange(event: Event): void {
+    this.isDefault.set((event.target as HTMLInputElement).checked);
+  }
+
   submit(): void {
     const name = this.name().trim();
     if (!name || this.saving()) return;
@@ -106,6 +121,7 @@ export class WarehouseFormDialogComponent {
       zoneNames: [],
       description: this.description().trim() || undefined,
       isActive: this.isActive(),
+      isDefault: this.isDefault(),
     };
     this.ref.close(payload);
   }

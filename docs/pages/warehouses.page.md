@@ -48,7 +48,8 @@ Quantity SoT is not part of this page: it remains `StorageItem` / stock movement
 | **TZ-NX-WAREHOUSE-W1-SHELL** | **NX route + nav «Склад» (Склады · Остатки · Движения) + thin named-warehouse CRUD** |
 | Warehouse pack B | Legacy registry CRUD reference |
 | **TZ-WAREHOUSE-UX-301** | Legacy type default/hint; not exposed in NX W1 |
+| **TZ-NX-WAREHOUSE-DEFAULT** | `isDefault` flag — exactly one true at a time (`WarehouseService.setDefault`/`findDefault`, atomic unset-others); form checkbox + list badge/quick-action «Сделать по умолчанию»; used by S4 receive→stock to resolve the confirm-dialog warehouse |
 
 ---
 
-_Обновлено: 2026-09-05 (TZ-NX-WAREHOUSE-W1-SHELL). Legacy details retained as cutover reference._
+_Обновлено: 2026-09-07 (TZ-NX-WAREHOUSE-DEFAULT). Legacy details retained as cutover reference._

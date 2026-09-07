@@ -25,12 +25,15 @@ export class WarehouseService {
   ) {}
 
   async create(dto: CreateWarehouseDto): Promise<WarehouseDocument> {
-    return this.model.create({
+    const doc = await this.model.create({
       ...dto,
       type: dto.type ?? 'main',
       isActive: dto.isActive ?? true,
+      isDefault: false,
       roleIds: (dto.roleIds ?? []).map((id) => new Types.ObjectId(id)),
     });
+    if (dto.isDefault) return this.setDefault(doc._id.toString());
+    return doc;
   }
 
   async findAll(): Promise<WarehouseDocument[]> {
@@ -63,13 +66,41 @@ export class WarehouseService {
     if (dto.roleIds !== undefined) {
       doc.roleIds = dto.roleIds.map((id) => new Types.ObjectId(id));
     }
+    if (dto.isDefault !== undefined) {
+      if (dto.isDefault) await this.clearOtherDefaults(doc._id);
+      doc.isDefault = dto.isDefault;
+    }
     return doc.save();
+  }
+
+  /** Atomically makes `id` the sole default warehouse (unsets all others first). */
+  async setDefault(id: string): Promise<WarehouseDocument> {
+    const doc = await this.findById(id);
+    await this.clearOtherDefaults(doc._id);
+    doc.isDefault = true;
+    return doc.save();
+  }
+
+  /** S4 receive→stock — resolve the warehouse to default to when the operator doesn't pick one. */
+  async findDefault(): Promise<WarehouseDocument | null> {
+    return this.model
+      .findOne({
+        isDefault: true,
+        $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+      })
+      .exec();
   }
 
   async remove(id: string): Promise<void> {
     const doc = await this.findById(id);
     await this.model
       .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
+      .exec();
+  }
+
+  private async clearOtherDefaults(excludeId: Types.ObjectId): Promise<void> {
+    await this.model
+      .updateMany({ _id: { $ne: excludeId } }, { $set: { isDefault: false } })
       .exec();
   }
 

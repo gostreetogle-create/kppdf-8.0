@@ -21,6 +21,10 @@ export class Warehouse {
   @Prop({ default: true, index: true })
   isActive!: boolean;
 
+  /** TZ-NX-WAREHOUSE-DEFAULT — exactly one true at a time (service-enforced). */
+  @Prop({ default: false, index: true })
+  isDefault!: boolean;
+
   /** Legacy zone names (string array). */
   @Prop({ type: [String], default: [] })
   zoneNames!: string[];

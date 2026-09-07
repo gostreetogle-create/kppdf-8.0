@@ -18,6 +18,8 @@ export interface Warehouse {
   type?: WarehouseType | string;
   description?: string;
   isActive: boolean;
+  /** TZ-NX-WAREHOUSE-DEFAULT — exactly one true at a time (server-enforced). */
+  isDefault?: boolean;
   zoneNames?: string[];
 }
 
@@ -27,6 +29,7 @@ export interface WarehouseWritePayload {
   zoneNames: [];
   description?: string;
   isActive: boolean;
+  isDefault?: boolean;
 }
 
 /** Thin NX client for the existing warehouse CRUD API. */
@@ -49,5 +52,12 @@ export class PiWarehousesService {
 
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/warehouses/${id}`);
+  }
+
+  /** Quick action — makes `id` the sole default warehouse without opening the form. */
+  setDefault(id: string): Observable<SilentResult<Warehouse>> {
+    return silentPatch<Warehouse>(this.http, `${this.baseUrl}/warehouses/${id}`, {
+      isDefault: true,
+    });
   }
 }

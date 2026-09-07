@@ -22,6 +22,8 @@ export class CreateWarehouseDto {
   @IsOptional() @IsString() description?: string;
   @ApiPropertyOptional({ description: 'Активен ли склад' })
   @IsOptional() @IsBoolean() isActive?: boolean;
+  @ApiPropertyOptional({ description: 'Склад по умолчанию (ровно один; сервер снимает флаг с остальных)' })
+  @IsOptional() @IsBoolean() isDefault?: boolean;
   @ApiPropertyOptional({ type: [String], description: 'Названия зон' })
   @IsOptional() @IsArray() zoneNames?: string[];
 

@@ -66,13 +66,21 @@ import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './wa
           @for (row of filteredRows(); track row._id) {
             <div class="grid grid-cols-[minmax(0,1fr)_minmax(7rem,0.35fr)_minmax(10rem,0.7fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0" role="row" data-test="warehouse-row">
               <div role="cell">
-                <div class="font-medium truncate">{{ row.name }}</div>
+                <div class="font-medium truncate flex items-center gap-1.5">
+                  {{ row.name }}
+                  @if (row.isDefault) {
+                    <span class="text-xs text-muted-foreground" data-test="warehouse-default-badge">★ по умолчанию</span>
+                  }
+                </div>
                 @if (row.description) {
                   <div class="text-xs text-muted-foreground truncate">{{ row.description }}</div>
                 }
               </div>
               <span class="text-sm" role="cell" [class.text-muted-foreground]="!row.isActive">{{ row.isActive ? 'Активен' : 'Неактивен' }}</span>
               <div class="flex items-center gap-2 justify-end" role="cell">
+                @if (!row.isDefault) {
+                  <button class="pi-button pi-button-secondary" type="button" (click)="makeDefault(row)" data-test="warehouse-make-default">Сделать по умолчанию</button>
+                }
                 <button class="pi-button pi-button-secondary" type="button" (click)="openEdit(row)" data-test="warehouse-edit">Изменить</button>
                 <button class="pi-button pi-button-secondary" type="button" (click)="confirmDelete(row)" data-test="warehouse-delete">Удалить</button>
               </div>
@@ -188,6 +196,18 @@ export class WarehousesPage implements OnInit {
       return;
     }
     this.toast.success('Склад удалён');
+    this.load();
+  }
+
+  async makeDefault(row: Warehouse): Promise<void> {
+    const result = await firstValueFrom(this.api.setDefault(row._id));
+    if (!result.ok) {
+      this.toast.error('Не удалось назначить склад по умолчанию', {
+        description: extractErrorMessage(result.error),
+      });
+      return;
+    }
+    this.toast.success(`«${row.name}» — склад по умолчанию`);
     this.load();
   }
 }

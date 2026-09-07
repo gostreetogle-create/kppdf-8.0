@@ -40,8 +40,29 @@ describe('WarehouseFormDialogComponent (W1)', () => {
       zoneNames: [],
       description: undefined,
       isActive: true,
+      isDefault: false,
     } satisfies WarehouseWritePayload);
     expect(fixture.nativeElement.querySelector('[data-test="warehouse-form-type"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="warehouse-form-zones"]')).toBeNull();
+  });
+
+  it('preselects the default checkbox from the edited warehouse and includes it in the payload', () => {
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-test="warehouse-form-default"]',
+    ) as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+
+    const name = fixture.nativeElement.querySelector('[data-test="warehouse-form-name"]') as HTMLInputElement;
+    name.value = 'Металл';
+    name.dispatchEvent(new Event('input'));
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-test="warehouse-form-submit"]') as HTMLButtonElement).click();
+
+    expect(ref.close).toHaveBeenCalledWith(
+      expect.objectContaining({ isDefault: true }),
+    );
   });
 });
