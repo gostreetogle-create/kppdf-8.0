@@ -329,3 +329,122 @@ describe('TZ-CATALOG-305 — child Product independence', () => {
     expect(childProduct.listPrice).toBe(500);
   });
 });
+
+describe('TZ-NX-PHOTO-P2 — Product.mainPhotoId validation', () => {
+  function buildService(model: Record<string, unknown>) {
+    return new ProductService(
+      model as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { loadAttributes: jest.fn().mockResolvedValue({}) } as never,
+      {} as never,
+      {} as never,
+    );
+  }
+
+  it('create rejects mainPhotoId not in photoIds (400 RU) before persistence', async () => {
+    const model = { create: jest.fn() };
+    const service = buildService(model);
+    await expect(
+      service.create({
+        sku: 'P-1',
+        kind: 'good',
+        unit: 'шт',
+        photoIds: [new Types.ObjectId().toString()],
+        mainPhotoId: new Types.ObjectId().toString(),
+      } as never),
+    ).rejects.toMatchObject({ message: 'Главное фото должно быть среди фото изделия' });
+    expect(model.create).not.toHaveBeenCalled();
+  });
+
+  it('create accepts mainPhotoId within photoIds and persists an ObjectId', async () => {
+    const mainId = new Types.ObjectId();
+    const model = { create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }) };
+    const service = buildService(model);
+    await service.create({
+      sku: 'P-1',
+      kind: 'good',
+      unit: 'шт',
+      photoIds: [mainId.toString()],
+      mainPhotoId: mainId.toString(),
+    } as never);
+    const payload = (model.create as jest.Mock).mock.calls[0][0];
+    expect(payload.mainPhotoId).toEqual(mainId);
+    expect(payload.photoIds[0]).toEqual(mainId);
+  });
+
+  it('update rejects mainPhotoId outside merged photoIds (400 RU)', async () => {
+    const id = new Types.ObjectId();
+    const existing = { _id: id, __v: 1, photoIds: [], categoryId: undefined };
+    const execFind = jest.fn().mockResolvedValue(existing);
+    const execUpdate = jest.fn().mockResolvedValue({ ...existing });
+    const model = {
+      findOne: jest.fn(() => ({ exec: execFind })),
+      findOneAndUpdate: jest.fn(() => ({ exec: execUpdate })),
+    };
+    const service = buildService(model);
+    await expect(
+      service.update(id.toString(), { mainPhotoId: new Types.ObjectId().toString() } as never),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('update merges incoming photoIds before validating main', async () => {
+    const id = new Types.ObjectId();
+    const mainId = new Types.ObjectId().toString();
+    const existing = { _id: id, __v: 1, photoIds: [], categoryId: undefined };
+    const execFind = jest.fn().mockResolvedValue(existing);
+    const execUpdate = jest.fn().mockResolvedValue({ ...existing, photoIds: [new Types.ObjectId(mainId)] });
+    const model = {
+      findOne: jest.fn(() => ({ exec: execFind })),
+      findOneAndUpdate: jest.fn(() => ({ exec: execUpdate })),
+    };
+    const service = buildService(model);
+    await service.update(id.toString(), { photoIds: [mainId], mainPhotoId: mainId } as never);
+    const [, update] = (model.findOneAndUpdate as jest.Mock).mock.calls[0];
+    expect(update.$set.mainPhotoId).toEqual(new Types.ObjectId(mainId));
+  });
+
+  it('update accepts mainPhotoId null to clear the cover', async () => {
+    const id = new Types.ObjectId();
+    const existing = { _id: id, __v: 1, photoIds: [new Types.ObjectId()], categoryId: undefined };
+    const execFind = jest.fn().mockResolvedValue(existing);
+    const execUpdate = jest.fn().mockResolvedValue({ ...existing, mainPhotoId: null });
+    const model = {
+      findOne: jest.fn(() => ({ exec: execFind })),
+      findOneAndUpdate: jest.fn(() => ({ exec: execUpdate })),
+    };
+    const service = buildService(model);
+    await service.update(id.toString(), { mainPhotoId: null } as never);
+    const [, update] = (model.findOneAndUpdate as jest.Mock).mock.calls[0];
+    expect(update.$set.mainPhotoId).toBeNull();
+  });
+
+  it('duplicate carries mainPhotoId from the source', async () => {
+    const sourceId = new Types.ObjectId();
+    const mainId = new Types.ObjectId();
+    const source = {
+      _id: sourceId,
+      name: 'Стол',
+      sku: 'TABLE-1',
+      kind: 'good',
+      unit: 'шт',
+      photoIds: [mainId],
+      mainPhotoId: mainId,
+      productModuleIds: [],
+      composition: [],
+    };
+    const execFind = jest.fn().mockResolvedValue(source);
+    const model = {
+      findOne: jest.fn(() => ({ exec: execFind })),
+      find: jest.fn(() => ({ select: jest.fn(() => ({ lean: jest.fn(() => ({ exec: jest.fn().mockResolvedValue([]) })) })) })),
+      create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId(), sku: 'TABLE-1-COPY-1' }),
+    };
+    const service = buildService(model);
+    await service.duplicate(sourceId.toString());
+    const payload = (model.create as jest.Mock).mock.calls[0][0];
+    expect(payload.mainPhotoId).toEqual(mainId);
+  });
+});

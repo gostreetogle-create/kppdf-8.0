@@ -4,7 +4,7 @@ updated_at: 2026-09-07T06:15:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** WAVE-NX-CATALOG-PHOTOS continuous — P0 **DONE** (`@kppdf/ui/photo` + `PiPhotosService`) → P2 next
+- **Freebuff:** WAVE-NX-CATALOG-PHOTOS continuous — P0 `7c9d1071` + P2 DONE → P1 next
 - **Claude:** IDLE (TZD-76/78 PARK)
 
 Доска потоков: [`STREAM-QUEUE.md`](./STREAM-QUEUE.md)

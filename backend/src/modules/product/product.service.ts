@@ -33,8 +33,26 @@ export class ProductService {
   async create(dto: CreateProductDto, organizationId?: string | null): Promise<ProductDocument> {
     const sku = this.normalizeRequiredCode(dto.sku, 'Артикул изделия');
     const { attributes, ...rest } = dto;
+    // WAVE-NX-CATALOG-PHOTOS P2: photoIds → ObjectId; main ∈ photoIds (после normalize) или null.
+    const photoObjectIds = rest.photoIds?.map((pid) => new Types.ObjectId(String(pid)));
+    let mainObjectId: Types.ObjectId | null | undefined;
+    if (rest.mainPhotoId === null) {
+      mainObjectId = null;
+    } else if (rest.mainPhotoId !== undefined) {
+      const main = String(rest.mainPhotoId);
+      if (!photoObjectIds || !photoObjectIds.some((pid) => pid.toString() === main)) {
+        throw new BadRequestException('Главное фото должно быть среди фото изделия');
+      }
+      mainObjectId = new Types.ObjectId(main);
+    }
     try {
-      const doc = await this.model.create({ ...rest, sku, ...this.organizationWrite(organizationId) });
+      const doc = await this.model.create({
+        ...rest,
+        ...(photoObjectIds ? { photoIds: photoObjectIds } : {}),
+        ...(mainObjectId !== undefined ? { mainPhotoId: mainObjectId } : {}),
+        sku,
+        ...this.organizationWrite(organizationId),
+      });
       if (attributes && Object.keys(attributes).length > 0) {
         const catId = doc.categoryId
           ? new Types.ObjectId(doc.categoryId as unknown as string)
@@ -132,6 +150,23 @@ export class ProductService {
     if (Array.isArray(rest.photoIds)) {
       $set.photoIds = rest.photoIds.map((pid) => new Types.ObjectId(String(pid)));
     }
+    // WAVE-NX-CATALOG-PHOTOS P2: main ∈ final photoIds (merged) или null.
+    if (rest.mainPhotoId !== undefined) {
+      const finalPhotoIds = (
+        (Array.isArray(rest.photoIds) ? rest.photoIds : (doc.photoIds ?? []).map((pid) => String(pid))) as Array<
+          string | Types.ObjectId
+        >
+      ).map((pid) => String(pid));
+      if (rest.mainPhotoId === null) {
+        $set.mainPhotoId = null;
+      } else {
+        const main = String(rest.mainPhotoId);
+        if (!finalPhotoIds.includes(main)) {
+          throw new BadRequestException('Главное фото должно быть среди фото изделия');
+        }
+        $set.mainPhotoId = new Types.ObjectId(main);
+      }
+    }
 
     let saved: ProductDocument;
     try {
@@ -199,6 +234,7 @@ export class ProductService {
       description: overrides.description ?? source.description,
       notes: source.notes,
       photoIds: [...(source.photoIds ?? [])],
+      mainPhotoId: source.mainPhotoId ?? null,
       dimensions: source.dimensions ? { ...source.dimensions } : undefined,
       weightKg: source.weightKg,
       ralCode: source.ralCode,

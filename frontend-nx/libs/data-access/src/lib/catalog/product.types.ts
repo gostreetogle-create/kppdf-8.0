@@ -29,6 +29,8 @@ export interface Product {
   description?: string;
   notes?: string;
   photoIds?: ProductRef[];
+  /** WAVE-NX-CATALOG-PHOTOS P2: главное фото (обложка); null/undefined = витрина берёт photoIds[0]. */
+  mainPhotoId?: ProductRef | null;
   dimensions?: ProductDimensions;
   weightKg?: number;
   ralCode?: string | null;
@@ -87,6 +89,8 @@ export interface CreateProductPayload {
   stockQty?: number;
   description?: string;
   notes?: string;
+  photoIds?: string[];
+  mainPhotoId?: string | null;
   dimensions?: ProductDimensions;
   weightKg?: number;
   hasPassport?: boolean;

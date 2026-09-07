@@ -140,6 +140,12 @@ export class CreateProductDto {
   @IsMongoId({ each: true, message: 'Некорректный ID фото' })
   photoIds?: string[];
 
+  @ApiPropertyOptional({ description: 'Главное фото (ID из photoIds; null = авто)' })
+  @Transform(emptyStringToNull)
+  @IsOptional()
+  @IsMongoId({ message: 'Некорректный ID главного фото' })
+  mainPhotoId?: string | null;
+
   @ApiPropertyOptional({ type: ProductDimensionsDto, description: 'Размеры продукта' })
   @IsOptional()
   @ValidateNested()

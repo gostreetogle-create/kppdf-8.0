@@ -36,6 +36,8 @@ export class Product {
   @Prop() description?: string;
   @Prop() notes?: string;
   @Prop({ type: [Types.ObjectId], ref: 'Photo', default: [] }) photoIds!: Types.ObjectId[];
+  /** WAVE-NX-CATALOG-PHOTOS P2: главное фото (обложка) — обязано быть в photoIds (validate в service). */
+  @Prop({ type: Types.ObjectId, ref: 'Photo', default: null }) mainPhotoId?: Types.ObjectId | null;
   @Prop({ type: ProdDimensionsSchemaFactory }) dimensions?: { length?: number; width?: number; height?: number; unit?: string };
   @Prop({ default: 0 }) weightKg?: number;
   @Prop() ralCode?: string;

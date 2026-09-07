@@ -440,7 +440,7 @@ export class CatalogGraphService {
       name: row.name,
       unit: 'unit' in row ? row.unit : undefined,
       photoIds: row.photoIds,
-      mainPhotoId: 'mainPhotoId' in row ? row.mainPhotoId : undefined,
+      mainPhotoId: 'mainPhotoId' in row ? (row.mainPhotoId ?? undefined) : undefined,
     };
   }
 
