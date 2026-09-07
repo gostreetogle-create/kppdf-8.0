@@ -177,6 +177,18 @@ Nav «Снабжение» теперь два пункта: **«Заявки»*
 на NX ещё нет Users-lookup сервиса (только Person/Worker для производства, не
 login-аккаунты). Резолюция в отображаемое имя — отдельная будущая задача.
 
+### Chrome — фильтры / история / связь Order↔Request (TZ-NX-SUPPLY-S6-CHROME)
+
+- Фильтры журнала: поиск (title/article), статус, «только оплаченные», диапазон
+  дат «нужно к» (`neededBy` from/to) — все client-side (список уже капается на
+  500 строк на бэкенде). «Сбросить фильтры» появляется только когда хоть один
+  фильтр активен.
+- Колонка «Заказ»: если `orderId` резолвится в локально загруженный `Order` —
+  кликабельная ссылка на `/orders/:id` (`routerLink`, как на `/supply`); иначе
+  показывается `orderLabel` (свободный текст) или короткий id как fallback.
+- Пустое состояние различает «заявок вообще нет» (CTA «+ Заявка») и «ничего не
+  найдено по фильтрам» (кнопка «Сбросить фильтры»), без жаргона.
+
 ## NX — TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK («Получено» → confirm + склад IN)
 
 HITL confirm, не silent auto-IN: кнопка «Получено» на `/supply-requests` (не
@@ -229,3 +241,4 @@ typeahead:
 | **TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK** | «Получено» на `/supply-requests` → confirm dialog → `StockMovement` IN (единый write-path) + `status='received'`; 409 на повтор |
 | **TZ-NX-SUPPLY-S5-MATERIAL-UPSERT** | Material typeahead в форме заявки → «+ Новый материал» / «Копировать и изменить» через переиспользуемый `MaterialFormDialogComponent`; без второго каталога, без silent-merge дублей |
 | **TZ-DESKTOP-SUPPLY-EXCEL-A** | Desktop Excel-импорт `supplyRequest`: колонки `invoiceNo`/`deliveryNote`/`paid`/`orderLabel`/`supplierName`/`orderNumber`; match по артикулу/имени/номеру → materialId/supplierId/orderId, miss = invalid-строка (не silent create) — см. `desktop/README.md` §Снабжение |
+| **TZ-NX-SUPPLY-S6-CHROME** | `/supply-requests` — фильтры (status/paid/дата), ссылка на Order при совпадении `orderId`, различённые empty-состояния; **WAVE-NX-SUPPLY-OPS DONE (7/7)** |

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   PiOrdersService,
@@ -41,7 +42,7 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
   selector: 'pi-supply-requests-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, RouterLink],
   template: `
     <main class="px-panel-inset py-6" data-test="supply-requests-page">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -91,6 +92,33 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
           />
           <span>Только оплаченные</span>
         </label>
+        <label class="flex items-center gap-1 text-xs text-muted-foreground" for="supply-request-date-from">
+          Нужно к: с
+          <input
+            id="supply-request-date-from"
+            type="date"
+            class="pi-input !h-8 !text-[13px] !py-0"
+            [value]="dateFrom()"
+            (change)="onDateFromChange($event)"
+            data-test="supply-request-date-from"
+          />
+        </label>
+        <label class="flex items-center gap-1 text-xs text-muted-foreground" for="supply-request-date-to">
+          по
+          <input
+            id="supply-request-date-to"
+            type="date"
+            class="pi-input !h-8 !text-[13px] !py-0"
+            [value]="dateTo()"
+            (change)="onDateToChange($event)"
+            data-test="supply-request-date-to"
+          />
+        </label>
+        @if (hasActiveFilters()) {
+          <button class="text-xs underline underline-offset-2 text-muted-foreground" type="button" (click)="resetFilters()" data-test="supply-request-reset-filters">
+            Сбросить фильтры
+          </button>
+        }
         <span class="text-sm text-muted-foreground">{{ filteredRows().length }} заявок</span>
         <span class="flex-1"></span>
         <button class="pi-button pi-button-secondary" type="button" (click)="load()" data-test="supply-request-refresh">
@@ -112,7 +140,14 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
       }
       @if (status() === 'success' && filteredRows().length === 0) {
         <div class="pi-dashed-panel p-8 text-center" data-test="supply-requests-empty">
-          Заявок пока нет. Создайте первую — «+ Заявка».
+          @if (rows().length === 0) {
+            Заявок пока нет. Создайте первую — «+ Заявка».
+          } @else {
+            Ничего не найдено по текущим фильтрам.
+            <button class="underline underline-offset-2" type="button" (click)="resetFilters()" data-test="supply-request-empty-reset">
+              Сбросить фильтры
+            </button>
+          }
         </div>
       }
       @if (status() === 'success' && filteredRows().length > 0) {
@@ -137,7 +172,15 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
                 <div role="cell" data-test="supply-request-status">{{ statusLabel(row.status) }}</div>
                 <div role="cell" data-test="supply-request-paid-cell">{{ row.paid ? 'Оплачено' : '—' }}</div>
                 <div role="cell" class="truncate">{{ row.invoiceNo || '—' }}</div>
-                <div role="cell" class="truncate">{{ orderLabel(row) }}</div>
+                <div role="cell" class="truncate">
+                  @if (linkedOrder(row); as order) {
+                    <a class="underline underline-offset-2 hover:text-sunrise-warm" [routerLink]="['/orders', order._id]" data-test="supply-request-order-link">
+                      {{ order.number }}
+                    </a>
+                  } @else {
+                    {{ orderLabel(row) }}
+                  }
+                </div>
                 <div role="cell" class="truncate" [attr.title]="row.createdBy">{{ createdByLabel(row.createdBy) }}</div>
                 <div class="flex items-center gap-2 justify-end" role="cell">
                   @if (isReceivable(row)) {
@@ -176,14 +219,33 @@ export class SupplyRequestsPage {
   protected readonly search = signal('');
   protected readonly statusFilter = signal<SupplyRequestStatus | ''>('');
   protected readonly paidOnly = signal(false);
+  protected readonly dateFrom = signal('');
+  protected readonly dateTo = signal('');
+
+  protected readonly hasActiveFilters = computed(
+    () =>
+      this.search().trim() !== '' ||
+      this.statusFilter() !== '' ||
+      this.paidOnly() ||
+      this.dateFrom() !== '' ||
+      this.dateTo() !== '',
+  );
 
   protected readonly filteredRows = computed(() => {
     const query = this.search().trim().toLowerCase();
     const status = this.statusFilter();
     const paidOnly = this.paidOnly();
+    const dateFrom = this.dateFrom();
+    const dateTo = this.dateTo();
     return this.rows().filter((row) => {
       if (status && row.status !== status) return false;
       if (paidOnly && !row.paid) return false;
+      if (dateFrom || dateTo) {
+        const needed = row.neededBy?.slice(0, 10) ?? '';
+        if (!needed) return false;
+        if (dateFrom && needed < dateFrom) return false;
+        if (dateTo && needed > dateTo) return false;
+      }
       if (!query) return true;
       return (row.title ?? '').toLowerCase().includes(query) || (row.article ?? '').toLowerCase().includes(query);
     });
@@ -206,6 +268,22 @@ export class SupplyRequestsPage {
     this.paidOnly.set((event.target as HTMLInputElement).checked);
   }
 
+  onDateFromChange(event: Event): void {
+    this.dateFrom.set((event.target as HTMLInputElement).value);
+  }
+
+  onDateToChange(event: Event): void {
+    this.dateTo.set((event.target as HTMLInputElement).value);
+  }
+
+  resetFilters(): void {
+    this.search.set('');
+    this.statusFilter.set('');
+    this.paidOnly.set(false);
+    this.dateFrom.set('');
+    this.dateTo.set('');
+  }
+
   load(): void {
     this.status.set('loading');
     void firstValueFrom(this.api.list()).then((result) => {
@@ -226,6 +304,12 @@ export class SupplyRequestsPage {
   protected supplierLabel(supplierId?: string): string {
     if (!supplierId) return '—';
     return this.suppliers().find((s) => s._id === supplierId)?.name ?? supplierId.slice(-6);
+  }
+
+  /** Resolved `Order` when `orderId` matches a known order — renders as a link; otherwise falls back to `orderLabel(row)` text. */
+  protected linkedOrder(row: SupplyRequest): Order | undefined {
+    if (!row.orderId) return undefined;
+    return this.orders().find((o) => o._id === row.orderId);
   }
 
   protected orderLabel(row: SupplyRequest): string {

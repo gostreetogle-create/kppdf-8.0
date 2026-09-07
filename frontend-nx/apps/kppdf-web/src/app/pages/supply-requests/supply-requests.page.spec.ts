@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import {
   PiOrdersService,
@@ -36,6 +37,7 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
       supplierId: 's1',
       orderId: 'o1',
       materialId: 'm1',
+      neededBy: '2026-09-10',
     },
     {
       _id: 'r2',
@@ -48,6 +50,7 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
       invoiceNo: 'INV-1',
       orderLabel: 'Цех 2',
       materialId: 'm2',
+      neededBy: '2026-09-20',
     },
   ];
   const orders: Order[] = [{ _id: 'o1', number: 'ORD-1' } as Order];
@@ -68,6 +71,7 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
     await TestBed.configureTestingModule({
       imports: [SupplyRequestsPage],
       providers: [
+        provideRouter([]),
         { provide: PiSupplyRequestsService, useValue: api },
         { provide: PiOrdersService, useValue: ordersApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
@@ -113,6 +117,60 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('[data-test="supply-request-row"]').length).toBe(1);
     expect(fixture.nativeElement.textContent).toContain('Труба');
+  });
+
+  it('filters by neededBy date range', async () => {
+    await setup();
+    const dateFrom = fixture.nativeElement.querySelector('[data-test="supply-request-date-from"]') as HTMLInputElement;
+    dateFrom.value = '2026-09-15';
+    dateFrom.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const remaining = fixture.nativeElement.querySelectorAll('[data-test="supply-request-row"]');
+    expect(remaining.length).toBe(1);
+    expect(fixture.nativeElement.textContent).toContain('Труба');
+  });
+
+  it('shows a router link to the order when orderId resolves, otherwise the orderLabel text', async () => {
+    await setup();
+    const link = fixture.nativeElement.querySelector('[data-test="supply-request-order-link"]') as HTMLAnchorElement;
+    expect(link).not.toBeNull();
+    expect(link.textContent?.trim()).toBe('ORD-1');
+    expect(fixture.nativeElement.textContent).toContain('Цех 2');
+  });
+
+  it('shows and clears active filters via «Сбросить фильтры»', async () => {
+    await setup();
+    expect(fixture.nativeElement.querySelector('[data-test="supply-request-reset-filters"]')).toBeNull();
+
+    const paidOnly = fixture.nativeElement.querySelector(
+      '[data-test="supply-request-paid-filter"]',
+    ) as HTMLInputElement;
+    paidOnly.checked = true;
+    paidOnly.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const resetBtn = fixture.nativeElement.querySelector(
+      '[data-test="supply-request-reset-filters"]',
+    ) as HTMLButtonElement;
+    expect(resetBtn).not.toBeNull();
+    resetBtn.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="supply-request-reset-filters"]')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('[data-test="supply-request-row"]').length).toBe(2);
+  });
+
+  it('shows a distinct empty state for "no matches" vs "no data at all"', async () => {
+    await setup();
+    const search = fixture.nativeElement.querySelector('[data-test="supply-request-search"]') as HTMLInputElement;
+    search.value = 'nonexistent';
+    search.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="supply-requests-empty"]')?.textContent).toContain(
+      'Ничего не найдено',
+    );
   });
 
   it('opens the create dialog with preloaded orders/suppliers and reloads on save', async () => {

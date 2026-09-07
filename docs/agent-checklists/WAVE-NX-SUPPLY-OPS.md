@@ -2,7 +2,7 @@
 
 **Audit:** `docs/audits/2026-09-06-supply-google-sheets-to-nx-audit.md`  
 **Predecessor:** WAVE-NX-SUPPLY S0–S2 DONE  
-**Статус:** READY — Claude-only (`tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md`) после Photos P3  
+**Статус:** **DONE** (7/7) — Claude-only (`tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md`), см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S6-CHROME.done.md` §итог  
 **Исполнитель:** `agent_id: claude` (Freebuff PARK)
 
 | # | SIZE | TZ | Path | Status |
@@ -13,7 +13,7 @@
 | 4 | L | S4 Received → stock IN | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK.done.md` |
 | 5 | L | S5 Material upsert + copy | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S5-MATERIAL-UPSERT.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S5-MATERIAL-UPSERT.done.md` |
 | 6 | S | Excel path A | `tasks/_ready/nx-supply/TZ-DESKTOP-SUPPLY-EXCEL-A.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-DESKTOP-SUPPLY-EXCEL-A.done.md` |
-| 7 | S | S6 Chrome filters/links | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S6-CHROME.md` | READY |
+| 7 | S | S6 Chrome filters/links | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S6-CHROME.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S6-CHROME.done.md` |
 | — | L | Excel path B multi-sheet | backlog later | PARK |
 
 **PO lock:** receive=confirm+warehouse(default); paid=flag; order=Order\|orderLabel; material=supply+copy; createdBy.  
