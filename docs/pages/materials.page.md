@@ -230,5 +230,6 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 ---
 
 - **NX dropzone SoT:** `@kppdf/ui/photo` (`PiPhotoDropzoneComponent`) + `PiPhotosService` (`@kppdf/data-access`) — WAVE-NX-CATALOG-PHOTOS P0; подключение в формы реестров → P1; рамка (contain/cover + drag-pan) → `PATCH /photos/:id/frame` — P3.
+- **Форма материала переиспользуется вне реестра:** `TZ-NX-SUPPLY-S5-MATERIAL-UPSERT` открывает тот же `MaterialFormDialogComponent` из формы заявки снабжения (`/supply-requests`) для «+ Новый материал» / «Копировать и изменить» — один write-path (`PiMaterialsService`), без второго каталога. Подробности: `docs/pages/supply.page.md` §S5.
 
 _Создано: 2026-07-19. Последнее обновление: 2026-09-07 (TZ-NX-PHOTO-P3: рамка фото в dropzone материала; ранее TZ-CATALOG-373: view toggle list↔grid + `pi-materials-view-mode`, filters-rail, grid-витрина `PiShowcaseCard`; TZ-MATERIALS-312: supplier empty/error/loading states и desktop half-width «Габариты»; TZ-PHOTO-302: list/grid URL через `photoListUrl`, thumb для каталогов с fallback на original; TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр)._

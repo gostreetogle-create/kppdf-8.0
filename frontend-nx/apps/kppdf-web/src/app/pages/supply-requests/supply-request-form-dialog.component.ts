@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -13,11 +13,16 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF, type DialogRef } from '@kppdf/ui/dialog';
+import { PiDialogComponent, PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF, type DialogRef } from '@kppdf/ui/dialog';
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { SUPPLY_REQUEST_STATUS_LABELS } from '../registries/data/supply-request-formatters';
+import {
+  MaterialFormDialogComponent,
+  type MaterialFormDialogData,
+} from '../registries/dialogs/material-form-dialog.component';
 
 /** Sentinel `<option>` value — order not found in the list, switch to free-text `orderLabel`. */
 const MANUAL_ORDER_VALUE = '__manual__';
@@ -59,26 +64,39 @@ export interface SupplyRequestFormDialogData {
               <app-pi-form-field label="Артикул" htmlFor="supply-request-article">
                 <app-pi-input id="supply-request-article" formControlName="article" data-test="supply-request-article" />
               </app-pi-form-field>
-              <app-pi-form-field label="Найти материал в каталоге" htmlFor="supply-request-material-search">
-                <app-pi-input
-                  id="supply-request-material-search"
-                  [value]="materialQuery()"
-                  (valueChange)="onMaterialQuery($event)"
-                  placeholder="Начните вводить название или артикул…"
-                  data-test="supply-request-material-search"
-                />
-              </app-pi-form-field>
+              <div class="flex items-end gap-2">
+                <app-pi-form-field label="Найти материал в каталоге" htmlFor="supply-request-material-search" class="flex-1">
+                  <app-pi-input
+                    id="supply-request-material-search"
+                    [value]="materialQuery()"
+                    (valueChange)="onMaterialQuery($event)"
+                    placeholder="Начните вводить название или артикул…"
+                    data-test="supply-request-material-search"
+                  />
+                </app-pi-form-field>
+                <app-pi-button type="button" variant="outline" size="sm" (click)="openCreateMaterial()" data-test="supply-request-material-create">
+                  + Новый материал
+                </app-pi-button>
+              </div>
               @if (materialResults().length > 0) {
                 <ul class="pi-dashed-panel divide-y divide-border" data-test="supply-request-material-results">
                   @for (m of materialResults(); track m._id) {
-                    <li>
+                    <li class="flex items-center gap-2">
                       <button
                         type="button"
-                        class="w-full text-left px-2 py-1.5 text-sm hover:bg-paper-2"
+                        class="flex-1 text-left px-2 py-1.5 text-sm hover:bg-paper-2"
                         (click)="pickMaterial(m)"
                         [attr.data-test]="'supply-request-material-pick-' + m._id"
                       >
                         {{ m.name }} @if (m.article) { <span class="text-muted-foreground">· {{ m.article }}</span> }
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1.5 text-xs text-muted-foreground underline underline-offset-2 shrink-0"
+                        (click)="openCopyMaterial(m)"
+                        [attr.data-test]="'supply-request-material-copy-' + m._id"
+                      >
+                        Копировать и изменить
                       </button>
                     </li>
                   }
@@ -179,6 +197,9 @@ export class SupplyRequestFormDialogComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly api = inject(PiSupplyRequestsService);
   private readonly materialsApi = inject(PiMaterialsService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   readonly manualOrderValue = MANUAL_ORDER_VALUE;
   readonly statuses: readonly SupplyRequestStatus[] = ['in_progress', 'requested', 'ordered', 'received', 'cancelled'];
@@ -246,6 +267,26 @@ export class SupplyRequestFormDialogComponent {
   clearMaterial(): void {
     this.materialId.set(null);
     this.materialLabel.set('');
+  }
+
+  /** PO §6: supply access may create Material — same shared form as the catalog registry. */
+  openCreateMaterial(): void {
+    this.openMaterialDialog({ mode: 'create', allowKindSelect: true });
+  }
+
+  /** «Копировать материал»: prefill create from an existing material, user edits before it saves as a NEW one. */
+  openCopyMaterial(source: Material): void {
+    this.openMaterialDialog({ mode: 'create', material: source, allowKindSelect: true });
+  }
+
+  private openMaterialDialog(data: MaterialFormDialogData): void {
+    const ref = this.dialog.open<Material | null | undefined>(MaterialFormDialogComponent, {
+      data,
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (material) => {
+      if (material) this.pickMaterial(material);
+    });
   }
 
   async submit(): Promise<void> {

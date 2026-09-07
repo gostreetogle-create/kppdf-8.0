@@ -3,21 +3,24 @@ import { of } from 'rxjs';
 import {
   PiMaterialsService,
   PiSupplyRequestsService,
+  type Material,
   type Order,
   type Organization,
   type SupplyRequest,
 } from '@kppdf/data-access';
-import { PI_DIALOG_DATA, PI_DIALOG_REF, type DialogRef } from '@kppdf/ui/dialog';
+import { PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF, type DialogRef } from '@kppdf/ui/dialog';
 import {
   SupplyRequestFormDialogComponent,
   type SupplyRequestFormDialogData,
 } from './supply-request-form-dialog.component';
+import { MaterialFormDialogComponent } from '../registries/dialogs/material-form-dialog.component';
 
 describe('SupplyRequestFormDialogComponent (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
   let fixture: ComponentFixture<SupplyRequestFormDialogComponent>;
   let ref: { close: jest.Mock };
   let api: { create: jest.Mock; update: jest.Mock };
   let materialsApi: { list: jest.Mock };
+  let dialog: { open: jest.Mock };
 
   const orders: Order[] = [{ _id: 'o1', number: 'ORD-1' } as Order];
   const suppliers: Organization[] = [{ _id: 's1', name: 'ООО Металл', inn: '123', type: ['supplier'] }];
@@ -31,6 +34,7 @@ describe('SupplyRequestFormDialogComponent (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', (
     materialsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 10 } })),
     };
+    dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [SupplyRequestFormDialogComponent],
       providers: [
@@ -38,6 +42,7 @@ describe('SupplyRequestFormDialogComponent (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', (
         { provide: PI_DIALOG_REF, useValue: ref as unknown as DialogRef<unknown> },
         { provide: PiSupplyRequestsService, useValue: api },
         { provide: PiMaterialsService, useValue: materialsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(SupplyRequestFormDialogComponent);
@@ -137,6 +142,33 @@ describe('SupplyRequestFormDialogComponent (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', (
     const payload = api.create.mock.calls[0][0];
     expect(payload.orderLabel).toBe('Цех 2');
     expect(payload.orderId).toBeUndefined();
+  });
+
+  it('«+ Новый материал» opens a blank create dialog', async () => {
+    await setup();
+    const dialogRef = { closed: () => undefined } as unknown as DialogRef<unknown>;
+    dialog.open.mockReturnValue(dialogRef);
+
+    (fixture.nativeElement.querySelector('[data-test="supply-request-material-create"]') as HTMLButtonElement).click();
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      MaterialFormDialogComponent,
+      expect.objectContaining({ data: { mode: 'create', allowKindSelect: true } }),
+    );
+  });
+
+  it('«Копировать и изменить» opens create prefilled from the source material', async () => {
+    await setup();
+    const source: Material = { _id: 'm1', name: 'Подшипник', article: '6205', unit: 'шт' } as Material;
+    const dialogRef = { closed: () => undefined } as unknown as DialogRef<unknown>;
+    dialog.open.mockReturnValue(dialogRef);
+
+    fixture.componentInstance.openCopyMaterial(source);
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      MaterialFormDialogComponent,
+      expect.objectContaining({ data: { mode: 'create', material: source, allowKindSelect: true } }),
+    );
   });
 
   it('prefills from an existing request and calls update on submit', async () => {

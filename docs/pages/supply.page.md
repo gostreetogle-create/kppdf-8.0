@@ -195,6 +195,28 @@ prefilled план `qty`, можно поправить). Кнопка видн�
 слова PO»); без `warehouseId` в запросе и без `Warehouse.isDefault` — `400`
 («сначала выберите склад», PO lock §6).
 
+## NX — TZ-NX-SUPPLY-S5-MATERIAL-UPSERT (typeahead → создать / копировать материал)
+
+В форме заявки (`supply-request-form-dialog.component.ts`), рядом с material
+typeahead:
+
+- **«+ Новый материал»** — открывает переиспользуемый
+  `MaterialFormDialogComponent` (`registries/dialogs/material-form-dialog.component.ts`,
+  тот же, что в реестре материалов, с фото-dropzone P1) в `mode: 'create'`,
+  `allowKindSelect: true` (типы `part`/`fastener`/`purchased`/`other` — как у
+  «детали» в реестре, не сырьё). Результат сразу биндится через `pickMaterial()`.
+- **«Копировать и изменить»** на каждой строке результатов поиска — тот же
+  диалог в `mode: 'create'` с `material: source` (prefill всех полей из
+  источника через существующий `patchMaterial()`/`hydratePhotos()`); диалог
+  сохраняет **новый** материал (create, не update — `mode` не даёт
+  переключиться на edit), пользователь правит артикул/имя перед сохранением.
+  Фото источника тоже prefill'ятся (существующее поведение диалога, не
+  специально для copy) — можно убрать перед сохранением, если не нужны на копии.
+- Дедуп — HITL: typeahead показывает список похожих, никакого auto-merge;
+  выбор — явный клик пользователя (существующее поведение S3, не менялось).
+- Второй каталог не заводился — единственный write-path материалов остаётся
+  `PiMaterialsService` (`/materials`), тот же, что у реестра.
+
 ### TZ reference (NX)
 
 | TZ | Что сделано |
@@ -205,3 +227,4 @@ prefilled план `qty`, можно поправить). Кнопка видн�
 | **TZ-NX-WAREHOUSE-DEFAULT** | `Warehouse.isDefault` — нужен для следующего S4 (receive→stock), не в этом файле — см. `docs/pages/warehouses.page.md` |
 | **TZ-NX-SUPPLY-S3-REQUEST-JOURNAL** | `/supply-requests` — полный журнал заявок (Sheets parity), заменил truncated registries dialog |
 | **TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK** | «Получено» на `/supply-requests` → confirm dialog → `StockMovement` IN (единый write-path) + `status='received'`; 409 на повтор |
+| **TZ-NX-SUPPLY-S5-MATERIAL-UPSERT** | Material typeahead в форме заявки → «+ Новый материал» / «Копировать и изменить» через переиспользуемый `MaterialFormDialogComponent`; без второго каталога, без silent-merge дублей |
