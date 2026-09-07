@@ -1,6 +1,6 @@
 # TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET: воздух и плитки в expand заказа
 
-**РОЛЬ АГЕНТА:** Executor (frontend-nx) — Freebuff  
+**РОЛЬ АГЕНТА:** Executor (frontend-nx) — **agent_id: claude** (Freebuff PARK 2026-09-07)  
 **ЗАВИСИМОСТИ:** нет (D2 hub tray DONE; visual FAIL по скрину PO 2026-09-05)  
 **LAYER:** 3  
 **SIZE:** S  

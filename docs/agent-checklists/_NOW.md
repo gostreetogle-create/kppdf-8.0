@@ -1,31 +1,23 @@
 ﻿# NOW
 
-updated_at: 2026-09-08T03:30:00+03:00
+updated_at: 2026-09-07T22:20:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — Orders hub tray inset DONE. Executor report ниже; ждёт промпт следующей задачи от Cursor.
+- **Claude:** IDLE — Claude-only очередь волн закрыта
+- **LM Studio / Cursor↔Gemma:** STOP на сегодня
 
 Очередь: [`CLAUDE-ONLY-QUEUE.md`](./CLAUDE-ONLY-QUEUE.md)
 
-## Executor report (TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET)
+## DONE (Claude-only день)
 
-- Outer grid `gap-4` → `gap-5`; `-mx-2` снят с toggle «Состав заказа»; подблоки Снабжение/Производство/Готовность/Склад/Отгрузка — отдельные плитки `rounded-sm bg-paper-2 p-3` вместо `border-t` списка.
-- Gates зелёные: jest (order-hub-tray, 3 новых assert'а) · lint kppdf-web · nx build kppdf-web (last).
-- Детали: `tasks/_archive/2026-09/TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET.done.md`
-
-## DONE
-
-- Photos P0–P3 · Supply OPS 7/7 · TZD-78 `7a3e576e` (0.5.10)
-- Orders hub tray inset — DONE
+- Photos P0–P3 · Supply OPS 7/7 · TZD-78 `7a3e576e` · Orders tray `b770e802` (meta `c2640ef2`)
 
 ## NEXT
 
-1. **PO тест:** Gemma LM Studio ↔ KPPDF MCP — `docs/peer/TEST-GEMMA-LMSTUDIO-KPPDF-MCP.md` (сначала поднять Desktop MCP) — не в этом TZ, не трогалось
-2. TZD-76 · G12 PARK
+Промптов нет. Новое — по слову PO (TZD-76 / G12 / Supply Excel B / LM Studio BYOK).
 
 ## PARK
 
-- TZD-76 · G12 · Freebuff · Excel supply pack B
-- In-app Desktop chat → call MCP tools (отдельный TZ, если тест LM Studio покажет ценность)
+- Freebuff · TZD-76 · G12 · Excel pack B · Cursor↔LM Studio (`docs/peer/CURSOR-LMSTUDIO-AS-MODEL.md`)
