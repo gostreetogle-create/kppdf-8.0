@@ -1339,6 +1339,22 @@ function printReadyPanel() {
 }
 
 // ---------- main ----------
+function ensureClaudeUnattendedQuiet() {
+  // PO AFK: keep Desktop/CLI in bypass without manual checklist.
+  // Best-effort — never fail start.mjs if Claude isn't installed.
+  try {
+    const script = join(ROOT, 'scripts', 'ensure-claude-unattended.mjs');
+    if (!existsSync(script)) return;
+    spawnSync(process.execPath, [script, '--quiet'], {
+      cwd: ROOT,
+      stdio: 'ignore',
+      timeout: 15_000,
+    });
+  } catch {
+    // ignore
+  }
+}
+
 async function main() {
   const banner = flags.prod
     ? `${c.bold}${c.yellow}━━ kppdf-8.0 PRODUCTION ━━${c.reset}\n${c.dim}  Backend: dist/main.js (NODE_ENV=production) · Frontend: static server${c.reset}`
@@ -1346,6 +1362,7 @@ async function main() {
       ? `${c.bold}${c.magenta}━━ kppdf-8.0 local starter (Nx) ━━${c.reset}\n${c.dim}  Mongo + Backend (NestJS) + frontend-nx (Angular Nx :4201)${c.reset}`
       : `${c.bold}${c.magenta}━━ kppdf-8.0 local starter ━━${c.reset}\n${c.dim}  Mongo + Backend (NestJS) + Frontend (Angular 20 :4200)${c.reset}`;
   console.log(banner);
+  ensureClaudeUnattendedQuiet();
 
   // ---- STOP mode ----
   if (flags.stop) {
