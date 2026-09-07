@@ -1,7 +1,7 @@
 # TZ-NX-WAREHOUSE-DEFAULT — DONE
 
 - **agent_id:** claude
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** 08149e8e
 - **TZ:** tasks/_ready/nx-supply/TZ-NX-WAREHOUSE-DEFAULT.md
 - **WAVE:** WAVE-NX-SUPPLY-OPS (2/7)
 
