@@ -1,7 +1,7 @@
 # TZ-NX-SUPPLY-S6-CHROME — DONE
 
 - **agent_id:** claude
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** 7b1db538
 - **TZ:** tasks/_ready/nx-supply/TZ-NX-SUPPLY-S6-CHROME.md
 - **WAVE:** WAVE-NX-SUPPLY-OPS (7/7 — **WAVE DONE**)
 - **Deps:** S3 journal (`a11234ee`)
@@ -47,7 +47,7 @@ Stock; Excel B; new entities.
 | 4 | TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK | `78ab5690` |
 | 5 | TZ-NX-SUPPLY-S5-MATERIAL-UPSERT | `4e54034d` |
 | 6 | TZ-DESKTOP-SUPPLY-EXCEL-A | `541ac855` |
-| 7 | TZ-NX-SUPPLY-S6-CHROME | pending (this file) |
+| 7 | TZ-NX-SUPPLY-S6-CHROME | `7b1db538` |
 
 Google Sheets «Снабжение» replacement is now live in NX end-to-end: journal
 (`/supply-requests`) → create/edit with invoice/paid/order/material fields →
