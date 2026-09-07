@@ -1,7 +1,7 @@
 # TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK — DONE
 
 - **agent_id:** claude
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** 78ab5690
 - **TZ:** tasks/_ready/nx-supply/TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK.md
 - **WAVE:** WAVE-NX-SUPPLY-OPS (4/7)
 - **Deps:** TZ-SUPPLY-BE-INVOICE-DELIVERY (`1c4c381a`), TZ-NX-WAREHOUSE-DEFAULT (`08149e8e`), S3 journal (`a11234ee`)
