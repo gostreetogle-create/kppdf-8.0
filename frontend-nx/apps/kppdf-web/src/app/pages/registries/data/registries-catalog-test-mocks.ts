@@ -3,15 +3,7 @@ import { jest } from '@jest/globals';
 import type {
   PiOrganizationsService,
   PiProductPassportsService,
-  PiSupplyRequestsService,
 } from '@kppdf/data-access';
-
-export function mockSupplyRequestsService(): PiSupplyRequestsService {
-  return {
-    list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
-    getById: jest.fn(),
-  } as unknown as PiSupplyRequestsService;
-}
 
 export function mockOrganizationsService(): PiOrganizationsService {
   return {

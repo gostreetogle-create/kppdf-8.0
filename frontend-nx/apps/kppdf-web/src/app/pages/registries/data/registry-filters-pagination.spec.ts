@@ -1,7 +1,7 @@
 import { buildRegistriesCatalogDefault } from './registries.catalog';
 import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
 import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
-import { PiMaterialsService, PiModulesService, PiOrganizationsService, PiProductPassportsService, PiProductsService, PiSupplyRequestsService, PiUnitsService } from '@kppdf/data-access';
+import { PiMaterialsService, PiModulesService, PiOrganizationsService, PiProductPassportsService, PiProductsService, PiUnitsService } from '@kppdf/data-access';
 import { of } from 'rxjs';
 import type { Router } from '@angular/router';
 import type { RegistryFilter } from '../model/registry.types';
@@ -33,7 +33,6 @@ function buildCatalog() {
     { list: jest.fn(), getById: jest.fn() } as unknown as PiMaterialsService,
     { list: jest.fn(), getById: jest.fn() } as unknown as PiModulesService,
     { list: jest.fn(), getById: jest.fn() } as unknown as PiProductsService,
-    { list: jest.fn(), getById: jest.fn() } as unknown as PiSupplyRequestsService,
   {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 25 } })),
       getById: jest.fn(),
@@ -97,14 +96,6 @@ describe('registry filters + pagination mode (TZ-NX-REGISTRIES-FILTERS-PAGINATIO
     expect(def.paginationMode).toBe('fixture');
   });
 
-  it('supply-requests: search/status/priority/orderId filters, client pagination', () => {
-    const def = catalog.find((r) => r.key === 'supply-requests')!;
-    expect(filterKeys(def.filters)).toEqual(['search', 'status', 'priority', 'orderId']);
-    expect(def.paginationMode).toBe('client');
-    expect(def.createAction).toBeUndefined();
-    expect(def.rowActions ?? []).toHaveLength(0);
-  });
-
   it('organizations: search + type filters, server pagination', () => {
     const def = catalog.find((r) => r.key === 'organizations')!;
     expect(filterKeys(def.filters)).toEqual(['search', 'type']);
@@ -129,7 +120,6 @@ describe('registry toolbar layout (TZ-NX-REGISTRIES-TOOLBAR-FINALIZE)', () => {
     'details',
     'modules',
     'products',
-    'supply-requests',
     'organizations',
     'product-passports',
   ] as const)(

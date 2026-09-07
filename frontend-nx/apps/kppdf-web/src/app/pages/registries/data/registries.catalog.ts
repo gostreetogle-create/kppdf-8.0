@@ -7,7 +7,6 @@ import {
   PiOrganizationsService,
   PiProductPassportsService,
   PiProductsService,
-  PiSupplyRequestsService,
   PiUnitsService,
   PiTextBlocksService,
   PiTextBlockCategoriesService,
@@ -24,7 +23,6 @@ import { createMaterialRegistryDialogHost } from './material-registry-dialog-hos
 import { createMaterialsRegistry, type MaterialRegistryDeps } from './materials.registry';
 import { createModulesRegistry, type ModuleRegistryDeps } from './modules.registry';
 import { createProductsRegistry, type ProductRegistryDeps } from './products.registry';
-import { createSupplyRequestsRegistry } from './supply-requests.registry';
 import { createOrganizationsRegistry } from './organizations.registry';
 import { createProductPassportsRegistry } from './product-passports.registry';
 import { createUnitsRegistry } from './units.registry';
@@ -83,7 +81,6 @@ export function buildRegistriesCatalogDefault(
   materialsService: PiMaterialsService,
   modulesService: PiModulesService,
   productsService: PiProductsService,
-  supplyRequestsService: PiSupplyRequestsService,
   organizationsService: PiOrganizationsService,
   productPassportsService: PiProductPassportsService,
   router: Router,
@@ -107,7 +104,6 @@ export function buildRegistriesCatalogDefault(
     createDetailsRegistry(materialDeps),
     createModulesRegistry(moduleDeps),
     createProductsRegistry(productDeps),
-    createSupplyRequestsRegistry(supplyRequestsService, registryDialog ?? undefined),
     createOrganizationsRegistry(organizationsService, registryDialog ?? undefined),
     createVatRateRegistry(organizationsService),
     createFormulasRegistry(),
@@ -135,7 +131,6 @@ export function createRegistriesCatalog(
   const materialsService = inject(PiMaterialsService);
   const modulesService = inject(PiModulesService);
   const productsService = inject(PiProductsService);
-  const supplyRequestsService = inject(PiSupplyRequestsService);
   const organizationsService = inject(PiOrganizationsService);
   const productPassportsService = inject(PiProductPassportsService);
   const unitsService = inject(PiUnitsService);
@@ -185,7 +180,6 @@ export function createRegistriesCatalog(
     materialsService,
     modulesService,
     productsService,
-    supplyRequestsService,
     organizationsService,
     productPassportsService,
     router,

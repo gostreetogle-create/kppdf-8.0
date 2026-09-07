@@ -133,9 +133,49 @@ S2 не трогает `/supply` саму по себе — это точка в
 /orders/:id/items/:itemIndex/kit-reserve`), а затем даёт deep-link сюда
 (`/supply?orderId=`). `SupplyRequest` остаётся отдельной сущностью от
 `SupplyTask` (реестр S1) — см. архитектурное решение в
-`tasks/_archive/2026-09/TZ-NX-SUPPLY-S1-PAGE.done.md`. NX пока не показывает
-`SupplyRequest` списком на `/supply` — это остаётся gap на будущее (легаси
-«Быстрый заказ» их тоже не показывает как реестр).
+`tasks/_archive/2026-09/TZ-NX-SUPPLY-S1-PAGE.done.md`. `SupplyRequest` теперь
+показывается своим отдельным журналом — см. §S3 ниже (закрывает прежний gap:
+NX больше не показывает `SupplyRequest` только через `?orderId=` deep-link).
+
+## NX — TZ-NX-SUPPLY-S3-REQUEST-JOURNAL (журнал заявок, Sheets parity)
+
+**Route:** `/supply-requests` (`data: { pageKey: 'supply-requests', capabilities: ['procurement:read'] }`).
+Nav «Снабжение» теперь два пункта: **«Заявки»** (`/supply-requests`, этот журнал)
+и **«По заказам»** (`/supply`, `SupplyTask` реестр выше) — раздельные сущности,
+общая nav-категория (канон из `docs/audits/2026-09-06-supply-google-sheets-to-nx-audit.md` §3).
+
+Единственный SoT для create/edit `SupplyRequest` в NX. Старая registries generic
+запись (`title`+`qty` truncated dialog) **удалена** — второй конкурирующий UI не
+плодился (было: `createSupplyRequestsRegistry` в `registries.catalog.ts` +
+`SimpleRegistryFormDialogComponent` kind `'supply-request'`).
+
+### UI (`supply-requests.page.ts` + `supply-request-form-dialog.component.ts`)
+
+- Список: наименование/материал (snapshot `title`/`article`), кол-во+ед., поставщик
+  (`Organization`, resolved по preloaded списку type=`supplier`), статус, оплата
+  (`paid` — независимый флаг), счёт (`invoiceNo`), заказ (`Order.number` или
+  свободный `orderLabel`), создал (короткий id — известное ограничение ниже), даты.
+- Фильтры: поиск (title/article), статус, «только оплаченные» (`paid`) — все
+  client-side (backend `GET /supply-requests` не отдаёт постраничный `paid`
+  query, список и так капается на 500 строк).
+- Форма (`width="md"` dialog): материал — живой typeahead (debounce 300ms,
+  `PiMaterialsService.list({search, limit:10})`, мин. 2 символа) с fallback на
+  ручные `title`/`article`, если каталожного совпадения нет; выбор материала
+  автозаполняет `title`/`article`/`unit` (можно снять выбор кнопкой «Очистить» —
+  возвращает ручной ввод); поставщик и заказ — `<select>` из preloaded списков
+  (suppliers ≤100, orders — весь список, как на `/supply`); заказ:
+  XOR `orderId`/`orderLabel` — сентинел-опция «Не найден в списке — ввести
+  текст» переключает на свободный текст, взаимоисключение как на backend
+  (`TZ-SUPPLY-BE-INVOICE-DELIVERY`); `paid` — чекбокс, независим от `status`.
+- Диалог сам вызывает `PiSupplyRequestsService.create/update` (как
+  `StockMovementFormDialogComponent`) — закрывается с сохранённой сущностью,
+  страница просто перезагружает список.
+
+### Known limitation
+
+Колонка «Создал» показывает укороченный `createdBy` id (`.slice(-6)`), не имя —
+на NX ещё нет Users-lookup сервиса (только Person/Worker для производства, не
+login-аккаунты). Резолюция в отображаемое имя — отдельная будущая задача.
 
 ### TZ reference (NX)
 
@@ -144,3 +184,5 @@ S2 не трогает `/supply` саму по себе — это точка в
 | TZ-NX-SUPPLY-S0-KIT-RESERVE-BE | Backend kit-availability/kit-reserve API (не в этом файле — см. warehouse/kit docs) |
 | **TZ-NX-SUPPLY-S1-PAGE** | `/supply` живой реестр SupplyTask (без mock), `?orderId=`, transitions, explode/create |
 | **TZ-SUPPLY-BE-INVOICE-DELIVERY** | `SupplyRequest`: `invoiceNo`/`deliveryNote`/`orderLabel` (XOR `orderId`) + отдельный флаг `paid`/`paidAt` (не связан со `status`) + `createdBy` (сервер проставляет из auth user на create, с клиента не меняется) |
+| **TZ-NX-WAREHOUSE-DEFAULT** | `Warehouse.isDefault` — нужен для следующего S4 (receive→stock), не в этом файле — см. `docs/pages/warehouses.page.md` |
+| **TZ-NX-SUPPLY-S3-REQUEST-JOURNAL** | `/supply-requests` — полный журнал заявок (Sheets parity), заменил truncated registries dialog |

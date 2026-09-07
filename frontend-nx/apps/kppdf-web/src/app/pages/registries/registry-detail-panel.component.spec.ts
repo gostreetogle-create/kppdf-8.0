@@ -7,7 +7,6 @@ import { buildRegistriesCatalogDefault } from './data/registries.catalog';
 import {
   mockOrganizationsService,
   mockProductPassportsService,
-  mockSupplyRequestsService,
 } from './data/registries-catalog-test-mocks';
 import type { MaterialRegistryDialogHost } from './data/material-registry-dialog-host';
 import type { CatalogRegistryDialogHost } from './data/catalog-registry-dialog-host';
@@ -490,7 +489,6 @@ describe('RegistryDetailPanelComponent — real catalog smoke (TZ-NX-REGISTRY-UN
       mockMaterialsService(),
       modulesService,
       mockProductsService(),
-      mockSupplyRequestsService(),
       mockOrganizationsService(),
       mockProductPassportsService(),
       router,

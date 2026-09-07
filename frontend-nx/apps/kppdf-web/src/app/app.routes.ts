@@ -65,6 +65,15 @@ export const appRoutes: Route[] = [
         loadComponent: () => import('./pages/supply/supply.page').then((m) => m.SupplyPage),
       },
       {
+        // TZ-NX-SUPPLY-S3-REQUEST-JOURNAL — SupplyRequest journal (Sheets parity);
+        // single SoT, replaces the truncated registries generic dialog.
+        path: 'supply-requests',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'supply-requests', capabilities: ['procurement:read'] },
+        loadComponent: () =>
+          import('./pages/supply-requests/supply-requests.page').then((m) => m.SupplyRequestsPage),
+      },
+      {
         // TZ-NX-GANTT-G1-SHELL-ROUTE — production Gantt L0 shell; capabilities
         // `production:read` already declared in capabilities metadata.
         // TZ-NX-GANTT-G3 — ProductionReadFacade lives on the route (singleton per

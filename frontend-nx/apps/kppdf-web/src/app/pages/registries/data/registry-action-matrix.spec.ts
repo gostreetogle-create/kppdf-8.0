@@ -17,7 +17,6 @@ import { buildRegistriesCatalogDefault } from './registries.catalog';
 import {
   mockOrganizationsService,
   mockProductPassportsService,
-  mockSupplyRequestsService,
 } from './registries-catalog-test-mocks';
 import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
 import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
@@ -143,7 +142,6 @@ describe('registry action matrix — click effects (TZ-NX-REGISTRIES-FULL-CLOSEO
       TestBed.inject(PiMaterialsService),
       TestBed.inject(PiModulesService),
       TestBed.inject(PiProductsService),
-      mockSupplyRequestsService(),
       mockOrganizationsService(),
       mockProductPassportsService(),
       router,

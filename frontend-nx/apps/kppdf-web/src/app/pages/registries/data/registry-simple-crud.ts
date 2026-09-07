@@ -6,7 +6,7 @@ import { onDialogCloseOnce } from '../../on-dialog-close-once';
 import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
 import { createRegistryCrudActions, copyName } from './registry-crud-actions';
 import { SimpleRegistryFormDialogComponent, type SimpleRegistryDialogKind } from '../dialogs/simple-registry-form-dialog.component';
-import type { PiOrganizationsService, PiProductPassportsService, PiSupplyRequestsService } from '@kppdf/data-access';
+import type { PiOrganizationsService, PiProductPassportsService } from '@kppdf/data-access';
 
 type SimpleService = { create: (payload: Record<string, unknown>) => ReturnType<PiOrganizationsService['create']>; update: (id: string, payload: Record<string, unknown>) => ReturnType<PiOrganizationsService['update']>; remove: (id: string) => ReturnType<PiOrganizationsService['remove']> };
 
@@ -28,4 +28,4 @@ export function openSimpleDialog(dialog: PiDialogService, kind: SimpleRegistryDi
   ctx.notify('Форма открыта', 'success');
 }
 
-export type SupportedSimpleService = PiOrganizationsService | PiSupplyRequestsService | PiProductPassportsService;
+export type SupportedSimpleService = PiOrganizationsService | PiProductPassportsService;

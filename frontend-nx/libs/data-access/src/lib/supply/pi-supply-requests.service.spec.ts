@@ -58,7 +58,7 @@ describe('PiSupplyRequestsService (TZ-NX-SUPPLY-REQUEST-REGISTRY-READ)', () => {
     service.getById('507f1f77bcf86cd799439012').subscribe();
     const req = httpMock.expectOne(`${baseUrl}/supply-requests/507f1f77bcf86cd799439012`);
     expect(req.request.method).toBe('GET');
-    req.flush({ _id: '507f1f77bcf86cd799439012', qty: 1, status: 'in_progress', priority: 'normal' });
+    req.flush({ _id: '507f1f77bcf86cd799439012', qty: 1, status: 'in_progress', priority: 'normal', paid: false });
   });
 
   it('list() maps SilentResult error without throwing', () => {
