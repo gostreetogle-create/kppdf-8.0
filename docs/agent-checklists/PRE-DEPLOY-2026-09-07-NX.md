@@ -3,7 +3,7 @@
 **Goal:** после закрытия `TZ-OPS-DEPLOY-NX-STATIC` + гейтов штамп READY, чтобы любой агент по фразе  
 «сделай деплой по документации» выкатил **NX** warm без правок кода.
 
-**deploy_sha_target:** заполнено в `DEPLOY-READY.md` (executor commit, см. archive TZ-OPS-DEPLOY-NX-STATIC)  
+**deploy_sha_target:** `d76e4fa7`  
 **prepared_at:** 2026-09-08T04:00:00+03:00  
 **prepared_by:** claude (executor) — pipeline switched to NX, full gates green, stamp READY  
 **frontend_target:** `nx` (обязательно)  

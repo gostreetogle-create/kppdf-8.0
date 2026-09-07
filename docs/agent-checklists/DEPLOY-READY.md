@@ -12,7 +12,7 @@ status: READY
 frontend_target: nx
 wipe_default: false
 wipe_reason: "same Nest API; additive schemas since 4d55d0ea — keep Mongo/uploads (warm)"
-deploy_sha_target: pending (filled at closeout — see follow-up commit)
+deploy_sha_target: d76e4fa7
 prepared_at: 2026-09-08T04:00:00+03:00
 prepared_by: claude-executor
 evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-07-NX.md

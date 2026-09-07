@@ -1,7 +1,7 @@
 # TZ-OPS-DEPLOY-NX-STATIC — DONE
 
 - **agent_id:** claude
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** d76e4fa7
 - **TZ:** tasks/_ready/TZ-OPS-DEPLOY-NX-STATIC.md
 - **Prompt:** tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md
 - **Canon:** docs/ops/DEPLOY-NX-PROD.md
