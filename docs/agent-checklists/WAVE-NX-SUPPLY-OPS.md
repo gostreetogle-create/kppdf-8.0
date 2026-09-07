@@ -12,7 +12,7 @@
 | 3 | L | S3 Request journal UX | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S3-REQUEST-JOURNAL.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S3-REQUEST-JOURNAL.done.md` |
 | 4 | L | S4 Received → stock IN | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK.done.md` |
 | 5 | L | S5 Material upsert + copy | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S5-MATERIAL-UPSERT.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S5-MATERIAL-UPSERT.done.md` |
-| 6 | S | Excel path A | `tasks/_ready/nx-supply/TZ-DESKTOP-SUPPLY-EXCEL-A.md` | READY |
+| 6 | S | Excel path A | `tasks/_ready/nx-supply/TZ-DESKTOP-SUPPLY-EXCEL-A.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-DESKTOP-SUPPLY-EXCEL-A.done.md` |
 | 7 | S | S6 Chrome filters/links | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S6-CHROME.md` | READY |
 | — | L | Excel path B multi-sheet | backlog later | PARK |
 

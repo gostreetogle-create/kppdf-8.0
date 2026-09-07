@@ -34,11 +34,14 @@
   import {
     analyzeTables,
     applyTableMapping,
+    EMPTY_SUPPLY_LOOKUPS,
     evaluateSendReadiness,
+    normalizeLookupKey,
     referenceDedupeKeysOf,
     reshapeForTable,
     validateTableRows,
     workerDedupeKeyOf,
+    type SupplyRequestLookups,
   } from './core/multi-import';
   import {
     EXPORT_PILOT_TARGET_KEYS,
@@ -1296,6 +1299,8 @@
       const existingByTarget: Partial<Record<ImportTargetKey, ReadonlySet<string>>> = {};
       // TZD-69 — «Люди»: workTypeNames резолвится по имени, нужен список видов работ орг.
       let workTypeNames: ReadonlySet<string> = EMPTY_DEDUPE;
+      // TZ-DESKTOP-SUPPLY-EXCEL-A — match-справочники строк снабжения (материал/поставщик/заказ).
+      let supplyLookups: SupplyRequestLookups = EMPTY_SUPPLY_LOOKUPS;
       const cfg = await loadConfig();
       if (cfg.apiBaseUrl && cfg.apiKey) {
         const targets = [...new Set(importBlocks.map((block) => block.targetKey))];
@@ -1312,6 +1317,9 @@
           const workTypes = await apiGet<Array<Record<string, unknown>>>(apiFrom(cfg), '/api/work-types');
           workTypeNames = new Set(workTypes.map((wt) => String(wt.name ?? '').trim()).filter(Boolean));
         }
+        if (targets.includes('supplyRequest')) {
+          supplyLookups = await fetchSupplyLookups(apiFrom(cfg));
+        }
       }
       importBlocks = importBlocks.map((block) => ({
         ...block,
@@ -1320,6 +1328,7 @@
           block.targetKey,
           existingByTarget[block.targetKey] ?? EMPTY_DEDUPE,
           workTypeNames,
+          supplyLookups,
         ),
       }));
       importStage = 'rows';
@@ -1707,6 +1716,10 @@
             orderId: row.orderId ? String(row.orderId).trim() : undefined,
             materialId: row.materialId ? String(row.materialId).trim() : undefined,
             supplierId: row.supplierId ? String(row.supplierId).trim() : undefined,
+            orderLabel: row.orderLabel ? String(row.orderLabel).trim() : undefined,
+            invoiceNo: row.invoiceNo ? String(row.invoiceNo).trim() : undefined,
+            deliveryNote: row.deliveryNote ? String(row.deliveryNote) : undefined,
+            paid: boolOr(row.paid),
           });
         } else if (targetKey === 'supplyTask') {
           const orderId = String(row.orderId ?? '').trim();
@@ -2469,6 +2482,59 @@
       if (items.length === 0 || page * 100 >= total) return { keys, truncated: false };
     }
     return { keys, truncated: true };
+  }
+
+  /**
+   * TZ-DESKTOP-SUPPLY-EXCEL-A — справочники для match-резолюции строк снабжения:
+   * артикул/имя материала, имя поставщика (Organization type=supplier), номер заказа.
+   * Не каталожный dedupe (нет в `fetchDedupeKeys`) — это lookup для FK, не проверка дублей.
+   */
+  async function fetchSupplyLookups(api: ApiClientOptions): Promise<SupplyRequestLookups> {
+    const MAX_PAGES = 10;
+    const materialsByKey = new Map<string, string>();
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const resp = await apiGet<{ items?: Array<Record<string, unknown>>; total?: number }>(
+        api,
+        `/api/materials?limit=100&page=${page}`,
+      );
+      const items = resp.items ?? [];
+      for (const item of items) {
+        const id = String(item._id ?? '');
+        if (!id) continue;
+        const article = String(item.article ?? '').trim();
+        const name = String(item.name ?? '').trim();
+        if (article) materialsByKey.set(normalizeLookupKey(article), id);
+        if (name) materialsByKey.set(normalizeLookupKey(name), id);
+      }
+      const total = resp.total ?? items.length;
+      if (items.length === 0 || page * 100 >= total) break;
+    }
+
+    const suppliersByName = new Map<string, string>();
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const resp = await apiGet<{ items?: Array<Record<string, unknown>>; total?: number }>(
+        api,
+        `/api/organizations?type=supplier&limit=100&page=${page}`,
+      );
+      const items = resp.items ?? [];
+      for (const item of items) {
+        const id = String(item._id ?? '');
+        const name = String(item.name ?? '').trim();
+        if (id && name) suppliersByName.set(normalizeLookupKey(name), id);
+      }
+      const total = resp.total ?? items.length;
+      if (items.length === 0 || page * 100 >= total) break;
+    }
+
+    const ordersByNumber = new Map<string, string>();
+    const orders = await apiGet<Array<Record<string, unknown>>>(api, '/api/orders');
+    for (const order of orders) {
+      const id = String(order._id ?? '');
+      const number = String(order.number ?? '').trim();
+      if (id && number) ordersByNumber.set(normalizeLookupKey(number), id);
+    }
+
+    return { materialsByKey, suppliersByName, ordersByNumber };
   }
 
   /** Сохранить отчёт отклонённых строк как .csv (простой, Excel-совместимый). */

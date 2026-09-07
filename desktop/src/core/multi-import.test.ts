@@ -5,9 +5,11 @@ import {
   analyzeTables,
   applyTableMapping,
   evaluateSendReadiness,
+  normalizeLookupKey,
   reshapeForTable,
   validateTableRows,
   workerDedupeKeyOf,
+  type SupplyRequestLookups,
 } from './multi-import';
 import type { ValidatedImportRow } from './import-mapping';
 
@@ -279,6 +281,116 @@ test('TZ-QA-445G supplyRequest: title → ok_new; bad priority / id → invalid'
   assert.equal(badPriority[0].status, 'invalid');
   const badId = validateTableRows([{ title: 'X', orderId: 'not-an-id' }], 'supplyRequest');
   assert.equal(badId[0].status, 'invalid');
+});
+
+function lookups(overrides: Partial<SupplyRequestLookups> = {}): SupplyRequestLookups {
+  return {
+    materialsByKey: new Map(),
+    suppliersByName: new Map(),
+    ordersByNumber: new Map(),
+    ...overrides,
+  };
+}
+
+test('TZ-DESKTOP-SUPPLY-EXCEL-A: article resolves to materialId; miss on an explicit article is invalid (no silent create)', () => {
+  const found = validateTableRows(
+    [{ title: 'Подшипник', article: '6205', qty: 1 }],
+    'supplyRequest',
+    new Set(),
+    new Set(),
+    lookups({ materialsByKey: new Map([[normalizeLookupKey('6205'), 'mat-1']]) }),
+  );
+  assert.equal(found[0].status, 'ok_new');
+  assert.equal(found[0].values.materialId, 'mat-1');
+
+  const miss = validateTableRows(
+    [{ title: 'Подшипник', article: 'unknown-sku', qty: 1 }],
+    'supplyRequest',
+    new Set(),
+    new Set(),
+    lookups(),
+  );
+  assert.equal(miss[0].status, 'invalid');
+  assert.match(miss[0].message, /не найден/);
+
+  // No article at all — bare title, no material link attempted, still ok_new.
+  const bare = validateTableRows([{ title: 'Просто позиция', qty: 1 }], 'supplyRequest');
+  assert.equal(bare[0].status, 'ok_new');
+});
+
+test('TZ-DESKTOP-SUPPLY-EXCEL-A: an explicit materialId ObjectId wins over article match', () => {
+  const explicitId = '507f1f77bcf86cd799439011';
+  const rows = validateTableRows(
+    [{ title: 'X', article: 'unknown-sku', materialId: explicitId, qty: 1 }],
+    'supplyRequest',
+    new Set(),
+    new Set(),
+    lookups(),
+  );
+  assert.equal(rows[0].status, 'ok_new');
+  assert.equal(rows[0].values.materialId, explicitId);
+});
+
+test('TZ-DESKTOP-SUPPLY-EXCEL-A: supplier name resolves to supplierId; miss is invalid', () => {
+  const found = validateTableRows(
+    [{ title: 'X', supplierName: 'ООО Металл', qty: 1 }],
+    'supplyRequest',
+    new Set(),
+    new Set(),
+    lookups({ suppliersByName: new Map([[normalizeLookupKey('ООО Металл'), 'org-1']]) }),
+  );
+  assert.equal(found[0].status, 'ok_new');
+  assert.equal(found[0].values.supplierId, 'org-1');
+
+  const miss = validateTableRows(
+    [{ title: 'X', supplierName: 'Неизвестный поставщик', qty: 1 }],
+    'supplyRequest',
+    new Set(),
+    new Set(),
+    lookups(),
+  );
+  assert.equal(miss[0].status, 'invalid');
+});
+
+test('TZ-DESKTOP-SUPPLY-EXCEL-A: order number resolves to orderId and clears orderLabel (XOR, order wins)', () => {
+  const found = validateTableRows(
+    [{ title: 'X', orderNumber: 'ORD-1', orderLabel: 'Цех 2', qty: 1 }],
+    'supplyRequest',
+    new Set(),
+    new Set(),
+    lookups({ ordersByNumber: new Map([[normalizeLookupKey('ORD-1'), 'order-1']]) }),
+  );
+  assert.equal(found[0].status, 'ok_new');
+  assert.equal(found[0].values.orderId, 'order-1');
+  assert.equal(found[0].values.orderLabel, undefined);
+
+  const miss = validateTableRows(
+    [{ title: 'X', orderNumber: 'ORD-404', qty: 1 }],
+    'supplyRequest',
+    new Set(),
+    new Set(),
+    lookups(),
+  );
+  assert.equal(miss[0].status, 'invalid');
+});
+
+test('TZ-DESKTOP-SUPPLY-EXCEL-A: free-text orderLabel with no orderNumber stays a valid row', () => {
+  const rows = validateTableRows(
+    [{ title: 'X', orderLabel: 'Цех 2, участок сборки', qty: 1 }],
+    'supplyRequest',
+    new Set(),
+    new Set(),
+    lookups(),
+  );
+  assert.equal(rows[0].status, 'ok_new');
+  assert.equal(rows[0].values.orderLabel, 'Цех 2, участок сборки');
+});
+
+test('TZ-DESKTOP-SUPPLY-EXCEL-A: new pass-through columns (invoiceNo/deliveryNote/paid) exist and map by header', () => {
+  const target = IMPORT_TARGETS.supplyRequest;
+  for (const key of ['invoiceNo', 'deliveryNote', 'paid', 'orderLabel', 'supplierName', 'orderNumber']) {
+    assert.ok(target.columns.some((c) => c.key === key), `expected supplyRequest column ${key}`);
+  }
 });
 
 test('TZ-QA-445G supplyTask: orderId+qty+title → ok_new; missing identity → invalid', () => {

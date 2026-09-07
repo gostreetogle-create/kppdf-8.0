@@ -228,3 +228,4 @@ typeahead:
 | **TZ-NX-SUPPLY-S3-REQUEST-JOURNAL** | `/supply-requests` — полный журнал заявок (Sheets parity), заменил truncated registries dialog |
 | **TZ-NX-SUPPLY-S4-RECEIVE-TO-STOCK** | «Получено» на `/supply-requests` → confirm dialog → `StockMovement` IN (единый write-path) + `status='received'`; 409 на повтор |
 | **TZ-NX-SUPPLY-S5-MATERIAL-UPSERT** | Material typeahead в форме заявки → «+ Новый материал» / «Копировать и изменить» через переиспользуемый `MaterialFormDialogComponent`; без второго каталога, без silent-merge дублей |
+| **TZ-DESKTOP-SUPPLY-EXCEL-A** | Desktop Excel-импорт `supplyRequest`: колонки `invoiceNo`/`deliveryNote`/`paid`/`orderLabel`/`supplierName`/`orderNumber`; match по артикулу/имени/номеру → materialId/supplierId/orderId, miss = invalid-строка (не silent create) — см. `desktop/README.md` §Снабжение |

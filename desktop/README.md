@@ -142,6 +142,19 @@ pnpm build           # shell production build
 Excel-кнопок в веб-реестрах **нет** — массовый Excel живёт только здесь
 (решение WAVE-DESKTOP-EXCEL-NX-ALIGN, см. `docs/pages/registries.page.md`).
 
+### Снабжение (`supplyRequest`) — Sheets parity (TZ-DESKTOP-SUPPLY-EXCEL-A)
+
+Колонки: `invoiceNo`, `deliveryNote`, `paid`, `orderLabel`, `supplierName`,
+`orderNumber` — сверх уже существовавших (`title`/`article`/`qty`/`unit`/…).
+Match-правила при подтверждении (`confirmMapping`): артикул/имя → `materialId`
+(каталог `/api/materials`), имя поставщика → Organization
+(`/api/organizations?type=supplier`), номер заказа → `orderId` (`/api/orders`).
+Явный `orderId`/`materialId`/`supplierId` (raw ObjectId) всегда побеждает над
+именем. **Несовпадение по явно заполненной колонке — invalid-строка (красная),
+не silent create**: создание материала остаётся ручным HITL-потоком
+(NX «Снабжение» → +Новый материал / Копировать, см. `docs/pages/supply.page.md`
+§S5), Desktop не заводит новые Material/Organization из импорта снабжения.
+
 ## Паринг и скачивание приложения — RBAC на сайте NX (TZD-72)
 
 Ссылка на установщик задаётся `DESKTOP_DOWNLOAD_URL` в `deploy/synology/config.env`;

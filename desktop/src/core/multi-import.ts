@@ -242,6 +242,29 @@ function isObjectId(value: string): boolean {
   return OBJECT_ID_RE.test(value);
 }
 
+/** TZ-DESKTOP-SUPPLY-EXCEL-A — normalize a name/article for map-key lookup (case/whitespace-insensitive). */
+export function normalizeLookupKey(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+/**
+ * TZ-DESKTOP-SUPPLY-EXCEL-A — reference lookups for `supplyRequest` match rules:
+ * article/name → materialId, supplier name → Organization, order number → orderId.
+ * Built by the caller (App.svelte fetches the catalog pages); miss on an explicit
+ * match column is `invalid`, never a silent create.
+ */
+export interface SupplyRequestLookups {
+  readonly materialsByKey: ReadonlyMap<string, string>;
+  readonly suppliersByName: ReadonlyMap<string, string>;
+  readonly ordersByNumber: ReadonlyMap<string, string>;
+}
+
+export const EMPTY_SUPPLY_LOOKUPS: SupplyRequestLookups = {
+  materialsByKey: new Map(),
+  suppliersByName: new Map(),
+  ordersByNumber: new Map(),
+};
+
 /** TZD-51 — проверка значений строки справочника; null = ок, иначе RU-причина. */
 function referenceFieldError(targetKey: ImportTargetKey, values: RawRow): string | null {
   switch (targetKey) {
@@ -361,6 +384,7 @@ export function validateTableRows(
   targetKey: ImportTargetKey,
   existingKeys: ReadonlySet<string> = new Set(),
   workTypeNames: ReadonlySet<string> = new Set(),
+  supplyLookups: SupplyRequestLookups = EMPTY_SUPPLY_LOOKUPS,
 ): ValidatedImportRow[] {
   if (targetKey === 'worker') {
     return validateWorkerRows(rows, existingKeys, workTypeNames);
@@ -369,7 +393,7 @@ export function validateTableRows(
     return validateReferenceRows(rows, targetKey, existingKeys);
   }
   if (targetKey === 'supplyRequest' || targetKey === 'supplyTask') {
-    return validateSupplyRows(rows, targetKey);
+    return validateSupplyRows(rows, targetKey, supplyLookups);
   }
   const target = importTarget(targetKey);
   const dedupeKey = DEDUPE_KEYS[targetKey] ?? '';
@@ -416,10 +440,11 @@ export function validateTableRows(
   });
 }
 
-/** TZ-QA-445G — валидация строк снабжения (без каталожного dedupe). */
+/** TZ-QA-445G / TZ-DESKTOP-SUPPLY-EXCEL-A — валидация строк снабжения (без каталожного dedupe, но с match-резолюцией по справочникам). */
 function validateSupplyRows(
   rows: RawRow[],
   targetKey: 'supplyRequest' | 'supplyTask',
+  lookups: SupplyRequestLookups = EMPTY_SUPPLY_LOOKUPS,
 ): ValidatedImportRow[] {
   const target = importTarget(targetKey);
   return rows.map((values, rowIndex) => {
@@ -466,6 +491,50 @@ function validateSupplyRows(
           };
         }
       }
+
+      // Match rules (Sheets parity): article/name → materialId; supplier name →
+      // Organization; order number → orderId. A raw ObjectId column always wins
+      // (already validated above); a miss on an explicit match column is
+      // `invalid` — no silent create (material create stays the S5 manual HITL flow).
+      if (!textValue(values, 'materialId')) {
+        const article = textValue(values, 'article');
+        if (article) {
+          const resolved = lookups.materialsByKey.get(normalizeLookupKey(article));
+          if (!resolved) {
+            return {
+              rowIndex,
+              values,
+              status: 'invalid',
+              message: `Материал с артикулом «${article}» не найден в каталоге — создайте вручную (Снабжение → материал)`,
+            };
+          }
+          values.materialId = resolved;
+        }
+      }
+      if (!textValue(values, 'supplierId')) {
+        const supplierName = textValue(values, 'supplierName');
+        if (supplierName) {
+          const resolved = lookups.suppliersByName.get(normalizeLookupKey(supplierName));
+          if (!resolved) {
+            return { rowIndex, values, status: 'invalid', message: `Поставщик «${supplierName}» не найден` };
+          }
+          values.supplierId = resolved;
+        }
+      }
+      if (textValue(values, 'orderId')) {
+        values.orderLabel = undefined;
+      } else {
+        const orderNumber = textValue(values, 'orderNumber');
+        if (orderNumber) {
+          const resolved = lookups.ordersByNumber.get(normalizeLookupKey(orderNumber));
+          if (!resolved) {
+            return { rowIndex, values, status: 'invalid', message: `Заказ «${orderNumber}» не найден` };
+          }
+          values.orderId = resolved;
+          values.orderLabel = undefined;
+        }
+      }
+
       return { rowIndex, values, status: 'ok_new', message: 'Новая строка готова' };
     }
 

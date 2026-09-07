@@ -207,9 +207,16 @@ export const IMPORT_TARGETS = {
       { key: 'responsible', label: 'Ответственный', aliases: ['responsible', 'ответственный', 'снабженец'] },
       { key: 'productUrl', label: 'Ссылка', aliases: ['producturl', 'ссылка', 'url', 'url товара'] },
       { key: 'color', label: 'Цвет', aliases: ['color', 'цвет'] },
-      { key: 'orderId', label: 'ID заказа', aliases: ['orderid', 'id заказа', 'заказ'] },
+      { key: 'orderId', label: 'ID заказа', aliases: ['orderid', 'id заказа'] },
       { key: 'materialId', label: 'ID материала', aliases: ['materialid', 'id материала'] },
-      { key: 'supplierId', label: 'ID поставщика', aliases: ['supplierid', 'id поставщика', 'поставщик'] },
+      { key: 'supplierId', label: 'ID поставщика', aliases: ['supplierid', 'id поставщика'] },
+      /** TZ-DESKTOP-SUPPLY-EXCEL-A — Sheets parity: name/number columns resolved by match (article/name → materialId, name → Organization, number → orderId), not raw ObjectId. */
+      { key: 'supplierName', label: 'Поставщик', aliases: ['suppliername', 'поставщик', 'название поставщика'] },
+      { key: 'orderNumber', label: '№ заказа', aliases: ['ordernumber', '№ заказа', 'номер заказа', 'заказ №'] },
+      { key: 'orderLabel', label: 'Заказчик (текст)', aliases: ['orderlabel', 'заказчик', 'участок', 'цех'] },
+      { key: 'invoiceNo', label: 'Счёт №', aliases: ['invoiceno', 'счёт №', 'счет №', 'номер счёта', 'номер счета'] },
+      { key: 'deliveryNote', label: 'Доставка', aliases: ['deliverynote', 'доставка', 'накладная', 'ттн'] },
+      { key: 'paid', label: 'Оплачено', aliases: ['paid', 'оплачено', 'оплата'] },
     ],
   },
   /** TZ-QA-445G — реестр SupplyTask (нужен ID заказа). */
