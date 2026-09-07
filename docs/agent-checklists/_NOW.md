@@ -1,31 +1,31 @@
 ﻿# NOW
 
-updated_at: 2026-09-08T02:45:00+03:00
+updated_at: 2026-09-08T03:30:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — TZD-78 DONE. Executor report ниже; ждёт промпт следующей задачи от Cursor.
+- **Claude:** IDLE — Orders hub tray inset DONE. Executor report ниже; ждёт промпт следующей задачи от Cursor.
 
 Очередь: [`CLAUDE-ONLY-QUEUE.md`](./CLAUDE-ONLY-QUEUE.md)
 
-## Executor report (TZD-78-CHAT-HITL-MAPPING)
+## Executor report (TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET)
 
-- Чат: команда «разбери файл X» / кнопка с именем файла → read-only аудит + RU-сводка сопоставления (без обращения к модели) → CTA «Открыть в Импорте» (переиспользует существующий `auditFile()`). Запись в БД — только через HITL-подтверждение на вкладке «Импорт», как раньше.
-- Version 0.5.9 → 0.5.10; `release-installer` опубликован; HEAD `/downloads/kppdf-desktop-setup.zip` → 200.
-- Gates зелёные: `tsc --noEmit`, `svelte-check` (397/0/0), `tsx --test` 135/135 (+11).
-- Детали: `tasks/_archive/2026-09/TZD-78-CHAT-HITL-MAPPING.done.md`
+- Outer grid `gap-4` → `gap-5`; `-mx-2` снят с toggle «Состав заказа»; подблоки Снабжение/Производство/Готовность/Склад/Отгрузка — отдельные плитки `rounded-sm bg-paper-2 p-3` вместо `border-t` списка.
+- Gates зелёные: jest (order-hub-tray, 3 новых assert'а) · lint kppdf-web · nx build kppdf-web (last).
+- Детали: `tasks/_archive/2026-09/TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET.done.md`
 
 ## DONE
 
-- WAVE-NX-CATALOG-PHOTOS — P0…P3
-- WAVE-NX-SUPPLY-OPS 7/7 — `1c4c381a` · `08149e8e` · `a11234ee` · `78ab5690` · `4e54034d` · `541ac855` · `7b1db538` (meta `37ccb6d9`)
-- TZD-78-CHAT-HITL-MAPPING — 0.5.10
+- Photos P0–P3 · Supply OPS 7/7 · TZD-78 `7a3e576e` (0.5.10)
+- Orders hub tray inset — DONE
 
-## NEXT (Claude-only)
+## NEXT
 
-1. Orders tray inset
+1. **PO тест:** Gemma LM Studio ↔ KPPDF MCP — `docs/peer/TEST-GEMMA-LMSTUDIO-KPPDF-MCP.md` (сначала поднять Desktop MCP) — не в этом TZ, не трогалось
+2. TZD-76 · G12 PARK
 
 ## PARK
 
 - TZD-76 · G12 · Freebuff · Excel supply pack B
+- In-app Desktop chat → call MCP tools (отдельный TZ, если тест LM Studio покажет ценность)

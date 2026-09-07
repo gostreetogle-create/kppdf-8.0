@@ -276,4 +276,35 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     ) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
   });
+
+  it('TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET: no negative margin on the composition toggle (no edge-flush text)', async () => {
+    await setup();
+    const toggle = fixture.nativeElement.querySelector('[data-test="order-composition-toggle"]');
+    expect(toggle.className).not.toMatch(/-mx-/);
+  });
+
+  it('TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET: outer group grid uses gap-5 air, not gap-4', async () => {
+    await setup();
+    const groups = fixture.nativeElement.querySelector('[data-test="order-lifecycle-groups"]');
+    expect(groups.className).toMatch(/\bgap-5\b/);
+    expect(groups.className).not.toMatch(/\bgap-4\b/);
+  });
+
+  it('TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET: Исполнение/Логистика sub-blocks are separate inset tiles, not border-t stacking', async () => {
+    await setup();
+    const root: HTMLElement = fixture.nativeElement;
+    for (const testId of [
+      'order-supply-block',
+      'order-production-block',
+      'order-readiness-block',
+      'order-warehouse-block',
+      'order-shipping-block',
+    ]) {
+      const block = root.querySelector(`[data-test="${testId}"]`) as HTMLElement;
+      expect(block).toBeTruthy();
+      expect(block.className).toMatch(/\bbg-paper-2\b/);
+      expect(block.className).toMatch(/\bp-3\b/);
+      expect(block.className).not.toMatch(/border-t/);
+    }
+  });
 });

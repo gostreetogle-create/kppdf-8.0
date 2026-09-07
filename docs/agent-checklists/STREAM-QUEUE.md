@@ -12,7 +12,7 @@ updated_at: 2026-09-08T02:45:00+03:00
 | 0 | Photos P3 frame closeout | `tasks/PROMPT-CLAUDE-FINISH-PHOTO-P3.md` | **DONE** — WAVE-NX-CATALOG-PHOTOS DONE (P0–P3) |
 | 1 | WAVE-NX-SUPPLY-OPS | `tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md` | **DONE** — 7/7, см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S6-CHROME.done.md` |
 | 2 | TZD-78 chat HITL mapping | `tasks/PROMPT-CLAUDE-TZD-78-CHAT-MAPPING.md` | **DONE** — 0.5.10, см. `tasks/_archive/2026-09/TZD-78-CHAT-HITL-MAPPING.done.md` |
-| 3 | Orders hub tray inset | `tasks/PROMPT-CLAUDE-ORDERS-TRAY-INSET.md` | **NEXT** — ждёт промпт от Cursor |
+| 3 | Orders hub tray inset | `tasks/PROMPT-CLAUDE-ORDERS-TRAY-INSET.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET.done.md` |
 | 4 | TZD-76 GGUF NSIS | — | PARK |
 | 5 | Gantt G12 | — | PARK |
 
@@ -22,4 +22,4 @@ updated_at: 2026-09-08T02:45:00+03:00
 
 ## Done recently
 
-DocStudio Chrome+S45/S46 · orphan clean · Desktop TZD-74/75/77/78 · Photos P0–P3 (WAVE DONE) · WAVE-NX-SUPPLY-OPS 1–7/7 (WAVE DONE)
+DocStudio Chrome+S45/S46 · orphan clean · Desktop TZD-74/75/77/78 · Photos P0–P3 (WAVE DONE) · WAVE-NX-SUPPLY-OPS 1–7/7 (WAVE DONE) · Orders hub tray inset
