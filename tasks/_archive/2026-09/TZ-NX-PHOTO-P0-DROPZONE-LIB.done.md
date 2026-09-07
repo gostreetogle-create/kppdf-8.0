@@ -2,7 +2,7 @@
 
 - **agent_id:** freebuff
 - **archived_at:** 2026-09-07T06:17:27+03:00 (session)
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** 7c9d1071e4f95a23afe42b132dfc463645fc8505
 - **TZ:** tasks/_ready/nx-photos/TZ-NX-PHOTO-P0-DROPZONE-LIB.md
 
 ## Что сделано

@@ -101,7 +101,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 - Приоритет = важность в списке/фильтре (**не** длина полосок); подсказка в UI.
 - Виды работ: wash/цвет как на Ганте; опц. `WorkType.accentHue` в форме вида работ.
 - Раскрытие дерева: крупные «+ / −», клик по всей строке; «→» в карточку `/products/:id` / `/modules/:id`.
-- Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`); NX G10 обогащает populated `photoIds` через `firstPhotoUrl`, без отдельного Photos API.
+- Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`); NX G10 обогащает populated `photoIds` через `firstPhotoUrl`, без отдельного Photos API. TZ-NX-PHOTO-P3: rail-иконки и список читают `Photo.frame` через `getOrderThumbFrameMap` + `photoFrameStyle` (object-fit/object-position, fallback contain/center).
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
 - **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
 - **No bottom card:** the old `Карточка` bottom sheet and chrome action were removed in TZ-322; order meta lives only as one cascade strip under the summary row. The cascade is the canonical interaction surface for status/priority/plannedDate and work-detail; do not restore a bottom overlay.
@@ -130,7 +130,7 @@ NX: `frontend-nx/apps/kppdf-web/src/app/app.routes.ts` — route `production` �
 | Сервис | Методы / boundary |
 |--------|-------------------|
 | `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, counterpartyFilter, filtersDirty, resetFilters; local UI state |
-| `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap, getOrderThumbMap; read/cache/composition/photo mapping, no fact-production SoT |
+| `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap, getOrderThumbFrameMap; read/cache/composition/photo mapping, no fact-production SoT |
 | `ProductionCockpitPage` | `onRefresh`, `onToday`, `onFitHorizon`, order-meta/estimate commits; smart shell: chrome, filters, PATCH orchestration, range + reload |
 | `ProductionScaleControlsComponent` | `zoom` + `groupBy` inputs; `zoomChange` / `fit` / `groupByChange` outputs; dumb RU controls only |
 | `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) / **patchEstimateStart()** (316); existing API paths |

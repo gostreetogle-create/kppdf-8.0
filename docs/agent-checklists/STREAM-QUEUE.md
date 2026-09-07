@@ -1,45 +1,25 @@
-# STREAM QUEUE — два потока (Freebuff / Claude)
+# STREAM QUEUE — Claude-only (Freebuff PARK)
 
-> Режим PO 2026-09-06: скрин + слова → Cursor кладёт TZ в поток → отчёт агента → Cursor сразу следующий промпт в чат.  
-> Живой статус слотов: [`_NOW.md`](./_NOW.md). Этот файл — **очередь волн**, не claim.
+> PO 2026-09-07: без Freebuff. Все волны — Claude.  
+> Мастер: [`CLAUDE-ONLY-QUEUE.md`](./CLAUDE-ONLY-QUEUE.md) · слот: [`_NOW.md`](./_NOW.md)
 
-updated_at: 2026-09-06T23:45:00+03:00
-
-## Правила
-
-1. PO кидает скрин/текст → Cursor пишет TZ + строку сюда (Freebuff **или** Claude) + `PROMPT-*.md` при готовности волны. В чат **не** совать промпт, пока слот занят / нет зависимости.
-2. PO кидает **отчёт** Freebuff/Claude → Cursor сверяет → в чат **сразу** следующий промпт этому агенту (или «промптов нет»).
-3. Один `kppdf-web` / пересечение conflict keys → только **подряд** в одном потоке, не два параллельных на одну сборку.
-4. Freebuff = рутина UI/CRUD/порты. Claude = долгая сборка, ops desktop, сложный bug/hydrate когда так решил Cursor.
-
----
-
-## Freebuff stream
-
-| Порядок | WAVE / TZ | PROMPT | Статус |
-|---------|-----------|--------|--------|
-| 1a | Hotfix shell+warehouse | — | **DONE** `c413bef7` |
-| 1b | Local demo orphan clean | — | **DONE** `6b1e9492` |
-| 2 | WAVE-DOCSTUDIO-CHROME-IA C1→C4 | — | **DONE** `42b4df0f` / `85f1dc8e` / `45d7e6b8` / `2b295bf9` |
-| 3 | S46→S45 DocStudio tables | — | **DONE** `bf90a214` / `3e45e680` (meta `46c53e8b`) |
-
----
+updated_at: 2026-09-07T20:00:00+03:00
 
 ## Claude stream
 
-| Порядок | WAVE / TZ | PROMPT | Статус |
-|---------|-----------|--------|--------|
-| 1 | Desktop installer v0.5.7 | — | **DONE** |
-| 2 | TZD-74 AI tab honesty | — | **DONE** |
-| 3 | TZD-75 hide local chat + 0.5.8 | — | **DONE** `702ab5f6` |
-| 4 | TZD-76 real local helper (NSIS) | — | PARK |
-| 5 | TZD-77 chat + Inbox bridge + 0.5.9 | — | **DONE** `135a9407` |
-| 6 | TZD-78 chat→HITL propose mapping | — | PARK до PO |
+| # | WAVE | PROMPT | Статус |
+|---|------|--------|--------|
+| 0 | Photos P3 frame closeout | `tasks/PROMPT-CLAUDE-FINISH-PHOTO-P3.md` | **DONE** — WAVE-NX-CATALOG-PHOTOS DONE (P0–P3) |
+| 1 | WAVE-NX-SUPPLY-OPS | `tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md` | **NEXT** — ждёт промпт от Cursor |
+| 2 | TZD-78 chat HITL mapping | `tasks/PROMPT-CLAUDE-TZD-78-CHAT-MAPPING.md` | после Supply (или по слову PO раньше) |
+| 3 | Orders hub tray inset | `tasks/PROMPT-CLAUDE-ORDERS-TRAY-INSET.md` | после TZD-78 / по слову PO |
+| 4 | TZD-76 GGUF NSIS | — | PARK |
+| 5 | Gantt G12 | — | PARK |
 
----
+## Freebuff stream
 
-## Inbox / PARK next
+| — | **PARK** — не выдавать промпты, пока PO не вернёт Freebuff |
 
-- Gemini peer: `docs/agents/GEMINI-BROWSER-NOTEBOOK.md`
-- TZD-76 GGUF NSIS · TZD-78 mapping HITL · WAVE-NX-SUPPLY-OPS · WAVE-NX-CATALOG-PHOTOS · Orders inset · G12
-- Visual QA DocStudio chrome+tables (PO глазом) · lint debt production/gantt (не этой волны)
+## Done recently
+
+DocStudio Chrome+S45/S46 · orphan clean · Desktop TZD-74/75/77 · Photos P0–P3 (WAVE DONE)

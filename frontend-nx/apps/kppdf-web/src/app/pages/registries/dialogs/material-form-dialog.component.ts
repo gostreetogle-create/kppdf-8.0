@@ -24,10 +24,16 @@ import {
   type Material,
   type MaterialDimensionType,
   type MaterialKind,
+  type PhotoFrame,
   type Unit,
 } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { PiPhotoDropzoneComponent, type PiPhotoItem } from '@kppdf/ui/photo';
+import {
+  PiPhotoDropzoneComponent,
+  normalizePhotoFrame,
+  photoFrameOf,
+  type PiPhotoItem,
+} from '@kppdf/ui/photo';
 import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
@@ -187,6 +193,7 @@ type DimensionGroup = FormGroup<{
             (filesSelected)="onPhotosSelected($event)"
             (removePhoto)="onPhotoRemove($event)"
             (mainChanged)="onPhotoMainChanged($event)"
+            (frameSave)="onPhotoFrameSave($event)"
             (invalidFileType)="onPhotoInvalidType()"
             data-test="material-photo-dropzone"
           />
@@ -444,6 +451,22 @@ export class MaterialFormDialogComponent implements OnInit {
     this.form.markAsDirty();
   }
 
+  protected async onPhotoFrameSave(event: { id: string; frame: Partial<PhotoFrame> }): Promise<void> {
+    this.photoError.set(null);
+    const res = await firstValueFrom(this.photosService.updateFrame(event.id, event.frame));
+    if (!res.ok) {
+      this.photoError.set(extractErrorMessage(res.error));
+      return;
+    }
+    const savedFrame = res.data.frame ?? normalizePhotoFrame({
+      ...this.photoItems().find((photo) => photo._id === event.id)?.frame,
+      ...event.frame,
+    });
+    this.photoItems.update((list) =>
+      list.map((photo) => (photo._id === event.id ? { ...photo, frame: savedFrame } : photo)),
+    );
+  }
+
   protected onPhotoInvalidType(): void {
     this.photoError.set(PiPhotoDropzoneComponent.INVALID_FILE_TYPE_MESSAGE);
   }
@@ -512,9 +535,11 @@ export class MaterialFormDialogComponent implements OnInit {
         items.push({ _id: ref, storageUrl: `/api/photos/${ref}/raw` });
       } else if (ref && typeof ref === 'object' && '_id' in ref) {
         const doc = ref as Record<string, unknown> & { storageUrl?: string };
+        const frame = photoFrameOf(doc);
         items.push({
           _id: String(doc['_id']),
           storageUrl: typeof doc.storageUrl === 'string' ? doc.storageUrl : `/api/photos/${String(doc['_id'])}/raw`,
+          ...(frame ? { frame } : {}),
         });
       }
     }

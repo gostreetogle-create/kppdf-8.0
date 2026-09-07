@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import type { PiPhotoItem } from './pi-photo-dropzone.component';
-import { PiPhotoDropzoneComponent } from './pi-photo-dropzone.component';
+import { photoFrameOf, PiPhotoDropzoneComponent } from './pi-photo-dropzone.component';
 
 describe('PiPhotoDropzoneComponent (TZ-NX-PHOTO-P0)', () => {
   const photo: PiPhotoItem = {
@@ -96,6 +96,51 @@ describe('PiPhotoDropzoneComponent (TZ-NX-PHOTO-P0)', () => {
     dropTarget(fixture).dispatchEvent(bad);
     fixture.detectChanges();
     expect(invalidFileType).toHaveBeenCalled();
+  });
+
+  it('renders previews with the persisted rectangular frame style and normalizes frame refs', async () => {
+    const { fixture } = await setup();
+    fixture.componentRef.setInput('photos', [
+      {
+        ...photo,
+        frame: { fit: 'cover', posX: -12, posY: 120 },
+      },
+    ]);
+    fixture.detectChanges();
+
+    const image = fixture.nativeElement.querySelector(
+      '[data-test="photo-preview-img"]',
+    ) as HTMLImageElement;
+    expect(image.style.objectFit).toBe('cover');
+    expect(image.style.objectPosition).toBe('0% 100%');
+    expect(photoFrameOf({ frame: { fit: 'cover', posX: -12, posY: 120 } })).toEqual({
+      fit: 'cover',
+      posX: 0,
+      posY: 100,
+    });
+    expect(photoFrameOf({ frame: {} })).toBeUndefined();
+  });
+
+  it('opens the frame editor from a preview and emits the parent-owned frame save', async () => {
+    const { fixture, component } = await setup();
+    const frameSave = jest.fn();
+    component.frameSave.subscribe(frameSave);
+    fixture.componentRef.setInput('photos', [photo]);
+    fixture.detectChanges();
+
+    const frameButton = fixture.nativeElement.querySelector(
+      '[data-test="photo-frame-button"]',
+    ) as HTMLButtonElement;
+    frameButton.click();
+    fixture.detectChanges();
+    expect(component['frameEditingId']()).toBe('p1');
+
+    component['onFrameSave']('p1', { fit: 'cover', posX: 20, posY: 30 });
+    expect(frameSave).toHaveBeenCalledWith({
+      id: 'p1',
+      frame: { fit: 'cover', posX: 20, posY: 30 },
+    });
+    expect(component['frameEditingId']()).toBeNull();
   });
 
   it('renders previews with remove and main-toggle controls', async () => {

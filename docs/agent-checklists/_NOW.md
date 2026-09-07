@@ -1,24 +1,25 @@
 ﻿# NOW
 
-updated_at: 2026-09-07T06:15:00+03:00
+updated_at: 2026-09-07T20:00:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** WAVE-NX-CATALOG-PHOTOS continuous — P0 `7c9d1071` / P2 `f2707641` / P1 DONE → P3 next
-- **Claude:** IDLE (TZD-76/78 PARK)
+- **Freebuff:** IDLE (PARK, не использовать)
+- **Claude:** IDLE — волна 0 (Photos P3) закрыта, WAVE-NX-CATALOG-PHOTOS DONE. Executor report ниже; ждёт промпт волны 1 от Cursor.
+  Очередь: [`CLAUDE-ONLY-QUEUE.md`](./CLAUDE-ONLY-QUEUE.md)
 
-Доска потоков: [`STREAM-QUEUE.md`](./STREAM-QUEUE.md)
+## Executor report (волна 0 — Photos P3)
 
-## DONE (срез)
+- P0 `7c9d1071` · P1 `c0b675a7` · P2 `f2707641` · P3 см. `tasks/_archive/2026-09/TZ-NX-PHOTO-P3-FRAME-UI.done.md` для SHA
+- Gates зелёные (jest, lint changed, architecture:check, nx build kppdf-web last)
+- `_active` очищен; checklist + archive DONE
 
-- DocStudio Chrome IA + S46/S45; orphan clean; shell hotfix; Desktop TZD-74/75/77
+## NEXT (Claude-only)
 
-## NEXT
-
-1. Freebuff → фото P0→P3  
-2. После фото или параллельно по слову PO: Cursor пишет executable TZ для WAVE-NX-SUPPLY-OPS → отдельный промпт
+1. Supply OPS (`PROMPT-CLAUDE-NX-SUPPLY-OPS.md`)  
+2. TZD-78  
+3. Orders tray inset  
 
 ## PARK
 
-- WAVE-NX-SUPPLY-OPS (stubs only — нужен TZ authoring)
-- TZD-76 / TZD-78 · Orders inset · G12 · lint debt gantt
+- TZD-76 · G12 · Excel supply pack B · Freebuff

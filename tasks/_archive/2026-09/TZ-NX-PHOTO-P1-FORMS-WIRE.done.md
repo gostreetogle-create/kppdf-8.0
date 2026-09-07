@@ -1,7 +1,7 @@
 # TZ-NX-PHOTO-P1-FORMS-WIRE — DONE
 
 - **agent_id:** freebuff
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** c0b675a7533be952568f741ab00044b17fa433d7
 - **TZ:** tasks/_ready/nx-photos/TZ-NX-PHOTO-P1-FORMS-WIRE.md
 - **Deps:** P0 `7c9d1071` + P2 `f2707641` — закрыты до старта (Product.mainPhotoId в BE есть).
 

@@ -253,7 +253,7 @@ media фиксирован в пропорции 16:9 с `object-fit: contain` (
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-09-07 (TZ-NX-PHOTO-P2: `Product.mainPhotoId` в BE — schema/DTO/validate main ∈ photoIds → 400 RU; витрина cover = `mainPhotoId` ?? `photoIds[0]`; UI форм — P1; ранее TZ-UX-326 chrome page-tools)._
+_Создано: 2026-07-19. Последнее обновление: 2026-09-07 (TZ-NX-PHOTO-P3: рамка фото — dropzone-editor `pi-photo-frame-editor` (contain/cover + drag-pan) → `PATCH /photos/:id/frame`; TZ-NX-PHOTO-P2: `Product.mainPhotoId` в BE — schema/DTO/validate main ∈ photoIds → 400 RU; витрина cover = `mainPhotoId` ?? `photoIds[0]`; UI форм — P1; ранее TZ-UX-326 chrome page-tools)._
 
 ## Состав изделия (TZ-CATALOG-320)
 

@@ -85,6 +85,7 @@ type PhotoRefLike = {
   variant?: string;
   parentPhotoId?: string;
   linkedPhotoId?: string;
+  frame?: { fit?: 'contain' | 'cover'; posX?: number; posY?: number } | null;
 };
 
 function photoRef(value: unknown): PhotoRefLike | null {
@@ -105,11 +106,15 @@ function photoListUrl(photo: PhotoRefLike, allPhotos: readonly PhotoRefLike[]): 
   return linkedThumb?.storageUrl ?? photo.storageUrl!;
 }
 
-/** Resolve the cheapest populated catalog photo for list/tree surfaces. */
-export function firstPhotoUrl(
+/**
+ * Resolve the cheapest populated catalog photo for list/tree surfaces.
+ * WAVE-NX-CATALOG-PHOTOS P3: also returns the photo's rectangular frame
+ * (TZ-PHOTO-304) so consumers can apply object-fit/object-position.
+ */
+export function firstPhotoThumb(
   photoIds?: readonly unknown[] | null,
   mainPhotoId?: unknown | null,
-): string | null {
+): { url: string; frame?: { fit: 'contain' | 'cover'; posX: number; posY: number } } | null {
   const photos = (photoIds ?? []).map(photoRef).filter((photo): photo is PhotoRefLike => photo != null);
   const main = photoRef(mainPhotoId);
   const mainId = typeof mainPhotoId === 'string' ? mainPhotoId : main?._id;
@@ -117,7 +122,26 @@ export function firstPhotoUrl(
     main ??
     (mainId ? photos.find((photo) => photo._id === mainId) : undefined) ??
     photos[0];
-  return selected ? photoListUrl(selected, photos) : null;
+  if (!selected) return null;
+  const url = photoListUrl(selected, photos);
+  const f = selected.frame;
+  const frame =
+    f && (f.fit === 'cover' || (typeof f.posX === 'number' && typeof f.posY === 'number'))
+      ? {
+          fit: f.fit === 'cover' ? ('cover' as const) : ('contain' as const),
+          posX: typeof f.posX === 'number' ? f.posX : 50,
+          posY: typeof f.posY === 'number' ? f.posY : 50,
+        }
+      : undefined;
+  return { url, frame };
+}
+
+/** Resolve the cheapest populated catalog photo URL for list/tree surfaces. */
+export function firstPhotoUrl(
+  photoIds?: readonly unknown[] | null,
+  mainPhotoId?: unknown | null,
+): string | null {
+  return firstPhotoThumb(photoIds, mainPhotoId)?.url ?? null;
 }
 
 /** Product composition line — structural subset (NX `Product.composition` is `ProductRef[]`). */
@@ -331,9 +355,14 @@ export class ProductionReadFacade {
     return out;
   }
 
-  /** First populated product photo per order for the collapsed Orders rail. */
-  async getOrderThumbMap(orders: Order[]): Promise<Map<string, string>> {
-    const out = new Map<string, string>();
+  /** P3: order thumb + photo frame for CSS object-fit/object-position on the rail. */
+  async getOrderThumbFrameMap(
+    orders: Order[],
+  ): Promise<Map<string, { url: string; frame?: { fit: 'contain' | 'cover'; posX: number; posY: number } }>> {
+    const out = new Map<
+      string,
+      { url: string; frame?: { fit: 'contain' | 'cover'; posX: number; posY: number } }
+    >();
     const warnings: string[] = [];
     for (const order of orders) {
       const first = order.items?.[0];
@@ -341,8 +370,8 @@ export class ProductionReadFacade {
       if (!productId) continue;
       const product = await this.getProduct(productId, warnings);
       if (!product) continue;
-      const url = firstPhotoUrl(product.photoIds);
-      if (url) out.set(order._id, url);
+      const thumb = firstPhotoThumb(product.photoIds);
+      if (thumb) out.set(order._id, thumb);
     }
     return out;
   }

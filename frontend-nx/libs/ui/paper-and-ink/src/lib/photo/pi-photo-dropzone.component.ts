@@ -7,13 +7,29 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { ButtonComponent } from '../button/index';
+import {
+  PiPhotoFrame,
+  PiPhotoFrameEditorComponent,
+  normalizePhotoFrame,
+  photoFrameStyle,
+} from './pi-photo-frame-editor.component';
 
 /** Shape consumed by the previews strip; mirrors `Photo` (id + url enough for display). */
 export interface PiPhotoItem {
   _id: string;
   storageUrl: string;
   originalFilename?: string;
+  frame?: PiPhotoFrame;
+}
+
+/** Read a populated Photo ref's frame while keeping malformed refs on the default. */
+export function photoFrameOf(value: unknown): PiPhotoFrame | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const frame = (value as { frame?: unknown }).frame;
+  if (!frame || typeof frame !== 'object') return undefined;
+  const candidate = frame as Partial<PiPhotoFrame>;
+  if (candidate.fit !== 'contain' && candidate.fit !== 'cover') return undefined;
+  return normalizePhotoFrame(candidate);
 }
 
 /**
@@ -28,7 +44,7 @@ export interface PiPhotoItem {
   selector: 'pi-photo-dropzone',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent],
+  imports: [PiPhotoFrameEditorComponent],
   template: `
     <div class="space-y-2" data-test="photo-dropzone">
       <div
@@ -105,8 +121,19 @@ export interface PiPhotoItem {
               <img
                 [src]="photo.storageUrl"
                 [alt]="photo.originalFilename || 'Фото продукта'"
-                class="block w-full h-24 object-cover"
+                class="block w-full h-24"
+                [style]="photoFrameStyle(photoFrames()?.get(photo._id) ?? photo.frame)"
+                data-test="photo-preview-img"
               />
+              <button
+                type="button"
+                class="absolute bottom-1 left-1 z-10 h-6 rounded-sm px-1.5 bg-paper-raised text-ink hairline text-[10px] font-mono uppercase tracking-wider transition-colors hover:bg-paper-2"
+                [attr.aria-label]="'Рамка фото ' + (i + 1)"
+                (click)="openFrameEditor(photo._id, $event)"
+                data-test="photo-frame-button"
+              >
+                Рамка
+              </button>
               <button
                 type="button"
                 class="absolute top-1 left-1 z-10 h-6 min-w-6 rounded-sm text-xs font-mono transition-colors"
@@ -139,6 +166,28 @@ export interface PiPhotoItem {
           }
         </div>
       }
+      @if (frameEditingId()) {
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Рамка фото"
+          (click)="closeFrameEditor()"
+          data-test="photo-frame-overlay"
+        >
+          <div class="w-full max-w-md bg-paper rounded-sm hairline p-3" (click)="$event.stopPropagation()">
+            @if (editingPhoto(); as ep) {
+              <pi-photo-frame-editor
+                [photoUrl]="ep.storageUrl"
+                [photoName]="ep.originalFilename ?? null"
+                [frame]="photoFrames()?.get(ep._id) ?? ep.frame ?? null"
+                (save)="onFrameSave(ep._id, $event)"
+                (cancel)="closeFrameEditor()"
+              />
+            }
+          </div>
+        </div>
+      }
     </div>
   `,
 })
@@ -150,6 +199,10 @@ export class PiPhotoDropzoneComponent {
   readonly errorMessage = input<string | null>(null);
   /** Currently main photo id; null = no main (main ★ deferred to parent default). */
   readonly mainPhotoId = input<string | null>(null);
+  /** Frames by photo id (P3); missing id → canonical contain/center. */
+  readonly photoFrames = input<ReadonlyMap<string, PiPhotoFrame> | null>(null);
+  /** Reports the merged partial frame from the frame editor (parent persists via API). */
+  readonly frameSave = output<{ id: string; frame: Partial<PiPhotoFrame> }>();
   readonly filesSelected = output<File[]>();
   readonly removePhoto = output<string>();
   readonly mainChanged = output<string | null>();
@@ -161,6 +214,11 @@ export class PiPhotoDropzoneComponent {
     'Только изображения (JPG, PNG, WebP, GIF, AVIF, SVG)';
 
   protected readonly dragActive = signal(false);
+  protected readonly frameEditingId = signal<string | null>(null);
+  protected readonly editingPhoto = computed(
+    () => this.photos().find((p) => p._id === this.frameEditingId()) ?? null,
+  );
+  protected readonly photoFrameStyle = photoFrameStyle;
   private readonly hovered = signal(false);
   private readonly focused = signal(false);
   private readonly interactionActive = computed(() => this.hovered() || this.focused());
@@ -249,6 +307,21 @@ export class PiPhotoDropzoneComponent {
     event.stopPropagation();
     if (this.uploading()) return;
     this.mainChanged.emit(this.mainPhotoId() === id ? null : id);
+  }
+
+  protected openFrameEditor(id: string, event: Event): void {
+    event.stopPropagation();
+    if (this.uploading()) return;
+    this.frameEditingId.set(id);
+  }
+
+  protected closeFrameEditor(): void {
+    this.frameEditingId.set(null);
+  }
+
+  protected onFrameSave(id: string, frame: Partial<PiPhotoFrame>): void {
+    this.frameSave.emit({ id, frame });
+    this.closeFrameEditor();
   }
 }
 

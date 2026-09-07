@@ -343,7 +343,12 @@ export class ProductionCockpitPage {
   protected readonly workerLabels = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly workerCandidates = signal<ReadonlyMap<string, readonly Person[]>>(new Map());
   protected readonly workerAssignmentSaving = signal(false);
-  protected readonly orderThumbs = signal<ReadonlyMap<string, string>>(new Map());
+  protected readonly orderThumbs = signal<
+    ReadonlyMap<
+      string,
+      { url: string; frame?: { fit: 'contain' | 'cover'; posX: number; posY: number } }
+    >
+  >(new Map());
   /** HUB-303: RU hint when ?orderId= is unknown. */
   protected readonly orderIdHint = signal<string | null>(null);
   /** Deep-link return — visible only when arriving from the desk. */
@@ -802,7 +807,7 @@ export class ProductionCockpitPage {
   /** TZ-NX-GANTT-G10 — rail thumbnails hydrate in the background (bars go first). */
   private async loadThumbs(orders: Order[]): Promise<void> {
     try {
-      this.orderThumbs.set(await this.facade.getOrderThumbMap(orders));
+      this.orderThumbs.set(await this.facade.getOrderThumbFrameMap(orders));
     } catch {
       // A missing/partial photo payload must never make the estimate screen fail.
       this.orderThumbs.set(new Map());

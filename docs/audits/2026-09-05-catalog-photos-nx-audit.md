@@ -48,3 +48,13 @@ Upload SoT: `POST /api/photos/upload` + bind на сущность.
 P2 BE можно ∥ к P0, если Claude свободен и не трогает NX.
 
 Промпт: `tasks/PROMPT-NX-CATALOG-PHOTOS.md` (не стартовать сейчас).
+
+---
+
+## P3 DONE (2026-09-07)
+
+Frame editor (`pi-photo-frame-editor`: contain/cover toggle + drag-pan) в dropzone превью;
+save → merged partial через существующий `PATCH /photos/:id/frame`. Rectangular consumer:
+production Orders rail (collapsed icons + list) читает `Photo.frame` через
+`getOrderThumbFrameMap` + `photoFrameStyle`; fallback без frame = contain/center, как раньше.
+known_limitation: DocStudio/Gantt thumbs вне production rail — отдельный sweep, не в этой волне.

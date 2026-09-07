@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { photoFrameStyle } from '@kppdf/ui/photo';
 import {
   counterpartyIdOf,
   counterpartyNameOf,
@@ -57,8 +58,13 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
               [attr.title]="railTitle(o)"
               [attr.data-test]="'orders-rail-icon-' + o._id"
             >
-              @if (thumbs().get(o._id); as src) {
-                <img [src]="src" alt="" class="w-full h-full object-cover" />
+              @if (thumbs().get(o._id); as thumb) {
+                <img
+                  [src]="thumb.url"
+                  alt=""
+                  class="w-full h-full"
+                  [style]="photoFrameStyle(thumb.frame)"
+                />
               } @else {
                 <span class="text-[9px] leading-tight px-0.5 break-all">{{
                   shortNum(o.number)
@@ -183,11 +189,12 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
                   (click)="select.emit(o._id)"
                   [attr.data-test]="'orders-rail-item-' + o._id"
                 >
-                  @if (thumbs().get(o._id); as src) {
+                  @if (thumbs().get(o._id); as thumb) {
                     <img
-                      [src]="src"
+                      [src]="thumb.url"
                       alt=""
-                      class="w-9 h-9 rounded-sm object-cover border hairline shrink-0"
+                      class="w-9 h-9 rounded-sm border hairline shrink-0"
+                      [style]="photoFrameStyle(thumb.frame)"
                     />
                   }
                   <span class="min-w-0 flex-1">
@@ -235,7 +242,11 @@ export class OrdersRailComponent {
   readonly collapsed = input(false);
   readonly showList = input(true);
   readonly showFilters = input(true);
-  readonly thumbs = input<ReadonlyMap<string, string>>(new Map());
+  /** WAVE-NX-CATALOG-PHOTOS P3: url + optional rectangular frame per order. */
+  readonly thumbs = input<
+    ReadonlyMap<string, { url: string; frame?: { fit: 'contain' | 'cover'; posX: number; posY: number } }>
+  >(new Map());
+  protected readonly photoFrameStyle = photoFrameStyle;
   /** TZ-PRODUCTION-336 — orders without Gantt estimate (marker, still listed). */
   readonly noGanttOrderIds = input<ReadonlySet<string>>(new Set());
   readonly select = output<string>();

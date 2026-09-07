@@ -1,7 +1,7 @@
 # TZ-NX-PHOTO-P2-PRODUCT-MAIN — DONE
 
 - **agent_id:** freebuff
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** f2707641
 - **TZ:** tasks/_ready/nx-photos/TZ-NX-PHOTO-P2-PRODUCT-MAIN.md
 
 ## Что сделано

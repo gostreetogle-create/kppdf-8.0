@@ -13,6 +13,7 @@ import {
   ProductionReadFacade,
   PREFETCH_CONCURRENCY,
   extractDirectModuleIds,
+  firstPhotoThumb,
   firstPhotoUrl,
 } from './production-read.facade';
 
@@ -38,6 +39,27 @@ describe('ProductionReadFacade (TZ-NX-GANTT-G2-READ-MODEL)', () => {
     expect(firstPhotoUrl(null)).toBeNull();
   });
 
+  it('TZ-NX-CATALOG-PHOTOS P3: carries the selected photo frame through the thumb helper', () => {
+    expect(
+      firstPhotoThumb([
+        {
+          _id: 'original-1',
+          storageUrl: '/uploads/original.jpg',
+          variant: 'original',
+          frame: { fit: 'cover', posX: 12, posY: 88 },
+        },
+        {
+          _id: 'thumb-1',
+          storageUrl: '/uploads/thumb.jpg',
+          variant: 'thumb',
+          parentPhotoId: 'original-1',
+        },
+      ]),
+    ).toEqual({
+      url: '/uploads/thumb.jpg',
+      frame: { fit: 'cover', posX: 12, posY: 88 },
+    });
+  });
   it('extractDirectModuleIds prefers non-empty composition over legacy', () => {
     const fromComposition = extractDirectModuleIds({
       _id: 'p1',
