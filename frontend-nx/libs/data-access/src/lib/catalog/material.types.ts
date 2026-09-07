@@ -79,7 +79,7 @@ export interface CreateMaterialPayload {
   dimensions?: MaterialDimension[];
   colors?: string[];
   photoIds?: string[];
-  mainPhotoId?: string;
+  mainPhotoId?: string | null;
   supplierId?: string;
   notes?: string;
 }

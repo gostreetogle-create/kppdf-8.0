@@ -11,7 +11,7 @@
 |---|------|-----|------|------|--------|
 | P0 | L | TZ-NX-PHOTO-P0-DROPZONE-LIB | `tasks/_ready/nx-photos/TZ-NX-PHOTO-P0-DROPZONE-LIB.md` | — | **DONE** |
 | P2 | S | TZ-NX-PHOTO-P2-PRODUCT-MAIN | `tasks/_ready/nx-photos/TZ-NX-PHOTO-P2-PRODUCT-MAIN.md` | — (∥ P0 OK) | **DONE** |
-| P1 | L | TZ-NX-PHOTO-P1-FORMS-WIRE | `tasks/_ready/nx-photos/TZ-NX-PHOTO-P1-FORMS-WIRE.md` | P0 + P2 | PARK |
+| P1 | L | TZ-NX-PHOTO-P1-FORMS-WIRE | `tasks/_ready/nx-photos/TZ-NX-PHOTO-P1-FORMS-WIRE.md` | P0 + P2 | **DONE** |
 | P3 | L | TZ-NX-PHOTO-P3-FRAME-UI | `tasks/_ready/nx-photos/TZ-NX-PHOTO-P3-FRAME-UI.md` | P0 (+ P1 желательно) | PARK |
 
 **Порядок исполнения:** P0 ∥ P2 → P1 → P3.

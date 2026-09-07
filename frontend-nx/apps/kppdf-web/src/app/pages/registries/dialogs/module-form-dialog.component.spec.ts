@@ -3,12 +3,23 @@ import { of } from 'rxjs';
 import {
   PiCompositionService,
   PiModulesService,
+  PiPhotosService,
   PiWorkTypesService,
   type ProductModule,
 } from '@kppdf/data-access';
 import { PI_DIALOG_DATA, PI_DIALOG_REF, PiDialogService } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
+
+// jsdom lacks Element.scrollIntoView; composition focus uses it via queueMicrotask.
+Element.prototype.scrollIntoView = Element.prototype.scrollIntoView ?? jest.fn();
+
+const PHOTOS_MOCK = {
+  upload: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'mph-2', storageUrl: '/uploads/mph-2.jpg' } })),
+  remove: jest.fn().mockReturnValue(of({ ok: true, data: null })),
+  get: jest.fn(),
+  updateFrame: jest.fn(),
+};
 
 const SAMPLE: ProductModule = {
   _id: 'mod-1',
@@ -60,6 +71,7 @@ describe('ModuleFormDialogComponent (Phase 2)', () => {
           },
         },
         { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
         {
           provide: PiDialogService,
           useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
@@ -176,6 +188,7 @@ describe('ModuleFormDialogComponent (Phase 2)', () => {
           },
         },
         { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
         {
           provide: PiDialogService,
           useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
@@ -210,6 +223,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
         { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
         { provide: PiModulesService, useValue: { create, update: jest.fn() } },
         { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
         {
           provide: PiDialogService,
           useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
@@ -268,6 +282,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
         { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
         { provide: PiModulesService, useValue: { create, update: jest.fn() } },
         { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
         {
           provide: PiDialogService,
           useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
@@ -306,6 +321,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
         { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
         { provide: PiModulesService, useValue: { create, update: jest.fn() } },
         { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
         {
           provide: PiDialogService,
           useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },

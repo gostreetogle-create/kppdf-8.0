@@ -4,7 +4,7 @@ updated_at: 2026-09-07T06:15:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff:** WAVE-NX-CATALOG-PHOTOS continuous — P0 `7c9d1071` + P2 DONE → P1 next
+- **Freebuff:** WAVE-NX-CATALOG-PHOTOS continuous — P0 `7c9d1071` / P2 `f2707641` / P1 DONE → P3 next
 - **Claude:** IDLE (TZD-76/78 PARK)
 
 Доска потоков: [`STREAM-QUEUE.md`](./STREAM-QUEUE.md)

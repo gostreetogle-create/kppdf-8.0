@@ -18,6 +18,7 @@ import { firstValueFrom } from 'rxjs';
 import {
   MATERIAL_KINDS,
   PiMaterialsService,
+  PiPhotosService,
   PiUnitsService,
   type CreateMaterialPayload,
   type Material,
@@ -26,6 +27,7 @@ import {
   type Unit,
 } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
+import { PiPhotoDropzoneComponent, type PiPhotoItem } from '@kppdf/ui/photo';
 import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
@@ -73,6 +75,7 @@ type DimensionGroup = FormGroup<{
     InputComponent,
     TextareaComponent,
     PiFormSectionComponent,
+    PiPhotoDropzoneComponent,
     CompositionPanelComponent,
   ],
   template: `
@@ -175,6 +178,20 @@ type DimensionGroup = FormGroup<{
           </div>
         </app-pi-form-section>
 
+        <app-pi-form-section title="Фото" headingId="mat-form-photos" tone="neutral">
+          <pi-photo-dropzone
+            [photos]="photoItems()"
+            [mainPhotoId]="mainPhotoId()"
+            [uploading]="photosUploading()"
+            [errorMessage]="photoError()"
+            (filesSelected)="onPhotosSelected($event)"
+            (removePhoto)="onPhotoRemove($event)"
+            (mainChanged)="onPhotoMainChanged($event)"
+            (invalidFileType)="onPhotoInvalidType()"
+            data-test="material-photo-dropzone"
+          />
+        </app-pi-form-section>
+
         <app-pi-form-section title="Описание" headingId="mat-form-notes" tone="neutral">
           <div class="grid md:grid-cols-2 gap-form-field">
             <app-pi-form-field label="Описание" htmlFor="mat-description">
@@ -250,6 +267,7 @@ export class MaterialFormDialogComponent implements OnInit {
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly materialsService = inject(PiMaterialsService);
+  private readonly photosService = inject(PiPhotosService);
   private readonly unitsService = inject(PiUnitsService);
   private readonly data = inject<MaterialFormDialogData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<Material | null | undefined>>(PI_DIALOG_REF);
@@ -260,6 +278,12 @@ export class MaterialFormDialogComponent implements OnInit {
   protected readonly savedId = signal<string | null>(null);
   protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
   private materialEntity = signal<Material | undefined>(undefined);
+
+  /** WAVE-NX-CATALOG-PHOTOS P1: локальное состояние фото; write — только на Save. */
+  protected readonly photoItems = signal<PiPhotoItem[]>([]);
+  protected readonly mainPhotoId = signal<string | null>(null);
+  protected readonly photosUploading = signal(false);
+  protected readonly photoError = signal<string | null>(null);
 
   protected readonly isDetailForm = computed(
     () => this.data.lockMaterialKind === 'part' || this.data.entityLabel === 'деталь',
@@ -377,6 +401,53 @@ export class MaterialFormDialogComponent implements OnInit {
     }
   }
 
+  /** P1 write-path: upload → append id, main = first when empty. */
+  protected async onPhotosSelected(files: File[]): Promise<void> {
+    if (files.length === 0 || this.photosUploading()) return;
+    this.photosUploading.set(true);
+    this.photoError.set(null);
+    const uploaded: PiPhotoItem[] = [];
+    for (const file of files) {
+      const res = await firstValueFrom(this.photosService.upload(file));
+      if (!res.ok) {
+        this.photoError.set(extractErrorMessage(res.error));
+        break;
+      }
+      uploaded.push(res.data);
+    }
+    if (uploaded.length > 0) {
+      this.photoItems.update((list) => [...list, ...uploaded]);
+      if (this.mainPhotoId() === null) {
+        this.mainPhotoId.set(uploaded[0]._id);
+      }
+      this.form.markAsDirty();
+    }
+    this.photosUploading.set(false);
+  }
+
+  protected onPhotoRemove(id: string): void {
+    this.photoItems.update((list) => list.filter((p) => p._id !== id));
+    if (this.mainPhotoId() === id) {
+      const rest = this.photoItems();
+      this.mainPhotoId.set(rest.length > 0 ? rest[0]._id : null);
+    }
+    void this.photosService.remove(id).subscribe({
+      error: () => {
+        /* silent: entity Save всё равно уберёт ссылку (B-PHOTO) */
+      },
+    });
+    this.form.markAsDirty();
+  }
+
+  protected onPhotoMainChanged(id: string | null): void {
+    this.mainPhotoId.set(id);
+    this.form.markAsDirty();
+  }
+
+  protected onPhotoInvalidType(): void {
+    this.photoError.set(PiPhotoDropzoneComponent.INVALID_FILE_TYPE_MESSAGE);
+  }
+
   private async loadUnits(): Promise<void> {
     const res = await firstValueFrom(this.unitsService.list({ limit: 100, isActive: true }));
     if (res.ok) {
@@ -430,6 +501,33 @@ export class MaterialFormDialogComponent implements OnInit {
     for (const d of m.dimensions ?? []) {
       this.dimensionsArray.push(this.createDimensionGroup(d.type, d.value, !!d.isImmutable));
     }
+    this.hydratePhotos(m.photoIds, m.mainPhotoId);
+  }
+
+  /** Edit-load: строка-ссылка = достаточно для превью; populated объект — напрямую. */
+  private hydratePhotos(refs: Material['photoIds'], main: Material['mainPhotoId']): void {
+    const items: PiPhotoItem[] = [];
+    for (const ref of refs ?? []) {
+      if (typeof ref === 'string') {
+        items.push({ _id: ref, storageUrl: `/api/photos/${ref}/raw` });
+      } else if (ref && typeof ref === 'object' && '_id' in ref) {
+        const doc = ref as Record<string, unknown> & { storageUrl?: string };
+        items.push({
+          _id: String(doc['_id']),
+          storageUrl: typeof doc.storageUrl === 'string' ? doc.storageUrl : `/api/photos/${String(doc['_id'])}/raw`,
+        });
+      }
+    }
+    this.photoItems.set(items);
+    const mainId =
+      main == null
+        ? null
+        : typeof main === 'string'
+          ? main
+          : typeof main === 'object' && '_id' in main
+            ? String((main as Record<string, unknown>)['_id'])
+            : null;
+    this.mainPhotoId.set(mainId ?? (items.length > 0 ? items[0]._id : null));
   }
 
   private createDimensionGroup(
@@ -474,6 +572,15 @@ export class MaterialFormDialogComponent implements OnInit {
       isImmutable: d.isImmutable,
     }));
     if (dimensions.length) payload.dimensions = dimensions;
+    const photos = this.photoItems();
+    if (photos.length > 0) {
+      payload.photoIds = photos.map((p) => p._id);
+      const main = this.mainPhotoId();
+      if (main && photos.some((p) => p._id === main)) payload.mainPhotoId = main;
+    } else if (this.mode() === 'edit') {
+      payload.photoIds = [];
+      payload.mainPhotoId = null;
+    }
     return payload;
   }
 }

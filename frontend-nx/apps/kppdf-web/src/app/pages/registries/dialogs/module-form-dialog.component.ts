@@ -22,6 +22,7 @@ import {
 import { firstValueFrom } from 'rxjs';
 import {
   PiModulesService,
+  PiPhotosService,
   PiWorkTypesService,
   type CreateProductModulePayload,
   type ProductModule,
@@ -29,6 +30,7 @@ import {
   type WorkType,
 } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
+import { PiPhotoDropzoneComponent, type PiPhotoItem } from '@kppdf/ui/photo';
 import { PiDialogComponent, PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
@@ -56,6 +58,7 @@ export interface ModuleFormDialogData {
     FormFieldComponent,
     InputComponent,
     PiFormSectionComponent,
+    PiPhotoDropzoneComponent,
     CompositionPanelComponent,
   ],
   template: `
@@ -94,6 +97,20 @@ export interface ModuleFormDialogData {
               <app-pi-input id="mod-sort" type="number" formControlName="sortOrder" />
             </app-pi-form-field>
           </div>
+        </app-pi-form-section>
+
+        <app-pi-form-section title="Фото" headingId="module-photos" tone="neutral">
+          <pi-photo-dropzone
+            [photos]="photoItems()"
+            [mainPhotoId]="mainPhotoId()"
+            [uploading]="photosUploading()"
+            [errorMessage]="photoError()"
+            (filesSelected)="onPhotosSelected($event)"
+            (removePhoto)="onPhotoRemove($event)"
+            (mainChanged)="onPhotoMainChanged($event)"
+            (invalidFileType)="onPhotoInvalidType()"
+            data-test="module-photo-dropzone"
+          />
         </app-pi-form-section>
 
         <app-pi-form-section title="Виды работ" headingId="module-work-types" tone="neutral">
@@ -170,6 +187,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   @ViewChild('compositionBlock') private compositionBlock?: ElementRef<HTMLElement>;
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly modulesService = inject(PiModulesService);
+  private readonly photosService = inject(PiPhotosService);
   private readonly workTypesService = inject(PiWorkTypesService);
   private readonly data = inject<ModuleFormDialogData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<ProductModule | null | undefined>>(PI_DIALOG_REF);
@@ -185,6 +203,12 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
   protected readonly moduleEntity = signal<ProductModule | undefined>(this.data.module);
   protected readonly workTypes = signal<WorkType[]>([]);
+
+  /** WAVE-NX-CATALOG-PHOTOS P1: локальное состояние фото; write — только на Save. */
+  protected readonly photoItems = signal<PiPhotoItem[]>([]);
+  protected readonly mainPhotoId = signal<string | null>(null);
+  protected readonly photosUploading = signal(false);
+  protected readonly photoError = signal<string | null>(null);
 
   protected readonly dialogTitle = computed(() =>
     this.mode() === 'edit' ? 'Редактировать модуль' : 'Создать модуль',
@@ -293,6 +317,53 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
     if (catalogDays != null) group.controls.days.setValue(catalogDays);
   }
 
+  /** P1 write-path: upload → append id, main = first when empty. */
+  protected async onPhotosSelected(files: File[]): Promise<void> {
+    if (files.length === 0 || this.photosUploading()) return;
+    this.photosUploading.set(true);
+    this.photoError.set(null);
+    const uploaded: PiPhotoItem[] = [];
+    for (const file of files) {
+      const res = await firstValueFrom(this.photosService.upload(file));
+      if (!res.ok) {
+        this.photoError.set(extractErrorMessage(res.error));
+        break;
+      }
+      uploaded.push(res.data);
+    }
+    if (uploaded.length > 0) {
+      this.photoItems.update((list) => [...list, ...uploaded]);
+      if (this.mainPhotoId() === null) {
+        this.mainPhotoId.set(uploaded[0]._id);
+      }
+      this.form.markAsDirty();
+    }
+    this.photosUploading.set(false);
+  }
+
+  protected onPhotoRemove(id: string): void {
+    this.photoItems.update((list) => list.filter((p) => p._id !== id));
+    if (this.mainPhotoId() === id) {
+      const rest = this.photoItems();
+      this.mainPhotoId.set(rest.length > 0 ? rest[0]._id : null);
+    }
+    void this.photosService.remove(id).subscribe({
+      error: () => {
+        /* silent: entity Save всё равно уберёт ссылку (B-PHOTO) */
+      },
+    });
+    this.form.markAsDirty();
+  }
+
+  protected onPhotoMainChanged(id: string | null): void {
+    this.mainPhotoId.set(id);
+    this.form.markAsDirty();
+  }
+
+  protected onPhotoInvalidType(): void {
+    this.photoError.set(PiPhotoDropzoneComponent.INVALID_FILE_TYPE_MESSAGE);
+  }
+
   private async loadWorkTypes(): Promise<void> {
     const result = await firstValueFrom(this.workTypesService.list({ activeOnly: true }));
     if (result.ok) this.workTypes.set(result.data.items);
@@ -311,7 +382,34 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
     });
     this.workTypesArray.clear();
     for (const row of m.workTypes ?? []) this.workTypesArray.push(this.createWorkTypeGroup(row));
+    this.hydratePhotos(m.photoIds, m.mainPhotoId);
     this.form.markAsPristine();
+  }
+
+  /** Edit-load: строка-ссылка = достаточно для превью; populated объект — напрямую. */
+  private hydratePhotos(refs: ProductModule['photoIds'], main: ProductModule['mainPhotoId']): void {
+    const items: PiPhotoItem[] = [];
+    for (const ref of refs ?? []) {
+      if (typeof ref === 'string') {
+        items.push({ _id: ref, storageUrl: `/api/photos/${ref}/raw` });
+      } else if (ref && typeof ref === 'object' && '_id' in ref) {
+        const doc = ref as Record<string, unknown> & { storageUrl?: string };
+        items.push({
+          _id: String(doc['_id']),
+          storageUrl: typeof doc.storageUrl === 'string' ? doc.storageUrl : `/api/photos/${String(doc['_id'])}/raw`,
+        });
+      }
+    }
+    this.photoItems.set(items);
+    const mainId =
+      main == null
+        ? null
+        : typeof main === 'string'
+          ? main
+          : typeof main === 'object' && '_id' in main
+            ? String((main as Record<string, unknown>)['_id'])
+            : null;
+    this.mainPhotoId.set(mainId ?? (items.length > 0 ? items[0]._id : null));
   }
 
   private buildPayload(): CreateProductModulePayload {
@@ -338,6 +436,15 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
         ...(row.sortOrder == null ? {} : { sortOrder: Number(row.sortOrder) }),
         ...(row.days == null ? {} : { days: Number(row.days) }),
       }));
+    const photos = this.photoItems();
+    if (photos.length > 0) {
+      payload.photoIds = photos.map((p) => p._id);
+      const main = this.mainPhotoId();
+      if (main && photos.some((p) => p._id === main)) payload.mainPhotoId = main;
+    } else if (this.mode() === 'edit') {
+      payload.photoIds = [];
+      payload.mainPhotoId = null;
+    }
     return payload;
   }
 }

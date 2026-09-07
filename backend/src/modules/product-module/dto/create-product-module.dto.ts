@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsNumber, IsObject, IsOptional, IsString, Length, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsMongoId, IsNumber, IsObject, IsOptional, IsString, Length, Min, ValidateNested } from 'class-validator';
 
 class ModuleDimensionsDto {
   @ApiPropertyOptional({ description: 'Ширина' })
@@ -72,4 +72,15 @@ export class CreateProductModuleDto {
   @IsOptional()
   @IsArray()
   materials?: unknown[];
+
+  @ApiPropertyOptional({ type: [String], description: 'ID фотографий модуля' })
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true, message: 'Некорректный ID фото' })
+  photoIds?: string[];
+
+  @ApiPropertyOptional({ description: 'Главное фото (ID из photoIds; null = авто)' })
+  @IsOptional()
+  @IsMongoId({ message: 'Некорректный ID главного фото' })
+  mainPhotoId?: string | null;
 }

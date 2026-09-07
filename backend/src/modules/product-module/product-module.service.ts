@@ -15,7 +15,7 @@ import {
 
 export interface MaterialInModuleDto { materialId: string; quantity?: number; unit?: string; isPurchased?: boolean; overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string }; sortOrder?: number; }
 export interface WorkTypeInModuleDto { workTypeId: string; estimatedHours?: number; sortOrder?: number; days?: number | null; }
-export interface UpsertProductModuleDto { name: string; article: string; dimensions?: { width?: number; height?: number; depth?: number; unit?: string }; weight?: number; sortOrder?: number; workTypes?: WorkTypeInModuleDto[]; materials?: MaterialInModuleDto[]; }
+export interface UpsertProductModuleDto { name: string; article: string; dimensions?: { width?: number; height?: number; depth?: number; unit?: string }; weight?: number; sortOrder?: number; workTypes?: WorkTypeInModuleDto[]; materials?: MaterialInModuleDto[]; photoIds?: string[]; mainPhotoId?: string | null; }
 
 type DimensionKey = 'length' | 'width' | 'height';
 
@@ -98,6 +98,10 @@ export class ProductModuleService {
     if (dto.weight !== undefined) doc.weight = dto.weight;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
     if (dto.workTypes) doc.workTypes = dto.workTypes.map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0, days: this.normalizeWorkTypeDays(w.days) }));
+    // WAVE-NX-CATALOG-PHOTOS P1: фото модуля через канонические поля (schema готова; dual-write ProductModulePhoto не трогаем).
+    if (Array.isArray(dto.photoIds)) doc.photoIds = dto.photoIds.map((pid) => new Types.ObjectId(String(pid)));
+    if (dto.mainPhotoId === null) doc.mainPhotoId = undefined;
+    else if (dto.mainPhotoId !== undefined) doc.mainPhotoId = new Types.ObjectId(String(dto.mainPhotoId));
     try {
       return await doc.save();
     } catch (err) {
@@ -236,6 +240,12 @@ export class ProductModuleService {
       organizationId: organizationId ? this.organizationId(organizationId) : undefined,
       workTypes: (dto.workTypes ?? []).map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0, days: this.normalizeWorkTypeDays(w.days) })),
       materials: [],
+      ...(dto.photoIds !== undefined ? { photoIds: dto.photoIds.map((pid) => new Types.ObjectId(String(pid))) } : {}),
+      ...(dto.mainPhotoId === null
+        ? { mainPhotoId: null }
+        : dto.mainPhotoId !== undefined
+          ? { mainPhotoId: new Types.ObjectId(String(dto.mainPhotoId)) }
+          : {}),
     };
   }
 

@@ -128,4 +128,4 @@ listRes → data → filteredRows (поиск + «Состав») → sortedRows
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-16 (TZ-UX-327 chrome page-tools)._
+_Создано: 2026-07-19. Обновлено: 2026-09-07 (TZ-NX-PHOTO-P1: фото в форме модуля через `@kppdf/ui/photo` — файл/drag/Ctrl+V, ★ главное = `mainPhotoId`; ранее TZ-UX-327 chrome page-tools)._

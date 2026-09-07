@@ -36,6 +36,8 @@ export interface ProductModule {
   weight?: number;
   sortOrder?: number;
   photoIds?: ModuleRef[];
+  /** WAVE-NX-CATALOG-PHOTOS P1: главное фото (schema поле существует; write-path открыт в P1). */
+  mainPhotoId?: ModuleRef | null;
   /** ТZ-PRODUCTION: populated workTypes on detail (backend populates workTypeId). */
   workTypes?: WorkTypeInModule[];
   /** Канонический состав модуля (TZ-CATALOG-302/317); dual-read зеркало backend. */
@@ -61,6 +63,9 @@ export interface CreateProductModulePayload {
   sortOrder?: number;
   /** Planning links used by the Gantt; material composition remains separate. */
   workTypes?: ProductModuleWorkTypePayload[];
+  /** WAVE-NX-CATALOG-PHOTOS P1: canonical photo refs (schema fields exist since legacy). */
+  photoIds?: string[];
+  mainPhotoId?: string | null;
 }
 
 export type UpdateProductModulePayload = Partial<CreateProductModulePayload>;

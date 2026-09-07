@@ -1,10 +1,25 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { PiCompositionService, PiMaterialsService, PiUnitsService } from '@kppdf/data-access';
+import {
+  PiCompositionService,
+  PiMaterialsService,
+  PiPhotosService,
+  PiUnitsService,
+} from '@kppdf/data-access';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
+
+// jsdom lacks Element.scrollIntoView; composition focus uses it via queueMicrotask.
+Element.prototype.scrollIntoView = Element.prototype.scrollIntoView ?? jest.fn();
+
+const PHOTOS_MOCK = {
+  upload: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'mph-1', storageUrl: '/uploads/mph-1.jpg' } })),
+  remove: jest.fn().mockReturnValue(of({ ok: true, data: null })),
+  get: jest.fn(),
+  updateFrame: jest.fn(),
+};
 
 const COMPOSITION_MOCK = {
   getMaterialTree: jest.fn().mockReturnValue(
@@ -44,6 +59,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
             ),
           },
         },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
         {
           provide: PiMaterialsService,
           useValue: {
@@ -140,6 +156,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
             ),
           },
         },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
       ],
     }).compileComponents();
 
@@ -193,6 +210,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
           provide: PiMaterialsService,
           useValue: { create: jest.fn(), update: jest.fn() },
         },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
       ],
     }).compileComponents();
 
@@ -214,6 +232,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
           { provide: PiUnitsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) } },
           { provide: PiMaterialsService, useValue: { create: jest.fn(), update: jest.fn() } },
           { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+          { provide: PiPhotosService, useValue: PHOTOS_MOCK },
         ],
       }).compileComponents();
 
@@ -243,6 +262,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
           { provide: PiUnitsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) } },
           { provide: PiMaterialsService, useValue: { create: jest.fn(), update: jest.fn() } },
           { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+          { provide: PiPhotosService, useValue: PHOTOS_MOCK },
         ],
       }).compileComponents();
 
@@ -256,5 +276,87 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
       expect(el.querySelector('[data-test="detail-bom-add"]')).toBeNull();
       expect(el.querySelector('[data-test^="detail-bom-row-"]')).toBeNull();
     });
+  });
+});
+
+describe('MaterialFormDialogComponent фото (TZ-NX-PHOTO-P1, деталь = materialKind)', () => {
+  const close = jest.fn();
+  const update = jest.fn();
+  let fixture: ComponentFixture<MaterialFormDialogComponent>;
+
+  beforeEach(async () => {
+    close.mockReset();
+    PHOTOS_MOCK.upload.mockReset().mockReturnValue(
+      of({ ok: true, data: { _id: 'mph-2', storageUrl: '/uploads/mph-2.jpg' } }),
+    );
+    PHOTOS_MOCK.remove.mockReset().mockReturnValue(of({ ok: true, data: null }));
+    update.mockReset().mockReturnValue(
+      of({ ok: true, data: { _id: '507f1f77bcf86cd799439011', name: 'Кронштейн', article: 'PRT-1', unit: 'pcs', materialKind: 'part' } }),
+    );
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [MaterialFormDialogComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: PI_DIALOG_DATA,
+          useValue: {
+            mode: 'edit',
+            material: {
+              _id: '507f1f77bcf86cd799439011',
+              name: 'Кронштейн',
+              article: 'PRT-1',
+              unit: 'pcs',
+              materialKind: 'part',
+              photoIds: ['mph-1'],
+              mainPhotoId: 'mph-1',
+            },
+            lockMaterialKind: 'part',
+            allowKindSelect: false,
+            entityLabel: 'деталь',
+          },
+        },
+        { provide: PI_DIALOG_REF, useValue: { close } as DialogRef<unknown> },
+        {
+          provide: PiUnitsService,
+          useValue: {
+            list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })),
+          },
+        },
+        { provide: PiMaterialsService, useValue: { create: jest.fn(), update } },
+        { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(MaterialFormDialogComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  it('uses the same photo block for a деталь (part) and hydrates main', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="material-photo-dropzone"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="photo-preview-0"]')).toBeTruthy();
+    expect(fixture.componentInstance['mainPhotoId']()).toBe('mph-1');
+  });
+
+  it('upload → save payload contains photoIds + mainPhotoId', async () => {
+    await fixture.componentInstance['onPhotosSelected']([
+      new File(['i'], 'c.jpg', { type: 'image/jpeg' }),
+    ]);
+    await fixture.componentInstance['onSubmit']();
+    const payload = update.mock.calls[0][1];
+    expect(payload.photoIds).toEqual(['mph-1', 'mph-2']);
+    expect(payload.mainPhotoId).toBe('mph-1');
+  });
+
+  it('removing the last photo clears main and sends empty photoIds on edit save', async () => {
+    fixture.componentInstance['onPhotoRemove']('mph-1');
+    expect(fixture.componentInstance['mainPhotoId']()).toBeNull();
+    await fixture.componentInstance['onSubmit']();
+    const payload = update.mock.calls[0][1];
+    expect(payload.photoIds).toEqual([]);
+    expect(payload.mainPhotoId).toBeNull();
   });
 });
