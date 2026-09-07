@@ -5,6 +5,7 @@ outcome: DONE
 closed_at: 2026-09-08
 closed_by: claude
 lock_file: `.mimocode/locks/TZD-78-CHAT-HITL-MAPPING.lock` (local; ignored by Git)
+implementation_sha: `7a3e576e`
 
 ## Verification
 
