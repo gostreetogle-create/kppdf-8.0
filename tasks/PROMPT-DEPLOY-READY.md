@@ -11,41 +11,53 @@
 
 ## Задача агента подготовки
 
-Привести репо к `docs/agent-checklists/DEPLOY-READY.md` → `status: READY`.  
+Привести репо к `docs/agent-checklists/DEPLOY-READY.md` → `status: READY`  
+**и** `frontend_target: nx` (канон `docs/ops/DEPLOY-NX-PROD.md`).  
 Прод **не** трогать (не `deploy.ps1` / не SSH-запись / не wipe).
+
+**NX-волна (актуально 2026-09-07):** используй `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md`  
++ `tasks/_ready/TZ-OPS-DEPLOY-NX-STATIC.md` (переключить `deploy.py` на NX build).  
+Этот файл — общий каркас гейтов.
 
 ```text
 CLAIM (agent_id, claimed_at ISO, workspace D:\kppdf-8.0).
 
-0. Если DEPLOY-READY уже READY и HEAD == deploy_sha_target → «уже готово», STOP.
+0. Если DEPLOY-READY уже READY + frontend_target=nx и HEAD == deploy_sha_target → «уже готово», STOP.
+   Если READY но frontend_target отсутствует/legacy → продолжай NX prep.
 
 1. SYNC: git fetch; main == origin/main; дерево чистое.
    Чужой IN WORK с пересечением ключей → STOP.
 
-2. ПОЛНЫЕ ГЕЙТЫ на HEAD (не focused):
-   frontend/backend tsc; frontend && pnpm test; backend && pnpm test; architecture:check
+2. NX static path: TZ-OPS-DEPLOY-NX-STATIC closed (deploy.py → nx build kppdf-web → frontend/browser/).
+
+3. ПОЛНЫЕ ГЕЙТЫ на HEAD (не focused):
+   frontend/backend tsc; frontend && pnpm test; backend && pnpm test; architecture:check;
+   cd frontend-nx && pnpm exec nx build kppdf-web
    Красный вне §Базлайн → чини мини-TZ + все зависимые specs, потом гейты снова.
    Красный из §Базлайн → в known_debt штампа, не чини молча.
 
-3. SPEC-COVERAGE с прошлого prod/ready SHA:
+4. SPEC-COVERAGE с прошлого prod/ready SHA:
    git diff --name-only <sha>..HEAD -- product .ts
    → rg зависимые *.spec.ts → прогон/обновление.
 
-4. ГИГИЕНА:
+5. ГИГИЕНА:
    a) _active XOR _archive (+ sha: в done.md)
    b) смешанный коммит (одна SHA = две TZ) → HARD STOP штампа;
       waive только явной фразой PO
    c) синхронизируй верх README: путь к штампу и шаги «деплой по документации»
-      совпадают с фактическим READY
+      совпадают с фактическим READY; frontend_target=nx
 
-5. DESKTOP: zip vs последний коммит desktop/ → спроси PO пересобрать или accept-stale;
+6. DESKTOP: zip vs последний коммит desktop/ → спроси PO пересобрать или accept-stale;
    ответ в штамп (desktop_zip).
 
-6. Evidence: PRE-DEPLOY-<date>.md с deploy_sha_target = полный HEAD; §F пуст.
-   Preflight.ps1 OK; VPN off; SSH 192.168.1.103:22.
+7. ДАННЫЕ: wipe_default=false если схемы совместимы (канон NX warm). Wipe не ставить в штамп
+   без эскалации PO.
 
-7. Перепиши DEPLOY-READY.md → READY + поля sha/date/agent/debt/desktop/mixed.
-   Коммит+push docs. Отчёт: «Deploy-Ready на <sha>. Можно: сделай деплой по документации.»
+8. Evidence: PRE-DEPLOY-*-NX.md с deploy_sha_target = полный HEAD; §F пуст.
+   Preflight.ps1 — на машине деплоя (VPN off); prep может отметить «deferred to deploy agent».
+
+9. Перепиши DEPLOY-READY.md → READY + frontend_target/nx + wipe_default + sha/date/agent/debt/desktop/mixed.
+   Коммит+push docs. Отчёт: «Deploy-Ready NX на <sha>. Можно: сделай деплой по документации.»
    STOP.
 ```
 

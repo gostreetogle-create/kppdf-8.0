@@ -69,5 +69,6 @@
 
 - Шпаргалка PO: [`docs/PO-AGENT-FLOW.md`](../PO-AGENT-FLOW.md)
 - Deploy: [`deploy/synology/README.md`](../../deploy/synology/README.md) · [`RUNBOOK.md`](../../deploy/synology/RUNBOOK.md)
+- **NX prod cutover / warm vs wipe:** [`docs/ops/DEPLOY-NX-PROD.md`](./DEPLOY-NX-PROD.md)
 - Backup: [`deploy/synology/backup.sh`](../../deploy/synology/backup.sh)
 - Resume исполнителя: [`tasks/PROMPT-RESUME-ANY.md`](../../tasks/PROMPT-RESUME-ANY.md)

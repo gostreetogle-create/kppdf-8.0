@@ -235,6 +235,10 @@ cd /opt/kppdf-8.0 && sudo docker compose -f docker-compose.prod.yml up -d --forc
 
 ## 9. Деплой
 
+> **Prod UI target = NX.** Канон cutover: [`docs/ops/DEPLOY-NX-PROD.md`](../../docs/ops/DEPLOY-NX-PROD.md).  
+> Штамп: [`docs/agent-checklists/DEPLOY-READY.md`](../../docs/agent-checklists/DEPLOY-READY.md).  
+> Пока `deploy.py` не переключён на `nx build kppdf-web` — не деплоить «по документации».
+
 ### 9.1 Первичная настройка (один раз)
 
 См. [`INSTALL.md`](./INSTALL.md) и [`README.md`](./README.md).
@@ -267,11 +271,12 @@ python deploy/synology/deploy.py
 
 ### 9.3 Что делает деплой
 
-1. `pnpm --dir frontend build` → копия в `frontend/browser/`
+1. Сборка FE: **после TZ-OPS-DEPLOY-NX-STATIC** — `nx build kppdf-web` → копия в `frontend/browser/`  
+   (до cutover скрипт ещё мог собирать legacy — не использовать для NX-прод).
 2. Архив: `backend/`, `frontend/browser/`, `docker-compose.prod.yml`, `backup.sh`
 3. SSH (ключ или пароль) → upload в `/opt/kppdf-8.0/`
 4. Запись `.env` из `config.env`
-5. Опционально `--wipe` (app + mongo data)
+5. Опционально `--wipe` (app + mongo data) — только по `DANGEROUS-OPS` + фразе PO
 6. `docker compose build backend && up -d` + ожидание rs0
 7. Health `/api/health/ready` + пробный login admin
 

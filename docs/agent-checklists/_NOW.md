@@ -1,23 +1,24 @@
 ﻿# NOW
 
-updated_at: 2026-09-07T22:20:00+03:00
+updated_at: 2026-09-07T22:35:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — Claude-only очередь волн закрыта
-- **LM Studio / Cursor↔Gemma:** STOP на сегодня
+- **Claude:** следующий слот — **prep NX-деплоя** (не сам деплой)
+- **Deploy stamp:** `BLOCKED` — `docs/agent-checklists/DEPLOY-READY.md`
 
-Очередь: [`CLAUDE-ONLY-QUEUE.md`](./CLAUDE-ONLY-QUEUE.md)
+## NEXT (один промпт)
 
-## DONE (Claude-only день)
+Скопировать Claude: [`tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md`](../../tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md)
 
-- Photos P0–P3 · Supply OPS 7/7 · TZD-78 `7a3e576e` · Orders tray `b770e802` (meta `c2640ef2`)
+После READY: любому агенту — «сделай деплой по документации» (warm, Mongo keep).
 
-## NEXT
+## DONE (сегодня)
 
-Промптов нет. Новое — по слову PO (TZD-76 / G12 / Supply Excel B / LM Studio BYOK).
+- Photos / Supply OPS / TZD-78 / Orders tray · docs EOD `2cef78d2` · leftovers `91aab0c1`
+- Cursor: пакет NX deploy prep (`docs/ops/DEPLOY-NX-PROD.md`, TZ-OPS-DEPLOY-NX-STATIC)
 
 ## PARK
 
-- Freebuff · TZD-76 · G12 · Excel pack B · Cursor↔LM Studio (`docs/peer/CURSOR-LMSTUDIO-AS-MODEL.md`)
+- Freebuff · TZD-76 · G12 · Excel pack B · LM Studio BYOK · wipe (не планируется)

@@ -1,30 +1,33 @@
 # DEPLOY-READY — живой штамп
 
 > Единственный «светофор» перед деплоем.  
-> Пишет подготовка («подготовь к деплою»).  
+> Пишет подготовка («подготовь к деплою» / NX prep).  
 > Читает любой ИИ по `deploy/synology/README.md` → «сделай деплой по документации».
 >
-> Prod до этой выкладки: deployed `4d55d0ea` 2026-08-27 (warm). Prior deployed `78de2801` 2026-08-26.
+> Prod last warm: `4d55d0ea` 2026-08-27.  
+> **NX cutover:** канон `docs/ops/DEPLOY-NX-PROD.md`. До закрытия `TZ-OPS-DEPLOY-NX-STATIC` — **не** деплоить.
 
 ```yaml
-status: READY
-deploy_sha_target: 7eac057cfc43ba49da26ab1758d6b72c8e036798
-prepared_at: 2026-09-03T22:20:00+03:00
-prepared_by: claude-executor
-evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-03.md
-debt:
-  - "BE: no-explicit-any warnings (197, pre-existing)"
-  - "FE: no-implements-oninit-in-pages warnings (17, pre-existing)"
-  - "architecture: 15x fe-page-cross-component (pre-existing, unchanged; see PRE-DEPLOY)"
-desktop_zip: accept-stale (no installer zip in frontend/downloads/; web warm only)
+status: BLOCKED
+frontend_target: nx
+wipe_default: false
+wipe_reason: "same Nest API; additive schemas since 4d55d0ea — keep Mongo/uploads (warm)"
+deploy_sha_target: null
+blocked_reason: "deploy.py still builds legacy frontend; TZ-OPS-DEPLOY-NX-STATIC + full gates pending"
+prepared_at: 2026-09-07T22:30:00+03:00
+prepared_by: cursor-architect
+evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-07-NX.md
+prep_prompt: tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md
+debt: []
+desktop_zip: accept-stale
 mixed_commit: no
 ```
 
 ## Для агента деплоя
 
-1. `status` = **READY** → можно.
-2. `git fetch` && `git checkout main` && `git pull --ff-only`.
-3. `git merge-base --is-ancestor fd416e40 HEAD` must succeed; deploy from **tip HEAD**.
-4. VPN **off**. Confirm `deploy/synology/config.env` + `CREDENTIALS.md` exist on the deploy machine (not in git).
-5. `.\deploy\synology\deploy.ps1` (no `-Wipe`).
-6. Smoke per `deploy/synology/README.md`. Then set this stamp `INVALID` + commit.
+1. Если `status` **не** `READY` → **STOP**. PO: «штамп не READY — нужна подготовка» (`PROMPT-CLAUDE-DEPLOY-PREP-NX.md`).
+2. Если `READY` и `frontend_target: nx` → `git fetch` && `git checkout main` && `git pull --ff-only`.
+3. `git merge-base --is-ancestor <deploy_sha_target> HEAD` must succeed; deploy from **tip HEAD**.
+4. VPN **off**. `config.env` + `CREDENTIALS.md` на машине деплоя (не в git).
+5. Warm only: `.\deploy\synology\deploy.ps1` (**no** `-Wipe`), unless PO separately `да, разрешаю wipe после бэкапа`.
+6. Smoke: `docs/ops/DEPLOY-NX-PROD.md` §4 + `deploy/synology/README.md`. Затем `INVALID` + commit.

@@ -1,7 +1,7 @@
 # CLAUDE-ONLY QUEUE — волны после DocStudio / Photos
 
-> PO 2026-09-07: Freebuff offline. Волны Claude ниже — **DONE** на сегодня.
-> Живой слот: `docs/agent-checklists/_NOW.md`.
+> Живой слот: `docs/agent-checklists/_NOW.md`.  
+> Deploy stamp: `BLOCKED` until NX prep closes.
 
 ## Порядок
 
@@ -11,9 +11,14 @@
 | 1 | Supply OPS | `tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md` | **DONE** 7/7 |
 | 2 | TZD-78 | `tasks/PROMPT-CLAUDE-TZD-78-CHAT-MAPPING.md` | **DONE** `7a3e576e` |
 | 3 | Orders tray inset | `tasks/PROMPT-CLAUDE-ORDERS-TRAY-INSET.md` | **DONE** `b770e802` |
-| 4 | TZD-76 | — | PARK |
-| 5 | G12 | — | PARK |
+| 4 | **NX deploy prep** (не деплой) | `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md` | **NEXT** |
+| 5 | TZD-76 | — | PARK |
+| 6 | G12 | — | PARK |
+
+## После READY
+
+Любому агенту: «сделай деплой по документации» → `deploy/synology/README.md` + warm (Mongo keep).
 
 ## Правило
 
-Новый промпт — только после явного слова PO. Не стартовать LM Studio BYOK/tunnel без команды.
+Не стартовать wipe / LM Studio BYOK без команды PO.

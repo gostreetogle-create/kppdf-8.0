@@ -1,7 +1,9 @@
 # Deploy — KPPDF 8.0 (Synology VM)
 
 > **Одна точка входа для деплоя.** Секреты не в git: `CREDENTIALS.md` + `config.env`.  
-> **Последний успешный warm deploy:** 2026-08-27 · код `4d55d0ea` · prod `https://kppdf-crm.ru`.
+> **Последний успешный warm deploy:** 2026-08-27 · код `4d55d0ea` · prod `https://kppdf-crm.ru`.  
+> **Цель UI:** после cutover — **NX** (`frontend-nx` → staging `frontend/browser/`). Канон: [`docs/ops/DEPLOY-NX-PROD.md`](../../docs/ops/DEPLOY-NX-PROD.md).  
+> Пока `DEPLOY-READY.status != READY` или `frontend_target != nx` — деплой **STOP** (prep: `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md`).
 
 ---
 
@@ -12,13 +14,16 @@
 1. Папка проекта: `D:\kppdf-8.0`, ветка `main`.
 2. Открой [`docs/agent-checklists/DEPLOY-READY.md`](../../docs/agent-checklists/DEPLOY-READY.md).
    - Если `status` **не** `READY` → **STOP**. Напиши PO: «штамп не READY — нужна подготовка к деплою».
-   - Если `READY` → `git fetch origin` && `git checkout main` && `git pull --ff-only`.
+   - Если `READY`, но `frontend_target` не `nx` → **STOP** (устаревший legacy-штамп).
+   - Если `READY` + `frontend_target: nx` → `git fetch origin` && `git checkout main` && `git pull --ff-only`.
    - Проверка SHA: `deploy_sha_target` должен быть **предком** `HEAD`
      (`git merge-base --is-ancestor <deploy_sha_target> HEAD`). Обычно tip = target
      или tip = target + 1 docs-коммит штампа. Иначе **STOP**.
    - Деплой всегда с **tip `main` (HEAD)**, не detached на старый SHA.
 3. VPN **выключен**. Секреты уже в `deploy/synology/config.env` + `CREDENTIALS.md` (не коммитить, пароли не печатать).
-4. Warm deploy (данные не трогать, **без** wipe):
+4. Wipe: смотри штамп `wipe_default`. Канон NX = **warm** (`false`).  
+   `-Wipe` только после бэкапа и фразы PO `да, разрешаю wipe после бэкапа` (`docs/ops/DANGEROUS-OPS.md`).
+5. Warm deploy (данные не трогать, **без** wipe):
 
 ```powershell
 cd D:\kppdf-8.0
@@ -27,8 +32,8 @@ $env:PYTHONIOENCODING='utf-8'
 .\deploy\synology\deploy.ps1
 ```
 
-5. Жди блок `=== Deploy complete ===` (~10–15 мин).
-6. Smoke (логин/пароль из `CREDENTIALS.md`, в чат не писать):
+6. Жди блок `=== Deploy complete ===` (~10–20 мин; NX build дольше legacy).
+7. Smoke (логин/пароль из `CREDENTIALS.md`, в чат не писать) + NX UI checks из `docs/ops/DEPLOY-NX-PROD.md` §4:
 
 ```powershell
 curl.exe -sf http://192.168.1.103:3000/api/health/ready
@@ -36,18 +41,19 @@ curl.exe -sf -u "LOGIN:PASS" https://kppdf-crm.ru/api/health/ready
 curl.exe -sf -u "LOGIN:PASS" -o NUL -w "%{http_code}" https://kppdf-crm.ru/
 ```
 
-7. Отчёт PO: SHA + «warm deploy OK» + health. В `DEPLOY-READY.md` поставь `status: INVALID` и `why_invalid: deployed <sha> <date>`, закоммить штамп.
+8. Отчёт PO: SHA + «warm NX deploy OK» + health. В `DEPLOY-READY.md` поставь `status: INVALID` и `why_invalid: deployed <sha> <date>`, закоммить штамп.
 
-Запрещено: wipe, второй параллельный deploy, коммит секретов, «заодно» новые TZ.  
-Wipe / стереть базу — **не** обычный деплой. Спроси PO по-русски (`docs/ops/DANGEROUS-OPS.md`).
+Запрещено: wipe без фразы PO, второй параллельный deploy, коммит секретов, «заодно» новые TZ.
 
 ---
 
 ## Подготовка (это не деплой)
 
 PO говорит Cursor: **«подготовь к деплою»**.  
-Полные гейты, фиксы stale-тестов, гигиена → штамп `DEPLOY-READY = READY`. Прод не трогают.  
-Чек-лист: `tasks/PROMPT-DEPLOY-READY.md`. Постмортем: `docs/audits/2026-08-23-deploy-block-desk423-stale-specs.md`.
+Для **NX-сайта**: `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md` + `TZ-OPS-DEPLOY-NX-STATIC`  
+(переключить `deploy.py` на `nx build kppdf-web`, гейты, штамп READY). Прод не трогают.  
+Общий чек-лист гейтов: `tasks/PROMPT-DEPLOY-READY.md`. Канон: `docs/ops/DEPLOY-NX-PROD.md`.  
+Постмортем: `docs/audits/2026-08-23-deploy-block-desk423-stale-specs.md`.
 
 | Файл | Зачем |
 |------|--------|
@@ -99,9 +105,10 @@ Preflight: `.\deploy\synology\preflight.ps1`
 
 ### Как устроен быстрый путь (канон)
 
-1. **Angular собирается локально** (`pnpm --dir frontend build` → `frontend/browser/`).
+1. **NX собирается локально** (`cd frontend-nx && pnpm exec nx build kppdf-web` → copy в `frontend/browser/`).  
+   До закрытия `TZ-OPS-DEPLOY-NX-STATIC` скрипт ещё может собирать legacy — не деплоить.
 2. В tar уходит: `backend/` + `frontend/browser/` + `docker-compose.prod.yml`.
-3. На VM: `docker compose build backend` **с кэшем** → `up -d`.
+3. На VM: `docker compose build backend` **с кэшем** → `up -d` (mount `frontend/browser` без смены).
 4. **Не** два деплоя параллельно; `--no-cache` — исключение.
 
 ---
