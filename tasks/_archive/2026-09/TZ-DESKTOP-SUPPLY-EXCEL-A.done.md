@@ -1,7 +1,7 @@
 # TZ-DESKTOP-SUPPLY-EXCEL-A — DONE
 
 - **agent_id:** claude
-- **implementation_sha:** pending (filled at closeout)
+- **implementation_sha:** 541ac855
 - **TZ:** tasks/_ready/nx-supply/TZ-DESKTOP-SUPPLY-EXCEL-A.md
 - **WAVE:** WAVE-NX-SUPPLY-OPS (6/7)
 - **Deps:** TZ-SUPPLY-BE-INVOICE-DELIVERY (`1c4c381a`)
