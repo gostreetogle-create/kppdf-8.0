@@ -23,7 +23,7 @@ Columns (D2): Номер · Дата · Статус · Оплата · КП · 
 
 ## NX order hub tray (D2, `order-hub-tray.component.ts`)
 
-Hub-only порт (без desk-write): confirm/ship/add-line/notebook/cancel-shipment сюда **не** портированы — они остаются в legacy `frontend/` до отдельного `/desk` route (вне этой волны). Группы точно по PO visual lock (см. § Визуальная иерархия expand ниже): **Заказ** (disclosure «Состав заказа» — `pi-composition-tree` per line, `PiCompositionService.getProductTree`, lazy только на первый toggle, кэш после) → **Исполнение** (Снабжение `PiSupplyRequestsService.list({orderId})` + Производство deep-link + Готовность X/Y) → **Логистика** (Склад `PiReservationsService.list({orderId: Order.number})` + Отгрузка deep-link) → **Документы** (deep-link). Budget: supply=1 + reservations=1 http сразу на expand строки (row-lazy, не за отдельным под-тумблером); composition — per line, только по клику на «Состав заказа».
+Hub-only порт (без desk-write): confirm/ship/add-line/notebook/cancel-shipment сюда **не** портированы — они остаются в legacy `frontend/` до отдельного `/desk` route (вне этой волны). Группы точно по PO visual lock (см. § Визуальная иерархия expand ниже): **Заказ** (disclosure «Состав заказа» — `pi-composition-tree` per line, `PiCompositionService.getProductTree`, lazy только на первый toggle, кэш после) → **Исполнение** (Снабжение `PiSupplyRequestsService.list({orderId})` + Производство deep-link + Готовность X/Y) → **Логистика** (Склад `PiReservationsService.list({orderId: Order.number})` + Отгрузка `PiShipmentsService.list({orderId})`, TZ-NX-SHIP-S2) → **Документы** (deep-link). Budget: supply=1 + reservations=1 + shipments=1 http сразу на expand строки (row-lazy, не за отдельным под-тумблером); composition — per line, только по клику на «Состав заказа».
 
 Новый read-only клиент: `PiReservationsService` (`libs/data-access/src/lib/sales/pi-reservations.service.ts`) — `GET /reservations?orderId=` фильтрует по строковому `Reservation.orderId`, который хранит **`Order.number`**, не `_id` (как в legacy).
 
@@ -50,7 +50,7 @@ Read-only expand на списке `/orders`:
 | **Документы (HUB-303)**    | 0    | `/doc-constructor/templates?source=order&sourceId=`                                                                                                                      |
 | **Готовность (HUB-304)**   | 0    | `X из Y` + линии ready/не ready; link «Открыть заказ» → `/orders/:id`; **нет** toggle ready в панели. Формула списка = `count(items.readyForWork===true)` — **не** `OrderItem.status` (тот считает «X из Y» на Комбайне `/design/combine`, TZ-SWEEP-401). Поля не сливать. |
 | **Склад (HUB-304)**        | 1    | lazy `GET /api/reservations?orderId=<Order.number>` (**номер**, не `_id`, не `reservationIds[]`) → active/total; empty «Нет броней»; error inline; link `/storage-items` |
-| **Отгрузка (HUB-304)**     | 0    | stub copy + link `/shipping`; **не** `GET /shipments`                                                                                                                    |
+| **Отгрузка (HUB-304 → TZ-NX-SHIP-S2 DONE)** | 1 | lazy `GET /shipments?orderId=<Order._id>` → активная (не cancelled) отгрузка: «Отгружен: `<number>` · `<date>`» + «Документ не оформлен» если `docs.length===0`; empty «Отгрузка не оформлена»; error inline; link `/shipping?orderId=` (не bare `/shipping`). Ship/cancel кнопок в hub нет (S3 добавит ship-without-doc; cancel остаётся в реестре `/shipping`). |
 
 - Stale: ответы supply/reservations игнорируются если `expandedId` уже другой.
 - Write **заказа** из expand запрещён (линии/ready/заказчик). Карандаш состава пишет в **каталог** (live BOM), не в snapshot `Order.items`.
@@ -243,6 +243,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-ORDERS-HUB-304** | Готовность + Склад + shipping stub — DONE                                                    |
 | **TZ-DESK-428** | Shared tray: spacing `p-4`/`gap-5`/`pb-4` + disclosure chevron (rotate) / hover / бейдж «раскрыть-свернуть» — parity с `/desk` |
 | **TZ-UX-444A** | Shared `PiStatusBanner` + lifecycle adoption на `/orders/:id`: draft/cancelled обязательны; shipped/delivered скрыты |
+| **TZ-NX-SHIP-S2** | Отгрузка hub-блок: shipping stub → real `GET /shipments?orderId=`, honest empty/error, link `?orderId=` — DONE (WAVE-NX-SHIPPING) |
 
 ## Особенности
 

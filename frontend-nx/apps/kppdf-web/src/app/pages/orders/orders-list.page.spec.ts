@@ -7,6 +7,7 @@ import {
   PiCompositionService,
   PiOrdersService,
   PiReservationsService,
+  PiShipmentsService,
   PiSupplyRequestsService,
   type Order,
 } from '@kppdf/data-access';
@@ -145,6 +146,7 @@ describe('OrdersListPage — hub expand (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: { getProductTree: jest.fn() } },
         { provide: PiSupplyRequestsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
         { provide: PiReservationsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
+        { provide: PiShipmentsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(OrdersListPage);

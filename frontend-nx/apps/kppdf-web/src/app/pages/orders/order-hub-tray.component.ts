@@ -14,11 +14,13 @@ import { forkJoin } from 'rxjs';
 import {
   PiCompositionService,
   PiReservationsService,
+  PiShipmentsService,
   PiSupplyRequestsService,
   type CompositionTreeNode,
   type KitReserveResult,
   type Order,
   type OrderItem,
+  type Shipment,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiDialogService } from '@kppdf/ui/dialog';
@@ -42,6 +44,10 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
  * dedicated `/desk` route ships (out of this wave). Groups per PO visual lock
  * (2026-08-15, `docs/pages/orders.page.md` § Визуальная иерархия expand):
  * Заказ → Исполнение (Снабжение/Производство/Готовность) → Логистика (Склад/Отгрузка) → Документы.
+ *
+ * TZ-NX-SHIP-S2 — «Отгрузка» block reads real `Shipment` data (row-expand-lazy
+ * budget: supply=1 + reservations=1 + shipments=1). Ship/cancel buttons stay
+ * off this wave (S3 adds ship-without-doc; cancel stays registry-only).
  */
 @Component({
   selector: 'app-order-hub-tray',
@@ -250,16 +256,36 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
               <div class="flex items-baseline gap-3 flex-wrap">
                 <span class="text-xs text-muted-foreground">Отгрузка</span>
                 <a
-                  routerLink="/shipping"
+                  [routerLink]="['/shipping']"
+                  [queryParams]="{ orderId: order()._id }"
                   class="min-h-touch px-2 py-1 ml-auto border border-rule-strong rounded-sm bg-transparent text-xs"
                   data-test="order-shipping-link"
                   (click)="$event.stopPropagation()"
                   >Открыть раздел „Отгрузка“</a
                 >
               </div>
-              <p class="text-xs text-muted-foreground m-0 mt-1" data-test="order-shipping-summary">
-                {{ statusLabel(order().status) }}
-              </p>
+              @if (shipmentsLoading()) {
+                <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
+              } @else if (shipmentsError()) {
+                <p class="text-xs text-destructive m-0 mt-1" role="alert" data-test="order-shipment-error">
+                  {{ shipmentsError() }}
+                </p>
+              } @else if (hasShipment()) {
+                <div class="flex flex-col gap-0.5 mt-1" data-test="order-shipment-block">
+                  <span class="text-xs" data-test="order-shipment-summary">
+                    Отгружен: {{ shipmentNumber() }} · {{ shipmentDateLabel() }}
+                  </span>
+                  @if (!shipmentHasDocs()) {
+                    <span class="text-xs text-muted-foreground" data-test="order-shipment-no-docs">
+                      Документ не оформлен
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="text-xs text-muted-foreground m-0 mt-1" data-test="order-shipping-summary">
+                  Отгрузка не оформлена
+                </p>
+              }
             </section>
           </div>
         </section>
@@ -293,6 +319,7 @@ export class OrderHubTrayComponent implements OnInit {
   private readonly compositionApi = inject(PiCompositionService);
   private readonly supplyApi = inject(PiSupplyRequestsService);
   private readonly reservationsApi = inject(PiReservationsService);
+  private readonly shipmentsApi = inject(PiShipmentsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(PiDialogService);
   private readonly injector = inject(Injector);
@@ -311,13 +338,18 @@ export class OrderHubTrayComponent implements OnInit {
   protected readonly reservationError = signal<string | null>(null);
   protected readonly reservationCounters = signal<ReservationCounters>(EMPTY_RESERVATION_COUNTERS);
 
+  protected readonly shipmentsLoading = signal(false);
+  protected readonly shipmentsError = signal<string | null>(null);
+  protected readonly shipments = signal<readonly Shipment[]>([]);
+
   protected readonly statusLabel = orderStatusLabel;
 
   ngOnInit(): void {
-    // Row-expand-lazy (HUB-303 budget: supply=1 + reservations=1). Composition
-    // stays behind its own disclosure — loaded only on first toggle.
+    // Row-expand-lazy (HUB-303 budget: supply=1 + reservations=1 + shipments=1).
+    // Composition stays behind its own disclosure — loaded only on first toggle.
     this.loadSupply();
     this.loadReservations();
+    this.loadShipments();
   }
 
   protected trackItem(index: number, item: OrderItem): string {
@@ -397,6 +429,50 @@ export class OrderHubTrayComponent implements OnInit {
           total: tasks.length,
         });
       });
+  }
+
+  /** TZ-NX-SHIP-S2 — real shipment summary for the hub tray (replaces order-status stub). */
+  private loadShipments(): void {
+    this.shipmentsLoading.set(true);
+    this.shipmentsError.set(null);
+    this.shipmentsApi
+      .list({ orderId: this.order()._id })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.shipmentsLoading.set(false);
+        if (!res.ok) {
+          this.shipmentsError.set(extractErrorMessage(res.error) || 'Не удалось загрузить отгрузку');
+          this.shipments.set([]);
+          return;
+        }
+        this.shipments.set(res.data ?? []);
+      });
+  }
+
+  /** TZ-SHIP-433 canon — «активная» отгрузка = не отменённая; cancelled не держит блок «Отгружен». */
+  protected activeShipment(): Shipment | null {
+    return this.shipments().find((shipment) => shipment.status !== 'cancelled') ?? null;
+  }
+
+  protected hasShipment(): boolean {
+    return (
+      this.activeShipment() !== null || this.order().status === 'shipped' || this.order().status === 'delivered'
+    );
+  }
+
+  protected shipmentNumber(): string {
+    return this.activeShipment()?.number ?? '—';
+  }
+
+  protected shipmentDateLabel(): string {
+    const raw = this.activeShipment()?.date ?? this.activeShipment()?.createdAt;
+    if (!raw) return '—';
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('ru-RU');
+  }
+
+  protected shipmentHasDocs(): boolean {
+    return (this.activeShipment()?.docs?.length ?? 0) > 0;
   }
 
   private loadReservations(): void {

@@ -6,10 +6,12 @@ import { of } from 'rxjs';
 import {
   PiCompositionService,
   PiReservationsService,
+  PiShipmentsService,
   PiSupplyRequestsService,
   type CompositionTreeNode,
   type KitReserveResult,
   type Order,
+  type Shipment,
 } from '@kppdf/data-access';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { PiDialogService } from '@kppdf/ui/dialog';
@@ -21,6 +23,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
   let compositionApi: { getProductTree: jest.Mock };
   let supplyApi: { list: jest.Mock };
   let reservationsApi: { list: jest.Mock };
+  let shipmentsApi: { list: jest.Mock };
   let dialog: { open: jest.Mock };
 
   const order: Order = {
@@ -33,10 +36,11 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     ],
   };
 
-  async function setup(order_: Order = order): Promise<void> {
+  async function setup(order_: Order = order, shipments: Shipment[] = []): Promise<void> {
     compositionApi = { getProductTree: jest.fn() };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: shipments })) };
     dialog = { open: jest.fn() };
 
     await TestBed.configureTestingModule({
@@ -46,6 +50,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -68,11 +73,92 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     expect(root.querySelector('[data-test="order-group-documents"]')).toBeTruthy();
   });
 
-  it('loads supply and reservations eagerly on init (row-expand budget, not behind a sub-toggle)', async () => {
+  it('loads supply, reservations, and shipments eagerly on init (row-expand budget, not behind a sub-toggle)', async () => {
     await setup();
     expect(supplyApi.list).toHaveBeenCalledWith({ orderId: 'order-1' });
     expect(reservationsApi.list).toHaveBeenCalledWith({ orderId: 'ORD-001' });
+    expect(shipmentsApi.list).toHaveBeenCalledWith({ orderId: 'order-1' });
     expect(compositionApi.getProductTree).not.toHaveBeenCalled();
+  });
+
+  it('TZ-NX-SHIP-S2: shows an honest empty message when the order has no shipment', async () => {
+    await setup();
+    const summary = fixture.nativeElement.querySelector('[data-test="order-shipping-summary"]');
+    expect(summary?.textContent).toContain('Отгрузка не оформлена');
+    expect(fixture.nativeElement.querySelector('[data-test="order-shipment-block"]')).toBeFalsy();
+  });
+
+  it('TZ-NX-SHIP-S2: shows the real shipment number/date and «Документ не оформлен» when there are no docs', async () => {
+    await setup(order, [
+      {
+        _id: 'ship-1',
+        number: 'SHIP-001',
+        orderId: 'order-1',
+        counterpartyId: 'c1',
+        date: '2026-09-08T10:00:00.000Z',
+        status: 'scheduled',
+        items: [],
+      },
+    ]);
+    const block = fixture.nativeElement.querySelector('[data-test="order-shipment-block"]');
+    expect(block).toBeTruthy();
+    expect(block.querySelector('[data-test="order-shipment-summary"]').textContent).toContain('SHIP-001');
+    expect(block.querySelector('[data-test="order-shipment-no-docs"]')).toBeTruthy();
+  });
+
+  it('TZ-NX-SHIP-S2: hides «Документ не оформлен» once a doc is attached, and ignores cancelled shipments', async () => {
+    await setup(order, [
+      {
+        _id: 'ship-0',
+        number: 'SHIP-000',
+        orderId: 'order-1',
+        counterpartyId: 'c1',
+        date: '2026-09-01T10:00:00.000Z',
+        status: 'cancelled',
+        items: [],
+      },
+      {
+        _id: 'ship-1',
+        number: 'SHIP-001',
+        orderId: 'order-1',
+        counterpartyId: 'c1',
+        date: '2026-09-08T10:00:00.000Z',
+        status: 'scheduled',
+        items: [],
+        docs: [{ number: 'TTN-1', date: '2026-09-08', type: 'ttn', totalAmount: 1000 }],
+      },
+    ]);
+    const block = fixture.nativeElement.querySelector('[data-test="order-shipment-block"]');
+    expect(block.querySelector('[data-test="order-shipment-summary"]').textContent).toContain('SHIP-001');
+    expect(block.querySelector('[data-test="order-shipment-no-docs"]')).toBeFalsy();
+  });
+
+  it('TZ-NX-SHIP-S2: surfaces the API error honestly instead of a fake summary', async () => {
+    shipmentsApi = { list: jest.fn() };
+    compositionApi = { getProductTree: jest.fn() };
+    supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi.list.mockReturnValue(
+      of({ ok: false, error: new HttpErrorResponse({ status: 500, error: { message: 'boom' } }) }),
+    );
+    dialog = { open: jest.fn() };
+    await TestBed.configureTestingModule({
+      imports: [OrderHubTrayComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PiCompositionService, useValue: compositionApi },
+        { provide: PiSupplyRequestsService, useValue: supplyApi },
+        { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: PiDialogService, useValue: dialog },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', order);
+    fixture.detectChanges();
+
+    const error = fixture.nativeElement.querySelector('[data-test="order-shipment-error"]');
+    expect(error?.textContent).toBeTruthy();
   });
 
   it('shows readiness X из Y from items.readyForWork', async () => {
@@ -114,6 +200,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     compositionApi = { getProductTree: jest.fn() };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
@@ -122,6 +209,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -143,6 +231,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     compositionApi = { getProductTree: jest.fn() };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
@@ -151,6 +240,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -170,6 +260,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
@@ -178,6 +269,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -226,7 +318,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     expect(supplyLink.getAttribute('href')).toBe('/supply?orderId=order-1');
     expect(productionLink.getAttribute('href')).toBe('/production?orderId=order-1');
     expect(warehouseLink.getAttribute('href')).toBe('/storage-items');
-    expect(shippingLink.getAttribute('href')).toBe('/shipping');
+    expect(shippingLink.getAttribute('href')).toBe('/shipping?orderId=order-1');
     expect(documentsLink.getAttribute('href')).toBe('/doc-constructor/templates?source=order&sourceId=order-1');
   });
 
