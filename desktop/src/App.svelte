@@ -55,6 +55,7 @@
     type FormCategoryKey,
     type FormFingerprint,
   } from './core/excel-form-template';
+  import { serializeSupplyExcelPack, type SupplyPackData } from './core/supply-excel-pack';
   import type { RowValidationStatus } from './core/import-mapping';
   import {
     buildSpecificationPreview,
@@ -271,6 +272,8 @@
       'Скачает готовый .xlsx с каноническими русскими заголовками. Заполните лист «Данные» и загрузите файл в студии импорта — форма распознается сама. Аккаунт для скачивания не нужен.',
     downloadExport:
       'Скачает тот же файл, но лист «Данные» уже заполнен текущими строками из справочника сервера. Правьте нужные ячейки и загружайте обратно — форма распознается сама. Нужно подключение (аккаунт).',
+    downloadSupplyPack:
+      'Скачает один .xlsx с листом «Заявки» (заполняете) и тремя справочными листами (Материалы/Поставщики/Заказы) из сервера — колонки «Артикул»/«Поставщик»/«№ заказа» на «Заявки» дают выпадающий список, совпадение с базой гарантировано. Нужно подключение (аккаунт).',
     startAi:
       'Запустит встроенный движок llama.cpp. Если модель уже скачана — она загрузится в память.',
     stopAi: 'Остановит локального помощника. Скачанная модель останется на диске.',
@@ -2563,6 +2566,81 @@
     return { materialsByKey, suppliersByName, ordersByNumber };
   }
 
+  /**
+   * TZ-DESKTOP-SUPPLY-EXCEL-B — снимок справочников для генератора multi-sheet
+   * шаблона (путь B): те же три источника, что и `fetchSupplyLookups`, но как
+   * списки строк для листов «Материалы»/«Поставщики»/«Заказы», не как Map для
+   * матчинга. Отдельная функция (не переиспользует Map) — разная форма данных,
+   * разные вызовы, не второй write-path (оба read-only с одних и тех же GET).
+   */
+  async function fetchSupplyPackData(api: ApiClientOptions): Promise<SupplyPackData> {
+    const MAX_PAGES = 10;
+    const materials: SupplyPackData['materials'][number][] = [];
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const resp = await apiGet<{ items?: Array<Record<string, unknown>>; total?: number }>(
+        api,
+        `/api/materials?limit=100&page=${page}`,
+      );
+      const items = resp.items ?? [];
+      for (const item of items) {
+        materials.push({ article: String(item.article ?? '').trim(), name: String(item.name ?? '').trim() });
+      }
+      const total = resp.total ?? items.length;
+      if (items.length === 0 || page * 100 >= total) break;
+    }
+
+    const suppliers: SupplyPackData['suppliers'][number][] = [];
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const resp = await apiGet<{ items?: Array<Record<string, unknown>>; total?: number }>(
+        api,
+        `/api/organizations?type=supplier&limit=100&page=${page}`,
+      );
+      const items = resp.items ?? [];
+      for (const item of items) {
+        suppliers.push({ name: String(item.name ?? '').trim() });
+      }
+      const total = resp.total ?? items.length;
+      if (items.length === 0 || page * 100 >= total) break;
+    }
+
+    const orders: SupplyPackData['orders'][number][] = [];
+    const orderRows = await apiGet<Array<Record<string, unknown>>>(api, '/api/orders');
+    for (const order of orderRows) {
+      orders.push({ number: String(order.number ?? '').trim() });
+    }
+
+    return { materials, suppliers, orders };
+  }
+
+  /** TZ-DESKTOP-SUPPLY-EXCEL-B — скачать multi-sheet шаблон снабжения с выпадающими списками. */
+  async function downloadSupplySheetsPack() {
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) {
+      formMessage = 'Нужно подключение — шаблон со списками требует паринга (данные для списков берутся с сервера).';
+      return;
+    }
+    formBusy = true;
+    formMessage = '';
+    try {
+      const data = await fetchSupplyPackData(apiFrom(cfg));
+      const bytes = await serializeSupplyExcelPack(data);
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const path = await save({
+        defaultPath: 'kppdf-supply-pack.xlsx',
+        filters: [{ name: 'Excel — снабжение (несколько листов)', extensions: ['xlsx'] }],
+      });
+      if (!path) return; // пользователь отменил диалог
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
+      await writeFile(path, bytes);
+      formMessage = `Шаблон снабжения сохранён: ${path} (материалов: ${data.materials.length}, поставщиков: ${data.suppliers.length}, заказов: ${data.orders.length}). Заполните лист «Заявки» — колонки «Артикул»/«Поставщик»/«№ заказа» со списком.`;
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      formMessage = `Не удалось собрать шаблон снабжения: ${detail}`;
+    } finally {
+      formBusy = false;
+    }
+  }
+
   /** Сохранить отчёт отклонённых строк как .csv (простой, Excel-совместимый). */
   async function downloadRejectionReport() {
     if (!rejectionReport || rejectionReport.length === 0) return;
@@ -3189,6 +3267,20 @@
           >
             {formBusy ? 'Готовим…' : 'Скачать с данными'}
           </button>
+          {#if formTable === 'supplyRequest'}
+            <button
+              class="btn"
+              type="button"
+              onclick={downloadSupplySheetsPack}
+              disabled={formBusy || !connected}
+              onmouseenter={() => showHint(HINTS.downloadSupplyPack)}
+              onmouseleave={clearHint}
+              onfocus={() => showHint(HINTS.downloadSupplyPack)}
+              onblur={clearHint}
+            >
+              {formBusy ? 'Готовим…' : 'Шаблон снабжения (со списками)'}
+            </button>
+          {/if}
         </div>
         {#if selectedFormTemplate}
           <p class="hint">{selectedFormTemplate.descriptionRu}</p>
@@ -3197,6 +3289,9 @@
           <p class="hint">«Скачать с данными» пока доступна только для: {exportPilotLabels}.</p>
         {:else if formTable && !connected}
           <p class="hint">«Скачать с данными» требует подключения (паринг).</p>
+        {/if}
+        {#if formTable === 'supplyRequest' && !connected}
+          <p class="hint">«Шаблон снабжения (со списками)» требует подключения (паринг).</p>
         {/if}
         <ol class="form-studio__steps">
           <li>Скачайте форму нужной таблицы (аккаунт для этого не нужен).</li>

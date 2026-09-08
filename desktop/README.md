@@ -159,6 +159,28 @@ Match-правила при подтверждении (`confirmMapping`): ар�
 (NX «Снабжение» → +Новый материал / Копировать, см. `docs/pages/supply.page.md`
 §S5), Desktop не заводит новые Material/Organization из импорта снабжения.
 
+### Снабжение путь B — multi-sheet шаблон со списками (TZ-DESKTOP-SUPPLY-EXCEL-B)
+
+Кнопка **«Шаблон снабжения (со списками)»** (Form Studio → категория «Снабжение»
+→ таблица «Быстрый заказ», нужен паринг) собирает один `.xlsx`:
+
+| Лист | Содержимое |
+|------|------------|
+| `Заявки` | пустой (заполняете); колонки — те же поля `supplyRequest`, кроме raw ObjectId и `status` |
+| `Материалы` | снимок `/api/materials`: Артикул, Наименование |
+| `Поставщики` | снимок `/api/organizations?type=supplier`: Наименование |
+| `Заказы` | снимок `/api/orders`: Номер |
+
+На «Заявки» колонки «Артикул» / «Поставщик» / «№ заказа» несут нативную Excel
+data validation (выпадающий список) со ссылкой на соответствующий справочный
+лист — выбор из списка гарантирует совпадение при импорте (те же match-правила
+пути A выше, `core/multi-import.ts` `validateSupplyRows`). Импорт назад — та же
+студия импорта, что и путь A: `importers/excel.ts` уже умеет multi-sheet
+preview и сам выбирает «Заявки» активным листом, как только там появятся
+строки. `xlsx` (SheetJS Community) не пишет data validation — генератор
+(`core/supply-excel-pack.ts`) поэтому использует `exceljs`; совместимость
+exceljs-writer → xlsx-reader проверена round-trip тестом.
+
 ## Паринг и скачивание приложения — RBAC на сайте NX (TZD-72)
 
 Ссылка на установщик задаётся `DESKTOP_DOWNLOAD_URL` в `deploy/synology/config.env`;

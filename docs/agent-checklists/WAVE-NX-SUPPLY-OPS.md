@@ -2,7 +2,7 @@
 
 **Audit:** `docs/audits/2026-09-06-supply-google-sheets-to-nx-audit.md`  
 **Predecessor:** WAVE-NX-SUPPLY S0–S2 DONE  
-**Статус:** **DONE** (7/7) — Claude-only (`tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md`), см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S6-CHROME.done.md` §итог  
+**Статус:** **DONE** (8/8, вкл. Excel B) — Claude-only (`tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md` + `tasks/PROMPT-CLAUDE-SUPPLY-EXCEL-B.md`), см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S6-CHROME.done.md` §итог и `tasks/_archive/2026-09/TZ-DESKTOP-SUPPLY-EXCEL-B.done.md`  
 **Исполнитель:** `agent_id: claude` (Freebuff PARK)
 
 | # | SIZE | TZ | Path | Status |
@@ -14,7 +14,7 @@
 | 5 | L | S5 Material upsert + copy | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S5-MATERIAL-UPSERT.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S5-MATERIAL-UPSERT.done.md` |
 | 6 | S | Excel path A | `tasks/_ready/nx-supply/TZ-DESKTOP-SUPPLY-EXCEL-A.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-DESKTOP-SUPPLY-EXCEL-A.done.md` |
 | 7 | S | S6 Chrome filters/links | `tasks/_ready/nx-supply/TZ-NX-SUPPLY-S6-CHROME.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-NX-SUPPLY-S6-CHROME.done.md` |
-| — | L | Excel path B multi-sheet | backlog later | PARK |
+| — | L | Excel path B multi-sheet | `tasks/_ready/nx-supply/TZ-DESKTOP-SUPPLY-EXCEL-B.md` · `tasks/PROMPT-CLAUDE-SUPPLY-EXCEL-B.md` | **DONE** — см. `tasks/_archive/2026-09/TZ-DESKTOP-SUPPLY-EXCEL-B.done.md` |
 
 **PO lock:** receive=confirm+warehouse(default); paid=flag; order=Order\|orderLabel; material=supply+copy; createdBy.  
 **Не в волне:** Purchase*/Tender; wipe Google; Excel B day-1; второй склад-тип.

@@ -7,3 +7,10 @@ packages:
 allowBuilds:
   esbuild: true
   node-llama-cpp: true
+
+# TZ-DESKTOP-SUPPLY-EXCEL-B: exceljs pulls fast-csv (its unused CSV feature),
+# which drags in a stale @types/node@14 that clashes with the app's own
+# @types/node@26 (Buffer/Uint8Array signature mismatch in unrelated files).
+# Pin the whole tree to one version instead.
+overrides:
+  '@types/node': ^26.1.2
