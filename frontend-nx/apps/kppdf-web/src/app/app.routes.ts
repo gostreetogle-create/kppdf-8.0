@@ -104,6 +104,14 @@ export const appRoutes: Route[] = [
         loadComponent: () => import('./pages/warehouse/stock-movements.page').then((m) => m.StockMovementsPage),
       },
       {
+        // TZ-NX-SHIP-S1-REGISTRY — live NX shipping registry (replaces the dead
+        // hub `routerLink="/shipping"` flagged in the 2026-09-08 shipping audit).
+        path: 'shipping',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'shipping', capabilities: ['warehouse:read'] },
+        loadComponent: () => import('./pages/shipping/shipping.page').then((m) => m.ShippingPage),
+      },
+      {
         path: 'orders',
         children: [
           { path: '', pathMatch: 'full', loadComponent: () => import('./pages/orders/orders-list.page').then((m) => m.OrdersListPage) },

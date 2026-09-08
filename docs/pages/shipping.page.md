@@ -4,6 +4,10 @@
 создание отгрузки из заказа (whole/partial), отправка со склада (dispatch), документы
 и **отмена ошибочной отгрузки** до dispatch.
 **Статус: READY-продукт (TZ-SUPPLY-312, TZ-DESK-426, TZ-SHIP-433).**
+**NX: WAVE-NX-SHIPPING S1-REGISTRY DONE** — `frontend-nx` live registry at `/shipping`
+(nav «Склад» → «Отгрузка»), same API contract as legacy; dialogs (kind C) instead of legacy
+inline row-expando editors. Legacy `frontend/.../shipping/shipping.page.ts` stays the reference
+until cutover.
 
 ## Route
 

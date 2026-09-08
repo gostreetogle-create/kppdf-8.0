@@ -142,6 +142,7 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
       { path: '/warehouses', pageKey: 'inventory', label: 'Склады', capabilities: ['warehouse:read'] },
       { path: '/storage-items', pageKey: 'storage-items', label: 'Остатки', capabilities: ['warehouse:read'] },
       { path: '/stock-movements', pageKey: 'stock-movements', label: 'Движения', capabilities: ['warehouse:read'] },
+      { path: '/shipping', pageKey: 'shipping', label: 'Отгрузка', capabilities: ['warehouse:read'] },
     ],
   },
   {
