@@ -77,6 +77,25 @@ function normalizeKey(key: string): string {
   return key.trim().toLowerCase();
 }
 
+const PHOTO_COLUMN_KEYS = new Set(COLUMN_ALIASES.photo);
+
+/** TZ-NX-DOCSTUDIO-S48 — same key aliases as the `photo` alias group above. */
+function isPhotoColumnKey(key: string): boolean {
+  return PHOTO_COLUMN_KEYS.has(normalizeKey(key));
+}
+
+/** Escape a value for use inside a double-quoted HTML attribute (`escapeHtmlValue`'s quote branch never matches a bare `"`). */
+function escapeAttrValue(value: string): string {
+  return escapeHtmlValue(value).replace(/"/g, '&quot;');
+}
+
+/** TZ-NX-DOCSTUDIO-S48 — thumbnail or honest empty state, mirroring legacy `table-template.service.ts` `formatCell`'s photo branch (no Create-КП rewrite). */
+function renderPhotoCellHtml(value: string): string {
+  const url = value.trim();
+  if (!url) return '<span class="pi-photo-empty">Нет фото</span>';
+  return `<img src="${escapeAttrValue(url)}" alt="" style="max-width:72px;max-height:48px;object-fit:contain" />`;
+}
+
 function lineValue(columnKey: string, line: LineItem): string {
   const normalized = normalizeKey(columnKey);
   const alias = Object.entries(COLUMN_ALIASES).find(([, values]) =>
@@ -145,9 +164,12 @@ export function renderStudioTableHtml(
             if (disabledRowIndices.includes(rowIndex)) return '';
 
             const cells = columns
-              .map((_, idx) => {
+              .map((column, idx) => {
                 const value = row[idx] ?? '';
-                return `<td style="text-align:${columns[idx]?.align ?? 'left'}">${escapeHtmlValue(value)}</td>`;
+                const cellContent = isPhotoColumnKey(column.key)
+                  ? renderPhotoCellHtml(value)
+                  : escapeHtmlValue(value);
+                return `<td style="text-align:${column.align ?? 'left'}">${cellContent}</td>`;
               })
               .join('');
             return `<tr>${cells}</tr>`;

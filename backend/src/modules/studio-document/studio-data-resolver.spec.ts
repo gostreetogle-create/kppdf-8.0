@@ -71,6 +71,32 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     expect(html).toContain('99');
   });
 
+  it('renders a photo column as an <img> thumbnail, not the raw URL text (TZ-NX-DOCSTUDIO-S48)', () => {
+    const html = renderStudioTableHtml(
+      [{ key: 'photo', label: 'Фото' }, { key: 'name', label: 'Наименование' }],
+      [['/uploads/mangal.webp', 'Мангал']],
+    );
+    expect(html).toContain('<img src="/uploads/mangal.webp" alt=""');
+    expect(html).not.toContain('>/uploads/mangal.webp<');
+  });
+
+  it('renders «Нет фото» for an empty photo cell instead of a blank/qty-looking cell', () => {
+    const html = renderStudioTableHtml(
+      [{ key: 'photo', label: 'Фото' }, { key: 'name', label: 'Наименование' }],
+      [['', 'Мангал']],
+    );
+    expect(html).toContain('<span class="pi-photo-empty">Нет фото</span>');
+  });
+
+  it('escapes a double quote in a photo URL so it cannot break out of the src attribute', () => {
+    const html = renderStudioTableHtml(
+      [{ key: 'photo', label: 'Фото' }],
+      [['"><script>alert(1)</script>']],
+    );
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&quot;');
+  });
+
   it('renders subtotal and VAT footer for sum columns', () => {
     const html = renderStudioTableHtml(
       [{ key: 'name', label: 'Наименование' }, { key: 'sum', label: 'Сумма', type: 'sum' }, { key: 'vat', label: 'НДС', type: 'vat' }],

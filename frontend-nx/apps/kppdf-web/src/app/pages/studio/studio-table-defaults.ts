@@ -59,6 +59,13 @@ export function studioTableTemplateId(block: { settings?: Record<string, unknown
   return typeof id === 'string' && id.trim() ? id.trim() : null;
 }
 
+/** TZ-NX-DOCSTUDIO-S48 — parity with backend `COLUMN_ALIASES.photo` (studio-data-resolver.ts). */
+const PHOTO_COLUMN_KEY_ALIASES = ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'photoids', 'photo_ids', 'фото'];
+
+export function isStudioPhotoColumnKey(key: string): boolean {
+  return PHOTO_COLUMN_KEY_ALIASES.includes(key.trim().toLowerCase());
+}
+
 export function studioTableHiddenColumnKeys(block: { settings?: Record<string, unknown> }): string[] {
   const keys = block.settings?.['tableHiddenColumnKeys'];
   return Array.isArray(keys) ? keys.filter((k): k is string => typeof k === 'string') : [];

@@ -130,3 +130,79 @@ describe('StudioBlocksCanvasComponent — liveRows respect hidden columns (TZ-NX
     expect(component.tableRows(LIVE_TABLE)).toEqual([['SKU-1', 'Мангал']]);
   });
 });
+
+/**
+ * TZ-NX-DOCSTUDIO-S48 — the Фото column used to render whatever raw string sat
+ * in that cell position (e.g. quantity `1` after a BUG-1 column-count
+ * mismatch, or a URL as plain text). It must render an `<img>` when a URL is
+ * present and an honest "Нет фото" placeholder when the cell is empty — never
+ * a bare digit or raw URL text.
+ */
+describe('StudioBlocksCanvasComponent — photo column renders image or empty state (TZ-NX-DOCSTUDIO-S48)', () => {
+  const TABLE_WITH_PHOTO: StudioBlock = {
+    _id: 'tbl-photo',
+    type: 'table',
+    order: 0,
+    title: 'КП',
+    content: '',
+    layout: { page: 1, x: 0.1, y: 0.1, width: 0.5, height: 0.4, zIndex: 1, rotation: 0 },
+    settings: {
+      tableTemplateColumns: [
+        { key: 'article', label: 'Артикул', type: 'text', width: 20, align: 'left' },
+        { key: 'photo', label: 'Фото', type: 'text', width: 20, align: 'center' },
+        { key: 'productName', label: 'Наименование', type: 'text', width: 60, align: 'left' },
+      ],
+      tableTemplateSampleRows: [
+        ['SKU-1', '/uploads/mangal.webp', 'Мангал'],
+        ['SKU-2', '', 'Стол'],
+      ],
+    },
+  };
+
+  let fixture: ComponentFixture<StudioBlocksCanvasComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [StudioBlocksCanvasComponent] }).compileComponents();
+  });
+
+  function createCanvas(blocks: readonly StudioBlock[]): void {
+    fixture = TestBed.createComponent(StudioBlocksCanvasComponent);
+    fixture.componentRef.setInput('blocks', [...blocks]);
+    fixture.componentRef.setInput('selectedId', null);
+    fixture.componentRef.setInput('activeLayerId', null);
+    fixture.componentRef.setInput('currentPage', 1);
+    fixture.detectChanges();
+  }
+
+  it('renders an <img> for a populated photo cell and never the raw URL as text', () => {
+    createCanvas([TABLE_WITH_PHOTO]);
+    const host: HTMLElement = fixture.nativeElement;
+    const rows = host.querySelectorAll('tbody tr');
+    const firstRowPhotoCell = rows[0]!.querySelectorAll('td')[1]!;
+
+    const img = firstRowPhotoCell.querySelector('img.table-preview__photo');
+    expect(img).not.toBeNull();
+    expect(img!.getAttribute('src')).toBe('/uploads/mangal.webp');
+    expect(firstRowPhotoCell.textContent?.trim()).toBe('');
+  });
+
+  it('renders «Нет фото» for an empty photo cell, not a blank cell or a stray digit', () => {
+    createCanvas([TABLE_WITH_PHOTO]);
+    const host: HTMLElement = fixture.nativeElement;
+    const rows = host.querySelectorAll('tbody tr');
+    const secondRowPhotoCell = rows[1]!.querySelectorAll('td')[1]!;
+
+    expect(secondRowPhotoCell.querySelector('img')).toBeNull();
+    expect(secondRowPhotoCell.querySelector('.table-preview__photo-empty')?.textContent).toBe('Нет фото');
+  });
+
+  it('non-photo columns still render as plain text cells', () => {
+    createCanvas([TABLE_WITH_PHOTO]);
+    const host: HTMLElement = fixture.nativeElement;
+    const rows = host.querySelectorAll('tbody tr');
+    const nameCell = rows[0]!.querySelectorAll('td')[2]!;
+
+    expect(nameCell.querySelector('img')).toBeNull();
+    expect(nameCell.textContent?.trim()).toBe('Мангал');
+  });
+});

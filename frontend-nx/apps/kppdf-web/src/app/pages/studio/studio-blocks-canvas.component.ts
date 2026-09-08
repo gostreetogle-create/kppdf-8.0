@@ -9,6 +9,7 @@ import {
   studioImageUrl,
 } from './studio-block-helpers';
 import {
+  isStudioPhotoColumnKey,
   studioTableDisabledRowIndices,
   studioTableTransparentBackground,
   studioVisibleColumnIndices,
@@ -137,8 +138,18 @@ import {
                     <tbody>
                       @for (row of tableRows(block); track $index) {
                         <tr>
-                          @for (cell of row; track $index) {
-                            <td>{{ cell || ' ' }}</td>
+                          @for (cell of row; track $index; let ci = $index) {
+                            @if (isPhotoColumnAt(block, ci)) {
+                              <td class="table-preview__photo-cell">
+                                @if (cell) {
+                                  <img [src]="cell" alt="" class="table-preview__photo" />
+                                } @else {
+                                  <span class="table-preview__photo-empty">Нет фото</span>
+                                }
+                              </td>
+                            } @else {
+                              <td>{{ cell || ' ' }}</td>
+                            }
                           }
                         </tr>
                       } @empty {
@@ -251,6 +262,23 @@ import {
       font-weight: 600;
       color: var(--color-muted-foreground);
     }
+    .table-preview__photo-cell {
+      text-align: center;
+      white-space: normal;
+    }
+    .table-preview__photo {
+      display: block;
+      max-width: 100%;
+      max-height: 28px;
+      margin: 0 auto;
+      object-fit: contain;
+    }
+    .table-preview__photo-empty {
+      display: block;
+      font-size: 8px;
+      font-style: italic;
+      color: var(--color-muted-foreground);
+    }
     .studio-block--image img {
       width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;
     }
@@ -318,6 +346,12 @@ export class StudioBlocksCanvasComponent {
 
   tableColumns(block: StudioBlock) {
     return studioVisibleTableColumns(block);
+  }
+
+  /** TZ-NX-DOCSTUDIO-S48 — is the visible column at this cell index a photo column? */
+  isPhotoColumnAt(block: StudioBlock, columnIndex: number): boolean {
+    const column = this.tableColumns(block)[columnIndex];
+    return column ? isStudioPhotoColumnKey(column.key) : false;
   }
 
   tableRows(block: StudioBlock): string[][] {
