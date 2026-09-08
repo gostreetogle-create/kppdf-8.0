@@ -4,7 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-09-08
 closed_by: claude
-implementation_sha: pending (recorded in follow-up commit)
+implementation_sha: 0bb8e0b8
 
 ## Verification
 
