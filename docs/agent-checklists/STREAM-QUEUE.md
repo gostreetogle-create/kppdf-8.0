@@ -1,26 +1,20 @@
 # STREAM QUEUE — Claude-only (Freebuff PARK)
 
-> Мастер: [`CLAUDE-ONLY-QUEUE.md`](./CLAUDE-ONLY-QUEUE.md) · слот: [`_NOW.md`](./_NOW.md)  
-> Deploy: [`DEPLOY-READY.md`](./DEPLOY-READY.md) · NX канон: [`docs/ops/DEPLOY-NX-PROD.md`](../ops/DEPLOY-NX-PROD.md)
+> Мастер: [`CLAUDE-ONLY-QUEUE.md`](./CLAUDE-ONLY-QUEUE.md) · запас промптов: [`CLAUDE-FUTURE-PROMPTS.md`](./CLAUDE-FUTURE-PROMPTS.md)  
+> Deploy: [`DEPLOY-READY.md`](./DEPLOY-READY.md)
 
-updated_at: 2026-09-08T04:30:00+03:00
+updated_at: 2026-09-08T06:20:00+03:00
 
 ## Claude stream
 
 | # | WAVE | PROMPT | Статус |
 |---|------|--------|--------|
-| 0 | Photos P3 frame closeout | `tasks/PROMPT-CLAUDE-FINISH-PHOTO-P3.md` | **DONE** |
-| 1 | WAVE-NX-SUPPLY-OPS | `tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md` | **DONE** 7/7 |
-| 2 | TZD-78 chat HITL mapping | `tasks/PROMPT-CLAUDE-TZD-78-CHAT-MAPPING.md` | **DONE** |
-| 3 | Orders hub tray inset | `tasks/PROMPT-CLAUDE-ORDERS-TRAY-INSET.md` | **DONE** |
-| 4 | NX deploy prep (не деплой) | `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md` | **DONE** — stamp READY |
-| 5 | TZD-76 GGUF NSIS | — | PARK |
-| 6 | Gantt G12 | — | PARK |
+| 5 | WAVE-NX-SHIPPING S0–S3 | `tasks/PROMPT-CLAUDE-NX-SHIPPING.md` | **DONE** |
+| 6 | Ship S4 hub cancel | `tasks/PROMPT-CLAUDE-NX-SHIP-S4-CANCEL.md` | **DONE** `0bb8e0b8` |
+| 7 | Deploy go | `tasks/PROMPT-CLAUDE-DEPLOY-GO.md` | READY (PO-GATE) |
+| 8 | Supply Excel B | `tasks/PROMPT-CLAUDE-SUPPLY-EXCEL-B.md` | **DONE** `bcd5bb66` |
+| 9 | Gantt G12 | `tasks/PROMPT-CLAUDE-GANTT-G12.md` | PARK |
 
 ## Freebuff stream
 
 | — | **PARK** |
-
-## Done recently
-
-DocStudio · Desktop TZD-74/75/77/78 · Photos · Supply OPS · Orders tray · NX deploy prep (Cursor docs + Claude pipeline/gates/stamp)

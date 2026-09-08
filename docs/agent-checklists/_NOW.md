@@ -10,8 +10,7 @@ updated_at: 2026-09-08T11:10:00Z
 
 ## NEXT (один промпт)
 
-Запас промптов: `docs/agent-checklists/CLAUDE-FUTURE-PROMPTS.md` (#3 deploy · #5 G12)  
-Deploy отдельно: «сделай деплой по документации» / `PROMPT-CLAUDE-DEPLOY-GO.md`
+Продуктовая очередь Claude пуста. Deploy — только по фразе PO. G12 — PARK.
 
 ## DONE (сегодня)
 

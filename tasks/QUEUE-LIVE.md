@@ -2,15 +2,13 @@
 
 | Slot | Статус |
 |------|--------|
-| Freebuff | READY Warehouse W1→W4 · `PROMPT-FREEBUFF-NX-WAREHOUSE.md` |
-| Claude | IDLE |
+| Freebuff | PARK |
+| Claude | READY WAVE-NX-SHIPPING · `PROMPT-CLAUDE-NX-SHIPPING.md` |
 
 ## NEXT
 
-После W1+ : Claude `PROMPT-CLAUDE-NX-SUPPLY.md` (S0 BE can ∥ after Freebuff owns routes in W1, or wait W1 DONE for S1)
-
-Orders inset: park
+Claude S0→S3 shipping. Deploy = отдельная команда PO.
 
 ## DONE
 
-Module↔WT days · S44 · REG-SCROLL · Data IA · Deals
+Warehouse W1–W4 · Supply S0–S2 · Supply OPS · Photos · Deals · deploy prep

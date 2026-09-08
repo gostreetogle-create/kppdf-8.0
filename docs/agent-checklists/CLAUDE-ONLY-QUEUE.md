@@ -1,24 +1,14 @@
-# CLAUDE-ONLY QUEUE — волны после DocStudio / Photos
+# CLAUDE-ONLY QUEUE
 
-> Живой слот: `docs/agent-checklists/_NOW.md`.  
-> Deploy stamp: `BLOCKED` until NX prep closes.
-
-## Порядок
+> Живой слот: `_NOW.md`. Запас copy-paste: [`CLAUDE-FUTURE-PROMPTS.md`](./CLAUDE-FUTURE-PROMPTS.md).
 
 | # | Волна | Промпт | Статус |
 |---|--------|--------|--------|
-| 0 | Photos P3 | `tasks/PROMPT-CLAUDE-FINISH-PHOTO-P3.md` | **DONE** |
-| 1 | Supply OPS | `tasks/PROMPT-CLAUDE-NX-SUPPLY-OPS.md` | **DONE** 7/7 |
-| 2 | TZD-78 | `tasks/PROMPT-CLAUDE-TZD-78-CHAT-MAPPING.md` | **DONE** `7a3e576e` |
-| 3 | Orders tray inset | `tasks/PROMPT-CLAUDE-ORDERS-TRAY-INSET.md` | **DONE** `b770e802` |
-| 4 | **NX deploy prep** (не деплой) | `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md` | **NEXT** |
-| 5 | TZD-76 | — | PARK |
-| 6 | G12 | — | PARK |
+| 5 | Shipping S0–S3 | `PROMPT-CLAUDE-NX-SHIPPING.md` | **NEXT** |
+| 6 | Shipping S4 cancel | `PROMPT-CLAUDE-NX-SHIP-S4-CANCEL.md` | READY |
+| 7 | Deploy | `PROMPT-CLAUDE-DEPLOY-GO.md` | PO-GATE |
+| 8 | Excel B | `PROMPT-CLAUDE-SUPPLY-EXCEL-B.md` | READY |
+| 9 | G12 | `PROMPT-CLAUDE-GANTT-G12.md` | PARK |
 
-## После READY
-
-Любому агенту: «сделай деплой по документации» → `deploy/synology/README.md` + warm (Mongo keep).
-
-## Правило
-
-Не стартовать wipe / LM Studio BYOK без команды PO.
+Deploy: «сделай деплой по документации» или блок #7.  
+Не стартовать wipe / desk / TZD-76 без команды PO.
