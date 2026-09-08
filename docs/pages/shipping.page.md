@@ -47,8 +47,12 @@ Group Chip: `LOGISTICS_SECTION_CHIPS` (`PiGroupWorkspace`, activeId `shipping`).
 ## Hub expand
 
 From `/orders` tray — блок «Отгрузка» (`order-shipping-block`): номер отгрузки, признак
-«Документ не оформлен», ссылка «Открыть раздел „Отгрузка“» (hub-режим). Desk-режим — кнопка
-«Отгружено» (DESK-430) и «Отменить отгрузку» (TZ-SHIP-433) прямо в tray.
+«Документ не оформлен», ссылка «Открыть раздел „Отгрузка“» → `/shipping?orderId=` (hub-режим).
+**NX (TZ-NX-SHIP-S3):** hub также несёт кнопку **«Отгружено»** (`order-ship-button`) —
+whole-order ship-without-doc через `ShipConfirmDialogComponent`, тот же `POST /orders/:id/ship`,
+что и форма создания на реестре; «Отменить отгрузку» в hub **нет** — отмена только на
+реестре `/shipping` (TZ-SHIP-433). Legacy desk-режим — кнопка «Отгружено» (DESK-430) и
+«Отменить отгрузку» прямо в tray (остаётся до отдельного NX `/desk`).
 
 ## TZ reference
 

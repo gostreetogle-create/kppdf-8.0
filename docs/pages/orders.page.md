@@ -50,7 +50,7 @@ Read-only expand на списке `/orders`:
 | **Документы (HUB-303)**    | 0    | `/doc-constructor/templates?source=order&sourceId=`                                                                                                                      |
 | **Готовность (HUB-304)**   | 0    | `X из Y` + линии ready/не ready; link «Открыть заказ» → `/orders/:id`; **нет** toggle ready в панели. Формула списка = `count(items.readyForWork===true)` — **не** `OrderItem.status` (тот считает «X из Y» на Комбайне `/design/combine`, TZ-SWEEP-401). Поля не сливать. |
 | **Склад (HUB-304)**        | 1    | lazy `GET /api/reservations?orderId=<Order.number>` (**номер**, не `_id`, не `reservationIds[]`) → active/total; empty «Нет броней»; error inline; link `/storage-items` |
-| **Отгрузка (HUB-304 → TZ-NX-SHIP-S2 DONE)** | 1 | lazy `GET /shipments?orderId=<Order._id>` → активная (не cancelled) отгрузка: «Отгружен: `<number>` · `<date>`» + «Документ не оформлен» если `docs.length===0`; empty «Отгрузка не оформлена»; error inline; link `/shipping?orderId=` (не bare `/shipping`). Ship/cancel кнопок в hub нет (S3 добавит ship-without-doc; cancel остаётся в реестре `/shipping`). |
+| **Отгрузка (HUB-304 → TZ-NX-SHIP-S2/S3 DONE)** | 1 | lazy `GET /shipments?orderId=<Order._id>` → активная (не cancelled) отгрузка: «Отгружен: `<number>` · `<date>`» + «Документ не оформлен» если `docs.length===0`; иначе — если заказ ещё можно отгрузить (`status` не `shipped`/`delivered`/`cancelled`) — кнопка **«Отгружено»** (`order-ship-button`, единственный hub-write в этом блоке) → `ShipConfirmDialogComponent` (получатель/адрес/примечание, все опциональны) → `PiOrdersService.ship()` whole-order → reload; иначе honest «Отгрузка не оформлена»; error inline; link `/shipping?orderId=` (не bare `/shipping`). Cancel остаётся в реестре `/shipping` (TZ-SHIP-433), не дублируется в hub. |
 
 - Stale: ответы supply/reservations игнорируются если `expandedId` уже другой.
 - Write **заказа** из expand запрещён (линии/ready/заказчик). Карандаш состава пишет в **каталог** (live BOM), не в snapshot `Order.items`.
@@ -244,6 +244,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-DESK-428** | Shared tray: spacing `p-4`/`gap-5`/`pb-4` + disclosure chevron (rotate) / hover / бейдж «раскрыть-свернуть» — parity с `/desk` |
 | **TZ-UX-444A** | Shared `PiStatusBanner` + lifecycle adoption на `/orders/:id`: draft/cancelled обязательны; shipped/delivered скрыты |
 | **TZ-NX-SHIP-S2** | Отгрузка hub-блок: shipping stub → real `GET /shipments?orderId=`, honest empty/error, link `?orderId=` — DONE (WAVE-NX-SHIPPING) |
+| **TZ-NX-SHIP-S3** | Hub «Отгружено» без документа: `order-ship-button` → `ShipConfirmDialogComponent` → `PiOrdersService.ship()` whole-order → reload; WAVE-NX-SHIPPING S0–S3 DONE |
 
 ## Особенности
 

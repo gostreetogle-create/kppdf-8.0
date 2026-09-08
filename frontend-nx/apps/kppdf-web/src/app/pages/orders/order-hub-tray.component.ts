@@ -13,6 +13,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import {
   PiCompositionService,
+  PiOrdersService,
   PiReservationsService,
   PiShipmentsService,
   PiSupplyRequestsService,
@@ -24,12 +25,14 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiDialogService } from '@kppdf/ui/dialog';
+import { PiToastService } from '@kppdf/ui/toast';
 import { CompositionTreeComponent, type CompositionTreeSelectEvent } from '../composition/composition-tree.component';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import {
   KitReserveConfirmDialogComponent,
   type KitReserveConfirmDialogData,
 } from './kit-reserve-confirm-dialog.component';
+import { ShipConfirmDialogComponent, type ShipConfirmDialogData, type ShipConfirmResult } from './ship-confirm-dialog.component';
 import { orderStatusLabel } from './order-status';
 
 type SupplyCounters = { readonly ordered: number; readonly received: number; readonly total: number };
@@ -39,15 +42,19 @@ const EMPTY_SUPPLY_COUNTERS: SupplyCounters = { ordered: 0, received: 0, total: 
 const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
 
 /**
- * Order hub expand — hub-only (TZ-NX-DEALS-D2). No desk-write controls (confirm,
- * ship, add-line, notebook, cancel-shipment) — those stay legacy-only until a
- * dedicated `/desk` route ships (out of this wave). Groups per PO visual lock
- * (2026-08-15, `docs/pages/orders.page.md` § Визуальная иерархия expand):
- * Заказ → Исполнение (Снабжение/Производство/Готовность) → Логистика (Склад/Отгрузка) → Документы.
+ * Order hub expand — hub-only (TZ-NX-DEALS-D2). Most desk-write controls (confirm,
+ * add-line, notebook, cancel-shipment) stay legacy-only until a dedicated `/desk`
+ * route ships (out of this wave) — cancel-shipment specifically stays registry-only
+ * on `/shipping` this wave (TZ-SHIP-433 canon), not duplicated in the hub. Groups
+ * per PO visual lock (2026-08-15, `docs/pages/orders.page.md` § Визуальная
+ * иерархия expand): Заказ → Исполнение (Снабжение/Производство/Готовность) →
+ * Логистика (Склад/Отгрузка) → Документы.
  *
  * TZ-NX-SHIP-S2 — «Отгрузка» block reads real `Shipment` data (row-expand-lazy
- * budget: supply=1 + reservations=1 + shipments=1). Ship/cancel buttons stay
- * off this wave (S3 adds ship-without-doc; cancel stays registry-only).
+ * budget: supply=1 + reservations=1 + shipments=1).
+ * TZ-NX-SHIP-S3 — «Отгружено» whole-order ship-without-doc IS a hub-write
+ * control (`order-ship-button`, confirm dialog → `PiOrdersService.ship()`),
+ * the one exception PO explicitly allowed in the hub this wave.
  */
 @Component({
   selector: 'app-order-hub-tray',
@@ -281,6 +288,15 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                     </span>
                   }
                 </div>
+              } @else if (canMarkShipped()) {
+                <button
+                  type="button"
+                  class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs pi-focus-ring"
+                  (click)="openShipConfirm($event)"
+                  data-test="order-ship-button"
+                >
+                  Отгружено
+                </button>
               } @else {
                 <p class="text-xs text-muted-foreground m-0 mt-1" data-test="order-shipping-summary">
                   Отгрузка не оформлена
@@ -320,8 +336,10 @@ export class OrderHubTrayComponent implements OnInit {
   private readonly supplyApi = inject(PiSupplyRequestsService);
   private readonly reservationsApi = inject(PiReservationsService);
   private readonly shipmentsApi = inject(PiShipmentsService);
+  private readonly ordersApi = inject(PiOrdersService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
 
   protected readonly compositionExpanded = signal(false);
@@ -473,6 +491,38 @@ export class OrderHubTrayComponent implements OnInit {
 
   protected shipmentHasDocs(): boolean {
     return (this.activeShipment()?.docs?.length ?? 0) > 0;
+  }
+
+  /** TZ-NX-SHIP-S3 — mirrors legacy `canMarkShipped()` gate (TZ-DESK-430). */
+  protected canMarkShipped(): boolean {
+    const status = this.order().status;
+    return status !== 'shipped' && status !== 'delivered' && status !== 'cancelled';
+  }
+
+  /** TZ-NX-SHIP-S3 — «Отгружено» без документа: confirm dialog → whole-order POST ship → reload. */
+  protected openShipConfirm(event: Event): void {
+    event.stopPropagation();
+    const order = this.order();
+    const ref = this.dialog.open<ShipConfirmResult | undefined, ShipConfirmDialogData>(ShipConfirmDialogComponent, {
+      data: { order },
+      width: 'sm',
+      ariaLabel: 'Отгрузка без документа',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      this.ordersApi
+        .ship(order._id, { ...result })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error) || 'Не удалось отметить заказ отгруженным');
+            return;
+          }
+          this.toast.success('Заказ отмечен отгруженным');
+          this.loadShipments();
+        });
+    });
   }
 
   private loadReservations(): void {

@@ -5,6 +5,7 @@ import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import {
   PiCompositionService,
+  PiOrdersService,
   PiReservationsService,
   PiShipmentsService,
   PiSupplyRequestsService,
@@ -15,8 +16,10 @@ import {
 } from '@kppdf/data-access';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { PiDialogService } from '@kppdf/ui/dialog';
+import { PiToastService } from '@kppdf/ui/toast';
 import { OrderHubTrayComponent } from './order-hub-tray.component';
 import { KitReserveConfirmDialogComponent } from './kit-reserve-confirm-dialog.component';
+import { ShipConfirmDialogComponent } from './ship-confirm-dialog.component';
 
 describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
   let fixture: ComponentFixture<OrderHubTrayComponent>;
@@ -24,6 +27,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
   let supplyApi: { list: jest.Mock };
   let reservationsApi: { list: jest.Mock };
   let shipmentsApi: { list: jest.Mock };
+  let ordersApi: { ship: jest.Mock };
+  let toast: { success: jest.Mock; error: jest.Mock };
   let dialog: { open: jest.Mock };
 
   const order: Order = {
@@ -41,6 +46,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: shipments })) };
+    ordersApi = { ship: jest.fn().mockReturnValue(of({ ok: true, data: { ...order_, status: 'shipped' } })) };
+    toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };
 
     await TestBed.configureTestingModule({
@@ -51,6 +58,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: PiOrdersService, useValue: ordersApi },
+        { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -81,11 +90,17 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     expect(compositionApi.getProductTree).not.toHaveBeenCalled();
   });
 
-  it('TZ-NX-SHIP-S2: shows an honest empty message when the order has no shipment', async () => {
+  it('TZ-NX-SHIP-S3: shows the «Отгружено» button for a markable order with no shipment yet', async () => {
     await setup();
+    expect(fixture.nativeElement.querySelector('[data-test="order-ship-button"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-shipment-block"]')).toBeFalsy();
+  });
+
+  it('TZ-NX-SHIP-S2/S3: shows an honest empty message (no button) once the order is cancelled with no shipment', async () => {
+    await setup({ ...order, status: 'cancelled' });
     const summary = fixture.nativeElement.querySelector('[data-test="order-shipping-summary"]');
     expect(summary?.textContent).toContain('Отгрузка не оформлена');
-    expect(fixture.nativeElement.querySelector('[data-test="order-shipment-block"]')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-ship-button"]')).toBeFalsy();
   });
 
   it('TZ-NX-SHIP-S2: shows the real shipment number/date and «Документ не оформлен» when there are no docs', async () => {
@@ -141,6 +156,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     shipmentsApi.list.mockReturnValue(
       of({ ok: false, error: new HttpErrorResponse({ status: 500, error: { message: 'boom' } }) }),
     );
+    ordersApi = { ship: jest.fn() };
+    toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
@@ -150,6 +167,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: PiOrdersService, useValue: ordersApi },
+        { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -201,6 +220,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     compositionApi = { getProductTree: jest.fn() };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    ordersApi = { ship: jest.fn() };
+    toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
@@ -210,6 +231,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: PiOrdersService, useValue: ordersApi },
+        { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -232,6 +255,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     compositionApi = { getProductTree: jest.fn() };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    ordersApi = { ship: jest.fn() };
+    toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
@@ -241,6 +266,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: PiOrdersService, useValue: ordersApi },
+        { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -261,6 +288,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    ordersApi = { ship: jest.fn() };
+    toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderHubTrayComponent],
@@ -270,6 +299,8 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: PiOrdersService, useValue: ordersApi },
+        { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
@@ -398,5 +429,53 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
       expect(block.className).toMatch(/\bp-3\b/);
       expect(block.className).not.toMatch(/border-t/);
     }
+  });
+
+  it('TZ-NX-SHIP-S3: opens the ship-confirm dialog with the current order', async () => {
+    await setup();
+    dialog.open.mockReturnValue({ closed: () => undefined });
+    (fixture.nativeElement.querySelector('[data-test="order-ship-button"]') as HTMLButtonElement).click();
+    expect(dialog.open).toHaveBeenCalledWith(
+      ShipConfirmDialogComponent,
+      expect.objectContaining({ data: { order } }),
+    );
+  });
+
+  it('TZ-NX-SHIP-S3: ships the order and reloads shipments on confirm', async () => {
+    await setup();
+    const closed = signal<{ recipient?: string } | undefined>(undefined);
+    const ref = { closed, close: (value?: { recipient?: string }) => closed.set(value) } as unknown as DialogRef<
+      { recipient?: string } | undefined
+    >;
+    dialog.open.mockReturnValue(ref);
+    shipmentsApi.list.mockClear();
+
+    (fixture.nativeElement.querySelector('[data-test="order-ship-button"]') as HTMLButtonElement).click();
+    closed.set({ recipient: 'Иванов И.И.' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(ordersApi.ship).toHaveBeenCalledWith('order-1', { recipient: 'Иванов И.И.' });
+    expect(toast.success).toHaveBeenCalled();
+    expect(shipmentsApi.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('TZ-NX-SHIP-S3: shows a toast error and does not reload when ship() fails', async () => {
+    await setup();
+    ordersApi.ship.mockReturnValue(of({ ok: false, error: new HttpErrorResponse({ status: 500 }) }));
+    const closed = signal<{ recipient?: string } | undefined>(undefined);
+    const ref = { closed, close: (value?: { recipient?: string }) => closed.set(value) } as unknown as DialogRef<
+      { recipient?: string } | undefined
+    >;
+    dialog.open.mockReturnValue(ref);
+    shipmentsApi.list.mockClear();
+
+    (fixture.nativeElement.querySelector('[data-test="order-ship-button"]') as HTMLButtonElement).click();
+    closed.set({});
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(toast.error).toHaveBeenCalled();
+    expect(shipmentsApi.list).not.toHaveBeenCalled();
   });
 });

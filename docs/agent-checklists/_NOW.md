@@ -1,23 +1,25 @@
 ﻿# NOW
 
-updated_at: 2026-09-08T04:30:00+03:00
+updated_at: 2026-09-08T03:55:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — ждёт «сделай деплой по документации»
-- **Deploy stamp:** `READY` (`frontend_target: nx`, `wipe_default: false`) — `docs/agent-checklists/DEPLOY-READY.md`
+- **Claude:** IDLE — WAVE-NX-SHIPPING S0–S3 DONE, ждёт следующий промпт
+- **Deploy stamp:** `READY` — отдельная команда PO «сделай деплой по документации»
 
 ## NEXT (один промпт)
 
-PO любому агенту: **«сделай деплой по документации»** → `deploy/synology/README.md` блок «Если PO сказал…» + штамп READY. Warm, Mongo keep, без jest/tsc, без правок кода.
+Запас промптов: `docs/agent-checklists/CLAUDE-FUTURE-PROMPTS.md` (#2 Ship S4 hub cancel ·
+#3 deploy · #4 Excel B · #5 G12)
 
 ## DONE (сегодня)
 
-- Photos / Supply OPS / TZD-78 / Orders tray · docs EOD `2cef78d2` · leftovers `91aab0c1`
-- Cursor: пакет NX deploy prep (`docs/ops/DEPLOY-NX-PROD.md`, TZ-OPS-DEPLOY-NX-STATIC spec)
-- Claude: `TZ-OPS-DEPLOY-NX-STATIC` closed — `deploy.py` build_frontend → NX, полные гейты зелёные, `DEPLOY-READY.status: READY`
+- **WAVE-NX-SHIPPING S0–S3 DONE** (Claude): data-access (`d1e0a04b`) → `/shipping` registry
+  (`d027275c`) → hub READ (`ae22acff`) → hub «Отгружено» ship-without-doc (SHA in this commit)
+- Photos / Supply OPS / TZD-78 / Orders tray · NX deploy prep → stamp READY
 
-## PARK
+## PARK / FUTURE
 
-- Freebuff · TZD-76 · G12 · Excel pack B · LM Studio BYOK · wipe (не планируется)
+- Запас промптов: `docs/agent-checklists/CLAUDE-FUTURE-PROMPTS.md` (#2 S4 · #3 deploy · #4 Excel B · #5 G12)
+- Freebuff · TZD-76 · LM Studio BYOK · wipe · desk (ждёт слово PO)
