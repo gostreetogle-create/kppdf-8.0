@@ -24,7 +24,7 @@ import {
   type Shipment,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
-import { PiDialogService } from '@kppdf/ui/dialog';
+import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { CompositionTreeComponent, type CompositionTreeSelectEvent } from '../composition/composition-tree.component';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
@@ -43,18 +43,19 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
 
 /**
  * Order hub expand — hub-only (TZ-NX-DEALS-D2). Most desk-write controls (confirm,
- * add-line, notebook, cancel-shipment) stay legacy-only until a dedicated `/desk`
- * route ships (out of this wave) — cancel-shipment specifically stays registry-only
- * on `/shipping` this wave (TZ-SHIP-433 canon), not duplicated in the hub. Groups
- * per PO visual lock (2026-08-15, `docs/pages/orders.page.md` § Визуальная
- * иерархия expand): Заказ → Исполнение (Снабжение/Производство/Готовность) →
- * Логистика (Склад/Отгрузка) → Документы.
+ * add-line, notebook) stay legacy-only until a dedicated `/desk` route ships (out
+ * of this wave). Groups per PO visual lock (2026-08-15, `docs/pages/orders.page.md`
+ * § Визуальная иерархия expand): Заказ → Исполнение (Снабжение/Производство/
+ * Готовность) → Логистика (Склад/Отгрузка) → Документы.
  *
  * TZ-NX-SHIP-S2 — «Отгрузка» block reads real `Shipment` data (row-expand-lazy
  * budget: supply=1 + reservations=1 + shipments=1).
  * TZ-NX-SHIP-S3 — «Отгружено» whole-order ship-without-doc IS a hub-write
- * control (`order-ship-button`, confirm dialog → `PiOrdersService.ship()`),
- * the one exception PO explicitly allowed in the hub this wave.
+ * control (`order-ship-button`, confirm dialog → `PiOrdersService.ship()`).
+ * TZ-NX-SHIP-S4 — «Отменить отгрузку» (`order-cancel-shipment-button`) mirrors
+ * the registry's TZ-SHIP-433 gate (draft/scheduled, no `dispatchedAt`) via
+ * `PiShipmentsService.cancelShipment`; registry cancel (S1, `/shipping`) is
+ * unchanged — this is the same API, just reachable without leaving `/orders`.
  */
 @Component({
   selector: 'app-order-hub-tray',
@@ -287,6 +288,16 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                       Документ не оформлен
                     </span>
                   }
+                  @if (shipmentCancellable()) {
+                    <button
+                      type="button"
+                      class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs pi-focus-ring"
+                      (click)="cancelActiveShipment($event)"
+                      data-test="order-cancel-shipment-button"
+                    >
+                      Отменить отгрузку
+                    </button>
+                  }
                 </div>
               } @else if (canMarkShipped()) {
                 <button
@@ -491,6 +502,46 @@ export class OrderHubTrayComponent implements OnInit {
 
   protected shipmentHasDocs(): boolean {
     return (this.activeShipment()?.docs?.length ?? 0) > 0;
+  }
+
+  /** TZ-NX-SHIP-S4 / TZ-SHIP-433 canon — cancel only before dispatch (draft/scheduled, no dispatchedAt). */
+  protected shipmentCancellable(): boolean {
+    const shipment = this.activeShipment();
+    if (!shipment) return false;
+    return (shipment.status === 'draft' || shipment.status === 'scheduled') && !shipment.dispatchedAt;
+  }
+
+  /** TZ-NX-SHIP-S4 — undo a mistaken ship from the hub, before dispatch, without opening /shipping. */
+  protected cancelActiveShipment(event: Event): void {
+    event.stopPropagation();
+    const shipment = this.activeShipment();
+    if (!shipment) return;
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Отменить отгрузку?',
+        description: `Отменить отгрузку «${shipment.number}»? Заказ вернётся в «Готов».`,
+        confirmLabel: 'Отменить',
+        cancelLabel: 'Не отменять',
+        variant: 'destructive',
+      },
+      width: 'sm',
+      ariaLabel: 'Отменить отгрузку',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed) => {
+      if (!confirmed) return;
+      this.shipmentsApi
+        .cancelShipment(shipment._id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error) || 'Не удалось отменить отгрузку');
+            return;
+          }
+          this.toast.success('Отгрузка отменена — заказ вернулся в «Готов»');
+          this.loadShipments();
+        });
+    });
   }
 
   /** TZ-NX-SHIP-S3 — mirrors legacy `canMarkShipped()` gate (TZ-DESK-430). */

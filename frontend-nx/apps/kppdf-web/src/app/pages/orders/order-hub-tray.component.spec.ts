@@ -26,7 +26,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
   let compositionApi: { getProductTree: jest.Mock };
   let supplyApi: { list: jest.Mock };
   let reservationsApi: { list: jest.Mock };
-  let shipmentsApi: { list: jest.Mock };
+  let shipmentsApi: { list: jest.Mock; cancelShipment: jest.Mock };
   let ordersApi: { ship: jest.Mock };
   let toast: { success: jest.Mock; error: jest.Mock };
   let dialog: { open: jest.Mock };
@@ -45,7 +45,10 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     compositionApi = { getProductTree: jest.fn() };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
-    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: shipments })) };
+    shipmentsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: shipments })),
+      cancelShipment: jest.fn().mockReturnValue(of({ ok: true, data: shipments[0] })),
+    };
     ordersApi = { ship: jest.fn().mockReturnValue(of({ ok: true, data: { ...order_, status: 'shipped' } })) };
     toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };
@@ -148,8 +151,83 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     expect(block.querySelector('[data-test="order-shipment-no-docs"]')).toBeFalsy();
   });
 
+  const cancellableShipment: Shipment = {
+    _id: 'ship-1',
+    number: 'SHIP-001',
+    orderId: 'order-1',
+    counterpartyId: 'c1',
+    date: '2026-09-08T10:00:00.000Z',
+    status: 'scheduled',
+    items: [],
+  };
+
+  it('TZ-NX-SHIP-S4: shows «Отменить отгрузку» for a scheduled shipment without dispatchedAt', async () => {
+    await setup(order, [cancellableShipment]);
+    expect(fixture.nativeElement.querySelector('[data-test="order-cancel-shipment-button"]')).toBeTruthy();
+  });
+
+  it('TZ-NX-SHIP-S4: hides the cancel button once the shipment has dispatchedAt', async () => {
+    await setup(order, [{ ...cancellableShipment, status: 'in_transit', dispatchedAt: '2026-09-08T11:00:00.000Z' }]);
+    expect(fixture.nativeElement.querySelector('[data-test="order-cancel-shipment-button"]')).toBeFalsy();
+  });
+
+  it('TZ-NX-SHIP-S4: hides the cancel button for a delivered shipment', async () => {
+    await setup(order, [{ ...cancellableShipment, status: 'delivered' }]);
+    expect(fixture.nativeElement.querySelector('[data-test="order-cancel-shipment-button"]')).toBeFalsy();
+  });
+
+  it('TZ-NX-SHIP-S4: opens a destructive confirm dialog before cancelling', async () => {
+    await setup(order, [cancellableShipment]);
+    dialog.open.mockReturnValue({ closed: () => undefined });
+    (fixture.nativeElement.querySelector('[data-test="order-cancel-shipment-button"]') as HTMLButtonElement).click();
+    expect(dialog.open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ data: expect.objectContaining({ variant: 'destructive' }) }),
+    );
+    expect(shipmentsApi.cancelShipment).not.toHaveBeenCalled();
+  });
+
+  it('TZ-NX-SHIP-S4: cancels and reloads shipments on confirm', async () => {
+    await setup(order, [cancellableShipment]);
+    shipmentsApi.cancelShipment.mockReturnValue(
+      of({ ok: true, data: { ...cancellableShipment, status: 'cancelled' } }),
+    );
+    const closed = signal<boolean | undefined>(undefined);
+    const ref = { closed, close: (value?: boolean) => closed.set(value) } as unknown as DialogRef<boolean | undefined>;
+    dialog.open.mockReturnValue(ref);
+    shipmentsApi.list.mockClear();
+
+    (fixture.nativeElement.querySelector('[data-test="order-cancel-shipment-button"]') as HTMLButtonElement).click();
+    closed.set(true);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(shipmentsApi.cancelShipment).toHaveBeenCalledWith('ship-1');
+    expect(toast.success).toHaveBeenCalled();
+    expect(shipmentsApi.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('TZ-NX-SHIP-S4: shows a toast error and does not reload when cancel fails', async () => {
+    await setup(order, [cancellableShipment]);
+    shipmentsApi.cancelShipment.mockReturnValue(
+      of({ ok: false, error: new HttpErrorResponse({ status: 400 }) }),
+    );
+    const closed = signal<boolean | undefined>(undefined);
+    const ref = { closed, close: (value?: boolean) => closed.set(value) } as unknown as DialogRef<boolean | undefined>;
+    dialog.open.mockReturnValue(ref);
+    shipmentsApi.list.mockClear();
+
+    (fixture.nativeElement.querySelector('[data-test="order-cancel-shipment-button"]') as HTMLButtonElement).click();
+    closed.set(true);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(toast.error).toHaveBeenCalled();
+    expect(shipmentsApi.list).not.toHaveBeenCalled();
+  });
+
   it('TZ-NX-SHIP-S2: surfaces the API error honestly instead of a fake summary', async () => {
-    shipmentsApi = { list: jest.fn() };
+    shipmentsApi = { list: jest.fn(), cancelShipment: jest.fn() };
     compositionApi = { getProductTree: jest.fn() };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
@@ -219,7 +297,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     compositionApi = { getProductTree: jest.fn() };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
-    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), cancelShipment: jest.fn() };
     ordersApi = { ship: jest.fn() };
     toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };
@@ -254,7 +332,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     compositionApi = { getProductTree: jest.fn() };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
-    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), cancelShipment: jest.fn() };
     ordersApi = { ship: jest.fn() };
     toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };
@@ -287,7 +365,7 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
-    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), cancelShipment: jest.fn() };
     ordersApi = { ship: jest.fn() };
     toast = { success: jest.fn(), error: jest.fn() };
     dialog = { open: jest.fn() };

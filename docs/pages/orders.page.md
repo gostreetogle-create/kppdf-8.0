@@ -50,7 +50,7 @@ Read-only expand на списке `/orders`:
 | **Документы (HUB-303)**    | 0    | `/doc-constructor/templates?source=order&sourceId=`                                                                                                                      |
 | **Готовность (HUB-304)**   | 0    | `X из Y` + линии ready/не ready; link «Открыть заказ» → `/orders/:id`; **нет** toggle ready в панели. Формула списка = `count(items.readyForWork===true)` — **не** `OrderItem.status` (тот считает «X из Y» на Комбайне `/design/combine`, TZ-SWEEP-401). Поля не сливать. |
 | **Склад (HUB-304)**        | 1    | lazy `GET /api/reservations?orderId=<Order.number>` (**номер**, не `_id`, не `reservationIds[]`) → active/total; empty «Нет броней»; error inline; link `/storage-items` |
-| **Отгрузка (HUB-304 → TZ-NX-SHIP-S2/S3 DONE)** | 1 | lazy `GET /shipments?orderId=<Order._id>` → активная (не cancelled) отгрузка: «Отгружен: `<number>` · `<date>`» + «Документ не оформлен» если `docs.length===0`; иначе — если заказ ещё можно отгрузить (`status` не `shipped`/`delivered`/`cancelled`) — кнопка **«Отгружено»** (`order-ship-button`, единственный hub-write в этом блоке) → `ShipConfirmDialogComponent` (получатель/адрес/примечание, все опциональны) → `PiOrdersService.ship()` whole-order → reload; иначе honest «Отгрузка не оформлена»; error inline; link `/shipping?orderId=` (не bare `/shipping`). Cancel остаётся в реестре `/shipping` (TZ-SHIP-433), не дублируется в hub. |
+| **Отгрузка (HUB-304 → TZ-NX-SHIP-S2/S3/S4 DONE)** | 1 | lazy `GET /shipments?orderId=<Order._id>` → активная (не cancelled) отгрузка: «Отгружен: `<number>` · `<date>`» + «Документ не оформлен» если `docs.length===0` + кнопка **«Отменить отгрузку»** (`order-cancel-shipment-button`) если `status` `draft`/`scheduled` без `dispatchedAt` (TZ-SHIP-433 gate) → confirm → `PiShipmentsService.cancelShipment` → reload; иначе — если заказ ещё можно отгрузить (`status` не `shipped`/`delivered`/`cancelled`) — кнопка **«Отгружено»** (`order-ship-button`) → `ShipConfirmDialogComponent` (получатель/адрес/примечание, все опциональны) → `PiOrdersService.ship()` whole-order → reload; иначе honest «Отгрузка не оформлена»; error inline; link `/shipping?orderId=` (не bare `/shipping`). Реестр `/shipping` cancel (S1) не менялся — тот же API, теперь доступен и без ухода с `/orders`. |
 
 - Stale: ответы supply/reservations игнорируются если `expandedId` уже другой.
 - Write **заказа** из expand запрещён (линии/ready/заказчик). Карандаш состава пишет в **каталог** (live BOM), не в snapshot `Order.items`.
@@ -245,6 +245,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-UX-444A** | Shared `PiStatusBanner` + lifecycle adoption на `/orders/:id`: draft/cancelled обязательны; shipped/delivered скрыты |
 | **TZ-NX-SHIP-S2** | Отгрузка hub-блок: shipping stub → real `GET /shipments?orderId=`, honest empty/error, link `?orderId=` — DONE (WAVE-NX-SHIPPING) |
 | **TZ-NX-SHIP-S3** | Hub «Отгружено» без документа: `order-ship-button` → `ShipConfirmDialogComponent` → `PiOrdersService.ship()` whole-order → reload; WAVE-NX-SHIPPING S0–S3 DONE |
+| **TZ-NX-SHIP-S4** | Hub «Отменить отгрузку» (`order-cancel-shipment-button`) до dispatch — TZ-SHIP-433 gate, confirm → `PiShipmentsService.cancelShipment` → reload; WAVE-NX-SHIPPING S0–S4 DONE |
 
 ## Особенности
 
