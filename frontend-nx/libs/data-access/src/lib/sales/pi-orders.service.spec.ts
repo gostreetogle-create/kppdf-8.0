@@ -109,6 +109,23 @@ describe('PiOrdersService (TZ-NX-SALES-S33-PI-ORDERS-CRUD)', () => {
     request.flush({ _id: orderId, number: 'ORD-001' });
   });
 
+  it('ship() POSTs /orders/:id/ship with an empty body by default (TZ-NX-SHIP-S0)', () => {
+    service.ship(orderId).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/ship`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
+    request.flush({ _id: orderId, number: 'ORD-001', status: 'shipped' });
+  });
+
+  it('ship() POSTs /orders/:id/ship with an optional body (TZ-NX-SHIP-S0)', () => {
+    const body = { warehouseId: '507f1f77bcf86cd799439040', recipient: 'Иванов И.И.' };
+    service.ship(orderId, body).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/ship`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(body);
+    request.flush({ _id: orderId, number: 'ORD-001', status: 'shipped' });
+  });
+
   it('getKitAvailability() GETs /orders/:id/items/:itemIndex/kit-availability (TZ-NX-SUPPLY-S2)', () => {
     service.getKitAvailability(orderId, 0).subscribe();
     const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/items/0/kit-availability`);

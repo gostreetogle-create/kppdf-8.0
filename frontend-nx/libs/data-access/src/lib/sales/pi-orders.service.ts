@@ -41,6 +41,16 @@ export class PiOrdersService {
   }
 
   /**
+   * TZ-NX-SHIP-S0 — mirrors legacy `OrdersService.ship()` (TZ-SWEEP-401):
+   * creates a `Shipment` on the backend and moves the order (+ all lines)
+   * to `shipped`. NOT a PATCH — the PATCH status graph does not include
+   * `shipped`. Body is empty/optional — `warehouseId` is optional server-side.
+   */
+  ship(id: string, body: Record<string, unknown> = {}): Observable<SilentResult<Order>> {
+    return silentPost<Order>(this.http, `${this.baseUrl}/orders/${id}/ship`, body);
+  }
+
+  /**
    * TZ-NX-GANTT-G2 — order-level estimate days override (never the WorkType
    * catalog). Mirrors legacy OrdersService.patchEstimateDays (TZ-PRODUCTION-309).
    */
