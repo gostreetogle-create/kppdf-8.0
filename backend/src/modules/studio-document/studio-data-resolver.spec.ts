@@ -31,6 +31,39 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     expect(rows).toEqual([['Стол', '2', '1500']]);
   });
 
+  it('maps photo/description/article aliases by key, not position (TZ-NX-DOCSTUDIO-S47)', () => {
+    const poCanonColumns = [
+      { key: 'article', label: 'Артикул' },
+      { key: 'photo', label: 'Фото' },
+      { key: 'productName', label: 'Наименование' },
+      { key: 'description', label: 'Описание' },
+      { key: 'unit', label: 'Ед.Изм.' },
+      { key: 'unitPrice', label: 'Цена' },
+    ];
+    const rows = mapLineItemsToRows(
+      [
+        {
+          productName: 'Мангал',
+          productSku: 'SKU-1',
+          unit: 'шт',
+          unitPrice: 4500,
+          description: 'Складной мангал',
+          photoUrl: '/uploads/mangal.webp',
+        },
+      ],
+      poCanonColumns,
+    );
+    expect(rows).toEqual([['SKU-1', '/uploads/mangal.webp', 'Мангал', 'Складной мангал', 'шт', '4500']]);
+  });
+
+  it('treats `article` as an alias of sku (acceptance criterion 4)', () => {
+    const rows = mapLineItemsToRows(
+      [{ productSku: 'ART-9' }],
+      [{ key: 'article', label: 'Артикул' }],
+    );
+    expect(rows).toEqual([['ART-9']]);
+  });
+
   it('renders table HTML with escaped cell values', () => {
     const html = renderStudioTableHtml(columns, [['<b>Тест</b>', '1', '99']]);
     expect(html).toContain('<table');
@@ -157,6 +190,7 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
     const moduleModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
     const materialModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
     const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+    const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
     return {
       service: new StudioDataResolverService(
         quotationService as never,
@@ -165,6 +199,7 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
         moduleModel as never,
         materialModel as never,
         orgModel as never,
+        photoModel as never,
       ),
       quotationService,
     };
@@ -198,9 +233,57 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
     const product = new Types.ObjectId();
     const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200 }]) }) };
     const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
-    const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never);
+    const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
+    const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
     const resolved = await resolver.resolveDataSets({ organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never, [tableBlock], true);
     expect(resolved[0]).toMatchObject({ rows: [['Стол', '1', '1200']] });
+  });
+
+  it('resolves catalog products into a PO-canon 6-key table without positional leaks (TZ-NX-DOCSTUDIO-S47)', async () => {
+    const product = new Types.ObjectId();
+    const photo = new Types.ObjectId();
+    const productModel = {
+      find: jest.fn().mockReturnValue({
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([
+          {
+            _id: product,
+            name: 'Стол',
+            sku: 'P-1',
+            unit: 'шт',
+            listPrice: 1200,
+            description: 'Дубовый стол',
+            mainPhotoId: photo,
+          },
+        ]),
+      }),
+    };
+    const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+    const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: photo, storageUrl: '/uploads/stol.webp' }]) }) };
+    const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+    const poCanonBlock = {
+      ...tableBlock,
+      settings: {
+        tableTemplateColumns: [
+          { key: 'article', label: 'Артикул' },
+          { key: 'photo', label: 'Фото' },
+          { key: 'productName', label: 'Наименование' },
+          { key: 'description', label: 'Описание' },
+          { key: 'unit', label: 'Ед.Изм.' },
+          { key: 'unitPrice', label: 'Цена' },
+        ],
+      },
+    } as unknown as TemplateBlockDocument;
+
+    const resolved = await resolver.resolveDataSets(
+      { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+      [poCanonBlock],
+      true,
+    );
+
+    expect(resolved[0]).toMatchObject({
+      rows: [['P-1', '/uploads/stol.webp', 'Стол', 'Дубовый стол', 'шт', '1200']],
+    });
   });
 
   it('bakeSnapshot converts ERP source to manual with rows', async () => {

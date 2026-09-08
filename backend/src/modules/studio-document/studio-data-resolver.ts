@@ -5,6 +5,7 @@ import { Product, ProductDocument } from '../product/product.schema';
 import { ProductModule, ProductModuleDocument } from '../product-module/product-module.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
 import { Organization, OrganizationDocument } from '../organization/organization.schema';
+import { Photo, PhotoDocument } from '../photos/photo.schema';
 import type { QuotationItem } from '../quotation/quotation.schema';
 import { QuotationService } from '../quotation/quotation.service';
 import type { OrderItem } from '../order/order.schema';
@@ -36,6 +37,8 @@ type LineItem = {
   unit?: string;
   unitPrice?: number;
   total?: number;
+  description?: string;
+  photoUrl?: string;
 };
 
 type DataSetEntry = {
@@ -45,13 +48,16 @@ type DataSetEntry = {
   disabledRowIndices?: unknown;
 };
 
+/** TZ-NX-DOCSTUDIO-S47 — parity with Create КП aliases (`proposal-table-layout.util.ts`). */
 const COLUMN_ALIASES: Record<string, string[]> = {
   name: ['name', 'productname', 'title', 'product', 'наименование'],
   qty: ['qty', 'quantity', 'count', 'кол-во', 'количество'],
   price: ['price', 'unitprice', 'unit_price', 'цена'],
   sum: ['sum', 'total', 'amount', 'сумма'],
   unit: ['unit', 'ед', 'ед.изм'],
-  sku: ['sku', 'productsku', 'артикул'],
+  sku: ['sku', 'productsku', 'артикул', 'article'],
+  photo: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'photoids', 'photo_ids', 'фото'],
+  description: ['description', 'desc', 'описание'],
 };
 
 function refId(value: unknown): string {
@@ -90,6 +96,10 @@ function lineValue(columnKey: string, line: LineItem): string {
       return line.unit ?? '';
     case 'sku':
       return line.productSku ?? '';
+    case 'photo':
+      return line.photoUrl ?? '';
+    case 'description':
+      return line.description ?? '';
     default:
       return '';
   }
@@ -257,6 +267,7 @@ export class StudioDataResolverService {
     @InjectModel(ProductModule.name) private readonly moduleModel: Model<ProductModuleDocument>,
     @InjectModel(Material.name) private readonly materialModel: Model<MaterialDocument>,
     @InjectModel(Organization.name) private readonly orgModel: Model<OrganizationDocument>,
+    @InjectModel(Photo.name) private readonly photoModel: Model<PhotoDocument>,
   ) {}
 
   async resolveOrganizationVatRate(organizationId: string): Promise<number> {
@@ -401,17 +412,44 @@ export class StudioDataResolverService {
           ? await this.moduleModel.find(scopeFilter).lean().exec() as unknown as Array<Record<string, unknown>>
           : await this.materialModel.find(scopeFilter).lean().exec() as unknown as Array<Record<string, unknown>>;
       const byId = new Map(docs.map((doc) => [String(doc._id), doc]));
+      const photoUrlById = await this.resolveCatalogPhotoUrls(docs);
       return ids.filter((id) => byId.has(String(id))).map((id) => {
         const item = byId.get(String(id)) as Record<string, unknown>;
         const name = String(item['name'] ?? item['sku'] ?? item['article'] ?? '');
         const sku = String(item['sku'] ?? item['article'] ?? '');
         const unit = String(item['unit'] ?? 'шт');
         const price = Number(item['listPrice'] ?? item['basePrice'] ?? item['pricePerUnit'] ?? 0);
-        return mapLineItemsToRows([{ productName: name, productSku: sku, unit, quantity: 1, unitPrice: price, total: price }], columns)[0] ?? [];
+        const description = String(item['description'] ?? '');
+        const photoUrl = photoUrlById.get(this.catalogPhotoId(item)) ?? '';
+        return mapLineItemsToRows([{ productName: name, productSku: sku, unit, quantity: 1, unitPrice: price, total: price, description, photoUrl }], columns)[0] ?? [];
       });
     }
 
     return null;
+  }
+
+  /** Catalog item's photo ref: `mainPhotoId`, falling back to the first `photoIds` entry. */
+  private catalogPhotoId(item: Record<string, unknown>): string {
+    const main = item['mainPhotoId'];
+    if (main) return refId(main);
+    const ids = item['photoIds'];
+    return Array.isArray(ids) && ids.length > 0 ? refId(ids[0]) : '';
+  }
+
+  /** Batch-resolve catalog docs' photo refs to `Photo.storageUrl` (S48 renders the thumbnail). */
+  private async resolveCatalogPhotoUrls(
+    docs: Array<Record<string, unknown>>,
+  ): Promise<Map<string, string>> {
+    const ids = [...new Set(docs.map((doc) => this.catalogPhotoId(doc)).filter((id) => id && Types.ObjectId.isValid(id)))];
+    if (ids.length === 0) return new Map();
+    const photos = await this.photoModel
+      .find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) } })
+      .select('storageUrl')
+      .lean()
+      .exec();
+    return new Map(
+      photos.map((photo) => [String((photo as { _id: unknown })._id), String((photo as { storageUrl?: string }).storageUrl ?? '')]),
+    );
   }
 
   private defaultColumns(): StudioTableColumn[] {

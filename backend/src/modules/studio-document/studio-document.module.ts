@@ -7,6 +7,7 @@ import {
   Organization,
   OrganizationSchema,
 } from '../organization/organization.schema';
+import { Photo, PhotoSchema } from '../photos/photo.schema';
 import {
   StudioDocument,
   StudioDocumentSchema,
@@ -38,6 +39,7 @@ import { StudioQuotationLifecycleService } from './studio-quotation-lifecycle.se
       { name: ProductModuleEntity.name, schema: ProductModuleSchema },
       { name: Material.name, schema: MaterialSchema },
       { name: DocType.name, schema: DocTypeSchema },
+      { name: Photo.name, schema: PhotoSchema },
     ]),
     TemplateBlockModule,
     DocumentTemplateModule,

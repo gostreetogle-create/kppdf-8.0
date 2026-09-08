@@ -83,3 +83,50 @@ describe('StudioBlocksCanvasComponent — S45 print-like tables', () => {
     expect(host.querySelector('.table-preview input[type="checkbox"]')).toBeNull();
   });
 });
+
+/**
+ * TZ-NX-DOCSTUDIO-S47 (BUG-5) — `tableRows()` returned raw `liveRows` untouched
+ * by `tableHiddenColumnKeys`, so a hidden column stayed visible for live/catalog
+ * -source tables even though manual tables correctly hide it via
+ * `studioVisibleTableRows`. Live rows must go through the same visible-column
+ * filter as headers (`tableColumns()`).
+ */
+describe('StudioBlocksCanvasComponent — liveRows respect hidden columns (TZ-NX-DOCSTUDIO-S47)', () => {
+  const LIVE_TABLE: StudioBlock = {
+    _id: 'tbl-live',
+    type: 'table',
+    order: 0,
+    title: 'КП',
+    content: '',
+    layout: { page: 1, x: 0.1, y: 0.1, width: 0.5, height: 0.4, zIndex: 1, rotation: 0 },
+    settings: {
+      dataSource: { type: 'catalog-products' },
+      tableTemplateColumns: [
+        { key: 'article', label: 'Артикул', type: 'text', width: 20, align: 'left' },
+        { key: 'photo', label: 'Фото', type: 'text', width: 20, align: 'center' },
+        { key: 'productName', label: 'Наименование', type: 'text', width: 60, align: 'left' },
+      ],
+      tableHiddenColumnKeys: ['photo'],
+      liveRows: [['SKU-1', '/uploads/mangal.webp', 'Мангал']],
+    },
+  };
+
+  let fixture: ComponentFixture<StudioBlocksCanvasComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [StudioBlocksCanvasComponent] }).compileComponents();
+  });
+
+  it('hides the same column in liveRows as in the header, not the raw positional cell', () => {
+    fixture = TestBed.createComponent(StudioBlocksCanvasComponent);
+    fixture.componentRef.setInput('blocks', [LIVE_TABLE]);
+    fixture.componentRef.setInput('selectedId', null);
+    fixture.componentRef.setInput('activeLayerId', null);
+    fixture.componentRef.setInput('currentPage', 1);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    expect(component.tableColumns(LIVE_TABLE).map((c) => c.key)).toEqual(['article', 'productName']);
+    expect(component.tableRows(LIVE_TABLE)).toEqual([['SKU-1', 'Мангал']]);
+  });
+});

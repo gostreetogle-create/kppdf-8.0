@@ -1566,9 +1566,42 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       if (r.ok) {
         this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
         this.refreshPreviewIfActive();
+        if ('tableTemplateColumns' in patch) {
+          this.rehydrateLiveRowsAfterColumnChange(r.data);
+        }
       } else {
         this.conflict();
       }
+    });
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-S47 — column structure changed (template pick or manual
+   * add/remove/rename-key) while a live source is bound: existing `liveRows`
+   * (and any stored dataSet rows treated as manual overrides) were shaped for
+   * the old column count and would misalign under the new headers, so drop
+   * them and re-put with empty rows to force a clean live re-fetch at the new
+   * width/keys instead of `refreshLiveDataSetsOnLoad`'s override-preserving path.
+   */
+  private rehydrateLiveRowsAfterColumnChange(block: StudioBlock): void {
+    const doc = this.document();
+    if (!doc || block.type !== 'table') return;
+    const sourceType = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+    if (!sourceType || !STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)) return;
+    const key = `table-${block._id}`;
+    const catalogKey = sourceType.startsWith('catalog-') ? sourceType.slice('catalog-'.length) : '';
+    const catalogSelectionCount = catalogKey
+      ? this.catalogSelections()[catalogKey as 'products' | 'modules' | 'parts' | 'materials'].length
+      : 0;
+    const dataSet = { source: { type: sourceType }, rows: [], catalogSelectionCount };
+    void firstValueFrom(this.documents.putDataSet(doc._id, key, {
+      expectedRevision: this.document()?.revision ?? doc.revision ?? 1,
+      dataSet,
+    })).then((result) => {
+      if (!result.ok) return;
+      this.document.set(result.data);
+      this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
+      this.refreshPreviewIfActive();
     });
   }
 

@@ -11,6 +11,7 @@ import {
 import {
   studioTableDisabledRowIndices,
   studioTableTransparentBackground,
+  studioVisibleColumnIndices,
   studioVisibleTableColumns,
   studioVisibleTableRows,
 } from './studio-table-defaults';
@@ -322,7 +323,10 @@ export class StudioBlocksCanvasComponent {
   tableRows(block: StudioBlock): string[][] {
     const liveRows = block.settings?.['liveRows'];
     if (Array.isArray(liveRows)) {
-      return liveRows.filter((row): row is string[] => Array.isArray(row)).map((row) => row.map((cell) => String(cell ?? '')));
+      const rows = liveRows.filter((row): row is string[] => Array.isArray(row)).map((row) => row.map((cell) => String(cell ?? '')));
+      // TZ-NX-DOCSTUDIO-S47 (BUG-5) — liveRows bypassed hidden-column filtering; align with manual rows.
+      const visibleColIdx = studioVisibleColumnIndices(block);
+      return rows.map((row) => visibleColIdx.map((colIdx) => row[colIdx] ?? ''));
     }
     return studioVisibleTableRows(block);
   }
