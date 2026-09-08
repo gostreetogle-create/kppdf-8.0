@@ -1,27 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-08T11:10:00Z
+updated_at: 2026-09-08T19:45:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — WAVE-NX-SHIPPING S0–S4 DONE, WAVE-NX-SUPPLY-OPS Excel B DONE, ждёт следующий промпт
-- **Deploy stamp:** `READY` — отдельная команда PO «сделай деплой по документации»
+- **Claude:** IN PROGRESS — WAVE-DOCSTUDIO-S47-S48, row 0 DONE (PASS), claiming row 1 `TZ-NX-DOCSTUDIO-S47-COLUMN-MAP-PARITY`
+- **Deploy stamp:** `READY` (отдельная команда PO)
 
 ## NEXT (один промпт)
 
-Продуктовая очередь Claude пуста. Deploy — только по фразе PO. G12 — PARK.
+**Claude** → продолжает WAVE-DOCSTUDIO-S47-S48 row 1 (`tasks/_ready/doc-studio/TZ-NX-DOCSTUDIO-S47-COLUMN-MAP-PARITY.md`), затем row 2 (S48)
 
-## DONE (сегодня)
+## DONE (ранее)
 
-- **WAVE-NX-SHIPPING S0–S4 DONE** (Claude): data-access (`d1e0a04b`) → `/shipping` registry
-  (`d027275c`) → hub READ (`ae22acff`) → hub «Отгружено» ship-without-doc (`cfd5292c`) →
-  hub «Отменить отгрузку» до dispatch (`0bb8e0b8`)
-- **WAVE-NX-SUPPLY-OPS Excel B DONE** (Claude): multi-sheet шаблон снабжения с нативными
-  Excel dropdown (материалы/поставщики/заказы) — SHA in this commit; wave now 8/8
-- Photos / Supply OPS / TZD-78 / Orders tray · NX deploy prep → stamp READY
+- Shipping S0–S4 · Supply Excel B · Photos · Supply OPS · DocStudio S47 re-audit recheck (PASS)
 
-## PARK / FUTURE
+## PARK
 
-- Запас промптов: `docs/agent-checklists/CLAUDE-FUTURE-PROMPTS.md` (#3 deploy · #5 G12)
-- Freebuff · TZD-76 · LM Studio BYOK · wipe · desk (ждёт слово PO)
+- Deploy · G12 · desk · wipe
