@@ -14,7 +14,7 @@
 | 03 | `/registries` | `tasks/PROMPT-CLAUDE-UX-03-registries.md` | **DONE** — gold PASS-EMPTY `4be40d78` |
 | 04 | `/orders` | `tasks/PROMPT-CLAUDE-UX-04-orders.md` | **DONE** — audit `e010b83d`, FIX `b05802df` |
 | 05 | `/shipping` | `tasks/PROMPT-CLAUDE-UX-05-shipping.md` | **DONE** — audit `5586dc55`, FIX `3c70d95c` (expand-in-row + chip button) |
-| 06 | `/supply` | `tasks/PROMPT-CLAUDE-UX-06-supply.md` | **DONE** — audit `af549dfd`, FIX applied (expand-in-row + chip button) |
+| 06 | `/supply` | `tasks/PROMPT-CLAUDE-UX-06-supply.md` | **DONE** — audit `af549dfd`, FIX `a2e1353d` (expand-in-row + chip button) |
 | 07 | `/supply-requests` | `tasks/PROMPT-CLAUDE-UX-07-supply-requests.md` | READY |
 | 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | READY |
 | 09 | `/storage-items` | `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` | READY |

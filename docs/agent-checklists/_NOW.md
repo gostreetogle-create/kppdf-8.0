@@ -15,7 +15,7 @@ updated_at: 2026-09-09T20:10:00+03:00
 ## DONE
 
 - #00–#04 · #05 shipping FIX `3c70d95c` (expand-in-row + chip)
-- #06 supply PASS-FIX → fixed (expand-in-row for line/confirmedAt/notes, chip button): audit `af549dfd`, FIX SHA below
+- #06 supply PASS-FIX → fixed (expand-in-row for line/confirmedAt/notes, chip button): audit `af549dfd`, FIX `a2e1353d`
 
 ## PARK
 
