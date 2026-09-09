@@ -48,3 +48,24 @@ gold и учит неверному паттерну как SoT-страница
 (confirm-диалог на delete через `AlertDialogComponent`/канон `docs/DIALOG-COOKBOOK.md` §confirm)
 и P2 (дать footer-кнопкам toast-фидбек по аналогии с остальными секциями, раз бюджет позволяет
 "+ P2 if free").
+
+## Closeout (FIX applied)
+
+- **P1 (A2) — fixed.** `onInventoryDelete` (`forms.page.ts:524-539`) теперь открывает
+  `AlertDialogComponent` (`title: 'Удалить запись?'`, `variant: 'destructive'`) через
+  `PiDialogService` + общий хелпер `onDialogCloseOnce` (`apps/kppdf-web/src/app/pages/on-dialog-close-once.ts`,
+  тот же паттерн, что и `/counterparties`, `/registries`) — тост «Удалена…» шлётся только
+  после подтверждения. Паттерн теперь совпадает с gold.
+- **P2 (C1) — fixed.** Footer-кнопки Section VIII (`forms.page.ts:391,394`) получили
+  `(click)="onFooterCancel()"` / `(click)="onFooterSubmit()"` с toast-фидбеком, как у
+  остальных демо-секций страницы.
+- Gates: `nx build kppdf-web` PASS (production config, forms-page chunk 32.04 kB);
+  `nx test kppdf-web` — 103/103 suites PASS (681 passed, 7 pre-existing skipped, 0 regressions);
+  `nx test paper-and-ink` — 34/34 suites PASS, 357/357 tests (dialog/toast primitives consumed
+  by the fix, unmodified). Нет отдельного spec-файла для `forms.page.ts` — новых юнит-тестов
+  на template-биндинг не заводили (page.md не существует под `/kit/forms`, см. Integrity ниже).
+- **Note (не блокер):** TZ `PAGE_DOCS` указывал `texts.page.md / forms` — этот файл на
+  самом деле про `/doc-constructor/texts` (текстовые блоки шаблонов), не про `/kit/forms`.
+  Похоже на опечатку/неверную ссылку в TZ-метаданных. Для `/kit/forms` отдельного page.md
+  нет (аналогично `/kit/overview` в TZ-NX-UX-00, где это явно отмечено как ok) — новый
+  page.md не заводили, т.к. TZ не просит новую страницу, а просит parity-фикс демо.

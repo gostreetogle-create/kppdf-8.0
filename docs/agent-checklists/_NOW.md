@@ -1,20 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T10:20:00+03:00
+updated_at: 2026-09-09T10:35:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IN PROGRESS — UX #01 kit-forms (audit PASS-FIX, doing FIX now)
+- **Claude:** IDLE — UX #01 kit-forms DONE (audit PASS-FIX, FIX applied); ждёт PO «дай следующий промпт»
 - **Deploy stamp:** READY
 
 ## NEXT
 
-**Claude** → `tasks/PROMPT-CLAUDE-UX-01-kit-forms.md`
+**Claude** → ждёт PO copy-paste `tasks/PROMPT-CLAUDE-UX-02-kit-overlays.md`
 
 ## DONE
 
 - UX #00 kit-overview PASS-EMPTY `c516e40d`
+- UX #01 kit-forms PASS-FIX → fixed (destructive confirm + dead footer buttons) `b46d239e` + FIX commit below
 
 ## PARK
 

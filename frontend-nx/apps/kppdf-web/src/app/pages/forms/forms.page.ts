@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, NonNullableFormBuilder, Validators } from '@angular/forms';
 import { PiPageHeaderComponent } from '@kppdf/ui/page';
 import { PiSectionComponent } from '@kppdf/ui/page';
@@ -13,6 +13,8 @@ import { ColumnDef, TableComponent } from '@kppdf/ui/table';
 import { PiTableTreeComponent } from '@kppdf/ui/table-tree';
 import { PiRowActionsComponent } from '@kppdf/ui/row-actions';
 import { PiSelectAddRowComponent } from '@kppdf/ui/select-add-row';
+import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
 
 interface InventoryRow {
   id: string;
@@ -386,8 +388,12 @@ type SortDir = 'asc' | 'desc';
           Идемпотентность: повторная отправка безопасна · 142 строки готовы
         </p>
         <div class="flex items-center gap-2 shrink-0">
-          <app-pi-button variant="outline" type="button">Отмена</app-pi-button>
-          <app-pi-button variant="default" type="button">Отправить 142 строки</app-pi-button>
+          <app-pi-button variant="outline" type="button" (click)="onFooterCancel()">
+            Отмена
+          </app-pi-button>
+          <app-pi-button variant="default" type="button" (click)="onFooterSubmit()">
+            Отправить 142 строки
+          </app-pi-button>
         </div>
       </div>
     </app-pi-section>
@@ -396,6 +402,9 @@ type SortDir = 'asc' | 'desc';
 export class FormsPage {
   protected readonly toast = inject(PiToastService);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   protected readonly form = this.fb.group({
     name: this.fb.control('', [Validators.required, Validators.minLength(2)]),
@@ -513,7 +522,20 @@ export class FormsPage {
   }
 
   protected onInventoryDelete(row: InventoryRow): void {
-    this.toast.warning(`Удалить «${row.name}»? (демо, без подтверждения)`);
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Удалить запись?',
+        description: `«${row.name}» будет удалена (демо, без реального сохранения).`,
+        confirmLabel: 'Удалить',
+        cancelLabel: 'Отмена',
+        variant: 'destructive',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed) => {
+      if (confirmed) this.toast.warning(`Удалена «${row.name}» (демо, без реального сохранения)`);
+    });
   }
 
   protected onAddCategory(): void {
@@ -525,6 +547,15 @@ export class FormsPage {
 
   protected toggleStockRow(row: StockRow): void {
     this.expandedStockId.update((id) => (id === row.id ? null : row.id));
+  }
+
+  // ─── Section VIII: footer single-CTA demo feedback ────────────────────
+  protected onFooterCancel(): void {
+    this.toast.show('Отменено (демо, без реального действия)');
+  }
+
+  protected onFooterSubmit(): void {
+    this.toast.success('Отправлено 142 строки (демо, без реального сохранения)');
   }
 
   protected setSort(key: 'name' | 'qty' | 'status'): void {
