@@ -4,9 +4,9 @@
 > Cursor/PO смотрят сюда, если сессия оборвалась.  
 > Промпт: `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md`
 
-updated_at: 2026-09-09T19:10:00Z  
+updated_at: 2026-09-09T19:20:00Z  
 agent_id: claude  
-status: **RUNNING** — 08b+09+10+12 закрыты, 11 SKIP, continuous с 13  
+status: **RUNNING** — 08b+09+10+12+13 закрыты, 11 SKIP, continuous с 14  
 prompt: `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md` (фаза 1)
 
 ## Правило отметки
@@ -26,8 +26,8 @@ prompt: `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md` (фаза 1)
 | 10 | stock-movements AUDIT→FIX | `tasks/_ready/nx-ux/stock-movements/` | **DONE** | `5906bf4a` | 2026-09-09T19:00:00Z |
 | 11 | production | — | **SKIP** Гант | — | PO lock, не claim |
 | 12 | proposals AUDIT→FIX | `tasks/_ready/nx-ux/proposals/` | **DONE** | `d91dd517` | 2026-09-09T19:10:00Z |
-| 13 | counterparties AUDIT→FIX | `tasks/_ready/nx-ux/counterparties/` | IN_WORK | — | — |
-| 14 | contracts AUDIT→FIX | `tasks/_ready/nx-ux/contracts/` | PENDING | — | — |
+| 13 | counterparties AUDIT→FIX | `tasks/_ready/nx-ux/counterparties/` | **DONE** | `47e2d199` | 2026-09-09T19:20:00Z |
+| 14 | contracts AUDIT→FIX | `tasks/_ready/nx-ux/contracts/` | IN_WORK | — | — |
 | 15 | studio-list AUDIT→FIX | `tasks/_ready/nx-ux/studio-list/` | PENDING | — | — |
 | 16 | admin-devices AUDIT→FIX | `tasks/_ready/nx-ux/admin-devices/` | PENDING | — | — |
 | 17 | admin-roles AUDIT→FIX | `tasks/_ready/nx-ux/admin-roles/` | PENDING | — | — |
