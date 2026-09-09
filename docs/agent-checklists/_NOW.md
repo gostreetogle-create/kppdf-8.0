@@ -15,7 +15,7 @@ updated_at: 2026-09-09T19:50:00+03:00
 ## DONE
 
 - #00–#03 · #04 orders FIX `b05802df` (hub tray `.pi-outline-btn`)
-- #05 shipping PASS-FIX → fixed (expand-in-row for recipient/address/items/docs, chip button): audit `5586dc55`, FIX SHA below
+- #05 shipping PASS-FIX → fixed (expand-in-row for recipient/address/items/docs, chip button): audit `5586dc55`, FIX `3c70d95c`
 
 ## PARK
 
