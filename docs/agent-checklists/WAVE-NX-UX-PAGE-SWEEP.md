@@ -4,15 +4,15 @@
 **Очередь промптов:** `docs/agent-checklists/CLAUDE-UX-PAGE-PROMPTS.md`  
 **Правило PO:** один промпт = одна страница; выдавать только по «дай следующий промпт».  
 **Агент:** `agent_id: claude` — сначала AUDIT, потом FIX (находки на той же странице — чинить сразу).  
-**Статус:** #03 DONE (gold verify, audit PASS-EMPTY, FIX N/A) · ждёт PO «дай следующий промпт» → #04 orders
+**Статус:** #04 audit PASS-FIX — FIX in progress
 
 | # | Route | PROMPT | Status |
 |---|-------|--------|--------|
 | 00 | `/kit/overview` | `tasks/PROMPT-CLAUDE-UX-00-kit-overview.md` | **DONE** — audit PASS-EMPTY, FIX N/A `c516e40d` |
 | 01 | `/kit/forms` | `tasks/PROMPT-CLAUDE-UX-01-kit-forms.md` | **DONE** — audit `b46d239e`, FIX `4f7afcc8` (P1+P2) |
 | 02 | `/kit/overlays` | `tasks/PROMPT-CLAUDE-UX-02-kit-overlays.md` | **DONE** — audit `2f1765dc`, FIX `7307e97b` |
-| 03 | `/registries` | `tasks/PROMPT-CLAUDE-UX-03-registries.md` | **DONE** — gold verify, audit PASS-EMPTY, FIX N/A |
-| 04 | `/orders` | `tasks/PROMPT-CLAUDE-UX-04-orders.md` | READY |
+| 03 | `/registries` | `tasks/PROMPT-CLAUDE-UX-03-registries.md` | **DONE** — gold PASS-EMPTY `4be40d78` |
+| 04 | `/orders` | `tasks/PROMPT-CLAUDE-UX-04-orders.md` | audit **PASS-FIX** — FIX in progress |
 | 05 | `/shipping` | `tasks/PROMPT-CLAUDE-UX-05-shipping.md` | READY |
 | 06 | `/supply` | `tasks/PROMPT-CLAUDE-UX-06-supply.md` | READY |
 | 07 | `/supply-requests` | `tasks/PROMPT-CLAUDE-UX-07-supply-requests.md` | READY |
