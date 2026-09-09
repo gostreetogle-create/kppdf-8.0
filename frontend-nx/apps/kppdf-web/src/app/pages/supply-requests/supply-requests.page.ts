@@ -18,6 +18,7 @@ import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import {
+  formatSupplyRequestPriority,
   formatSupplyRequestStatus,
   SUPPLY_REQUEST_STATUS_LABELS,
 } from '../registries/data/supply-request-formatters';
@@ -115,7 +116,7 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
           />
         </label>
         @if (hasActiveFilters()) {
-          <button class="text-xs underline underline-offset-2 text-muted-foreground" type="button" (click)="resetFilters()" data-test="supply-request-reset-filters">
+          <button class="pi-outline-btn" type="button" (click)="resetFilters()" data-test="supply-request-reset-filters">
             Сбросить фильтры
           </button>
         }
@@ -144,7 +145,7 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
             Заявок пока нет. Создайте первую — «+ Заявка».
           } @else {
             Ничего не найдено по текущим фильтрам.
-            <button class="underline underline-offset-2" type="button" (click)="resetFilters()" data-test="supply-request-empty-reset">
+            <button class="pi-outline-btn" type="button" (click)="resetFilters()" data-test="supply-request-empty-reset">
               Сбросить фильтры
             </button>
           }
@@ -165,14 +166,23 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
               <span role="columnheader" aria-label="Действия"></span>
             </div>
             @for (row of filteredRows(); track row._id) {
-              <div class="grid grid-cols-[minmax(0,1.6fr)_minmax(5rem,0.6fr)_minmax(9rem,0.9fr)_minmax(7rem,0.7fr)_minmax(5rem,0.5fr)_minmax(7rem,0.7fr)_minmax(7rem,0.7fr)_minmax(6rem,0.6fr)_minmax(9rem,0.8fr)] gap-3 items-center px-4 py-3 hairline-bottom last:border-b-0" role="row" data-test="supply-request-row">
+              <div
+                class="grid grid-cols-[minmax(0,1.6fr)_minmax(5rem,0.6fr)_minmax(9rem,0.9fr)_minmax(7rem,0.7fr)_minmax(5rem,0.5fr)_minmax(7rem,0.7fr)_minmax(7rem,0.7fr)_minmax(6rem,0.6fr)_minmax(9rem,0.8fr)] gap-3 items-center px-4 py-3 hairline-bottom last:border-b-0 cursor-pointer pi-focus-ring"
+                role="row"
+                data-test="supply-request-row"
+                tabindex="0"
+                [attr.aria-expanded]="expandedId() === row._id"
+                (click)="toggleExpand(row._id)"
+                (keydown.enter)="toggleExpand(row._id)"
+                (keydown.space)="onRowSpace($event, row._id)"
+              >
                 <div role="cell" class="min-w-0 truncate">{{ row.title || row.article || 'Без названия' }}</div>
                 <div role="cell" class="text-right tabular-nums">{{ row.qty }} {{ row.unit }}</div>
                 <div role="cell" class="truncate">{{ supplierLabel(row.supplierId) }}</div>
                 <div role="cell" data-test="supply-request-status">{{ statusLabel(row.status) }}</div>
                 <div role="cell" data-test="supply-request-paid-cell">{{ row.paid ? 'Оплачено' : '—' }}</div>
                 <div role="cell" class="truncate">{{ row.invoiceNo || '—' }}</div>
-                <div role="cell" class="truncate">
+                <div role="cell" class="truncate" (click)="$event.stopPropagation()">
                   @if (linkedOrder(row); as order) {
                     <a class="underline underline-offset-2 hover:text-sunrise-warm" [routerLink]="['/orders', order._id]" data-test="supply-request-order-link">
                       {{ order.number }}
@@ -182,7 +192,7 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
                   }
                 </div>
                 <div role="cell" class="truncate" [attr.title]="row.createdBy">{{ createdByLabel(row.createdBy) }}</div>
-                <div class="flex items-center gap-2 justify-end" role="cell">
+                <div class="flex items-center gap-2 justify-end" role="cell" (click)="$event.stopPropagation()">
                   @if (isReceivable(row)) {
                     <button class="pi-button pi-button-primary" type="button" (click)="openReceive(row)" data-test="supply-request-receive">Получено</button>
                   }
@@ -190,6 +200,36 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
                   <button class="pi-button pi-button-secondary" type="button" (click)="confirmDelete(row)" data-test="supply-request-delete">Удалить</button>
                 </div>
               </div>
+              @if (expandedId() === row._id) {
+                <div class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2" data-test="supply-request-row-expand">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <div class="pi-label text-muted-foreground">Приоритет</div>
+                      <div class="text-sm">{{ priorityLabel(row.priority) }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Нужно к дате</div>
+                      <div class="text-sm">{{ row.neededBy ? fmtDate(row.neededBy) : '—' }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Дата оплаты</div>
+                      <div class="text-sm">{{ row.paidAt ? fmtDate(row.paidAt) : '—' }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Получено (факт)</div>
+                      <div class="text-sm">{{ row.receivedQty != null ? row.receivedQty + ' ' + (row.unit || '') : '—' }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Доставка</div>
+                      <div class="text-sm">{{ row.deliveryNote || '—' }}</div>
+                    </div>
+                    <div class="sm:col-span-2">
+                      <div class="pi-label text-muted-foreground">Примечание</div>
+                      <div class="text-sm">{{ row.notes || '—' }}</div>
+                    </div>
+                  </div>
+                </div>
+              }
             }
           </div>
         </div>
@@ -221,6 +261,8 @@ export class SupplyRequestsPage {
   protected readonly paidOnly = signal(false);
   protected readonly dateFrom = signal('');
   protected readonly dateTo = signal('');
+  /** Single expand (registry pattern) — reloading the list collapses it. */
+  protected readonly expandedId = signal<string | null>(null);
 
   protected readonly hasActiveFilters = computed(
     () =>
@@ -286,6 +328,7 @@ export class SupplyRequestsPage {
 
   load(): void {
     this.status.set('loading');
+    this.expandedId.set(null);
     void firstValueFrom(this.api.list()).then((result) => {
       if (!result.ok) {
         this.error.set(extractErrorMessage(result.error));
@@ -299,6 +342,24 @@ export class SupplyRequestsPage {
 
   protected statusLabel(status: SupplyRequestStatus): string {
     return formatSupplyRequestStatus(status);
+  }
+
+  protected priorityLabel(priority: SupplyRequest['priority']): string {
+    return formatSupplyRequestPriority(priority);
+  }
+
+  protected fmtDate(value: string): string {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString('ru-RU');
+  }
+
+  protected toggleExpand(requestId: string): void {
+    this.expandedId.update((current) => (current === requestId ? null : requestId));
+  }
+
+  protected onRowSpace(event: Event, requestId: string): void {
+    event.preventDefault();
+    this.toggleExpand(requestId);
   }
 
   protected supplierLabel(supplierId?: string): string {

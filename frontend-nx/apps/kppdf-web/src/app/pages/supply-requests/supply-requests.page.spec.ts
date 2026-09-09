@@ -32,12 +32,16 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
       qty: 100,
       unit: 'шт',
       status: 'in_progress',
-      priority: 'normal',
+      priority: 'urgent',
       paid: false,
       supplierId: 's1',
       orderId: 'o1',
       materialId: 'm1',
       neededBy: '2026-09-10',
+      deliveryNote: 'Курьером до склада',
+      notes: 'Проверить сертификат перед приёмкой',
+      receivedQty: 40,
+      paidAt: '2026-09-05',
     },
     {
       _id: 'r2',
@@ -210,5 +214,37 @@ describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
 
     (fixture.nativeElement.querySelector('[data-test="supply-request-delete"]') as HTMLButtonElement).click();
     expect(dialog.open).toHaveBeenCalledWith(AlertDialogComponent, expect.any(Object));
+  });
+
+  it('expands a row on click to show priority/paidAt/receivedQty/delivery/notes, and collapses on second click', async () => {
+    await setup();
+    const row = fixture.nativeElement.querySelector('[data-test="supply-request-row"]') as HTMLElement;
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[data-test="supply-request-row-expand"]')).toBeFalsy();
+
+    row.click();
+    fixture.detectChanges();
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    const expandEl = fixture.nativeElement.querySelector('[data-test="supply-request-row-expand"]');
+    expect(expandEl).toBeTruthy();
+    expect(expandEl.textContent).toContain('Срочно');
+    expect(expandEl.textContent).toContain('Курьером до склада');
+    expect(expandEl.textContent).toContain('Проверить сертификат перед приёмкой');
+    expect(expandEl.textContent).toContain('40');
+
+    row.click();
+    fixture.detectChanges();
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[data-test="supply-request-row-expand"]')).toBeFalsy();
+  });
+
+  it('does not toggle expand when clicking a row action button', async () => {
+    await setup();
+    const ref = { closed: () => undefined } as unknown as DialogRef<unknown>;
+    dialog.open.mockReturnValue(ref);
+    (fixture.nativeElement.querySelector('[data-test="supply-request-edit"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const row = fixture.nativeElement.querySelector('[data-test="supply-request-row"]') as HTMLElement;
+    expect(row.getAttribute('aria-expanded')).toBe('false');
   });
 });

@@ -4,7 +4,7 @@
 **Очередь промптов:** `docs/agent-checklists/CLAUDE-UX-PAGE-PROMPTS.md`  
 **Правило PO:** один промпт = одна страница; выдавать только по «дай следующий промпт».  
 **Агент:** `agent_id: claude` — сначала AUDIT, потом FIX (находки на той же странице — чинить сразу).  
-**Статус:** #07 audit PASS-FIX — FIX in progress
+**Статус:** #07 DONE (audit PASS-FIX, fixed) · ждёт PO «дай следующий промпт» → #08 warehouses
 
 | # | Route | PROMPT | Status |
 |---|-------|--------|--------|
@@ -15,7 +15,7 @@
 | 04 | `/orders` | `tasks/PROMPT-CLAUDE-UX-04-orders.md` | **DONE** — audit `e010b83d`, FIX `b05802df` |
 | 05 | `/shipping` | `tasks/PROMPT-CLAUDE-UX-05-shipping.md` | **DONE** — audit `5586dc55`, FIX `3c70d95c` (expand-in-row + chip button) |
 | 06 | `/supply` | `tasks/PROMPT-CLAUDE-UX-06-supply.md` | **DONE** — audit `af549dfd`, FIX `a2e1353d` (expand-in-row + chip button) |
-| 07 | `/supply-requests` | `tasks/PROMPT-CLAUDE-UX-07-supply-requests.md` | audit **PASS-FIX** — FIX in progress |
+| 07 | `/supply-requests` | `tasks/PROMPT-CLAUDE-UX-07-supply-requests.md` | **DONE** — audit `f6707094`, FIX applied (expand-in-row + 4× chip button) |
 | 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | READY |
 | 09 | `/storage-items` | `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` | READY |
 | 10 | `/stock-movements` | `tasks/PROMPT-CLAUDE-UX-10-stock-movements.md` | READY |

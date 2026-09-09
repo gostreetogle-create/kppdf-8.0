@@ -53,7 +53,7 @@ export interface SupplyRequestFormDialogData {
             @if (materialId(); as id) {
               <div class="flex items-center justify-between gap-2 pi-input" data-test="supply-request-material-chip">
                 <span class="truncate">{{ materialLabel() }}</span>
-                <button type="button" class="text-xs underline underline-offset-2" (click)="clearMaterial()" data-test="supply-request-material-clear">
+                <button type="button" class="pi-outline-btn" (click)="clearMaterial()" data-test="supply-request-material-clear">
                   Очистить
                 </button>
               </div>
@@ -92,7 +92,7 @@ export interface SupplyRequestFormDialogData {
                       </button>
                       <button
                         type="button"
-                        class="px-2 py-1.5 text-xs text-muted-foreground underline underline-offset-2 shrink-0"
+                        class="pi-outline-btn shrink-0"
                         (click)="openCopyMaterial(m)"
                         [attr.data-test]="'supply-request-material-copy-' + m._id"
                       >

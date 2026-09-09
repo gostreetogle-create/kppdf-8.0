@@ -171,6 +171,12 @@ Nav «Снабжение» теперь два пункта: **«Заявки»*
 - Диалог сам вызывает `PiSupplyRequestsService.create/update` (как
   `StockMovementFormDialogComponent`) — закрывается с сохранённой сущностью,
   страница просто перезагружает список.
+- **TZ-NX-UX-07-supply-requests-FIX:** клик по строке — expand-in-row (registry pattern)
+  с приоритетом / датой оплаты (`paidAt`) / фактическим получено (`receivedQty`) /
+  доставкой (`deliveryNote`) / примечанием (`notes`) read-only — эти поля не показывались
+  нигде, даже в форме редактирования. «Сбросить фильтры» (toolbar + empty-state) и
+  диалоговые «Очистить»/«Копировать и изменить» переведены с underline-текста на
+  `.pi-outline-btn`.
 
 ### Known limitation
 

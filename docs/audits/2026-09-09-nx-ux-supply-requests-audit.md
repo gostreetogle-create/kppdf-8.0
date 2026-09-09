@@ -53,3 +53,28 @@ of underline-styled secondary actions across the page + form dialog). FIX TZ
 (`TZ-NX-UX-07-supply-requests-FIX`) — **claim**: add expand-in-row showing
 paidAt/receivedQty/priority/neededBy/deliveryNote/notes read-only (same pattern as `/orders`/
 `/shipping`/`/supply`); convert the 4 underline actions to `.pi-outline-btn` if free.
+
+## Closeout (FIX applied)
+
+- **P1 (T1) — fixed.** `supply-requests.page.ts` rows now expand-in-row on click/Enter/Space
+  (`tabindex="0"`, `aria-expanded`, same pattern as the 3 sibling pages this wave), showing
+  Приоритет / Нужно к дате / Дата оплаты / Получено (факт) / Доставка / Примечание read-only.
+  Reused the existing `formatSupplyRequestPriority` helper (`registries/data/supply-request-formatters.ts`)
+  instead of inventing a new priority-label mapping. Order-link cell and row-actions cell get
+  `(click)="$event.stopPropagation()"` so they don't also toggle the row. `expandedId` resets on
+  `load()`.
+- **P2 (A1) — fixed, all 4 instances.** Toolbar «Сбросить фильтры» (`supply-requests.page.ts`,
+  both the always-visible and empty-state variants) and the form dialog's «Очистить» /
+  «Копировать и изменить» (`supply-request-form-dialog.component.ts`) all converted from
+  underline text to `.pi-outline-btn` — no size overrides added, consistent with #05/#06's fix
+  approach.
+- **Specs added:** two new cases in `supply-requests.page.spec.ts` — expand shows priority/
+  paidAt/receivedQty/deliveryNote/notes and collapses on second click; clicking a row action does
+  not toggle expand. (The second test needed no `whenStable()` wait — unlike `/supply`'s #06 fix,
+  `openEdit()` here only opens a dialog synchronously and doesn't call `load()` until the dialog
+  actually closes with a saved result, which the mock never triggers.)
+- Gates: `nx build kppdf-web` PASS; `nx test kppdf-web` — 103/103 suites PASS (687 passed = 685
+  baseline + 2 new, 0 regressions), including `supply-requests.page.spec.ts`'s 11 tests and
+  `supply-request-form-dialog.component.spec.ts`'s unmodified 10 tests (the two underline→
+  `.pi-outline-btn` swaps in that file didn't touch any asserted class/selector).
+- `docs/pages/supply.page.md` — NX UX note added to the `TZ-NX-SUPPLY-S3-REQUEST-JOURNAL` § UI section.
