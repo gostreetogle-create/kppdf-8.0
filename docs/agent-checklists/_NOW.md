@@ -1,21 +1,17 @@
 ﻿# NOW
 
-updated_at: 2026-09-08T20:05:00Z
+updated_at: 2026-09-09T06:40:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — WAVE-DOCSTUDIO-S47-S48 DONE (все 3 строки)
-- **Deploy stamp:** `READY` (отдельная команда PO)
+- **Claude:** IDLE — UX #00 kit-overview DONE (audit PASS-EMPTY, FIX N/A); ждёт PO «дай следующий промпт»
+- **Deploy stamp:** READY (отдельная фраза)
 
-## NEXT (один промпт)
+## NEXT
 
-**Claude** → промптов нет
-
-## DONE (ранее)
-
-- Shipping S0–S4 · Supply Excel B · Photos · Supply OPS · DocStudio S47–S48 (re-audit recheck PASS + column-map-parity + photo cells)
+**Claude** → ждёт PO copy-paste `tasks/PROMPT-CLAUDE-UX-01-kit-forms.md`
 
 ## PARK
 
-- Deploy · G12 · desk · wipe
+- Deploy · G12 · desk · wipe · `/production` UX

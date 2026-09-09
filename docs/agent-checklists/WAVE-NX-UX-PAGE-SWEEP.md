@@ -1,0 +1,36 @@
+﻿# WAVE-NX-UX-PAGE-SWEEP — постраничный UX (кнопки / таблицы / select / expand)
+
+**Canon:** `docs/audits/2026-09-09-nx-ux-page-sweep-canon.md`  
+**Очередь промптов:** `docs/agent-checklists/CLAUDE-UX-PAGE-PROMPTS.md`  
+**Правило PO:** один промпт = одна страница; выдавать только по «дай следующий промпт».  
+**Агент:** `agent_id: claude` — сначала AUDIT, потом FIX (находки на той же странице — чинить сразу).  
+**Статус:** #00 DONE (audit PASS-EMPTY) · ждёт PO «дай следующий промпт» → #01 kit-forms
+
+| # | Route | PROMPT | Status |
+|---|-------|--------|--------|
+| 00 | `/kit/overview` | `tasks/PROMPT-CLAUDE-UX-00-kit-overview.md` | **DONE** — audit PASS-EMPTY, FIX N/A |
+| 01 | `/kit/forms` | `tasks/PROMPT-CLAUDE-UX-01-kit-forms.md` | READY |
+| 02 | `/kit/overlays` | `tasks/PROMPT-CLAUDE-UX-02-kit-overlays.md` | READY |
+| 03 | `/registries` | `tasks/PROMPT-CLAUDE-UX-03-registries.md` | READY (gold verify) |
+| 04 | `/orders` | `tasks/PROMPT-CLAUDE-UX-04-orders.md` | READY |
+| 05 | `/shipping` | `tasks/PROMPT-CLAUDE-UX-05-shipping.md` | READY |
+| 06 | `/supply` | `tasks/PROMPT-CLAUDE-UX-06-supply.md` | READY |
+| 07 | `/supply-requests` | `tasks/PROMPT-CLAUDE-UX-07-supply-requests.md` | READY |
+| 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | READY |
+| 09 | `/storage-items` | `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` | READY |
+| 10 | `/stock-movements` | `tasks/PROMPT-CLAUDE-UX-10-stock-movements.md` | READY |
+| 11 | `/production` | — | **SKIP** (Гант ок — PO 2026-09-09, не трогать) |
+| 12 | `/proposals` | `tasks/PROMPT-CLAUDE-UX-12-proposals.md` | READY |
+| 13 | `/counterparties` | `tasks/PROMPT-CLAUDE-UX-13-counterparties.md` | READY |
+| 14 | `/contracts` | `tasks/PROMPT-CLAUDE-UX-14-contracts.md` | READY |
+| 15 | `/studio` | `tasks/PROMPT-CLAUDE-UX-15-studio-list.md` | READY (list/templates only) |
+| 16 | `/admin/devices` | `tasks/PROMPT-CLAUDE-UX-16-admin-devices.md` | READY |
+| 17 | `/admin/roles` | `tasks/PROMPT-CLAUDE-UX-17-admin-roles.md` | READY |
+
+## Порядок
+
+00→10, **пропуск 11**, 12→17. Не параллелить два UX FIX на `kppdf-web`.
+
+## После каждой волны
+
+Cursor сверяет → **ждёт** PO «дай следующий промпт» → один copy-paste.
