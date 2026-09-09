@@ -75,10 +75,17 @@ Group Chip TOC: Устройства | Роли (`ADMIN_TOC_CHIPS`), актив�
 
 | Computed | Назначение |
 |----------|-----------|
-| `cols` | deviceName (sticky), status (Работает/Отключён), role (mono), expiresAt (дата), lastUsedAt (дата) |
+| `cols` | deviceName (sticky), inviteKind (Обычное/Владельца), status (Работает/Отключён), role (mono), expiresAt (дата), lastUsedAt (дата) |
 | rowActions (active) | «Изменить роль», «Изменить срок», «Отключить» |
 
 Статус: `active` → «Работает», `revoked` → «Отключён» (только русские слова).
+
+**NX UX sweep (2026-09-09, `TZ-NX-UX-16-admin-devices-FIX`):** добавлена колонка «Тип»
+(`inviteKind`: `regular` → «Обычное», `owner-device` → «Владельца») — раньше владелец, видящий
+оба вида устройств в одном списке (см. §«Владелец» выше), не мог отличить их визуально. 3 row
+actions переведены с подчёркнутого текста на `.pi-outline-btn` / `.pi-outline-btn-destructive`
+(«Отключить»). Добавлен первый `admin-devices.page.spec.ts` (ранее покрытия не было). См.
+`docs/audits/2026-09-09-nx-ux-admin-devices-audit.md`.
 
 ## TZ reference
 

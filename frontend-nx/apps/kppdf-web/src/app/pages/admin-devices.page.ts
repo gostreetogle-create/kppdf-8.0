@@ -102,7 +102,7 @@ import { DeviceRoleDialogComponent } from './device-role-dialog.component';
               @if (d.status === 'active') {
                 <button
                   type="button"
-                  class="text-xs underline decoration-dotted underline-offset-2 text-muted-foreground hover:text-ink pi-focus-ring"
+                  class="pi-outline-btn"
                   (click)="onEditDevice(d, 'role')"
                   [disabled]="loadingRowId() === d.id"
                   data-test="devices-edit-role"
@@ -111,7 +111,7 @@ import { DeviceRoleDialogComponent } from './device-role-dialog.component';
                 </button>
                 <button
                   type="button"
-                  class="text-xs underline decoration-dotted underline-offset-2 text-muted-foreground hover:text-ink pi-focus-ring"
+                  class="pi-outline-btn"
                   (click)="onEditDevice(d, 'ttl')"
                   [disabled]="loadingRowId() === d.id"
                   data-test="devices-edit-ttl"
@@ -120,7 +120,7 @@ import { DeviceRoleDialogComponent } from './device-role-dialog.component';
                 </button>
                 <button
                   type="button"
-                  class="text-xs text-destructive hover:underline pi-focus-ring"
+                  class="pi-outline-btn pi-outline-btn-destructive"
                   (click)="onRevoke(d)"
                   [disabled]="loadingRowId() === d.id"
                   data-test="devices-revoke"
@@ -154,6 +154,12 @@ export class DevicesAdminPage implements OnInit {
 
   protected readonly cols: ColumnDef<AdminDevice>[] = [
     { key: 'deviceName', label: 'Имя компьютера', sticky: 'left', cellClass: 'text-xs' },
+    {
+      key: 'inviteKind',
+      label: 'Тип',
+      cellClass: 'text-xs',
+      format: (d) => (d.inviteKind === 'owner-device' ? 'Владельца' : 'Обычное'),
+    },
     {
       key: 'status',
       label: 'Состояние',
