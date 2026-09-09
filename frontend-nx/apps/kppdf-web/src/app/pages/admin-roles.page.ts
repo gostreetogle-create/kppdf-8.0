@@ -69,7 +69,7 @@ const PAGE_SIZE = 10;
         <div
           role="alert"
           class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
-          data-testid="roles-admin-error"
+          data-test="roles-admin-error"
         >
           {{ err }}
         </div>
@@ -101,18 +101,30 @@ const PAGE_SIZE = 10;
                     Загрузка…
                   </span>
                 }
-                <app-pi-row-actions
-                  [row]="r"
-                  [showEdit]="caps.hasAny(['role:write'])"
-                  [showDelete]="caps.hasAny(['role:admin'])"
-                  [loading]="loadingRowId() === r.id"
-                  editLabel="Редактировать"
-                  dataTestEdit="roles-admin-edit"
-                  deleteLabel="Удалить"
-                  dataTestDelete="roles-admin-delete"
-                  (edit)="onEdit($event)"
-                  (delete)="onDelete($event)"
-                />
+                @if (caps.hasAny(['role:write']) || caps.hasAny(['role:admin'])) {
+                  <app-pi-row-actions
+                    [row]="r"
+                    [showEdit]="caps.hasAny(['role:write'])"
+                    [showDelete]="caps.hasAny(['role:admin'])"
+                    [loading]="loadingRowId() === r.id"
+                    editLabel="Редактировать"
+                    dataTestEdit="roles-admin-edit"
+                    deleteLabel="Удалить"
+                    dataTestDelete="roles-admin-delete"
+                    (edit)="onEdit($event)"
+                    (delete)="onDelete($event)"
+                  />
+                } @else {
+                  <app-pi-button
+                    variant="ghost"
+                    size="sm"
+                    type="button"
+                    (click)="onView(r)"
+                    data-test="roles-admin-view"
+                  >
+                    {{ copy.viewLabel }}
+                  </app-pi-button>
+                }
               </div>
             } @else {
               <div class="flex items-center justify-end gap-2">
@@ -278,7 +290,9 @@ export class RolesAdminPage implements OnInit {
     });
   }
 
-  // ── View system (read-only) ──
+  // ── View (read-only) — system roles always, or custom roles when the
+  //    viewer has neither role:write nor role:admin (T1 fix: previously
+  //    such a viewer had no way to see a custom role's detail at all).
   protected onView(r: ClientRole): void {
     this.dialog.open<RoleFormResult>(RoleFormDialogComponent, {
       data: {
@@ -290,7 +304,7 @@ export class RolesAdminPage implements OnInit {
           description: r.description,
           permissions: r.permissions,
           pages: r.pages ?? [],
-          isSystem: true,
+          isSystem: r.isSystem,
         },
       } satisfies RoleFormData,
       parentDestroyRef: this.destroyRef,

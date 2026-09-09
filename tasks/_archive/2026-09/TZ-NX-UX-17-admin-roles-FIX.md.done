@@ -1,0 +1,72 @@
+﻿# TZ-NX-UX-17-admin-roles-FIX: UX parity — `/admin/roles`
+
+**РОЛЬ АГЕНТА:** Executor (frontend-nx) — claude  
+**ЗАВИСИМОСТИ:** `TZ-NX-UX-17-admin-roles-AUDIT` DONE + verdict PASS-FIX (если PASS-EMPTY — skip, archive N/A)  
+**LAYER:** 3 · **SIZE:** L  
+**PAGES:** `/admin/roles`  
+**PAGE_DOCS:** `(admin roles)`
+
+**CONFLICT KEYS:**  
+`frontend-nx/apps/kppdf-web/src/app/pages/admin-roles.page.ts` ;  
+`docs/pages/` relevant page.md ;  
+`docs/audits/2026-09-09-nx-ux-admin-roles-audit.md` (closeout) ;  
+`docs/agent-checklists/WAVE-NX-UX-PAGE-SWEEP.md` ;  
+`docs/agent-checklists/_NOW.md`
+
+IMPLICIT CONFLICT: nx build kppdf-web
+
+### Preflight Check Output
+- **Context read:** page audit `2026-09-09-nx-ux-admin-roles-audit.md`; canon sweep; registries gold
+- **Key Constraints:** Only smells listed P0/P1 (+ P2 if free). One route. Reuse Pi-* / registry patterns. If audit missed a clear smell while fixing — **fix it in the same TZ** and note in closeout.
+- **Planned Deliverable:** buttons/labels/selects/expand/table parity with gold
+- **Validation Path:** focused jest; nx build last; visual note in Executor report
+
+---
+
+## ЧТО ДЕЛАТЬ
+
+1. Implement P0 then P1 from the audit (expand-in-row if table registry-like; `pi-button`; labeled filters; honest empty/error).
+2. If during fix you find an extra smell on **this same page** — fix it and append to audit closeout (PO разрешил).
+3. Do **not** invent new BE fields or second write-paths.
+4. Specs for expand/actions where behaviour changes.
+5. page.md NX UX note; WAVE row 17 FIX DONE; `_NOW` Claude IDLE.
+
+## НЕ ИЗМЕНЯТЬ
+Other routes; BE schemas; DocStudio A4 geometry; shipping/money ledger; wipe/deploy.
+
+## КРИТЕРИИ ПРИЁМКИ
+1. All P0/P1 from audit closed or explicitly DEFERRED with reason.
+2. No underline-as-primary-action left for row tools (use pi-button).
+3. Expand/detail pattern matches registries where applicable.
+4. `nx build kppdf-web` PASS last; focused tests PASS.
+
+---
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-09-09
+closed_by: claude
+verification:
+  - acceptance criteria: PASS (both P2 findings from audit fixed, none deferred)
+  - typecheck: PASS (nx build kppdf-web = full AOT compile, exit 0)
+  - tests: PASS (nx test kppdf-web --testPathPattern=admin-roles → 105/105 suites, 704 passed = 700 baseline + 4 new, 0 regressions)
+  - lint: N/A (no dedicated lint target run separately; nx build AOT catches template errors)
+  - checklist: ADDED (docs/agent-checklists/TZ-NX-UX-17-admin-roles-FIX.md)
+  - progress.md: N/A (redirect file; status tracked in _NOW.md + this archive)
+  - status synchronization: PASS (WAVE row 17 -> DONE; this is the final stage — continuous
+    checklist moves to COMPLETE and _NOW Claude -> IDLE in the immediately-following docs-sync commit)
+
+Result: frontend-nx/apps/kppdf-web/src/app/pages/admin-roles.page.ts fixed
+— custom (non-system) roles now get a read-only "Смотреть" fallback
+(reusing the existing onView() method) when the viewer has neither
+role:write nor role:admin, mirroring the system-role branch's existing
+fallback. Reachability caveat: route is owner-only and the owner virtually
+always gets the CapabilitiesService admin shortcut, so this was fixed as
+cheap defensive parity, not a live complaint. Found-while-fixing: onView()
+hardcoded isSystem:true regardless of the real role — harmless today (the
+dialog never reads that field) but wrong for the new call site; changed to
+the real r.isSystem. Also fixed the page's one data-testid (should be
+data-test, matching every other selector on the page). First-ever spec
+file added (4 tests) since none existed before. docs/pages/
+admin-roles.page.md NX UX note added. No BE/other-route changes. nx build
+kppdf-web PASS last. FINAL STAGE of the continuous sweep queue.
