@@ -23,7 +23,7 @@
 | 11 | `/production` | — | **SKIP** (Гант ок — PO 2026-09-09, не трогать) |
 | 12 | `/proposals` | `tasks/PROMPT-CLAUDE-UX-12-proposals.md` | **DONE** — `d91dd517` (counterparty subtitle + 3× underline→.pi-outline-btn) |
 | 13 | `/counterparties` | `tasks/PROMPT-CLAUDE-UX-13-counterparties.md` | **DONE** — `47e2d199` (full name subtitle) |
-| 14 | `/contracts` | `tasks/PROMPT-CLAUDE-UX-14-contracts.md` | READY |
+| 14 | `/contracts` | `tasks/PROMPT-CLAUDE-UX-14-contracts.md` | **DONE** — `<pending SHA>` (detail card: attachment status + signed/expires + notes) |
 | 15 | `/studio` | `tasks/PROMPT-CLAUDE-UX-15-studio-list.md` | READY (list/templates only) |
 | 16 | `/admin/devices` | `tasks/PROMPT-CLAUDE-UX-16-admin-devices.md` | READY |
 | 17 | `/admin/roles` | `tasks/PROMPT-CLAUDE-UX-17-admin-roles.md` | READY |

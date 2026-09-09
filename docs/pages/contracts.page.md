@@ -48,6 +48,11 @@
 
 - Список: Номер · Заказчик (populate `customerId.name`, либо raw id как есть, если сервер вернул строку) · Статус (RU lifecycle) · Сумма · «Карточка» → `/contracts/:id`.
 - Карточка: номер, статус (banner), Заказчик, КП (`proposalId.number` если populate, иначе «Без КП»), позиции (имя×кол-во·сумма), общая сумма. Без кнопок sign/attach/activate/edit — chrome без CTA.
+- **NX UX sweep (2026-09-09, `TZ-NX-UX-14-contracts-FIX`):** карточка теперь также показывает
+  Статус вложения (`contractStatus` — см. таблицу выше, ранее нигде не отображался несмотря на
+  явное предупреждение "не путать с status"), Подписан (`signedAt`), Действует до (`expiresAt`) и
+  Примечания (`notes`, если есть) — все read-only, без новых write-действий (attach/sign
+  по-прежнему вне scope D4). См. `docs/audits/2026-09-09-nx-ux-contracts-audit.md`.
 - Chrome: тот же `PiGroupWorkspaceComponent`/`DEALS_TOC_CHIPS` (D1) — чип «Договоры» больше не `disabled` (был зарезервирован в D1, флаг снят в D4).
 - **known_limitation:** создание/редактирование/подпись/прикрепление файла договора остаются backend-only (нет UI) — оператор пока заводит договоры вне NX (legacy реестр выше или Swagger/API напрямую), пока не появится отдельная TZ на юр.workflow.
 

@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { PiContractsService, type Contract } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
-import { contractStatusLabel } from './contract-status';
+import { contractAttachmentStatusLabel, contractStatusLabel } from './contract-status';
 
 /** Thin read-only card (TZ-NX-DEALS-D4) — no sign/attach/activate UI, see page.md known_limitation. */
 @Component({
@@ -58,6 +58,30 @@ import { contractStatusLabel } from './contract-status';
                 }
               </div>
             </div>
+            <div>
+              <div class="text-xs text-muted-foreground">Статус вложения</div>
+              <div class="font-medium" data-test="contract-attachment-status">
+                {{ attachmentStatusLabel(contract.contractStatus) }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-muted-foreground">Подписан</div>
+              <div class="font-medium" data-test="contract-signed-at">
+                {{ contract.signedAt ? formatDate(contract.signedAt) : '—' }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-muted-foreground">Действует до</div>
+              <div class="font-medium" data-test="contract-expires-at">
+                {{ contract.expiresAt ? formatDate(contract.expiresAt) : '—' }}
+              </div>
+            </div>
+            @if (contract.notes) {
+              <div class="col-span-2">
+                <div class="text-xs text-muted-foreground">Примечания</div>
+                <div class="font-medium" data-test="contract-notes">{{ contract.notes }}</div>
+              </div>
+            }
           </div>
 
           <section>
@@ -127,6 +151,17 @@ export class ContractDetailPage implements OnInit {
     const p = contract.proposalId;
     if (!p || typeof p === 'string') return null;
     return p.number ?? null;
+  }
+
+  attachmentStatusLabel(status: Contract['contractStatus']): string {
+    return contractAttachmentStatusLabel(status);
+  }
+
+  formatDate(value: string): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? '—'
+      : date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   private id(): string {

@@ -1,0 +1,61 @@
+﻿# TZ-NX-UX-14-contracts-AUDIT: UX smell audit — `/contracts`
+
+**РОЛЬ АГЕНТА:** Executor auditor — claude  
+**ЗАВИСИМОСТИ:** предыдущая волна UX закрыта (или первая)  
+**LAYER:** 4 (docs) · **SIZE:** S  
+**PAGES:** `/contracts`  
+**PAGE_DOCS:** `(contracts)`
+
+**CONFLICT KEYS:**  
+`docs/audits/2026-09-09-nx-ux-contracts-audit.md` (create) ;  
+`docs/agent-checklists/WAVE-NX-UX-PAGE-SWEEP.md` (row 14)
+
+### Preflight Check Output
+- **Context read:** `docs/audits/2026-09-09-nx-ux-page-sweep-canon.md`; registry gold `registry-detail-panel.component.ts`; page sources under `frontend-nx/.../pages/contracts/**`
+- **Key Constraints:** **NO product code** in this TZ. One page only: `/contracts`.
+- **Planned Deliverable:** smell audit markdown with T1–C1 checklist + file:line
+- **Validation Path:** audit file PASS/EMPTY; then FIX TZ may claim
+
+**Note:** Contracts list+detail thin
+
+---
+
+## ЧТО ДЕЛАТЬ
+
+1. Открой код страницы `/contracts` (не по памяти). При живом стенде — глазом UI.
+2. Пройди чеклист T1–C1 из `docs/audits/2026-09-09-nx-ux-page-sweep-canon.md`.
+3. Сравни с `/registries` expand + `pi-button` toolbar.
+4. Напиши `docs/audits/2026-09-09-nx-ux-contracts-audit.md`:
+   - таблица smells (id · факт · path:line · severity P0/P1/P2)
+   - что УЖЕ ок (не чинить)
+   - verdict: `PASS-EMPTY` (нет P0/P1) **или** `PASS-FIX` (есть работа для FIX)
+5. Обнови WAVE row 14 audit status. Archive. **Не** правь product code.
+
+## НЕ ИЗМЕНЯТЬ
+`frontend-nx/**/*.ts` app logic; другие routes; BE; A4 studio geometry.
+
+## КРИТЕРИИ ПРИЁМКИ
+1. Audit file exists with every checklist row marked OK/FAIL/N/A.
+2. No product code in commit.
+3. If PASS-EMPTY — FIX TZ = skip (mark WAVE FIX N/A DONE).
+
+---
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-09-09
+closed_by: claude
+verification:
+  - acceptance criteria: PASS (audit file created, all T1-C1 rows marked OK/FAIL/N/A, verdict PASS-FIX)
+  - typecheck: N/A (docs-only, no product code changed)
+  - tests: N/A (docs-only)
+  - lint: N/A (docs-only)
+  - checklist: ADDED (docs/agent-checklists/TZ-NX-UX-14-contracts-FIX.md, combined AUDIT+FIX record)
+  - progress.md: N/A (redirect file; status tracked in _NOW.md + this archive)
+  - status synchronization: PASS (WAVE row 14 -> audit PASS-FIX, FIX claimed next)
+
+Result: docs/audits/2026-09-09-nx-ux-contracts-audit.md — verdict PASS-FIX
+(1xP1: T1 contractStatus/signedAt/expiresAt/notes all invisible on the
+detail card). No product code touched in this AUDIT TZ. FIX TZ
+(TZ-NX-UX-14-contracts-FIX) claimed next per PROMPT queue rule (PASS-FIX
+!= skip).

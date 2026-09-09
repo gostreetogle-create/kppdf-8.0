@@ -60,6 +60,37 @@ describe('ContractDetailPage (TZ-NX-DEALS-D4-CONTRACTS-THIN)', () => {
     expect(root.querySelector('[data-test="contract-total"]')?.textContent).toContain('2000');
   });
 
+  it('shows attachment status, signed/expires dates and notes when present', async () => {
+    await setup({
+      ok: true,
+      data: {
+        ...contract,
+        contractStatus: 'file_attached',
+        signedAt: '2026-08-01T00:00:00.000Z',
+        expiresAt: '2027-08-01T00:00:00.000Z',
+        notes: 'Особые условия поставки',
+      },
+    });
+
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('[data-test="contract-attachment-status"]')?.textContent).toContain(
+      'Файл прикреплён',
+    );
+    expect(root.querySelector('[data-test="contract-signed-at"]')?.textContent).toContain('01.08.2026');
+    expect(root.querySelector('[data-test="contract-expires-at"]')?.textContent).toContain('01.08.2027');
+    expect(root.querySelector('[data-test="contract-notes"]')?.textContent).toContain('Особые условия поставки');
+  });
+
+  it('shows dashes for attachment status/dates and hides notes when absent', async () => {
+    await setup({ ok: true, data: contract });
+
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('[data-test="contract-attachment-status"]')?.textContent).toContain('Нет файла');
+    expect(root.querySelector('[data-test="contract-signed-at"]')?.textContent?.trim()).toBe('—');
+    expect(root.querySelector('[data-test="contract-expires-at"]')?.textContent?.trim()).toBe('—');
+    expect(root.querySelector('[data-test="contract-notes"]')).toBeNull();
+  });
+
   it('shows «Без КП» when proposalId is absent', async () => {
     await setup({ ok: true, data: { ...contract, proposalId: undefined } });
     expect(fixture.nativeElement.textContent).toContain('Без КП');
