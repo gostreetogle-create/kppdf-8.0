@@ -1,5 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import {
+  ActivatedRoute,
+  Router,
+  provideRouter,
+  convertToParamMap,
+} from '@angular/router';
 import { signal } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
 import {
@@ -23,6 +28,7 @@ describe('StorageItemsPage (NX W2)', () => {
   let materialsApi: { getById: jest.Mock };
   let dialog: { open: jest.Mock };
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let navigateSpy: jest.SpyInstance;
 
   const warehouses: Warehouse[] = [
     { _id: 'w1', name: 'Металл', type: 'main', isActive: true },
@@ -75,6 +81,7 @@ describe('StorageItemsPage (NX W2)', () => {
     await TestBed.configureTestingModule({
       imports: [StorageItemsPage],
       providers: [
+        provideRouter([]),
         { provide: ActivatedRoute, useValue: { queryParamMap: queryParams$ } },
         { provide: PiStorageItemsService, useValue: storageApi },
         { provide: PiWarehousesService, useValue: warehousesApi },
@@ -82,6 +89,10 @@ describe('StorageItemsPage (NX W2)', () => {
         { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
+
+    navigateSpy = jest
+      .spyOn(TestBed.inject(Router), 'navigate')
+      .mockResolvedValue(true);
 
     fixture = TestBed.createComponent(StorageItemsPage);
     fixture.detectChanges();
@@ -103,9 +114,27 @@ describe('StorageItemsPage (NX W2)', () => {
     });
     expect(materialsApi.getById).toHaveBeenCalledWith('m1');
     expect(
-      fixture.nativeElement.querySelector('[data-test="material-filter-label"]')
+      fixture.nativeElement.querySelector('[data-test="material-filter-chip"]')
         ?.textContent,
     ).toContain('Лист стальной');
+  });
+
+  it('clears the material filter via the chip reset button', async () => {
+    await setup({ materialId: 'm1' });
+
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="material-filter-clear"]',
+      ) as HTMLButtonElement
+    ).click();
+
+    expect(navigateSpy).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: { materialId: null },
+        queryParamsHandling: 'merge',
+      }),
+    );
   });
 
   it('renders all balance columns and populated product data', async () => {
@@ -216,5 +245,51 @@ describe('StorageItemsPage (NX W2)', () => {
         data: expect.objectContaining({ materialId: 'm1', warehouses }),
       }),
     );
+  });
+
+  it('expands a row to show unit/sku/status and collapses on second click', async () => {
+    await setup({}, [
+      item({
+        materialId: { _id: 'm1', name: 'Лист стальной', sku: 'SKU-1', unit: 'кг' },
+      }),
+    ]);
+    const row = fixture.nativeElement.querySelector(
+      '[data-test="storage-row"]',
+    ) as HTMLElement;
+
+    row.click();
+    fixture.detectChanges();
+    let expand = fixture.nativeElement.querySelector(
+      '[data-test="storage-row-expand"]',
+    );
+    expect(expand?.textContent).toContain('кг');
+    expect(expand?.textContent).toContain('SKU-1');
+    expect(expand?.textContent).toContain('Активна');
+
+    row.click();
+    fixture.detectChanges();
+    expand = fixture.nativeElement.querySelector(
+      '[data-test="storage-row-expand"]',
+    );
+    expect(expand).toBeNull();
+  });
+
+  it('does not toggle expand when clicking the row action', async () => {
+    await setup();
+    const ref = {
+      closed: signal<StorageItem | undefined>(undefined),
+    } as unknown as DialogRef<StorageItem | undefined>;
+    dialog.open.mockReturnValue(ref);
+
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="adjust-item"]',
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-test="storage-row-expand"]'),
+    ).toBeNull();
   });
 });

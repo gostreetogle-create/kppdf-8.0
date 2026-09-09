@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   PiMaterialsService,
@@ -16,6 +16,8 @@ import {
   PiWarehousesService,
   storageItemMaterialId,
   storageItemName,
+  storageItemSku,
+  storageItemUnit,
   storageItemWarehouseName,
   type StorageItem,
   type Warehouse,
@@ -86,10 +88,18 @@ import {
 
         @if (materialName()) {
           <span
-            class="text-sm text-muted-foreground"
-            data-test="material-filter-label"
+            class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-sm bg-paper-2 border hairline"
+            data-test="material-filter-chip"
           >
-            Материал: {{ materialName() }}
+            <span>Материал: {{ materialName() }}</span>
+            <button
+              type="button"
+              class="pi-outline-btn"
+              (click)="clearMaterialFilter()"
+              data-test="material-filter-clear"
+            >
+              Сбросить
+            </button>
           </span>
         }
 
@@ -143,9 +153,14 @@ import {
             </div>
             @for (row of rows(); track row._id) {
               <div
-                class="grid grid-cols-[minmax(0,1.7fr)_minmax(8rem,0.9fr)_minmax(5.5rem,0.55fr)_minmax(5.5rem,0.55fr)_minmax(5.5rem,0.55fr)_minmax(6rem,0.6fr)_minmax(10rem,0.8fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0"
+                class="grid grid-cols-[minmax(0,1.7fr)_minmax(8rem,0.9fr)_minmax(5.5rem,0.55fr)_minmax(5.5rem,0.55fr)_minmax(5.5rem,0.55fr)_minmax(6rem,0.6fr)_minmax(10rem,0.8fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0 cursor-pointer pi-focus-ring"
                 role="row"
                 data-test="storage-row"
+                tabindex="0"
+                [attr.aria-expanded]="expandedId() === row._id"
+                (click)="toggleExpand(row._id)"
+                (keydown.enter)="toggleExpand(row._id)"
+                (keydown.space)="onRowSpace($event, row._id)"
               >
                 <div role="cell" class="min-w-0">
                   <div class="font-medium truncate">{{ itemName(row) }}</div>
@@ -178,7 +193,11 @@ import {
                 <div class="text-sm truncate" role="cell">
                   {{ row.zoneName || '—' }}
                 </div>
-                <div class="flex items-center gap-2 justify-end" role="cell">
+                <div
+                  class="flex items-center gap-2 justify-end"
+                  role="cell"
+                  (click)="$event.stopPropagation()"
+                >
                   <app-pi-button
                     variant="secondary"
                     type="button"
@@ -189,6 +208,29 @@ import {
                   </app-pi-button>
                 </div>
               </div>
+              @if (expandedId() === row._id) {
+                <div
+                  class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2"
+                  data-test="storage-row-expand"
+                >
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <div class="pi-label text-muted-foreground">Единица</div>
+                      <div class="text-sm">{{ itemUnit(row) }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Артикул</div>
+                      <div class="text-sm">{{ itemSku(row) }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Статус</div>
+                      <div class="text-sm">
+                        {{ row.isActive ? 'Активна' : 'Неактивна' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
             }
           </div>
         </div>
@@ -204,11 +246,13 @@ export class StorageItemsPage {
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly warehouseId = signal('');
   readonly lowStock = signal(false);
   readonly materialId = signal('');
   readonly materialName = signal('');
+  readonly expandedId = signal<string | null>(null);
 
   readonly warehouses = signal<readonly Warehouse[]>([]);
   private readonly allRows = signal<readonly StorageItem[]>([]);
@@ -246,6 +290,23 @@ export class StorageItemsPage {
     this.lowStock.set((event.target as HTMLInputElement).checked);
   }
 
+  clearMaterialFilter(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { materialId: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  toggleExpand(id: string): void {
+    this.expandedId.update((current) => (current === id ? null : id));
+  }
+
+  onRowSpace(event: Event, id: string): void {
+    event.preventDefault();
+    this.toggleExpand(id);
+  }
+
   itemName(item: StorageItem): string {
     return storageItemName(item);
   }
@@ -256,6 +317,14 @@ export class StorageItemsPage {
 
   itemMaterialId(item: StorageItem): string | null {
     return storageItemMaterialId(item);
+  }
+
+  itemUnit(item: StorageItem): string {
+    return storageItemUnit(item);
+  }
+
+  itemSku(item: StorageItem): string {
+    return storageItemSku(item);
   }
 
   openPutOnStock(): void {
@@ -296,6 +365,7 @@ export class StorageItemsPage {
     const version = ++this.loadVersion;
     this.status.set('loading');
     this.error.set('');
+    this.expandedId.set(null);
     const result = await firstValueFrom(
       this.storageApi.list({
         warehouseId: this.warehouseId() || undefined,

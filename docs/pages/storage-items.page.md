@@ -39,6 +39,15 @@ The balances table renders these fields for every row:
 5. **Минимум** — `minQuantity`.
 6. **Зона** — read-only `zoneName` when present.
 
+### NX UX sweep note (2026-09-09, `TZ-NX-UX-09-storage-items-FIX`)
+
+Rows expand-in-row on click/Enter/Space (same pattern as `/orders`, `/shipping`, `/supply`,
+`/supply-requests`), revealing **Единица** (`storageItemUnit()`), **Артикул**
+(`storageItemSku()`), and **Статус** (`isActive`) — none of which were visible anywhere before
+this fix. The `materialId` deep-link filter now renders as a dismissible chip
+(`material-filter-chip` / `material-filter-clear`), matching `/shipping`'s
+`clearOrderFilter`. See `docs/audits/2026-09-09-nx-ux-storage-items-audit.md`.
+
 ## Write actions
 
 ### Поставить на склад

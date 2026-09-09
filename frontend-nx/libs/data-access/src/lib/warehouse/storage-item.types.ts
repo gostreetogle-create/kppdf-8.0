@@ -65,3 +65,19 @@ export function storageItemMaterialId(item: StorageItem): string | null {
   if (typeof item.materialId === 'string') return item.materialId;
   return item.materialId?._id ?? null;
 }
+
+export function storageItemUnit(item: StorageItem): string {
+  const product =
+    typeof item.productId === 'object' ? item.productId : item.product;
+  const material =
+    typeof item.materialId === 'object' ? item.materialId : item.material;
+  return product?.unit ?? material?.unit ?? '—';
+}
+
+export function storageItemSku(item: StorageItem): string {
+  const product =
+    typeof item.productId === 'object' ? item.productId : item.product;
+  const material =
+    typeof item.materialId === 'object' ? item.materialId : item.material;
+  return product?.sku ?? material?.sku ?? '—';
+}
