@@ -1,16 +1,16 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T19:52:00Z
+updated_at: 2026-09-09T20:02:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** RUNNING — continuous UX sweep, 16 admin-devices DONE `aaad4cb2`, сейчас 17 admin-roles (последняя стадия очереди)
+- **Claude:** IDLE — continuous UX sweep COMPLETE (08b, 09, 10, 12–17 DONE; 11 SKIP). Живой чеклист `docs/agent-checklists/UX-SWEEP-CONTINUOUS-CHECKLIST.md` status: COMPLETE.
 - **Deploy stamp:** READY
 
 ## NEXT
 
-**Claude** → continuous, без «продолжать?»: 17 (последняя). Живой чеклист `docs/agent-checklists/UX-SWEEP-CONTINUOUS-CHECKLIST.md`.
+Нет активной задачи — sweep закрыт. PO решает следующий шаг.
 
 ## DONE
 
@@ -24,6 +24,7 @@ updated_at: 2026-09-09T19:52:00Z
 - UX #14 contracts — detail card attachment status + signed/expires + notes, audit `docs/audits/2026-09-09-nx-ux-contracts-audit.md`, `19ff92fc`
 - UX #15 studio-list — RU status label + pi-icon-button fix (list/templates only), audit `docs/audits/2026-09-09-nx-ux-studio-list-audit.md`, `99b0197b`
 - UX #16 admin-devices — inviteKind column + row actions → pi-outline-btn, audit `docs/audits/2026-09-09-nx-ux-admin-devices-audit.md`, `aaad4cb2`
+- UX #17 admin-roles — custom-role Смотреть fallback + data-test fix, audit `docs/audits/2026-09-09-nx-ux-admin-roles-audit.md`, `cb389b98` — **final stage, queue COMPLETE**
 
 ## PARK
 

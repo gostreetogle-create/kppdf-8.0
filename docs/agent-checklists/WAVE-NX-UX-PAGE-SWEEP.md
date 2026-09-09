@@ -26,7 +26,7 @@
 | 14 | `/contracts` | `tasks/PROMPT-CLAUDE-UX-14-contracts.md` | **DONE** — `19ff92fc` (detail card: attachment status + signed/expires + notes) |
 | 15 | `/studio` | `tasks/PROMPT-CLAUDE-UX-15-studio-list.md` | **DONE** — `99b0197b` (status label RU + pi-icon-button→pi-icon-btn, list/templates only) |
 | 16 | `/admin/devices` | `tasks/PROMPT-CLAUDE-UX-16-admin-devices.md` | **DONE** — `aaad4cb2` (inviteKind column + row actions → pi-outline-btn) |
-| 17 | `/admin/roles` | `tasks/PROMPT-CLAUDE-UX-17-admin-roles.md` | **DONE** — `<pending SHA>` (custom-role Смотреть fallback + data-test fix) |
+| 17 | `/admin/roles` | `tasks/PROMPT-CLAUDE-UX-17-admin-roles.md` | **DONE** — `cb389b98` (custom-role Смотреть fallback + data-test fix) |
 
 ## Порядок
 
