@@ -15,6 +15,10 @@
 Тонкий список + диалог create/edit (`counterparties-list.page.ts` + `counterparty-form-dialog.component.ts`) — **не** портирует legacy FullEditor kind C (секции Основные/Реквизиты/Банк/Подписант, справочник ролей). Поля формы: Название, ИНН, Телефон, Email. `roles` не выбирается в UI — всегда `['customer']` (create) или сохраняется как есть у существующей записи (edit), тот же дефолт, что у backend `quickCreateParty`.
 
 - Список: Название (`shortName` приоритетнее `name`) · ИНН (+ «(временный)» при `innIsStub`) · Контакт (телефон/email) · действия (Изменить/Удалить).
+- **NX UX sweep (2026-09-09, `TZ-NX-UX-13-counterparties-FIX`):** когда `shortName` задан и
+  отличается от `name`, полное юридическое название теперь показывается подписью под коротким
+  (`counterparty-full-name`) — раньше было нигде не видно. Приоритет `shortName` для основной
+  строки не изменился. См. `docs/audits/2026-09-09-nx-ux-counterparties-audit.md`.
 - Create/Edit — один диалог `CounterpartyFormDialogComponent`; POST/PATCH через `PiCounterpartiesService` (новые методы `create`/`update`/`remove`, добавлены в D3 — раньше клиент был read-only list/getById).
 - Delete — `AlertDialogComponent` confirm → `DELETE /counterparties/:id` (soft delete на сервере, как в legacy).
 - Nav: пункт «Заказчики» в категории «Клиенты» (`nav-categories.ts`) уже существовал, но был скрыт фильтром «route не существует» — с этим TZ роут появился, пункт нав появляется автоматически (без правок nav-categories.ts).

@@ -69,7 +69,14 @@ import { CounterpartyFormDialogComponent, type CounterpartyFormDialogData } from
               role="row"
               data-test="counterparty-row"
             >
-              <span class="font-medium truncate" role="cell">{{ row.shortName || row.name }}</span>
+              <span role="cell" class="min-w-0">
+                <span class="font-medium truncate block">{{ row.shortName || row.name }}</span>
+                @if (row.shortName && row.shortName !== row.name) {
+                  <span class="text-xs text-muted-foreground truncate block" data-test="counterparty-full-name">
+                    {{ row.name }}
+                  </span>
+                }
+              </span>
               <span class="text-sm" role="cell">{{ row.inn }}{{ row.innIsStub ? ' (временный)' : '' }}</span>
               <span class="text-sm text-muted-foreground truncate" role="cell">{{ contactLabel(row) }}</span>
               <div class="flex items-center gap-2 justify-end" role="cell">

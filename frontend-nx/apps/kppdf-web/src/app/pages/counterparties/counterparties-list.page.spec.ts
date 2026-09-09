@@ -60,6 +60,17 @@ describe('CounterpartiesListPage (TZ-NX-DEALS-D3-COUNTERPARTIES)', () => {
     expect(rowEls[1].textContent).toContain('(временный)');
   });
 
+  it('shows the full legal name as a subtitle when it differs from the short name', async () => {
+    await setup();
+    const rowEls = fixture.nativeElement.querySelectorAll('[data-test="counterparty-row"]');
+
+    // cp-1 has no shortName — no subtitle expected.
+    expect(rowEls[0].querySelector('[data-test="counterparty-full-name"]')).toBeNull();
+    // cp-2 has shortName "Бета" differing from name "ООО Бета" — subtitle expected.
+    const subtitle = rowEls[1].querySelector('[data-test="counterparty-full-name"]');
+    expect(subtitle?.textContent).toContain('ООО Бета');
+  });
+
   it('renders an honest empty state', async () => {
     await setup({ ok: true, data: { items: [], total: 0, page: 1, limit: 200 } });
     expect(fixture.nativeElement.querySelector('[data-test="counterparties-empty"]')).toBeTruthy();

@@ -1,0 +1,66 @@
+﻿# TZ-NX-UX-13-counterparties-FIX: UX parity — `/counterparties`
+
+**РОЛЬ АГЕНТА:** Executor (frontend-nx) — claude  
+**ЗАВИСИМОСТИ:** `TZ-NX-UX-13-counterparties-AUDIT` DONE + verdict PASS-FIX (если PASS-EMPTY — skip, archive N/A)  
+**LAYER:** 3 · **SIZE:** L  
+**PAGES:** `/counterparties`  
+**PAGE_DOCS:** `counterparties.page.md`
+
+**CONFLICT KEYS:**  
+`frontend-nx/apps/kppdf-web/src/app/pages/counterparties/**` ;  
+`docs/pages/` relevant page.md ;  
+`docs/audits/2026-09-09-nx-ux-counterparties-audit.md` (closeout) ;  
+`docs/agent-checklists/WAVE-NX-UX-PAGE-SWEEP.md` ;  
+`docs/agent-checklists/_NOW.md`
+
+IMPLICIT CONFLICT: nx build kppdf-web
+
+### Preflight Check Output
+- **Context read:** page audit `2026-09-09-nx-ux-counterparties-audit.md`; canon sweep; registries gold
+- **Key Constraints:** Only smells listed P0/P1 (+ P2 if free). One route. Reuse Pi-* / registry patterns. If audit missed a clear smell while fixing — **fix it in the same TZ** and note in closeout.
+- **Planned Deliverable:** buttons/labels/selects/expand/table parity with gold
+- **Validation Path:** focused jest; nx build last; visual note in Executor report
+
+---
+
+## ЧТО ДЕЛАТЬ
+
+1. Implement P0 then P1 from the audit (expand-in-row if table registry-like; `pi-button`; labeled filters; honest empty/error).
+2. If during fix you find an extra smell on **this same page** — fix it and append to audit closeout (PO разрешил).
+3. Do **not** invent new BE fields or second write-paths.
+4. Specs for expand/actions where behaviour changes.
+5. page.md NX UX note; WAVE row 13 FIX DONE; `_NOW` Claude IDLE.
+
+## НЕ ИЗМЕНЯТЬ
+Other routes; BE schemas; DocStudio A4 geometry; shipping/money ledger; wipe/deploy.
+
+## КРИТЕРИИ ПРИЁМКИ
+1. All P0/P1 from audit closed or explicitly DEFERRED with reason.
+2. No underline-as-primary-action left for row tools (use pi-button).
+3. Expand/detail pattern matches registries where applicable.
+4. `nx build kppdf-web` PASS last; focused tests PASS.
+
+---
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-09-09
+closed_by: claude
+verification:
+  - acceptance criteria: PASS (T1 from audit fixed, none deferred)
+  - typecheck: PASS (nx build kppdf-web = full AOT compile, exit 0)
+  - tests: PASS (nx test kppdf-web --testPathPattern=counterparties-list → 103/103 suites, 694 passed = 693 baseline + 1 new, 0 regressions)
+  - lint: N/A (no dedicated lint target run separately; nx build AOT catches template errors)
+  - checklist: ADDED (docs/agent-checklists/TZ-NX-UX-13-counterparties-FIX.md)
+  - progress.md: N/A (redirect file; status tracked in _NOW.md + this archive)
+  - status synchronization: PASS (WAVE row 13 -> DONE)
+
+Result: frontend-nx/apps/kppdf-web/src/app/pages/counterparties/counterparties-list.page.ts
+fixed — row now shows the full legal name as a subtitle whenever shortName
+differs (previously invisible everywhere). shortName's documented primary-
+label priority unchanged. An isActive badge was considered and explicitly
+rejected after confirming via the backend that every listed counterparty
+always has isActive=true (soft-delete uses a separate deletedAt field,
+filtered out of list() entirely) — would be constant noise. 1 new spec.
+docs/pages/counterparties.page.md NX UX note added. No BE/other-route
+changes. nx build kppdf-web PASS last.
