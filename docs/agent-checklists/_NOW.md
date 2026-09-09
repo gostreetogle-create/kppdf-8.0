@@ -1,16 +1,16 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T19:30:00Z
+updated_at: 2026-09-09T19:42:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** RUNNING — continuous UX sweep, 14 contracts DONE `19ff92fc`, сейчас 15 studio-list (list+templates only, НЕ A4 editor)
+- **Claude:** RUNNING — continuous UX sweep, 15 studio-list DONE `99b0197b`, сейчас 16 admin-devices
 - **Deploy stamp:** READY
 
 ## NEXT
 
-**Claude** → continuous, без «продолжать?»: 15→16→17. Живой чеклист `docs/agent-checklists/UX-SWEEP-CONTINUOUS-CHECKLIST.md`.
+**Claude** → continuous, без «продолжать?»: 16→17. Живой чеклист `docs/agent-checklists/UX-SWEEP-CONTINUOUS-CHECKLIST.md`.
 
 ## DONE
 
@@ -22,6 +22,7 @@ updated_at: 2026-09-09T19:30:00Z
 - UX #12 proposals — counterparty subtitle + underline→.pi-outline-btn, audit `docs/audits/2026-09-09-nx-ux-proposals-audit.md`, `d91dd517`
 - UX #13 counterparties — full legal name subtitle, audit `docs/audits/2026-09-09-nx-ux-counterparties-audit.md`, `47e2d199`
 - UX #14 contracts — detail card attachment status + signed/expires + notes, audit `docs/audits/2026-09-09-nx-ux-contracts-audit.md`, `19ff92fc`
+- UX #15 studio-list — RU status label + pi-icon-button fix (list/templates only), audit `docs/audits/2026-09-09-nx-ux-studio-list-audit.md`, `99b0197b`
 
 ## PARK
 
