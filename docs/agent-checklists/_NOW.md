@@ -1,17 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T06:40:00+03:00
+updated_at: 2026-09-09T10:20:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — UX #00 kit-overview DONE (audit PASS-EMPTY, FIX N/A); ждёт PO «дай следующий промпт»
-- **Deploy stamp:** READY (отдельная фраза)
+- **Claude:** IN PROGRESS — UX #01 kit-forms (audit PASS-FIX, doing FIX now)
+- **Deploy stamp:** READY
 
 ## NEXT
 
-**Claude** → ждёт PO copy-paste `tasks/PROMPT-CLAUDE-UX-01-kit-forms.md`
+**Claude** → `tasks/PROMPT-CLAUDE-UX-01-kit-forms.md`
+
+## DONE
+
+- UX #00 kit-overview PASS-EMPTY `c516e40d`
 
 ## PARK
 
-- Deploy · G12 · desk · wipe · `/production` UX
+- Deploy · G12 · desk · wipe · `/production` UX SKIP
