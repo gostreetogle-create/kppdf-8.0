@@ -54,3 +54,29 @@ styling instead of the canonical `.pi-outline-btn`/`pi-button`, affecting ~9 con
 (native `<a>`/`<button>` contexts per its own documented purpose) on all affected controls,
 convert the underline `Шаблоны документов` link to the same treatment as its sibling section
 links, no behavior/BE change.
+
+## Closeout (FIX applied)
+
+- **P1 (A1 + focus-ring) — fixed.** All 9 ad-hoc-styled controls in `order-hub-tray.component.ts`
+  converted to `.pi-outline-btn` (`:125,143,153,184,204,239,269,305`) — this is the **first real
+  usage** of this canonical class anywhere in the repo (was defined `global.css:997-1048` under
+  TZ-AUDIT-7 but never adopted). `Отменить отгрузку` (`:294`) additionally gets
+  `.pi-outline-btn-destructive` to match its own `variant: 'destructive'` confirm-dialog tone —
+  a small, in-scope upgrade (same mechanism, correct semantic color). `Подтвердить материалы`
+  keeps `[disabled]` behavior, now paired with `disabled:opacity-40 disabled:cursor-not-allowed`
+  (matches the disabled-button convention already used in `registry-toolbar-pagination.component.ts`
+  and `.pi-icon-btn:disabled`). The literal `<a class="underline">` («Шаблоны документов», `:326`)
+  is now the same `.pi-outline-btn` treatment as its sibling section links (Снабжение/Производство/
+  Склад/Отгрузка) — visually consistent «Документы» section.
+- `.pi-outline-btn`'s own `:focus-visible { box-shadow: var(--focus-ring-shadow) }` now covers all
+  9 controls — the 8 that previously had no focus indicator at all are fixed for free; the 2 that
+  already had explicit `pi-focus-ring` (`order-cancel-shipment-button`, `order-ship-button`) had
+  that class dropped since `.pi-outline-btn` already provides the same visual mechanism (no
+  double-declaration).
+- `orders-list.page.ts` — **no changes**, was already clean per audit (uses `pi-button` correctly).
+- Pure class/markup change: no `data-test` attributes touched, no template bindings/logic/behavior
+  changed, no BE fields invented, no second write-path.
+- Gates: `nx build kppdf-web` PASS; `nx test kppdf-web` — 103/103 suites PASS (681 passed, 0
+  regressions), including `orders-list.page.spec.ts` and `order-hub-tray.component.spec.ts`
+  specifically (neither asserted the old class strings, both green unmodified).
+- `docs/pages/orders.page.md` — TZ reference row + footer date updated.

@@ -246,6 +246,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-NX-SHIP-S2** | Отгрузка hub-блок: shipping stub → real `GET /shipments?orderId=`, honest empty/error, link `?orderId=` — DONE (WAVE-NX-SHIPPING) |
 | **TZ-NX-SHIP-S3** | Hub «Отгружено» без документа: `order-ship-button` → `ShipConfirmDialogComponent` → `PiOrdersService.ship()` whole-order → reload; WAVE-NX-SHIPPING S0–S3 DONE |
 | **TZ-NX-SHIP-S4** | Hub «Отменить отгрузку» (`order-cancel-shipment-button`) до dispatch — TZ-SHIP-433 gate, confirm → `PiShipmentsService.cancelShipment` → reload; WAVE-NX-SHIPPING S0–S4 DONE |
+| **TZ-NX-UX-04-orders-FIX** | `order-hub-tray.component.ts`: hub-tray action controls (Снабжение/Производство/Готовность/Склад/Отгрузка/Документы links, «Подтвердить материалы», «Отменить отгрузку», «Отгружено») переведены с ad-hoc `border-rule-strong` класса на канонический `.pi-outline-btn`/`.pi-outline-btn-destructive` — первое реальное применение этого класса в репо; фиксит отсутствующий keyboard focus-ring на 8 из 9 контролов и убирает единственную `<a class="underline">` («Шаблоны документов»). Чисто copy/class-level, поведение не менялось. WAVE-NX-UX-PAGE-SWEEP #04 — DONE |
 
 ## Особенности
 
@@ -256,4 +257,4 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 ---
 
-_Обновлено: 2026-08-26 (TZ-UX-444A)._
+_Обновлено: 2026-09-09 (TZ-NX-UX-04-orders-FIX — hub-tray `.pi-outline-btn` parity)._

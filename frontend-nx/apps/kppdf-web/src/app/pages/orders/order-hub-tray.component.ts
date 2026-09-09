@@ -122,7 +122,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
               }
               <a
                 [routerLink]="['/orders', order()._id]"
-                class="min-h-touch px-3 py-1.5 mt-3 inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-sm"
+                class="pi-outline-btn mt-3"
                 (click)="$event.stopPropagation()"
                 >Открыть карточку заказа</a
               >
@@ -140,7 +140,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                 <span class="text-xs text-muted-foreground">Снабжение</span>
                 <button
                   type="button"
-                  class="min-h-touch px-2 py-1 ml-auto inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                  class="pi-outline-btn ml-auto disabled:opacity-40 disabled:cursor-not-allowed"
                   data-test="order-confirm-materials"
                   (click)="openKitReserveConfirm($event)"
                   [disabled]="(order().items?.length ?? 0) === 0"
@@ -150,7 +150,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                 <a
                   routerLink="/supply"
                   [queryParams]="{ orderId: order()._id }"
-                  class="min-h-touch px-2 py-1 inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                  class="pi-outline-btn"
                   data-test="order-supply-link"
                   (click)="$event.stopPropagation()"
                   >Снабжение</a
@@ -181,7 +181,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                 <a
                   routerLink="/production"
                   [queryParams]="{ orderId: order()._id }"
-                  class="min-h-touch px-2 py-1 ml-auto inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                  class="pi-outline-btn ml-auto"
                   data-test="order-production-link"
                   (click)="$event.stopPropagation()"
                   >Производство</a
@@ -201,7 +201,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                 </span>
                 <a
                   [routerLink]="['/orders', order()._id]"
-                  class="min-h-touch px-2 py-1 ml-auto inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                  class="pi-outline-btn ml-auto"
                   data-test="order-readiness-link"
                   (click)="$event.stopPropagation()"
                   >Открыть заказ</a
@@ -236,7 +236,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                 <span class="text-xs text-muted-foreground">Склад</span>
                 <a
                   routerLink="/storage-items"
-                  class="min-h-touch px-2 py-1 ml-auto border border-rule-strong rounded-sm bg-transparent text-xs"
+                  class="pi-outline-btn ml-auto"
                   data-test="order-warehouse-link"
                   (click)="$event.stopPropagation()"
                   >Открыть</a
@@ -266,7 +266,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                 <a
                   [routerLink]="['/shipping']"
                   [queryParams]="{ orderId: order()._id }"
-                  class="min-h-touch px-2 py-1 ml-auto border border-rule-strong rounded-sm bg-transparent text-xs"
+                  class="pi-outline-btn ml-auto"
                   data-test="order-shipping-link"
                   (click)="$event.stopPropagation()"
                   >Открыть раздел „Отгрузка“</a
@@ -291,7 +291,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
                   @if (shipmentCancellable()) {
                     <button
                       type="button"
-                      class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs pi-focus-ring"
+                      class="pi-outline-btn pi-outline-btn-destructive w-full mt-1"
                       (click)="cancelActiveShipment($event)"
                       data-test="order-cancel-shipment-button"
                     >
@@ -302,7 +302,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
               } @else if (canMarkShipped()) {
                 <button
                   type="button"
-                  class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs pi-focus-ring"
+                  class="pi-outline-btn w-full mt-1"
                   (click)="openShipConfirm($event)"
                   data-test="order-ship-button"
                 >
@@ -323,7 +323,7 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
           <a
             routerLink="/doc-constructor/templates"
             [queryParams]="{ source: 'order', sourceId: order()._id }"
-            class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+            class="pi-outline-btn"
             data-test="order-documents-link"
             (click)="$event.stopPropagation()"
             >Шаблоны документов</a
