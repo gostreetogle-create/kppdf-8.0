@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import type { Counterparty, CreateCounterpartyPayload } from '@kppdf/data-access';
 import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF, type DialogRef } from '@kppdf/ui/dialog';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 
 export interface CounterpartyFormDialogData {
@@ -13,7 +14,7 @@ export interface CounterpartyFormDialogData {
   selector: 'pi-counterparty-form-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiDialogComponent],
+  imports: [PiDialogComponent, ButtonComponent],
   template: `
     <app-pi-dialog
       [title]="data.counterparty ? 'Редактировать заказчика' : 'Создать заказчика'"
@@ -68,16 +69,16 @@ export interface CounterpartyFormDialogData {
         </label>
       </div>
       <div footer class="flex justify-end gap-3">
-        <button type="button" class="pi-button pi-button-outline" (click)="ref.close()">Отмена</button>
-        <button
+        <app-pi-button type="button" variant="outline" (click)="ref.close()" data-test="counterparty-form-cancel">Отмена</app-pi-button>
+        <app-pi-button
           type="button"
-          class="pi-button pi-button-primary"
+          variant="default"
           [disabled]="!name().trim() || !inn().trim()"
           (click)="confirm()"
           data-test="counterparty-form-submit"
         >
           {{ data.counterparty ? 'Сохранить' : 'Создать' }}
-        </button>
+        </app-pi-button>
       </div>
     </app-pi-dialog>
   `,

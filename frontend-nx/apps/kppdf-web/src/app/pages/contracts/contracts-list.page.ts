@@ -66,7 +66,15 @@ import { contractStatusLabel } from './contract-status';
               <span class="text-sm text-muted-foreground truncate" role="cell">{{ customerName(row) }}</span>
               <span class="text-sm" role="cell">{{ statusLabel(row.status) }}</span>
               <span class="text-sm tabular-nums" role="cell">{{ row.totalAmount }}</span>
-              <a class="pi-button pi-button-secondary" [routerLink]="['/contracts', row._id]" role="cell" data-test="contract-row-link">
+              <!-- Native <a> (not app-pi-button): ButtonComponent doesn't forward routerLink's
+                   href host binding, which would silently drop hover-URL/open-in-new-tab.
+                   Classes mirror <app-pi-button variant="secondary"> exactly (button.component.ts). -->
+              <a
+                class="inline-flex items-center justify-center gap-2 font-medium font-mono uppercase tracking-wider rounded-sm transition-all pi-focus-ring bg-paper-2 text-ink hairline hover:bg-paper-3 h-10 px-4 text-sm"
+                [routerLink]="['/contracts', row._id]"
+                role="cell"
+                data-test="contract-row-link"
+              >
                 Карточка
               </a>
             </div>

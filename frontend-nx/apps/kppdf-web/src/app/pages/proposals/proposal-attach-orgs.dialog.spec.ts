@@ -68,7 +68,7 @@ describe('ProposalAttachOrgsDialogComponent (TZ-NX-KP-FAMILY-S44-ATTACH-ORGS)', 
     });
 
     const confirm = fixture.nativeElement.querySelector(
-      '[data-test="attach-orgs-confirm"]',
+      '[data-test="attach-orgs-confirm"] button',
     ) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);
 
@@ -113,7 +113,7 @@ describe('ProposalAttachOrgsDialogComponent (TZ-NX-KP-FAMILY-S44-ATTACH-ORGS)', 
 
     expect(fixture.nativeElement.querySelector('[data-test="attach-orgs-empty"]')).toBeTruthy();
     const confirm = fixture.nativeElement.querySelector(
-      '[data-test="attach-orgs-confirm"]',
+      '[data-test="attach-orgs-confirm"] button',
     ) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);
   });

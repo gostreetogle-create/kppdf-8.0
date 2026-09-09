@@ -7,6 +7,7 @@ import {
   type DocumentTemplate,
 } from '@kppdf/data-access';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
@@ -23,7 +24,7 @@ import { rememberStudioDocument } from './studio-session';
   selector: 'pi-studio-templates-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiPageChromeComponent, PiStatusBannerComponent],
+  imports: [PiPageChromeComponent, PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="studio-templates-list">
       <app-pi-page-chrome [crumbs]="[{ label: 'Документы', link: '/studio' }, { label: 'Шаблоны' }]" />
@@ -43,7 +44,7 @@ import { rememberStudioDocument } from './studio-session';
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <button class="pi-button pi-button-secondary" type="button" [attr.data-test]="'studio-template-create-' + template._id" (click)="createFromTemplate(template)">Создать документ</button>
+                <app-pi-button variant="secondary" type="button" [attr.data-test]="'studio-template-create-' + template._id" (click)="createFromTemplate(template)">Создать документ</app-pi-button>
                 <button class="pi-icon-button pi-focus-ring" type="button" aria-label="Удалить шаблон" title="Удалить" [attr.data-test]="'studio-template-delete-' + template._id" (click)="remove(template)">×</button>
               </div>
             </div>

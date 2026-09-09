@@ -13,6 +13,7 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
@@ -37,7 +38,7 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
   selector: 'pi-shipping-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="shipping-page">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -48,9 +49,9 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
             Реестр отгрузок: создание из заказа, отправка со склада, документы, отмена до отправки.
           </p>
         </div>
-        <button class="pi-button pi-button-primary" type="button" (click)="openCreate()" data-test="shipping-create-toggle">
+        <app-pi-button variant="default" type="button" (click)="openCreate()" data-test="shipping-create-toggle">
           + Отгрузка
-        </button>
+        </app-pi-button>
       </div>
 
       <div class="flex flex-wrap items-center gap-3 mb-4">
@@ -90,9 +91,9 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
         </select>
         <span class="text-sm text-muted-foreground">{{ shipments().length }} отгрузок</span>
         <span class="flex-1"></span>
-        <button class="pi-button pi-button-secondary" type="button" (click)="load()" data-test="shipping-refresh">
+        <app-pi-button variant="secondary" type="button" (click)="load()" data-test="shipping-refresh">
           Обновить
-        </button>
+        </app-pi-button>
       </div>
 
       @if (status() === 'loading') {
@@ -135,42 +136,42 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
                 <div role="cell" [attr.data-status]="shipment.status">{{ statusLabel(shipment.status) }}</div>
                 <div class="flex items-center gap-2 flex-wrap justify-end" role="cell" (click)="$event.stopPropagation()">
                   @if (shipment.status === 'scheduled' || shipment.status === 'draft') {
-                    <button
-                      class="pi-button pi-button-primary"
+                    <app-pi-button
+                      variant="default"
                       type="button"
                       (click)="dispatch(shipment)"
                       [disabled]="busy()"
                       [attr.data-test]="'shipping-dispatch-' + shipment._id"
                     >
                       Отправить
-                    </button>
-                    <button
-                      class="pi-button pi-button-secondary"
+                    </app-pi-button>
+                    <app-pi-button
+                      variant="secondary"
                       type="button"
                       (click)="cancelShipment(shipment)"
                       [disabled]="busy()"
                       [attr.data-test]="'shipping-cancel-' + shipment._id"
                     >
                       Отменить отгрузку
-                    </button>
+                    </app-pi-button>
                   }
                   @if (shipment.status === 'in_transit') {
-                    <button class="pi-button pi-button-secondary" type="button" (click)="markDelivered(shipment)" [disabled]="busy()" data-test="shipping-deliver">
+                    <app-pi-button variant="secondary" type="button" (click)="markDelivered(shipment)" [disabled]="busy()" data-test="shipping-deliver">
                       Доставлена
-                    </button>
+                    </app-pi-button>
                   }
                   @if (shipment.status !== 'cancelled' && shipment.status !== 'delivered') {
-                    <button
-                      class="pi-button pi-button-secondary"
+                    <app-pi-button
+                      variant="secondary"
                       type="button"
                       (click)="openEdit(shipment)"
                       [attr.data-test]="'shipping-edit-' + shipment._id"
                     >
                       Изменить
-                    </button>
-                    <button class="pi-button pi-button-secondary" type="button" (click)="openDoc(shipment)" data-test="shipping-doc-open">
+                    </app-pi-button>
+                    <app-pi-button variant="secondary" type="button" (click)="openDoc(shipment)" data-test="shipping-doc-open">
                       Документ
-                    </button>
+                    </app-pi-button>
                   }
                 </div>
               </div>

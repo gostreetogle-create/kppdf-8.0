@@ -14,6 +14,7 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 
 interface ItemDraft {
   readonly productId: string;
@@ -29,7 +30,7 @@ interface ItemDraft {
   selector: 'pi-order-create-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, RouterLink],
+  imports: [PiStatusBannerComponent, RouterLink, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="order-create">
       <div class="mb-6">
@@ -92,14 +93,14 @@ interface ItemDraft {
           <section>
             <div class="flex items-center justify-between mb-2">
               <h2 class="text-sm font-medium m-0">Позиции *</h2>
-              <button
-                class="pi-button pi-button-secondary"
+              <app-pi-button
+                variant="secondary"
                 type="button"
                 data-test="order-add-item"
                 (click)="addItem()"
               >
                 Добавить позицию
-              </button>
+              </app-pi-button>
             </div>
             <div class="space-y-2">
               @for (item of items(); track $index) {
@@ -124,15 +125,15 @@ interface ItemDraft {
                     (input)="setItemQty($index, $any($event.target).value)"
                     aria-label="Количество"
                   />
-                  <button
-                    class="pi-button pi-button-ghost"
+                  <app-pi-button
+                    variant="ghost"
                     type="button"
                     data-test="order-item-remove"
                     (click)="removeItem($index)"
                     [disabled]="items().length <= 1"
                   >
                     Убрать
-                  </button>
+                  </app-pi-button>
                 </div>
               }
             </div>
@@ -144,15 +145,22 @@ interface ItemDraft {
           </label>
 
           <div class="flex items-center gap-3">
-            <button
-              class="pi-button pi-button-primary"
+            <app-pi-button
+              variant="default"
               type="submit"
               data-test="order-create-submit"
               [disabled]="!canSubmit()"
             >
               {{ saving() ? 'Создание…' : 'Создать заказ' }}
-            </button>
-            <a class="pi-button pi-button-ghost" routerLink="/orders">Отмена</a>
+            </app-pi-button>
+            <!-- Native <a> (not app-pi-button): ButtonComponent doesn't forward routerLink's
+                 href host binding, which would silently drop hover-URL/open-in-new-tab.
+                 Classes mirror <app-pi-button variant="ghost"> exactly (button.component.ts). -->
+            <a
+              class="inline-flex items-center justify-center gap-2 font-medium font-mono uppercase tracking-wider rounded-sm transition-all pi-focus-ring bg-transparent text-ink hover:bg-paper-2 h-10 px-4 text-sm"
+              routerLink="/orders"
+              data-test="order-create-cancel"
+            >Отмена</a>
           </div>
         </form>
       }

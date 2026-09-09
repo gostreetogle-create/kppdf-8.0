@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { PiOrdersService, type Order } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { DEALS_TOC_CHIPS } from '../deals-group-chips';
 import { orderStatusLabel } from './order-status';
@@ -13,7 +14,7 @@ import { OrderHubTrayComponent } from './order-hub-tray.component';
   selector: 'pi-orders-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, RouterLink, PiGroupWorkspaceComponent, OrderHubTrayComponent],
+  imports: [PiStatusBannerComponent, RouterLink, PiGroupWorkspaceComponent, OrderHubTrayComponent, ButtonComponent],
   template: `
     <app-pi-group-workspace [toc]="toc" tocActiveId="orders" [chips]="[]" activeId="">
     <main class="py-6" data-test="orders-list">
@@ -22,9 +23,9 @@ import { OrderHubTrayComponent } from './order-hub-tray.component';
           <div class="eyebrow">Сделки</div>
           <h1 class="font-display text-2xl m-0">Заказы</h1>
         </div>
-        <button class="pi-button pi-button-primary" type="button" data-test="orders-create" (click)="create()">
+        <app-pi-button variant="default" type="button" data-test="orders-create" (click)="create()">
           Создать заказ
-        </button>
+        </app-pi-button>
       </div>
 
       @if (status() === 'loading') {
@@ -80,8 +81,11 @@ import { OrderHubTrayComponent } from './order-hub-tray.component';
               <span class="text-sm" role="cell">{{ row.isPaid ? 'Оплачен' : 'Не оплачен' }}</span>
               <span class="text-sm text-muted-foreground" role="cell">{{ row.quotationId ? 'Есть КП' : 'Без КП' }}</span>
               <span class="text-sm" role="cell" data-test="orders-row-readiness">{{ readinessLabel(row) }}</span>
+              <!-- Native <a> (not app-pi-button): ButtonComponent doesn't forward routerLink's
+                   href host binding, which would silently drop hover-URL/open-in-new-tab.
+                   Classes mirror <app-pi-button variant="secondary"> exactly (button.component.ts). -->
               <a
-                class="pi-button pi-button-secondary"
+                class="inline-flex items-center justify-center gap-2 font-medium font-mono uppercase tracking-wider rounded-sm transition-all pi-focus-ring bg-paper-2 text-ink hairline hover:bg-paper-3 h-10 px-4 text-sm"
                 [routerLink]="['/orders', row._id]"
                 role="cell"
                 data-test="orders-row-link"

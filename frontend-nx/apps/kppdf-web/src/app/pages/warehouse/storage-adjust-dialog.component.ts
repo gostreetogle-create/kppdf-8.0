@@ -11,6 +11,7 @@ import {
   PI_DIALOG_REF,
   type DialogRef,
 } from '@kppdf/ui/dialog';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 import {
   PiStorageItemsService,
@@ -29,7 +30,7 @@ export interface StorageAdjustDialogData {
   selector: 'pi-storage-adjust-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiDialogComponent],
+  imports: [PiDialogComponent, ButtonComponent],
   template: `
     <app-pi-dialog
       title="Корректировка остатка"
@@ -82,22 +83,23 @@ export interface StorageAdjustDialogData {
         }
       </div>
       <div footer class="flex justify-end gap-3">
-        <button
+        <app-pi-button
           type="button"
-          class="pi-button pi-button-outline"
+          variant="outline"
           (click)="ref.close(undefined)"
+          data-test="adjust-cancel"
         >
           Отмена
-        </button>
-        <button
+        </app-pi-button>
+        <app-pi-button
           type="button"
-          class="pi-button pi-button-primary"
+          variant="default"
           [disabled]="saving()"
           (click)="submit()"
           data-test="adjust-submit"
         >
           Скорректировать
-        </button>
+        </app-pi-button>
       </div>
     </app-pi-dialog>
   `,

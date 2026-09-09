@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { PiOrdersService, type Order } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 import { orderStatusLabel } from './order-status';
 
@@ -16,7 +17,7 @@ import { orderStatusLabel } from './order-status';
   selector: 'pi-order-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="order-detail">
       <div class="mb-6">
@@ -92,14 +93,14 @@ import { orderStatusLabel } from './order-status';
               }
             </div>
             @if (quotationId()) {
-              <button
-                class="pi-button pi-button-secondary"
+              <app-pi-button
+                variant="secondary"
                 type="button"
                 data-test="order-open-studio"
                 (click)="openQuotationInStudio()"
               >
                 КП в студии
-              </button>
+              </app-pi-button>
             }
           </section>
 

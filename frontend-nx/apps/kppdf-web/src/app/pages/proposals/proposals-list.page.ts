@@ -15,6 +15,7 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { BadgeComponent } from '@kppdf/ui/badge';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
@@ -43,7 +44,7 @@ const STATUS_LABELS: Record<string, string> = {
   selector: 'pi-proposals-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, BadgeComponent, PiGroupWorkspaceComponent],
+  imports: [PiStatusBannerComponent, BadgeComponent, PiGroupWorkspaceComponent, ButtonComponent],
   template: `
     <app-pi-group-workspace [toc]="toc" tocActiveId="proposals" [chips]="[]" activeId="">
     <main class="py-6" data-test="proposals-list">
@@ -52,9 +53,9 @@ const STATUS_LABELS: Record<string, string> = {
           <div class="eyebrow">Сделки</div>
           <h1 class="font-display text-2xl m-0">Коммерческие предложения</h1>
         </div>
-        <button class="pi-button pi-button-primary" type="button" data-test="proposals-create" (click)="createInStudio()">
+        <app-pi-button variant="default" type="button" data-test="proposals-create" (click)="createInStudio()">
           Создать в студии
-        </button>
+        </app-pi-button>
       </div>
       @if (status() === 'loading') {
         <div class="text-sm text-muted-foreground">Загрузка…</div>
@@ -81,27 +82,27 @@ const STATUS_LABELS: Record<string, string> = {
               <div class="flex flex-col items-end gap-1">
                 <div class="flex items-center gap-2">
                   @if (row.status === 'accepted' && (row.familyRole ?? 'solo') !== 'variant') {
-                    <button
-                      class="pi-button pi-button-primary"
+                    <app-pi-button
+                      variant="default"
                       type="button"
                       data-test="proposal-convert-order"
                       (click)="convertToOrder(row)"
                       [disabled]="convertingId() === row._id"
                     >
                       {{ convertingId() === row._id ? 'Преобразование…' : 'В заказ' }}
-                    </button>
+                    </app-pi-button>
                   }
-                  <button class="pi-button pi-button-secondary" type="button" data-test="proposal-open-studio" (click)="openInStudio(row)">
+                  <app-pi-button variant="secondary" type="button" data-test="proposal-open-studio" (click)="openInStudio(row)">
                     В студии
-                  </button>
-                  <button
-                    class="pi-button pi-button-secondary"
+                  </app-pi-button>
+                  <app-pi-button
+                    variant="secondary"
                     type="button"
                     data-test="proposal-attach-orgs"
                     (click)="openAttachOrgs(row)"
                   >
                     Несколько фирм
-                  </button>
+                  </app-pi-button>
                 </div>
                 <button
                   type="button"

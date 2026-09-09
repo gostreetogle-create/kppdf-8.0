@@ -4,7 +4,7 @@
 **Очередь промптов:** `docs/agent-checklists/CLAUDE-UX-PAGE-PROMPTS.md`  
 **Правило PO:** один промпт = одна страница; выдавать только по «дай следующий промпт».  
 **Агент:** `agent_id: claude` — сначала AUDIT, потом FIX (находки на той же странице — чинить сразу).  
-**Статус:** #08 DONE (`/warehouses` fixed) · **⚠️ P0 cross-cutting: `pi-button-*` classes undefined CSS, 17 files still affected incl. #04-#07 already-DONE pages — см. `docs/audits/2026-09-09-nx-ux-warehouses-audit.md` §Cross-cutting finding, ждёт решения PO** · ждёт PO «дай следующий промпт» → #09 storage-items
+**Статус:** continuous tail READY · `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md` · чеклист `UX-SWEEP-CONTINUOUS-CHECKLIST.md`
 
 | # | Route | PROMPT | Status |
 |---|-------|--------|--------|
@@ -16,7 +16,8 @@
 | 05 | `/shipping` | `tasks/PROMPT-CLAUDE-UX-05-shipping.md` | **DONE** — audit `5586dc55`, FIX `3c70d95c` (expand-in-row + chip button) |
 | 06 | `/supply` | `tasks/PROMPT-CLAUDE-UX-06-supply.md` | **DONE** — audit `af549dfd`, FIX `a2e1353d` (expand-in-row + chip button) |
 | 07 | `/supply-requests` | `tasks/PROMPT-CLAUDE-UX-07-supply-requests.md` | **DONE** — audit `f6707094`, FIX `d0f83db8` (expand-in-row + 4× chip button) |
-| 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | **DONE** — audit `395b08fa`, FIX `71b57377` (P0 `pi-button-*` → `app-pi-button`) — ⚠️ 17 sibling files still affected, see audit |
+| 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | **DONE** — FIX `71b57377` (`app-pi-button`) |
+| **08b** | **cross-cut `pi-button-*` → `<app-pi-button>`** | `tasks/PROMPT-CLAUDE-UX-08b-PI-BUTTON-SWEEP.md` | **DONE** — 16 files, `rg` count=0 |
 | 09 | `/storage-items` | `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` | READY |
 | 10 | `/stock-movements` | `tasks/PROMPT-CLAUDE-UX-10-stock-movements.md` | READY |
 | 11 | `/production` | — | **SKIP** (Гант ок — PO 2026-09-09, не трогать) |

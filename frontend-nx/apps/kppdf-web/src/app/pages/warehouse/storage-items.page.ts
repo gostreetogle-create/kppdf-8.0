@@ -23,6 +23,7 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import {
   StorageAdjustDialogComponent,
@@ -36,7 +37,7 @@ import {
   selector: 'pi-storage-items-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="storage-items-page">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -44,14 +45,14 @@ import {
           <div class="eyebrow">Склад</div>
           <h1 class="font-display text-2xl m-0">Остатки</h1>
         </div>
-        <button
-          class="pi-button pi-button-primary"
+        <app-pi-button
+          variant="default"
           type="button"
           (click)="openPutOnStock()"
           data-test="put-on-stock"
         >
           Поставить на склад
-        </button>
+        </app-pi-button>
       </div>
 
       <div class="flex flex-wrap items-center gap-3 mb-4">
@@ -178,14 +179,14 @@ import {
                   {{ row.zoneName || '—' }}
                 </div>
                 <div class="flex items-center gap-2 justify-end" role="cell">
-                  <button
-                    class="pi-button pi-button-secondary"
+                  <app-pi-button
+                    variant="secondary"
                     type="button"
                     (click)="openAdjust(row)"
                     data-test="adjust-item"
                   >
                     Корректировать
-                  </button>
+                  </app-pi-button>
                 </div>
               </div>
             }

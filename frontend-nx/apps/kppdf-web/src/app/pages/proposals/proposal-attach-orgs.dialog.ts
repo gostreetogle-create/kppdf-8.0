@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import type { Organization, Quotation } from '@kppdf/data-access';
 import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF, type DialogRef } from '@kppdf/ui/dialog';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 
 export interface AttachOrgsDialogData {
@@ -24,7 +25,7 @@ export interface AttachOrgsResult {
   selector: 'pi-proposal-attach-orgs-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiDialogComponent],
+  imports: [PiDialogComponent, ButtonComponent],
   template: `
     <app-pi-dialog
       title="Несколько фирм"
@@ -84,16 +85,16 @@ export interface AttachOrgsResult {
         }
       </div>
       <div footer class="flex justify-end gap-3">
-        <button type="button" class="pi-button pi-button-outline" (click)="ref.close()">Отмена</button>
-        <button
+        <app-pi-button type="button" variant="outline" (click)="ref.close()" data-test="attach-orgs-cancel">Отмена</app-pi-button>
+        <app-pi-button
           type="button"
-          class="pi-button pi-button-primary"
+          variant="default"
           [disabled]="checked().size === 0"
           (click)="confirm()"
           data-test="attach-orgs-confirm"
         >
           Добавить варианты
-        </button>
+        </app-pi-button>
       </div>
     </app-pi-dialog>
   `,

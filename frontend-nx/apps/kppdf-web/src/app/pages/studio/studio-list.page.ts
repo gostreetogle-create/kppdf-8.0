@@ -5,6 +5,7 @@ import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
 import { findKpDocType } from './studio-kp-doc-type';
@@ -16,15 +17,18 @@ import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData,
   selector: 'pi-studio-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, PiPageChromeComponent, RouterLink],
+  imports: [PiStatusBannerComponent, PiPageChromeComponent, RouterLink, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="studio-list">
       <app-pi-page-chrome [crumbs]="[{ label: 'Документы' }]" />
       <div class="flex items-center justify-end gap-2 mb-4">
-        <a class="pi-button pi-button-ghost" routerLink="/studio/templates" data-test="studio-templates-link">Шаблоны</a>
-        <button class="pi-button pi-button-secondary" type="button" data-test="studio-create-from-template" (click)="createFromTemplate()">Из шаблона</button>
-        <button class="pi-button pi-button-secondary" type="button" data-test="studio-create-kp" (click)="createKp()">Новое КП</button>
-        <button class="pi-button pi-button-primary" type="button" data-test="studio-create" (click)="create()">Создать документ</button>
+        <!-- Native <a> (not app-pi-button): ButtonComponent doesn't forward routerLink's
+             href host binding, which would silently drop hover-URL/open-in-new-tab.
+             Classes mirror <app-pi-button variant="ghost"> exactly (button.component.ts). -->
+        <a class="inline-flex items-center justify-center gap-2 font-medium font-mono uppercase tracking-wider rounded-sm transition-all pi-focus-ring bg-transparent text-ink hover:bg-paper-2 h-10 px-4 text-sm" routerLink="/studio/templates" data-test="studio-templates-link">Шаблоны</a>
+        <app-pi-button variant="secondary" type="button" data-test="studio-create-from-template" (click)="createFromTemplate()">Из шаблона</app-pi-button>
+        <app-pi-button variant="secondary" type="button" data-test="studio-create-kp" (click)="createKp()">Новое КП</app-pi-button>
+        <app-pi-button variant="default" type="button" data-test="studio-create" (click)="create()">Создать документ</app-pi-button>
       </div>
       @if (status() === 'loading') { <div class="text-sm text-muted-foreground">Загрузка…</div> }
       @if (status() === 'error') { <app-pi-status-banner tone="destructive" [message]="error()" actionLabel="Повторить" (action)="load()" /> }
@@ -46,7 +50,7 @@ import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData,
                 <div class="text-xs text-muted-foreground">{{ document.status }} · {{ formatUpdatedAt(document.updatedAt) }}</div>
               </button>
               <div class="flex items-center gap-2">
-                <button class="pi-button pi-button-ghost" type="button" data-test="studio-duplicate" (click)="duplicate(document)">Дублировать</button>
+                <app-pi-button variant="ghost" type="button" data-test="studio-duplicate" (click)="duplicate(document)">Дублировать</app-pi-button>
                 <button class="pi-icon-button pi-focus-ring" type="button" aria-label="Удалить" title="Удалить" data-test="studio-delete" (click)="remove(document)">×</button>
               </div>
             </div>

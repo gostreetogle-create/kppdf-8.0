@@ -1,21 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T20:55:00+03:00
+updated_at: 2026-09-09T21:40:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — UX #08 warehouses DONE (`.pi-button-*` → real `<app-pi-button>`); **⚠️ ждёт решения PO: тот же баг (undefined CSS classes) ещё в 17 файлах, включая #04-#07 уже-DONE страницы этой волны — см. `docs/audits/2026-09-09-nx-ux-warehouses-audit.md` §Cross-cutting finding**; ждёт PO «дай следующий промпт»
+- **Claude:** IDLE — UX #08b pi-button sweep DONE (16 files, `rg` count=0); не начал continuous tail (08b→17) — этот TZ явно запрещал #09 без PO
 - **Deploy stamp:** READY
 
 ## NEXT
 
-**Claude** → ждёт PO copy-paste `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` **ИЛИ** решения PO по cross-cutting `pi-button-*` находке (см. выше) — на усмотрение PO, что раньше
+**Claude** → ждёт PO: либо явный старт `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md` (чеклист `docs/agent-checklists/UX-SWEEP-CONTINUOUS-CHECKLIST.md`), либо следующий одиночный промпт как раньше
 
 ## DONE
 
-- #00–#06 · #07 supply-requests FIX `d0f83db8`
-- #08 warehouses PASS-FIX (P0) → fixed `/warehouses` only (real `<app-pi-button>`): audit `395b08fa`, FIX `71b57377`. ⚠️ 17 files still have the bug — see audit
+- UX #00–#08 (до warehouses)
+- UX #08b pi-button sweep — 16 файлов, audit `docs/audits/2026-09-09-nx-ux-pi-button-sweep.md`, SHA below
 
 ## PARK
 

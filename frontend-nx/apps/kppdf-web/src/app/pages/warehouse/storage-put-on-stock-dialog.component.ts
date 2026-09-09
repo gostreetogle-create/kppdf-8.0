@@ -19,6 +19,7 @@ import {
   PI_DIALOG_REF,
   type DialogRef,
 } from '@kppdf/ui/dialog';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 import { firstValueFrom } from 'rxjs';
 
@@ -32,7 +33,7 @@ export interface StoragePutOnStockDialogData {
   selector: 'pi-storage-put-on-stock-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiDialogComponent],
+  imports: [PiDialogComponent, ButtonComponent],
   template: `
     <app-pi-dialog
       title="Поставить на склад"
@@ -124,22 +125,23 @@ export interface StoragePutOnStockDialogData {
         }
       </div>
       <div footer class="flex justify-end gap-3">
-        <button
+        <app-pi-button
           type="button"
-          class="pi-button pi-button-outline"
+          variant="outline"
           (click)="ref.close(undefined)"
+          data-test="put-cancel"
         >
           Отмена
-        </button>
-        <button
+        </app-pi-button>
+        <app-pi-button
           type="button"
-          class="pi-button pi-button-primary"
+          variant="default"
           [disabled]="saving()"
           (click)="submit()"
           data-test="put-submit"
         >
           Поставить
-        </button>
+        </app-pi-button>
       </div>
     </app-pi-dialog>
   `,

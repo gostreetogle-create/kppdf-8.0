@@ -3,6 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { PiCounterpartiesService, type Counterparty, type CreateCounterpartyPayload } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
@@ -16,7 +17,7 @@ import { CounterpartyFormDialogComponent, type CounterpartyFormDialogData } from
   selector: 'pi-counterparties-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="counterparties-list">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -24,9 +25,9 @@ import { CounterpartyFormDialogComponent, type CounterpartyFormDialogData } from
           <div class="eyebrow">Клиенты</div>
           <h1 class="font-display text-2xl m-0">Заказчики</h1>
         </div>
-        <button class="pi-button pi-button-primary" type="button" data-test="counterparty-create" (click)="openCreate()">
+        <app-pi-button variant="default" type="button" data-test="counterparty-create" (click)="openCreate()">
           Создать заказчика
-        </button>
+        </app-pi-button>
       </div>
 
       @if (status() === 'loading') {
@@ -72,22 +73,22 @@ import { CounterpartyFormDialogComponent, type CounterpartyFormDialogData } from
               <span class="text-sm" role="cell">{{ row.inn }}{{ row.innIsStub ? ' (временный)' : '' }}</span>
               <span class="text-sm text-muted-foreground truncate" role="cell">{{ contactLabel(row) }}</span>
               <div class="flex items-center gap-2 justify-end" role="cell">
-                <button
-                  class="pi-button pi-button-secondary"
+                <app-pi-button
+                  variant="secondary"
                   type="button"
                   data-test="counterparty-edit"
                   (click)="openEdit(row)"
                 >
                   Изменить
-                </button>
-                <button
-                  class="pi-button pi-button-secondary"
+                </app-pi-button>
+                <app-pi-button
+                  variant="secondary"
                   type="button"
                   data-test="counterparty-delete"
                   (click)="confirmDelete(row)"
                 >
                   Удалить
-                </button>
+                </app-pi-button>
               </div>
             </div>
           }

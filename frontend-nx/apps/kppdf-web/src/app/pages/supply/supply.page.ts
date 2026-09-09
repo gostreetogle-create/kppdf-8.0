@@ -18,6 +18,7 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 
 const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
@@ -39,7 +40,7 @@ const GRID_COLS =
   selector: 'pi-supply-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, PiStatusBannerComponent],
+  imports: [FormsModule, RouterLink, PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="supply-page">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -50,14 +51,14 @@ const GRID_COLS =
             Реестр задач снабжения: подтверждение, заказ, получение.
           </p>
         </div>
-        <button
-          class="pi-button pi-button-primary"
+        <app-pi-button
+          variant="default"
           type="button"
           (click)="showCreate.set(!showCreate())"
           data-test="supply-create-toggle"
         >
           + Задача
-        </button>
+        </app-pi-button>
       </div>
 
       <div class="flex flex-wrap items-center gap-3 mb-4">
@@ -95,9 +96,9 @@ const GRID_COLS =
 
         <span class="text-sm text-muted-foreground">{{ tasks().length }} задач</span>
         <span class="flex-1"></span>
-        <button class="pi-button pi-button-secondary" type="button" (click)="load()" data-test="supply-refresh">
+        <app-pi-button variant="secondary" type="button" (click)="load()" data-test="supply-refresh">
           Обновить
-        </button>
+        </app-pi-button>
       </div>
 
       @if (showCreate()) {
@@ -124,15 +125,15 @@ const GRID_COLS =
                 }
               </select>
             </label>
-            <button
+            <app-pi-button
               type="button"
-              class="pi-button pi-button-secondary"
+              variant="secondary"
               (click)="onExplode()"
               [disabled]="exploding() || !explodeOrderId"
               data-test="supply-explode-submit"
             >
               Создать из заказа
-            </button>
+            </app-pi-button>
           </div>
           <div class="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
             <span class="h-px bg-border flex-1"></span>
@@ -172,14 +173,14 @@ const GRID_COLS =
                 data-test="supply-create-qty"
               />
             </label>
-            <button
+            <app-pi-button
               type="submit"
-              class="pi-button pi-button-primary"
+              variant="default"
               [disabled]="creating()"
               data-test="supply-create-submit"
             >
               Создать
-            </button>
+            </app-pi-button>
           </div>
         </form>
       }
@@ -250,37 +251,37 @@ const GRID_COLS =
                 </div>
                 <div class="flex items-center gap-2 justify-end" role="cell" (click)="$event.stopPropagation()">
                   @if (row.status === 'draft') {
-                    <button
-                      class="pi-button pi-button-primary"
+                    <app-pi-button
+                      variant="default"
                       type="button"
                       (click)="onConfirm(row)"
                       [disabled]="busyId() === row._id"
                       [attr.data-test]="'supply-confirm-' + row._id"
                     >
                       Подтвердить
-                    </button>
+                    </app-pi-button>
                   }
                   @if (row.status === 'confirmed') {
-                    <button
-                      class="pi-button pi-button-secondary"
+                    <app-pi-button
+                      variant="secondary"
                       type="button"
                       (click)="onOrdered(row)"
                       [disabled]="busyId() === row._id"
                       [attr.data-test]="'supply-ordered-' + row._id"
                     >
                       Заказано
-                    </button>
+                    </app-pi-button>
                   }
                   @if (row.status === 'ordered') {
-                    <button
-                      class="pi-button pi-button-secondary"
+                    <app-pi-button
+                      variant="secondary"
                       type="button"
                       (click)="onReceived(row)"
                       [disabled]="busyId() === row._id"
                       [attr.data-test]="'supply-received-' + row._id"
                     >
                       Получено
-                    </button>
+                    </app-pi-button>
                   }
                 </div>
               </div>

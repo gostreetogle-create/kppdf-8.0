@@ -14,6 +14,7 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
@@ -43,7 +44,7 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
   selector: 'pi-supply-requests-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, RouterLink],
+  imports: [PiStatusBannerComponent, RouterLink, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="supply-requests-page">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -54,9 +55,9 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
             Журнал закупок: материал/наименование, поставщик, счёт, оплата, статус.
           </p>
         </div>
-        <button class="pi-button pi-button-primary" type="button" (click)="openCreate()" data-test="supply-request-create">
+        <app-pi-button variant="default" type="button" (click)="openCreate()" data-test="supply-request-create">
           + Заявка
-        </button>
+        </app-pi-button>
       </div>
 
       <div class="flex flex-wrap items-center gap-3 mb-4">
@@ -122,9 +123,9 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
         }
         <span class="text-sm text-muted-foreground">{{ filteredRows().length }} заявок</span>
         <span class="flex-1"></span>
-        <button class="pi-button pi-button-secondary" type="button" (click)="load()" data-test="supply-request-refresh">
+        <app-pi-button variant="secondary" type="button" (click)="load()" data-test="supply-request-refresh">
           Обновить
-        </button>
+        </app-pi-button>
       </div>
 
       @if (status() === 'loading') {
@@ -194,10 +195,10 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
                 <div role="cell" class="truncate" [attr.title]="row.createdBy">{{ createdByLabel(row.createdBy) }}</div>
                 <div class="flex items-center gap-2 justify-end" role="cell" (click)="$event.stopPropagation()">
                   @if (isReceivable(row)) {
-                    <button class="pi-button pi-button-primary" type="button" (click)="openReceive(row)" data-test="supply-request-receive">Получено</button>
+                    <app-pi-button variant="default" type="button" (click)="openReceive(row)" data-test="supply-request-receive">Получено</app-pi-button>
                   }
-                  <button class="pi-button pi-button-secondary" type="button" (click)="openEdit(row)" data-test="supply-request-edit">Изменить</button>
-                  <button class="pi-button pi-button-secondary" type="button" (click)="confirmDelete(row)" data-test="supply-request-delete">Удалить</button>
+                  <app-pi-button variant="secondary" type="button" (click)="openEdit(row)" data-test="supply-request-edit">Изменить</app-pi-button>
+                  <app-pi-button variant="secondary" type="button" (click)="confirmDelete(row)" data-test="supply-request-delete">Удалить</app-pi-button>
                 </div>
               </div>
               @if (expandedId() === row._id) {

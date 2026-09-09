@@ -53,7 +53,7 @@ describe('CounterpartyFormDialogComponent (TZ-NX-DEALS-D3-COUNTERPARTIES)', () =
 
   it('create mode starts with empty fields and a disabled submit until name+ИНН are set', async () => {
     await setup({});
-    const submitBtn = fixture.nativeElement.querySelector('[data-test="counterparty-form-submit"]') as HTMLButtonElement;
+    const submitBtn = fixture.nativeElement.querySelector('[data-test="counterparty-form-submit"] button') as HTMLButtonElement;
     expect(submitBtn.disabled).toBe(true);
 
     setInput('counterparty-form-name', 'ООО Новый');
@@ -98,7 +98,7 @@ describe('CounterpartyFormDialogComponent (TZ-NX-DEALS-D3-COUNTERPARTIES)', () =
 
   it('cancel closes without a payload', async () => {
     await setup({});
-    (fixture.nativeElement.querySelector('.pi-button-outline') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('[data-test="counterparty-form-cancel"]') as HTMLButtonElement).click();
     expect(close).toHaveBeenCalledWith();
   });
 });

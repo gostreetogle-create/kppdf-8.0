@@ -170,7 +170,7 @@ describe('SupplyPage (NX S1)', () => {
     fixture.detectChanges();
 
     (
-      fixture.nativeElement.querySelector('[data-test="supply-create-submit"]') as HTMLButtonElement
+      fixture.nativeElement.querySelector('[data-test="supply-create-submit"] button') as HTMLButtonElement
     ).click();
     await fixture.whenStable();
 
