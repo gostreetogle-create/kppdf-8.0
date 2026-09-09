@@ -1,21 +1,20 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T19:35:00+03:00
+updated_at: 2026-09-09T19:30:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — UX #04 orders DONE (audit PASS-FIX, FIX applied); ждёт PO «дай следующий промпт»
+- **Claude:** IN PROGRESS — UX #05 shipping (audit PASS-FIX, doing FIX now)
 - **Deploy stamp:** READY
 
 ## NEXT
 
-**Claude** → ждёт PO copy-paste `tasks/PROMPT-CLAUDE-UX-05-shipping.md`
+**Claude** → `tasks/PROMPT-CLAUDE-UX-05-shipping.md`
 
 ## DONE
 
-- #00–#02 kit · #03 registries PASS-EMPTY `4be40d78`
-- #04 orders PASS-FIX → fixed (ad-hoc buttons → `.pi-outline-btn`, missing focus-ring, underline link): audit `e010b83d`, FIX `b05802df`
+- #00–#03 · #04 orders FIX `b05802df` (hub tray `.pi-outline-btn`)
 
 ## PARK
 
