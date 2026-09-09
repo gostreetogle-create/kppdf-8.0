@@ -4,7 +4,7 @@
 **Очередь промптов:** `docs/agent-checklists/CLAUDE-UX-PAGE-PROMPTS.md`  
 **Правило PO:** один промпт = одна страница; выдавать только по «дай следующий промпт».  
 **Агент:** `agent_id: claude` — сначала AUDIT, потом FIX (находки на той же странице — чинить сразу).  
-**Статус:** #07 DONE (audit PASS-FIX, fixed) · ждёт PO «дай следующий промпт» → #08 warehouses
+**Статус:** #08 audit PASS-FIX (**⚠️ P0 cross-cutting: `pi-button-*` classes undefined, 18 files affected — см. audit**) — FIX in progress for `/warehouses` only
 
 | # | Route | PROMPT | Status |
 |---|-------|--------|--------|
@@ -16,7 +16,7 @@
 | 05 | `/shipping` | `tasks/PROMPT-CLAUDE-UX-05-shipping.md` | **DONE** — audit `5586dc55`, FIX `3c70d95c` (expand-in-row + chip button) |
 | 06 | `/supply` | `tasks/PROMPT-CLAUDE-UX-06-supply.md` | **DONE** — audit `af549dfd`, FIX `a2e1353d` (expand-in-row + chip button) |
 | 07 | `/supply-requests` | `tasks/PROMPT-CLAUDE-UX-07-supply-requests.md` | **DONE** — audit `f6707094`, FIX `d0f83db8` (expand-in-row + 4× chip button) |
-| 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | READY |
+| 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | audit **PASS-FIX (P0!)** — FIX in progress, see cross-cutting note in audit |
 | 09 | `/storage-items` | `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` | READY |
 | 10 | `/stock-movements` | `tasks/PROMPT-CLAUDE-UX-10-stock-movements.md` | READY |
 | 11 | `/production` | — | **SKIP** (Гант ок — PO 2026-09-09, не трогать) |

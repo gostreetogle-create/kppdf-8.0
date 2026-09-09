@@ -1,21 +1,20 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T20:35:00+03:00
+updated_at: 2026-09-09T20:30:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — UX #07 supply-requests DONE (audit PASS-FIX, FIX applied); ждёт PO «дай следующий промпт»
+- **Claude:** IN PROGRESS — UX #08 warehouses (audit PASS-FIX; **⚠️ P0 cross-cutting finding: `pi-button-*` classes are undefined CSS, 18 files affected incl. #04-#07 already-DONE pages — see audit for full list**); fixing `/warehouses` only, doing FIX now
 - **Deploy stamp:** READY
 
 ## NEXT
 
-**Claude** → ждёт PO copy-paste `tasks/PROMPT-CLAUDE-UX-08-warehouses.md`
+**Claude** → `tasks/PROMPT-CLAUDE-UX-08-warehouses.md`
 
 ## DONE
 
-- #00–#05 · #06 supply FIX `a2e1353d` (expand + chip; confirmedBy ObjectId not shown — ok)
-- #07 supply-requests PASS-FIX → fixed (expand-in-row for priority/paidAt/receivedQty/delivery/notes, 4× chip button): audit `f6707094`, FIX `d0f83db8`
+- #00–#06 · #07 supply-requests FIX `d0f83db8`
 
 ## PARK
 
