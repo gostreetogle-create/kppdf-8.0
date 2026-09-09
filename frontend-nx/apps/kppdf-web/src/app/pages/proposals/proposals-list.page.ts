@@ -6,6 +6,7 @@ import {
   PiOrganizationsService,
   PiQuotationsService,
   PiStudioDocumentsService,
+  quotationCounterpartyName,
   type AttachOrganizationsPayload,
   type Organization,
   type Quotation,
@@ -78,6 +79,11 @@ const STATUS_LABELS: Record<string, string> = {
                   }
                 </div>
                 <div class="text-xs text-muted-foreground">{{ statusLabel(row.status) }}</div>
+                @if (counterpartyName(row); as name) {
+                  <div class="text-xs text-muted-foreground" data-test="proposal-counterparty">
+                    Заказчик: {{ name }}
+                  </div>
+                }
               </div>
               <div class="flex flex-col items-end gap-1">
                 <div class="flex items-center gap-2">
@@ -106,7 +112,7 @@ const STATUS_LABELS: Record<string, string> = {
                 </div>
                 <button
                   type="button"
-                  class="text-xs underline underline-offset-2 hover:text-ink disabled:opacity-40"
+                  class="pi-outline-btn"
                   data-test="proposal-family-expand"
                   (click)="toggleFamily(row)"
                 >
@@ -127,7 +133,7 @@ const STATUS_LABELS: Record<string, string> = {
                           </span>
                           <button
                             type="button"
-                            class="text-xs underline underline-offset-2 hover:text-ink"
+                            class="pi-outline-btn"
                             data-test="proposal-member-open-studio"
                             (click)="openVariantInStudio(member)"
                           >
@@ -140,7 +146,7 @@ const STATUS_LABELS: Record<string, string> = {
                       @if (family.variants.length > 0 && family.master.familyRole === 'master') {
                         <button
                           type="button"
-                          class="text-xs underline underline-offset-2 hover:text-ink"
+                          class="pi-outline-btn"
                           data-test="proposal-family-sync"
                           (click)="confirmSyncFromMaster(row)"
                         >
@@ -217,6 +223,10 @@ export class ProposalsListPage implements OnInit {
 
   statusLabel(status?: string): string {
     return status ? (STATUS_LABELS[status] ?? status) : '—';
+  }
+
+  counterpartyName(row: Quotation): string | null {
+    return quotationCounterpartyName(row);
   }
 
   /** S43 — org display name for a family variant (lazy-loaded once). */

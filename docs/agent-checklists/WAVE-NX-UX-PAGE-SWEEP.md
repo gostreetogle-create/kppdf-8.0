@@ -21,7 +21,7 @@
 | 09 | `/storage-items` | `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` | **DONE** — `d0458654` (expand-in-row + material chip reset) |
 | 10 | `/stock-movements` | `tasks/PROMPT-CLAUDE-UX-10-stock-movements.md` | **DONE** — `5906bf4a` (expand-in-row via TableComponent's own [expandedRow]) |
 | 11 | `/production` | — | **SKIP** (Гант ок — PO 2026-09-09, не трогать) |
-| 12 | `/proposals` | `tasks/PROMPT-CLAUDE-UX-12-proposals.md` | READY |
+| 12 | `/proposals` | `tasks/PROMPT-CLAUDE-UX-12-proposals.md` | **DONE** — `<pending SHA>` (counterparty subtitle + 3× underline→.pi-outline-btn) |
 | 13 | `/counterparties` | `tasks/PROMPT-CLAUDE-UX-13-counterparties.md` | READY |
 | 14 | `/contracts` | `tasks/PROMPT-CLAUDE-UX-14-contracts.md` | READY |
 | 15 | `/studio` | `tasks/PROMPT-CLAUDE-UX-15-studio-list.md` | READY (list/templates only) |

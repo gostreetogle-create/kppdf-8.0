@@ -25,6 +25,16 @@
 - Пустой журнал говорит «В журнале пока нет КП» и даёт явную кнопку «Создать КП», ведущую в `/proposals/create`; при поиске без результатов показывается «По вашему запросу КП не найдено».
 - «Копировать» вызывает duplicate API и открывает новый draft в студии Создать КП.
 
+### NX UX sweep note (2026-09-09, `TZ-NX-UX-12-proposals-FIX`)
+
+Every row now shows «Заказчик: {name}» under the status line when `counterpartyId` is populated
+(`quotationCounterpartyName()`, `quotation.types.ts`) — previously invisible anywhere on this page
+despite the backend always populating it on `list()`. The 3 underline-styled actions inside the
+family panel (toggle, per-variant «В студии», «Синхронизировать состав с мастером») are now
+`.pi-outline-btn`. See `docs/audits/2026-09-09-nx-ux-proposals-audit.md`, which also flags a
+doc-vs-code drift: this file's described search/sort/pagination/soft-delete UI does not exist in
+the current `proposals-list.page.ts` — left untouched (out of this UX-only TZ's scope).
+
 ## Семья (313 + NX S40–S48)
 
 Канон: один состав (master) раскатывается на наши `Organization`. BE: SALES-303. NX UI: WAVE-NX-KP-FAMILY.

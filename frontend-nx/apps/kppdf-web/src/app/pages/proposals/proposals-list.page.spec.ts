@@ -69,6 +69,53 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
     TestBed.resetTestingModule();
   });
 
+  it('shows the populated counterparty name on a row when present', async () => {
+    quotationsApi = {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: [
+            {
+              _id: 'q-with-cp',
+              number: 'KP-020',
+              status: 'draft',
+              counterpartyId: { _id: 'cp-1', name: 'ООО Ромашка' },
+            },
+          ],
+        }),
+      ),
+      convertToOrder: jest.fn(),
+      getFamily: jest.fn(),
+    };
+    studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
+    organizationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+    };
+    toast = { error: jest.fn() };
+    await TestBed.configureTestingModule({
+      imports: [ProposalsListPage],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { user: () => null } },
+        { provide: PiQuotationsService, useValue: quotationsApi },
+        { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiToastService, useValue: toast },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProposalsListPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const chip = fixture.nativeElement.querySelector(
+      '[data-test="proposal-counterparty"]',
+    );
+    expect(chip?.textContent).toContain('ООО Ромашка');
+  });
+
   it('renders the convert button only on accepted rows', async () => {
     await setup();
     await settle();

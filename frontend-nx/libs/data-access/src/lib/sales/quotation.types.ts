@@ -50,6 +50,12 @@ export interface QuotationFamilyMemberSummary {
   readonly status: QuotationStatus;
 }
 
+export function quotationCounterpartyName(quotation: Quotation): string | null {
+  const ref = quotation.counterpartyId;
+  if (ref && typeof ref === 'object') return ref.name ?? null;
+  return null;
+}
+
 /** GET /quotations/:id/family + POST …/family/attach-organizations response. */
 export interface QuotationFamilyResponse {
   readonly master: QuotationFamilyMemberSummary;
