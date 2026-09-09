@@ -62,6 +62,7 @@ whole-order ship-without-doc через `ShipConfirmDialogComponent`, тот ж�
 | TZ-DESK-426 | Фильтр `orderId` + `from=desk` (чип «Отгрузка») |
 | TZ-SHIP-433 | Отмена ошибочной отгрузки (cancel-shipment), tray «Отменить отгрузку», page.md — реестр |
 | TZ-SHIP-440 | Склад в create/edit выбирается из реестра `GET /warehouses`, не вводится как ObjectId |
+| **TZ-NX-UX-05-shipping-FIX** | Expand-in-row (registry pattern) — клик по строке показывает получателя/адрес/водителя/примечание/позиции/документы read-only, без ухода в write-intent диалог «Изменить»; filter-chip «Сбросить» переведён с underline-текста на `.pi-outline-btn`. WAVE-NX-UX-PAGE-SWEEP #05 — DONE |
 
 ## Особенности
 

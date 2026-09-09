@@ -12,7 +12,7 @@ export interface ShipmentDocDialogData {
   readonly shipment: Shipment;
 }
 
-const DOC_TYPE_LABELS: Record<string, string> = {
+export const DOC_TYPE_LABELS: Record<string, string> = {
   ttn: 'ТТН',
   upd: 'УПД',
   invoice: 'Счёт',

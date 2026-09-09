@@ -45,3 +45,25 @@ styled as underline text). FIX TZ (`TZ-NX-UX-05-shipping-FIX`) — **claim**: ad
 (same hand-rolled pattern as `/orders` list — `orders-list.page.ts`) showing items/recipient/
 address/driver/notes/docs read-only; restyle the chip reset button to `.pi-outline-btn`/similar
 if free.
+
+## Closeout (FIX applied)
+
+- **P1 (T1) — fixed.** `shipping.page.ts` rows now expand-in-row on click/Enter/Space
+  (`tabindex="0"`, `aria-expanded`, same pattern as `orders-list.page.ts`), showing
+  Получатель/Адрес/Водитель/Примечание/Позиции/Документы read-only (`:120-222`) — no edit-intent
+  dialog needed just to see what's in a shipment. Row-action buttons get `(click)="$event.
+  stopPropagation()"` on their container so dispatch/cancel/deliver/edit/doc clicks don't also
+  toggle the row. `expandedId` resets on `load()` (filter/reload collapses, matches orders
+  precedent). Doc-type labels (`ТТН`/`УПД`/`Счёт`/`Другое`) reused via `DOC_TYPE_LABELS`,
+  exported from `shipment-doc-dialog.component.ts` rather than duplicated.
+- **P2 (A1) — fixed.** Filter-chip «Сбросить» (`:60-62`) converted from `underline
+  underline-offset-2` text to `.pi-outline-btn` — no ad-hoc size override added (would just
+  reintroduce a new one-off style); accepted the canonical component's own proportions inside
+  the chip, consistent with the #04 orders fix precedent.
+- **Specs added** (TZ requires specs where expand/actions behavior changes): two new cases in
+  `shipping.page.spec.ts` — expand shows recipient/address/driver/notes/items/docs and collapses
+  on second click (`aria-expanded` asserted both ways); clicking a row action button does **not**
+  toggle expand (stopPropagation verified).
+- Gates: `nx build kppdf-web` PASS; `nx test kppdf-web` — 103/103 suites PASS (683 passed = 681
+  baseline + 2 new, 0 regressions), including all 4 shipping specs and the 2 new expand tests.
+- `docs/pages/shipping.page.md` — TZ reference row added.

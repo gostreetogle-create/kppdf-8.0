@@ -153,4 +153,48 @@ describe('ShippingPage (TZ-NX-SHIP-S1-REGISTRY)', () => {
     (fixture.nativeElement.querySelector('[data-test="shipping-deliver"]') as HTMLButtonElement).click();
     expect(shipmentsApi.update).toHaveBeenCalledWith('s1', { status: 'delivered' });
   });
+
+  it('expands a row on click to show recipient/address/items/docs, and collapses on second click', async () => {
+    await setup(
+      {},
+      [
+        shipment({
+          recipient: 'ООО «Ромашка»',
+          address: 'г. Москва, ул. Ленина, 1',
+          driverInfo: 'Иванов И.И.',
+          notes: 'Осторожно, стекло',
+          items: [{ productId: 'p1', productName: 'Дверь входная', quantity: 2, unit: 'шт' }],
+          docs: [{ number: 'ТТН-1', date: '2026-09-01T00:00:00.000Z', type: 'ttn', totalAmount: 1000 }],
+        }),
+      ],
+    );
+    const row = fixture.nativeElement.querySelector('[data-test="shipping-row"]') as HTMLElement;
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[data-test="shipping-row-expand"]')).toBeFalsy();
+
+    row.click();
+    fixture.detectChanges();
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    const expandEl = fixture.nativeElement.querySelector('[data-test="shipping-row-expand"]');
+    expect(expandEl).toBeTruthy();
+    expect(expandEl.textContent).toContain('ООО «Ромашка»');
+    expect(expandEl.textContent).toContain('г. Москва, ул. Ленина, 1');
+    expect(expandEl.textContent).toContain('Иванов И.И.');
+    expect(expandEl.textContent).toContain('Осторожно, стекло');
+    expect(expandEl.textContent).toContain('Дверь входная');
+    expect(expandEl.textContent).toContain('ТТН-1');
+
+    row.click();
+    fixture.detectChanges();
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[data-test="shipping-row-expand"]')).toBeFalsy();
+  });
+
+  it('does not toggle expand when clicking a row action button', async () => {
+    await setup({}, [shipment({ warehouseId: 'w1' })]);
+    (fixture.nativeElement.querySelector('[data-test="shipping-dispatch-s1"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const row = fixture.nativeElement.querySelector('[data-test="shipping-row"]') as HTMLElement;
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+  });
 });

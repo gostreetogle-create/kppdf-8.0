@@ -18,7 +18,7 @@ import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { ShipmentCreateDialogComponent, type ShipmentCreateDialogData } from './shipment-create-dialog.component';
 import { ShipmentEditDialogComponent, type ShipmentEditDialogData } from './shipment-edit-dialog.component';
-import { ShipmentDocDialogComponent, type ShipmentDocDialogData } from './shipment-doc-dialog.component';
+import { ShipmentDocDialogComponent, type ShipmentDocDialogData, DOC_TYPE_LABELS } from './shipment-doc-dialog.component';
 
 const STATUS_LABELS: Record<ShipmentStatus, string> = {
   draft: 'Черновик',
@@ -57,7 +57,7 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
         @if (orderFilter()) {
           <span class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-sm bg-paper-2 border hairline" data-test="shipping-order-filter-chip">
             <span>Фильтр: заказ {{ orderFilterLabel() }}</span>
-            <button type="button" class="underline underline-offset-2 hover:text-sunrise-warm" (click)="clearOrderFilter()" data-test="shipping-order-filter-clear">
+            <button type="button" class="pi-outline-btn" (click)="clearOrderFilter()" data-test="shipping-order-filter-clear">
               Сбросить
             </button>
           </span>
@@ -118,13 +118,22 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
               <span role="columnheader" aria-label="Действия"></span>
             </div>
             @for (shipment of shipments(); track shipment._id) {
-              <div class="grid grid-cols-[7rem_minmax(7rem,1fr)_6rem_5rem_8rem_minmax(14rem,1.5fr)] gap-3 items-center px-4 py-3 hairline-bottom last:border-b-0" role="row" data-test="shipping-row">
+              <div
+                class="grid grid-cols-[7rem_minmax(7rem,1fr)_6rem_5rem_8rem_minmax(14rem,1.5fr)] gap-3 items-center px-4 py-3 hairline-bottom last:border-b-0 cursor-pointer pi-focus-ring"
+                role="row"
+                data-test="shipping-row"
+                tabindex="0"
+                [attr.aria-expanded]="expandedId() === shipment._id"
+                (click)="toggleExpand(shipment._id)"
+                (keydown.enter)="toggleExpand(shipment._id)"
+                (keydown.space)="onRowSpace($event, shipment._id)"
+              >
                 <div role="cell"><strong>{{ shipment.number }}</strong></div>
                 <div role="cell" class="truncate">{{ orderLabel(shipment.orderId) }}</div>
                 <div role="cell">{{ fmtDate(shipment.date) }}</div>
                 <div role="cell">{{ shipment.items.length }}</div>
                 <div role="cell" [attr.data-status]="shipment.status">{{ statusLabel(shipment.status) }}</div>
-                <div class="flex items-center gap-2 flex-wrap justify-end" role="cell">
+                <div class="flex items-center gap-2 flex-wrap justify-end" role="cell" (click)="$event.stopPropagation()">
                   @if (shipment.status === 'scheduled' || shipment.status === 'draft') {
                     <button
                       class="pi-button pi-button-primary"
@@ -165,6 +174,52 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
                   }
                 </div>
               </div>
+              @if (expandedId() === shipment._id) {
+                <div class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2" data-test="shipping-row-expand">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <div class="pi-label text-muted-foreground">Получатель</div>
+                      <div class="text-sm">{{ shipment.recipient || '—' }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Адрес</div>
+                      <div class="text-sm">{{ shipment.address || '—' }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Водитель / перевозчик</div>
+                      <div class="text-sm">{{ shipment.driverInfo || '—' }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Примечание</div>
+                      <div class="text-sm">{{ shipment.notes || '—' }}</div>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="pi-label text-muted-foreground mb-1">Позиции</div>
+                    @if (shipment.items.length === 0) {
+                      <p class="text-xs text-muted-foreground m-0">Нет позиций.</p>
+                    } @else {
+                      <ul class="text-sm space-y-0.5 m-0 pl-4" data-test="shipping-expand-items">
+                        @for (item of shipment.items; track item.lineId || item.productId) {
+                          <li>{{ item.productName || item.productId }} — {{ item.quantity }} {{ item.unit || 'шт' }}</li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                  <div>
+                    <div class="pi-label text-muted-foreground mb-1">Документы</div>
+                    @if (!shipment.docs || shipment.docs.length === 0) {
+                      <p class="text-xs text-muted-foreground m-0">Документов нет.</p>
+                    } @else {
+                      <ul class="text-sm space-y-0.5 m-0 pl-4" data-test="shipping-expand-docs">
+                        @for (doc of shipment.docs; track doc.number + doc.date) {
+                          <li>{{ docTypeLabel(doc.type) }} {{ doc.number }} · {{ fmtDate(doc.date) }} · {{ doc.totalAmount }} ₽</li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                </div>
+              }
             }
           </div>
         </div>
@@ -192,6 +247,9 @@ export class ShippingPage {
   protected readonly busy = signal(false);
   protected readonly statusFilter = signal<ShipmentStatus | ''>('');
   protected readonly orderFilter = signal('');
+  /** Single expand (registry pattern) — reloading the list collapses it. */
+  protected readonly expandedId = signal<string | null>(null);
+  protected readonly docTypeLabels = DOC_TYPE_LABELS;
 
   protected readonly orderFilterLabel = computed(() => {
     const id = this.orderFilter();
@@ -221,6 +279,19 @@ export class ShippingPage {
     return orderId.number ?? orderId._id.slice(-6);
   }
 
+  protected docTypeLabel(type: string): string {
+    return this.docTypeLabels[type] ?? type;
+  }
+
+  protected toggleExpand(shipmentId: string): void {
+    this.expandedId.update((current) => (current === shipmentId ? null : shipmentId));
+  }
+
+  protected onRowSpace(event: Event, shipmentId: string): void {
+    event.preventDefault();
+    this.toggleExpand(shipmentId);
+  }
+
   protected onStatusFilterChange(event: Event): void {
     this.statusFilter.set((event.target as HTMLSelectElement).value as ShipmentStatus | '');
     this.load();
@@ -245,6 +316,7 @@ export class ShippingPage {
 
   load(): void {
     this.status.set('loading');
+    this.expandedId.set(null);
     void firstValueFrom(
       this.shipmentsApi.list({ status: this.statusFilter() || undefined, orderId: this.orderFilter() || undefined }),
     ).then((result) => {
