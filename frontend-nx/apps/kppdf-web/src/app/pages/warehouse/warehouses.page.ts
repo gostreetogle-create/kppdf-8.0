@@ -3,6 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { PiWarehousesService, type Warehouse, type WarehouseWritePayload } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
@@ -12,7 +13,7 @@ import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './wa
   selector: 'pi-warehouses-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent],
+  imports: [PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="warehouses-page">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -20,9 +21,9 @@ import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './wa
           <div class="eyebrow">Склад</div>
           <h1 class="font-display text-2xl m-0">Склады</h1>
         </div>
-        <button class="pi-button pi-button-primary" type="button" (click)="openCreate()" data-test="warehouse-create">
+        <app-pi-button variant="default" type="button" (click)="openCreate()" data-test="warehouse-create">
           Создать склад
-        </button>
+        </app-pi-button>
       </div>
 
       <div class="flex items-center gap-3 mb-4">
@@ -79,10 +80,10 @@ import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './wa
               <span class="text-sm" role="cell" [class.text-muted-foreground]="!row.isActive">{{ row.isActive ? 'Активен' : 'Неактивен' }}</span>
               <div class="flex items-center gap-2 justify-end" role="cell">
                 @if (!row.isDefault) {
-                  <button class="pi-button pi-button-secondary" type="button" (click)="makeDefault(row)" data-test="warehouse-make-default">Сделать по умолчанию</button>
+                  <app-pi-button variant="secondary" type="button" (click)="makeDefault(row)" data-test="warehouse-make-default">Сделать по умолчанию</app-pi-button>
                 }
-                <button class="pi-button pi-button-secondary" type="button" (click)="openEdit(row)" data-test="warehouse-edit">Изменить</button>
-                <button class="pi-button pi-button-secondary" type="button" (click)="confirmDelete(row)" data-test="warehouse-delete">Удалить</button>
+                <app-pi-button variant="secondary" type="button" (click)="openEdit(row)" data-test="warehouse-edit">Изменить</app-pi-button>
+                <app-pi-button variant="secondary" type="button" (click)="confirmDelete(row)" data-test="warehouse-delete">Удалить</app-pi-button>
               </div>
             </div>
           }

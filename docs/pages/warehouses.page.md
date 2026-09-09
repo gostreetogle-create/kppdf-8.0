@@ -49,6 +49,7 @@ Quantity SoT is not part of this page: it remains `StorageItem` / stock movement
 | Warehouse pack B | Legacy registry CRUD reference |
 | **TZ-WAREHOUSE-UX-301** | Legacy type default/hint; not exposed in NX W1 |
 | **TZ-NX-WAREHOUSE-DEFAULT** | `isDefault` flag — exactly one true at a time (`WarehouseService.setDefault`/`findDefault`, atomic unset-others); form checkbox + list badge/quick-action «Сделать по умолчанию»; used by S4 receive→stock to resolve the confirm-dialog warehouse |
+| **TZ-NX-UX-08-warehouses-FIX** | `pi-button`/`pi-button-primary`/`pi-button-secondary`/`pi-button-outline` — **не существующие CSS-классы** (нигде не определены, проверено по всем stylesheet + tailwind config + git history) — все кнопки на `warehouses.page.ts` и `warehouse-form-dialog.component.ts` рендерились без стиля Paper & Ink. Заменены на реальный `<app-pi-button variant="...">`. **Та же ошибка в ещё 17 файлах по всему приложению** (включая `/orders`, `/shipping`, `/supply`, `/supply-requests` — уже DONE в этой волне) — вне рамок этого TZ, см. `docs/audits/2026-09-09-nx-ux-warehouses-audit.md` §Cross-cutting finding, требует отдельного решения PO |
 
 ---
 

@@ -87,3 +87,32 @@ cross-cutting finding above, scoped to this page's own fix). No other smells. FI
 in `warehouses.page.ts` **and** `warehouse-form-dialog.component.ts` (same write-flow, same bug,
 PO-authorized same-page-fix rule) with the real `<app-pi-button variant="...">` component. Do
 **not** touch the other 17 affected files — out of scope for this TZ.
+
+## Closeout (FIX applied)
+
+- **P0 (A1) — fixed for `/warehouses` only.** All 6 buttons converted from
+  `<button class="pi-button pi-button-*">` to the real `<app-pi-button variant="...">`:
+  `warehouses.page.ts` — «Создать склад» (`variant="default"`), «Сделать по умолчанию»/«Изменить»/
+  «Удалить» (`variant="secondary"`); `warehouse-form-dialog.component.ts` — «Отмена»
+  (`variant="outline"`), «Сохранить» (`variant="default"`, keeps its `[disabled]` binding). Pure
+  component swap, no handler signature changes (`(click)="fn()"`, no `$event` dependency
+  anywhere), no behavior change — matches the file's pre-existing `data-test` attributes and
+  `[disabled]` logic exactly.
+- **Empirically verified the `data-test`-on-`<app-pi-button>` + `.click()` test pattern still
+  works** before assuming it (checked an existing passing test elsewhere in the codebase using
+  the identical pattern first, then confirmed on this page's own specs) — all 5 existing tests in
+  `warehouses.page.spec.ts` (3) and `warehouse-form-dialog.component.spec.ts` (2) pass unmodified.
+  No new specs needed — pure visual/class change, no behavior changed, satisfies TZ criteria #4
+  ("specs for expand/actions where behaviour changes") vacuously.
+- Gates: `nx build kppdf-web` PASS; `nx test kppdf-web` — 103/103 suites PASS (687 passed, 0
+  regressions, identical to pre-fix baseline since no tests were added or needed).
+- `docs/pages/warehouses.page.md` — NX UX note added, cross-references the cross-cutting finding.
+- **Did not touch** the other 17 files sharing this bug (`orders-list.page.ts`, `order-create.page.ts`,
+  `order-detail.page.ts`, `shipping.page.ts`, `supply.page.ts`, `supply-requests.page.ts`,
+  `contracts-list.page.ts`, `counterparties-list.page.ts`, `counterparty-form-dialog.component.ts`,
+  `proposals-list.page.ts`, `proposal-attach-orgs.dialog.ts`, `studio-list.page.ts`,
+  `studio-templates-list.page.ts`, `storage-items.page.ts`, `storage-adjust-dialog.component.ts`,
+  `storage-put-on-stock-dialog.component.ts`) — out of this TZ's scope per conflict keys and
+  "НЕ: другие routes." **Flagged for the PO in the Executor report** — recommend a dedicated
+  cross-cutting TZ, or picking each file up as its own page's wave comes due (mechanical,
+  low-risk fix per the pattern proven here).

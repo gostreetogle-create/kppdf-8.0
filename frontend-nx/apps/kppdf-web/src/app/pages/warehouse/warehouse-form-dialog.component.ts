@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF, type DialogRef } from '@kppdf/ui/dialog';
+import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 import type { Warehouse, WarehouseWritePayload } from '@kppdf/data-access';
 
@@ -11,7 +12,7 @@ export interface WarehouseFormDialogData {
   selector: 'pi-warehouse-form-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiDialogComponent],
+  imports: [PiDialogComponent, ButtonComponent],
   template: `
     <app-pi-dialog
       [title]="data.warehouse ? 'Изменить склад' : 'Создать склад'"
@@ -70,16 +71,16 @@ export interface WarehouseFormDialogData {
         }
       </div>
       <div footer class="flex justify-end gap-3">
-        <button type="button" class="pi-button pi-button-outline" (click)="ref.close(undefined)">Отмена</button>
-        <button
+        <app-pi-button type="button" variant="outline" (click)="ref.close(undefined)">Отмена</app-pi-button>
+        <app-pi-button
           type="button"
-          class="pi-button pi-button-primary"
+          variant="default"
           [disabled]="saving() || !name().trim()"
           (click)="submit()"
           data-test="warehouse-form-submit"
         >
           {{ saving() ? 'Сохранение…' : 'Сохранить' }}
-        </button>
+        </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
