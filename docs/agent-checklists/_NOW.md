@@ -15,7 +15,7 @@ updated_at: 2026-09-09T10:35:00+03:00
 ## DONE
 
 - UX #00 kit-overview PASS-EMPTY `c516e40d`
-- UX #01 kit-forms PASS-FIX → fixed (destructive confirm + dead footer buttons) `b46d239e` + FIX commit below
+- UX #01 kit-forms PASS-FIX → fixed (destructive confirm + dead footer buttons): audit `b46d239e`, FIX `4f7afcc8`
 
 ## PARK
 
