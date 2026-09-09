@@ -165,4 +165,81 @@ describe('StockMovementsPage (NX W3)', () => {
     await fixture.whenStable();
     expect(movementApi.list.mock.calls.length).toBe(callsBeforeClose + 1);
   });
+
+  it('expands a row to show zone/unit/sku/order and collapses on second click', async () => {
+    await setup();
+    const row = fixture.nativeElement.querySelector(
+      '[data-test="table-row-sm1"]',
+    ) as HTMLElement;
+
+    row.click();
+    fixture.detectChanges();
+    let expand = fixture.nativeElement.querySelector(
+      '[data-test="movement-row-expand"]',
+    );
+    expect(expand?.textContent).toContain('кг');
+    expect(expand?.textContent).toContain('order-1');
+
+    row.click();
+    fixture.detectChanges();
+    expand = fixture.nativeElement.querySelector(
+      '[data-test="movement-row-expand"]',
+    );
+    expect(expand).toBeNull();
+  });
+
+  it('shows the destination warehouse/zone in the expand panel for transfers', async () => {
+    const transferRow: StockMovement = {
+      _id: 'sm2',
+      type: 'transfer',
+      date: '2026-09-06T10:00:00.000Z',
+      materialId: { _id: 'm1', name: 'Лист стальной' },
+      warehouseId: 'w1',
+      warehouse: warehouses[0],
+      toWarehouseId: 'w2',
+      toWarehouse: warehouses[1],
+      toZoneName: 'B-02',
+      qty: 5,
+    };
+    movementApi = {
+      list: jest
+        .fn()
+        .mockReturnValue(
+          of({ ok: true, data: { items: [transferRow], total: 1 } }),
+        ),
+    };
+    warehousesApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: warehouses })),
+    };
+    dialog = { open: jest.fn() };
+    router = { navigate: jest.fn().mockResolvedValue(true) };
+    queryParams$ = new BehaviorSubject(convertToParamMap({}));
+
+    await TestBed.configureTestingModule({
+      imports: [StockMovementsPage],
+      providers: [
+        { provide: ActivatedRoute, useValue: { queryParamMap: queryParams$ } },
+        { provide: Router, useValue: router },
+        { provide: PiStockMovementsService, useValue: movementApi },
+        { provide: PiWarehousesService, useValue: warehousesApi },
+        { provide: PiDialogService, useValue: dialog },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(StockMovementsPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const row = fixture.nativeElement.querySelector(
+      '[data-test="table-row-sm2"]',
+    ) as HTMLElement;
+    row.click();
+    fixture.detectChanges();
+
+    const expand = fixture.nativeElement.querySelector(
+      '[data-test="movement-row-expand"]',
+    );
+    expect(expand?.textContent).toContain('Метизы');
+    expect(expand?.textContent).toContain('B-02');
+  });
 });

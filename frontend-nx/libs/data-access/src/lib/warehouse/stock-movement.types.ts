@@ -77,3 +77,38 @@ export function stockMovementWarehouseName(movement: StockMovement): string {
 export function stockMovementDocument(movement: StockMovement): string {
   return movement.documentRef ?? movement.orderId ?? '—';
 }
+
+export function stockMovementUnit(movement: StockMovement): string {
+  const material =
+    typeof movement.materialId === 'object'
+      ? movement.materialId
+      : movement.material;
+  const product =
+    typeof movement.productId === 'object'
+      ? movement.productId
+      : movement.product;
+  return material?.unit ?? product?.unit ?? '—';
+}
+
+export function stockMovementSku(movement: StockMovement): string {
+  const material =
+    typeof movement.materialId === 'object'
+      ? movement.materialId
+      : movement.material;
+  const product =
+    typeof movement.productId === 'object'
+      ? movement.productId
+      : movement.product;
+  return material?.sku ?? product?.sku ?? '—';
+}
+
+export function stockMovementToWarehouseName(
+  movement: StockMovement,
+): string | null {
+  if (movement.toWarehouse?.name) return movement.toWarehouse.name;
+  if (typeof movement.toWarehouseId === 'object')
+    return movement.toWarehouseId.name;
+  if (typeof movement.toWarehouseId === 'string' && movement.toWarehouseId)
+    return movement.toWarehouseId;
+  return null;
+}

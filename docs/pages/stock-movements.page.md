@@ -38,6 +38,16 @@ The NX table renders:
 
 The list consumes the canonical envelope `{ items, total }` and preserves loading, empty, and retryable error states.
 
+### NX UX sweep note (2026-09-09, `TZ-NX-UX-10-stock-movements-FIX`)
+
+Rows expand-in-row on click (via `TableComponent`'s own `[expandedRow]`/`[expandedRowWhen]`/
+`(rowClick)` inputs — no hand-rolled click/keyboard wiring needed here, unlike the sibling pages
+this wave), revealing **Зона**, **Единица** (`stockMovementUnit()`), **Артикул**
+(`stockMovementSku()`), **ID заказа**, and — for `type: 'transfer'` rows only — **Склад
+назначения** / **Зона назначения** (`stockMovementToWarehouseName()`). None of these were visible
+anywhere before this fix; `orderId` in particular was silently dropped from the table whenever
+`documentRef` was also set. See `docs/audits/2026-09-09-nx-ux-stock-movements-audit.md`.
+
 ## Create actions
 
 The page exposes only **+ Приход** and **+ Расход**. Both open the same focused dialog and use the existing atomic endpoint:

@@ -13,7 +13,10 @@ import {
   PiStockMovementsService,
   PiWarehousesService,
   stockMovementDocument,
+  stockMovementSku,
   stockMovementTargetName,
+  stockMovementToWarehouseName,
+  stockMovementUnit,
   stockMovementWarehouseName,
   type MovementType,
   type StockMovement,
@@ -133,9 +136,46 @@ const MOVEMENT_TYPES: readonly (MovementType | '')[] = [
             [initialSortKey]="'date'"
             [initialSortDir]="'desc'"
             [ariaLabel]="'Движения на складе'"
+            [expandedRow]="detailTpl"
+            [expandedRowWhen]="isRowExpanded"
+            (rowClick)="toggleRow($event)"
           />
         </div>
       }
+
+      <ng-template #detailTpl let-row>
+        <div
+          class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3"
+          data-test="movement-row-expand"
+        >
+          <div>
+            <div class="pi-label text-muted-foreground">Зона</div>
+            <div class="text-sm">{{ row.zoneName || '—' }}</div>
+          </div>
+          <div>
+            <div class="pi-label text-muted-foreground">Единица</div>
+            <div class="text-sm">{{ itemUnit(row) }}</div>
+          </div>
+          <div>
+            <div class="pi-label text-muted-foreground">Артикул</div>
+            <div class="text-sm">{{ itemSku(row) }}</div>
+          </div>
+          @if (toWarehouseName(row)) {
+            <div>
+              <div class="pi-label text-muted-foreground">Склад назначения</div>
+              <div class="text-sm">{{ toWarehouseName(row) }}</div>
+            </div>
+            <div>
+              <div class="pi-label text-muted-foreground">Зона назначения</div>
+              <div class="text-sm">{{ row.toZoneName || '—' }}</div>
+            </div>
+          }
+          <div>
+            <div class="pi-label text-muted-foreground">ID заказа</div>
+            <div class="text-sm">{{ row.orderId || '—' }}</div>
+          </div>
+        </div>
+      </ng-template>
     </main>
   `,
 })
@@ -154,6 +194,7 @@ export class StockMovementsPage {
   readonly items = signal<StockMovement[]>([]);
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal('');
+  private readonly expandedId = signal<string | null>(null);
 
   private loadVersion = 0;
 
@@ -240,6 +281,7 @@ export class StockMovementsPage {
     const version = ++this.loadVersion;
     this.status.set('loading');
     this.error.set('');
+    this.expandedId.set(null);
     void firstValueFrom(
       this.movementsApi.list({
         type: this.selectedType() || undefined,
@@ -263,6 +305,25 @@ export class StockMovementsPage {
 
   openOut(): void {
     this.openMovement('out');
+  }
+
+  readonly isRowExpanded = (row: StockMovement): boolean =>
+    row._id === this.expandedId();
+
+  toggleRow(row: StockMovement): void {
+    this.expandedId.update((id) => (id === row._id ? null : row._id));
+  }
+
+  itemUnit(row: StockMovement): string {
+    return stockMovementUnit(row);
+  }
+
+  itemSku(row: StockMovement): string {
+    return stockMovementSku(row);
+  }
+
+  toWarehouseName(row: StockMovement): string | null {
+    return stockMovementToWarehouseName(row);
   }
 
   typeLabel(type: MovementType): string {
