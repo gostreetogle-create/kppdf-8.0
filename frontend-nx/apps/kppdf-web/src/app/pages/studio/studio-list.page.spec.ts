@@ -84,6 +84,23 @@ describe('StudioListPage — create КП (TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH)', 
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
+  it('shows the Russian status label instead of the raw status value', async () => {
+    await setup([
+      {
+        _id: 'doc-frozen',
+        name: 'Замороженный документ',
+        status: 'frozen',
+        orientation: 'portrait',
+        pageSize: 'A4',
+        updatedAt: '2026-09-06T10:00:00.000Z',
+      },
+    ]);
+
+    const row = fixture.nativeElement.querySelector('[data-test="studio-row"]');
+    expect(row?.textContent).toContain('Заморожен');
+    expect(row?.textContent).not.toContain('frozen');
+  });
+
   it('creates a document with the КП doc type pre-selected and opens it', async () => {
     await setup();
     service.create.mockReturnValue(

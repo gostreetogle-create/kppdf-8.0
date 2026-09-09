@@ -13,6 +13,13 @@ import { rememberStudioDocument } from './studio-session';
 import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogData } from './studio-template-picker-dialog.component';
 import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData, type StudioCreateDoctypeResult } from './studio-create-doctype-dialog.component';
 
+/** Row-caption labels for the values actually used by `statusFilter` below (draft/frozen/final). */
+const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {
+  draft: 'Черновик',
+  frozen: 'Заморожен',
+  final: 'В архиве',
+};
+
 @Component({
   selector: 'pi-studio-list-page',
   standalone: true,
@@ -47,11 +54,11 @@ import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData,
             <div class="flex items-center justify-between gap-4 px-4 py-3 hairline-bottom" data-test="studio-row">
               <button class="text-left pi-focus-ring" type="button" (click)="open(document)">
                 <div class="font-medium">{{ document.name }}</div>
-                <div class="text-xs text-muted-foreground">{{ document.status }} · {{ formatUpdatedAt(document.updatedAt) }}</div>
+                <div class="text-xs text-muted-foreground">{{ documentStatusLabel(document.status) }} · {{ formatUpdatedAt(document.updatedAt) }}</div>
               </button>
               <div class="flex items-center gap-2">
                 <app-pi-button variant="ghost" type="button" data-test="studio-duplicate" (click)="duplicate(document)">Дублировать</app-pi-button>
-                <button class="pi-icon-button pi-focus-ring" type="button" aria-label="Удалить" title="Удалить" data-test="studio-delete" (click)="remove(document)">×</button>
+                <button class="pi-icon-btn pi-icon-btn-danger pi-focus-ring" type="button" aria-label="Удалить" title="Удалить" data-test="studio-delete" (click)="remove(document)">×</button>
               </div>
             </div>
           }
@@ -204,6 +211,9 @@ export class StudioListPage implements OnInit {
         void this.router.navigate(['/studio', result.data._id]);
       } else this.toast.error(String(result.error));
     });
+  }
+  protected documentStatusLabel(status: string): string {
+    return STUDIO_DOCUMENT_STATUS_LABELS[status] ?? status;
   }
   protected formatUpdatedAt(value?: string): string {
     if (!value) return '—';

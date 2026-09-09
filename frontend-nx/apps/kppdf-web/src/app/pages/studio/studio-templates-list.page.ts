@@ -45,7 +45,7 @@ import { rememberStudioDocument } from './studio-session';
               </div>
               <div class="flex items-center gap-2">
                 <app-pi-button variant="secondary" type="button" [attr.data-test]="'studio-template-create-' + template._id" (click)="createFromTemplate(template)">Создать документ</app-pi-button>
-                <button class="pi-icon-button pi-focus-ring" type="button" aria-label="Удалить шаблон" title="Удалить" [attr.data-test]="'studio-template-delete-' + template._id" (click)="remove(template)">×</button>
+                <button class="pi-icon-btn pi-icon-btn-danger pi-focus-ring" type="button" aria-label="Удалить шаблон" title="Удалить" [attr.data-test]="'studio-template-delete-' + template._id" (click)="remove(template)">×</button>
               </div>
             </div>
           }

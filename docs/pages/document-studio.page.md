@@ -14,6 +14,16 @@
 
 Аудит шапки: [`../audits/2026-09-06-docstudio-chrome-ia-audit.md`](../audits/2026-09-06-docstudio-chrome-ia-audit.md) · WAVE `WAVE-DOCSTUDIO-CHROME-IA.md`.
 
+**NX UX sweep (2026-09-09, `TZ-NX-UX-15-studio-list-FIX`) — `/studio` и `/studio/templates` списки
+(A4-редактор `/studio/:id` НЕ затронут):** строка документа в `/studio` теперь показывает RU-метку
+статуса («Черновик»/«Заморожен»/«В архиве») вместо сырого английского значения (`document.status`
+раньше рендерился как есть — «draft» вместо «Черновик»). Кнопка «×» удаления на обеих страницах
+(`/studio` и `/studio/templates`) переведена с мёртвого `class="pi-icon-button"` (нет CSS, тот же
+класс мёртвых кнопок, что и `pi-button-*` из `08b`) на реальный `.pi-icon-btn .pi-icon-btn-danger`.
+Третье место с тем же мёртвым классом, `studio-template-picker-dialog.component.ts`, вне glob'а
+этого TZ (`studio-*.page.ts`) — флагнуто, не тронуто. См.
+`docs/audits/2026-09-09-nx-ux-studio-list-audit.md`.
+
 **Live-данные таблиц (S46):** строки таблиц с живым источником (`catalog-*`, ERP) живут в клиенте (`settings.liveRows`, ephemeral — **не** пишутся в Mongo); после сохранения layout (drag/resize) клиентские строки восстанавливаются merge'ем ответа API с локальным блоком, иначе — one-shot re-hydrate через `putDataSet`. Аудит: [`../audits/2026-09-06-docstudio-live-data-hydrate-audit.md`](../audits/2026-09-06-docstudio-live-data-hydrate-audit.md).
 
 **Привязка колонок таблицы (S47):** ячейка = `column.key`, **не** позиция в строке — `COLUMN_ALIASES`/`lineValue` в `studio-data-resolver.ts` знают `sku`/`article`, `photo`, `productName`/`name`, `description`, `unit`, `unitPrice`/`price` (parity с Create КП `proposal-table-layout.util.ts`). Канон 6 колонок КП (скрин PO): **Артикул | Фото | Наименование | Описание | Ед.Изм. | Цена** — любой порядок ключей работает, дубликаты по алиасу не бывает. Смена «Вид таблицы» **или** структуры колонок (add/remove/rename-key) на таблице с живым источником обязана заново дёрнуть `putDataSet` с пустыми `rows` (`rehydrateLiveRowsAfterColumnChange` в `studio-editor.page.ts`) — иначе `liveRows`, посчитанные под старое число колонок, остаются и съезжают под новые заголовки (было: 3 ячейки под 6 заголовками). Скрытые колонки (`tableHiddenColumnKeys`) фильтруются одинаково что для ручных, что для live-строк (`studioVisibleColumnIndices`) — раньше live-таблицы игнорировали hide. **Known limitation:** в `TableTemplate` пока нет seed-пресета с ключами PO-канона (есть только `КП — позиции`, другой набор колонок) — оператор создаёт вид таблицы вручную через «Свойства → Сохранить как шаблон», ре-хайдрейт после выбора уже корректен. Аудиты: [`../audits/2026-09-08-docstudio-table-field-binding-audit.md`](../audits/2026-09-08-docstudio-table-field-binding-audit.md), [`../audits/2026-09-08-docstudio-table-field-binding-audit-claude-recheck.md`](../audits/2026-09-08-docstudio-table-field-binding-audit-claude-recheck.md).
