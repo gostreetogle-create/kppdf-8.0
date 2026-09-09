@@ -16,7 +16,7 @@
 | 05 | `/shipping` | `tasks/PROMPT-CLAUDE-UX-05-shipping.md` | **DONE** — audit `5586dc55`, FIX `3c70d95c` (expand-in-row + chip button) |
 | 06 | `/supply` | `tasks/PROMPT-CLAUDE-UX-06-supply.md` | **DONE** — audit `af549dfd`, FIX `a2e1353d` (expand-in-row + chip button) |
 | 07 | `/supply-requests` | `tasks/PROMPT-CLAUDE-UX-07-supply-requests.md` | **DONE** — audit `f6707094`, FIX `d0f83db8` (expand-in-row + 4× chip button) |
-| 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | **DONE** — audit `395b08fa`, FIX applied (P0 `pi-button-*` → `app-pi-button`) — ⚠️ 17 sibling files still affected, see audit |
+| 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | **DONE** — audit `395b08fa`, FIX `71b57377` (P0 `pi-button-*` → `app-pi-button`) — ⚠️ 17 sibling files still affected, see audit |
 | 09 | `/storage-items` | `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` | READY |
 | 10 | `/stock-movements` | `tasks/PROMPT-CLAUDE-UX-10-stock-movements.md` | READY |
 | 11 | `/production` | — | **SKIP** (Гант ок — PO 2026-09-09, не трогать) |

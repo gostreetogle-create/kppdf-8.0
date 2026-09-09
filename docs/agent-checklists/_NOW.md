@@ -15,7 +15,7 @@ updated_at: 2026-09-09T20:55:00+03:00
 ## DONE
 
 - #00–#06 · #07 supply-requests FIX `d0f83db8`
-- #08 warehouses PASS-FIX (P0) → fixed `/warehouses` only (real `<app-pi-button>`): audit `395b08fa`, FIX SHA below. ⚠️ 17 files still have the bug — see audit
+- #08 warehouses PASS-FIX (P0) → fixed `/warehouses` only (real `<app-pi-button>`): audit `395b08fa`, FIX `71b57377`. ⚠️ 17 files still have the bug — see audit
 
 ## PARK
 
