@@ -15,7 +15,7 @@ updated_at: 2026-09-09T19:35:00+03:00
 ## DONE
 
 - #00–#02 kit · #03 registries PASS-EMPTY `4be40d78`
-- #04 orders PASS-FIX → fixed (ad-hoc buttons → `.pi-outline-btn`, missing focus-ring, underline link): audit `e010b83d`, FIX SHA below
+- #04 orders PASS-FIX → fixed (ad-hoc buttons → `.pi-outline-btn`, missing focus-ring, underline link): audit `e010b83d`, FIX `b05802df`
 
 ## PARK
 
