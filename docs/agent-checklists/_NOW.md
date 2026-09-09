@@ -15,7 +15,7 @@ updated_at: 2026-09-09T20:35:00+03:00
 ## DONE
 
 - #00–#05 · #06 supply FIX `a2e1353d` (expand + chip; confirmedBy ObjectId not shown — ok)
-- #07 supply-requests PASS-FIX → fixed (expand-in-row for priority/paidAt/receivedQty/delivery/notes, 4× chip button): audit `f6707094`, FIX SHA below
+- #07 supply-requests PASS-FIX → fixed (expand-in-row for priority/paidAt/receivedQty/delivery/notes, 4× chip button): audit `f6707094`, FIX `d0f83db8`
 
 ## PARK
 
