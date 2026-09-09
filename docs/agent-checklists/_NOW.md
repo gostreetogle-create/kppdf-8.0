@@ -1,21 +1,22 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T16:50:00+03:00
+updated_at: 2026-09-09T17:05:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IN PROGRESS — UX #02 kit-overlays (audit PASS-FIX, doing FIX now)
+- **Claude:** IDLE — UX #02 kit-overlays DONE (audit PASS-FIX, FIX applied); ждёт PO «дай следующий промпт»
 - **Deploy stamp:** READY
 
 ## NEXT
 
-**Claude** → `tasks/PROMPT-CLAUDE-UX-02-kit-overlays.md`
+**Claude** → ждёт PO copy-paste `tasks/PROMPT-CLAUDE-UX-03-registries.md`
 
 ## DONE
 
 - UX #00 kit-overview PASS-EMPTY `c516e40d`
 - UX #01 kit-forms PASS-FIX `4f7afcc8` (confirm delete + footer CTAs)
+- UX #02 kit-overlays PASS-FIX → fixed (EN button labels + EN empty-state copy): audit `2f1765dc`, FIX SHA below
 
 ## PARK
 

@@ -45,3 +45,27 @@ Section V (Toast) — реальные, живые компоненты. Section
 (`TZ-NX-UX-02-kit-overlays-FIX`) — **claim**, перевести button-labels на RU по образцу
 `/kit/forms` (Отмена/Отправить и т.п.), сохранив технические примечания в скобках/`<code>`
 где уместно (например «AlertDialog» как имя компонента).
+
+## Closeout (FIX applied)
+
+- **P1 (C1, button labels) — fixed.** Все ~10 английских label на кнопках Sections I/II/III/V
+  переведены на RU (`overlays.page.ts:93-99,111-113,128-134,167-174`): «Обычный диалог» /
+  «Диалог-форма» / «Диалог-подтверждение (destructive)» / «Sheet справа/слева» / «Drawer снизу» /
+  «Наведите курсор (native title tooltip)» / «Открыть Popover» / «Обычный» / «Успех» / «Ошибка» /
+  «Внимание». Технические имена компонентов (`Sheet`, `Drawer`, `Popover`, `AlertDialog`,
+  `native title tooltip`) оставлены как есть в скобках/inline — та же конвенция, что и остальной
+  копирайт страницы (`<code>PiDialogService.open()</code>` и т.п.).
+- **Extra smell found during FIX (не в исходном audit) — fixed.** Section VI (Empty State) содержала
+  целый описательный абзац на английском (`overlays.page.ts:183-186`, «The `PiEmptyState` component
+  wraps content in a centered, max-384px panel...») — пропущен в исходном audit-проходе (замечен
+  только button-labels, не body-copy). Переведён на RU: «Компонент `PiEmptyState` оборачивает
+  контент в центрированную панель шириной до 384px с пунктирной рамкой 2px…». Отмечено здесь по
+  правилу TZ «found extra smell while fixing → fix + note in closeout».
+- **Не тронуто (осознанно, по прецеденту `/kit/forms`):** заголовки секций (`title="Dialog"`,
+  `"Toast"`, `"Empty State"` и т.п.) и `<h4>Empty State (Architectural)</h4>` — технические
+  pattern-имена/архитектурный демо-паттерн, та же конвенция, что и `/kit/forms` Section VII
+  `"Form Field (Architectural)"` (не были переведены и там) — не копия действия, не смысловой текст.
+- Gates: `nx build kppdf-web` PASS (production config); `nx test kppdf-web` — 103/103 suites PASS
+  (681 passed, 7 pre-existing skipped, 0 regressions). Нет отдельного spec-файла для
+  `overlays.page.ts` — изменения чисто copy-level (label text), логика/шаблонные биндинги не
+  менялись, новых unit-тестов не заводили.

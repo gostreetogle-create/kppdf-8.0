@@ -91,11 +91,11 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
     <app-pi-section title="Dialog" hint="placeholder · toast, не CDK Overlay" eyebrow="I">
       <div class="flex flex-wrap gap-form-field">
         <app-pi-button variant="default" (click)="demoDefaultDialog()">
-          Default dialog
+          Обычный диалог
         </app-pi-button>
-        <app-pi-button variant="outline" (click)="demoFormDialog()"> Form dialog </app-pi-button>
+        <app-pi-button variant="outline" (click)="demoFormDialog()"> Диалог-форма </app-pi-button>
         <app-pi-button variant="destructive" (click)="demoAlertDialog()">
-          AlertDialog (destructive)
+          Диалог-подтверждение (destructive)
         </app-pi-button>
       </div>
       <p class="text-xs text-muted-foreground mt-form-row">
@@ -108,9 +108,9 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
     <!-- ───── Section II. Sheet + Drawer (PLACEHOLDER — toast) ───── -->
     <app-pi-section title="Sheet &amp; Drawer" hint="placeholder · toast, не CDK Overlay" eyebrow="II">
       <div class="flex flex-wrap gap-form-field">
-        <app-pi-button variant="outline" (click)="demoSheetRight()">Sheet right</app-pi-button>
-        <app-pi-button variant="outline" (click)="demoSheetLeft()">Sheet left</app-pi-button>
-        <app-pi-button variant="outline" (click)="demoDrawerBottom()">Drawer bottom</app-pi-button>
+        <app-pi-button variant="outline" (click)="demoSheetRight()">Sheet справа</app-pi-button>
+        <app-pi-button variant="outline" (click)="demoSheetLeft()">Sheet слева</app-pi-button>
+        <app-pi-button variant="outline" (click)="demoDrawerBottom()">Drawer снизу</app-pi-button>
       </div>
       <p class="text-xs text-muted-foreground mt-form-row">
         Placeholder: toast вместо реального <code class="font-mono text-[11px]">PiSheetService</code>
@@ -126,11 +126,11 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
     >
       <div class="flex flex-wrap gap-form-field">
         <app-pi-button variant="outline" ariaLabel="Сохранить документ" title="Сохранить документ">
-          Hover me (native title tooltip)
+          Наведите курсор (native title tooltip)
         </app-pi-button>
         <app-pi-button variant="outline" (click)="demoPopover()">
           <lucide-angular [img]="userIcon" size="14" />
-          Open Popover
+          Открыть Popover
         </app-pi-button>
       </div>
       <p class="text-xs text-muted-foreground mt-form-row">
@@ -164,13 +164,13 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
     <!-- ───── Section V. Toast ───── -->
     <app-pi-section title="Toast" hint="Sonner-style" eyebrow="V">
       <div class="flex flex-wrap gap-form-field">
-        <app-pi-button variant="default" (click)="toast.show('Привет')"> Default </app-pi-button>
+        <app-pi-button variant="default" (click)="toast.show('Привет')"> Обычный </app-pi-button>
         <app-pi-button variant="secondary" (click)="toast.success('Готово!')">
-          Success
+          Успех
         </app-pi-button>
-        <app-pi-button variant="destructive" (click)="toast.error('Ошибка')"> Error </app-pi-button>
+        <app-pi-button variant="destructive" (click)="toast.error('Ошибка')"> Ошибка </app-pi-button>
         <app-pi-button variant="outline" (click)="toast.warning('Внимание')">
-          Warning
+          Внимание
         </app-pi-button>
       </div>
     </app-pi-section>
@@ -181,9 +181,9 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
         <span class="pi-tech-label">REF: EMPTY.02</span>
         <h4 class="font-title-sm text-ink mb-stack-sm mt-2">Empty State (Architectural)</h4>
         <p class="text-sm text-muted-foreground">
-          The <code class="font-mono text-[11px]">PiEmptyState</code> component wraps content in a
-          centered, max-384px panel with 2px dashed border. Used inside
-          <code class="font-mono text-[11px]">&lt;tbody&gt;</code> when a list is empty.
+          Компонент <code class="font-mono text-[11px]">PiEmptyState</code> оборачивает контент в
+          центрированную панель шириной до 384px с пунктирной рамкой 2px. Используется внутри
+          <code class="font-mono text-[11px]">&lt;tbody&gt;</code>, когда список пуст.
         </p>
         <div class="pi-tech-label mt-stack-sm">Eyebrow: 00</div>
         <div class="text-sm text-muted-foreground">Нет данных для отображения.</div>
