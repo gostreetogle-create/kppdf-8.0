@@ -188,4 +188,42 @@ describe('SupplyPage (NX S1)', () => {
       queryParamsHandling: 'merge',
     }));
   });
+
+  it('expands a row on click to show line/confirmedAt/notes, and collapses on second click', async () => {
+    await setup(
+      {},
+      [
+        task({
+          orderLineId: 'line-42',
+          confirmedAt: '2026-09-01T00:00:00.000Z',
+          notes: 'Срочно, звонить перед доставкой',
+        }),
+      ],
+    );
+    const row = fixture.nativeElement.querySelector('[data-test="supply-row"]') as HTMLElement;
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[data-test="supply-row-expand"]')).toBeFalsy();
+
+    row.click();
+    fixture.detectChanges();
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    const expandEl = fixture.nativeElement.querySelector('[data-test="supply-row-expand"]');
+    expect(expandEl).toBeTruthy();
+    expect(expandEl.textContent).toContain('line-42');
+    expect(expandEl.textContent).toContain('Срочно, звонить перед доставкой');
+
+    row.click();
+    fixture.detectChanges();
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[data-test="supply-row-expand"]')).toBeFalsy();
+  });
+
+  it('does not toggle expand when clicking a row action button', async () => {
+    await setup({}, [task({ status: 'draft' })]);
+    (fixture.nativeElement.querySelector('[data-test="supply-confirm-t1"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const row = fixture.nativeElement.querySelector('[data-test="supply-row"]') as HTMLElement;
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+  });
 });

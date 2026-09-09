@@ -115,6 +115,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 - Фильтр по статусу (`<select>`), фильтр `?orderId=` (query-param, deep-link) с chip + «Сбросить» (`router.navigate` с `queryParamsHandling: 'merge'`)
 - «+ Задача»: explode из состава заказа ИЛИ ручное создание (заказ + название + qty)
 - `data-test` атрибуты на всех интерактивных элементах для тестов
+- **TZ-NX-UX-06-supply-FIX:** клик по строке — expand-in-row (registry pattern) с полной линией заказа / датой подтверждения / примечанием read-only. `confirmedBy` (raw `ObjectId`, backend не резолвит в имя) **сознательно не показан** — не заводим сырой ObjectId в UI без lookup; `confirmedAt` покрывает практическую часть значения («когда подтверждено»). Filter-chip «Сбросить» переведён на `.pi-outline-btn`.
 
 ### Known limitation (унаследовано от backend, не изобретено во фронтенде)
 
@@ -123,7 +124,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 ### Tests
 
 - `pi-supply-tasks.service.spec.ts` — 8 tests (все методы, HTTP mock)
-- `supply.page.spec.ts` — 9 tests (фильтры, transitions, explode, create, no-mock-UI assertion, router-based filter clear)
+- `supply.page.spec.ts` — 11 tests (фильтры, transitions, explode, create, no-mock-UI assertion, router-based filter clear, expand-in-row shows/hides detail, row action click does not toggle expand)
 
 ## NX — TZ-NX-SUPPLY-S2-HUB-CONFIRM (order hub «Подтвердить материалы»)
 

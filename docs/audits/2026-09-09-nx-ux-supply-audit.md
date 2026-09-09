@@ -44,3 +44,29 @@ button styled as underline text, identical to `/shipping`'s pre-fix code). FIX T
 (`TZ-NX-UX-06-supply-FIX`) — **claim**: add expand-in-row (same pattern as `/orders`/`/shipping`)
 showing confirmedBy/confirmedAt/notes/full orderLineId read-only; convert the chip reset button
 to `.pi-outline-btn` (same fix as `/shipping`, now a 2nd real usage of that canonical class).
+
+## Closeout (FIX applied)
+
+- **P1 (T1) — fixed, with one deliberate scope adjustment.** `supply.page.ts` rows now
+  expand-in-row on click/Enter/Space (`tabindex="0"`, `aria-expanded`, same pattern as `/orders`/
+  `/shipping`), showing full Линия заказа / Дата подтверждения / Примечание read-only.
+  **`confirmedBy` deliberately NOT shown** — checked the backend schema
+  (`backend/src/modules/supply/supply-task.schema.ts:42`): it's a raw `Types.ObjectId` with no
+  username resolution anywhere in this component or its data layer (`SupplyTask.confirmedBy` is
+  typed `string` on the frontend, i.e. the raw id). Displaying it would introduce exactly the
+  "ObjectId руками" anti-pattern (D1) this whole wave has been removing elsewhere — `confirmedAt`
+  (a real formatted date) covers the practically useful part ("when was this confirmed") without
+  that regression. Row-action buttons' container gets `(click)="$event.stopPropagation()"`.
+  `expandedId` resets on `load()`.
+- **P2 (A1) — fixed.** Filter-chip «Сбросить» converted from underline text to `.pi-outline-btn` —
+  same treatment as `/shipping`'s fix, no size override added.
+- **Specs added:** two new cases in `supply.page.spec.ts` — expand shows line/confirmedAt/notes
+  and collapses on second click; clicking a row action does not toggle expand (had to add
+  `await fixture.whenStable()` before the second assertion — `load()` re-fetches through
+  `firstValueFrom(...).then()`, which resolves on a microtask tick even though the underlying
+  mock observable is synchronous, so the immediate post-click `detectChanges()` briefly sees
+  `status() === 'loading'` and no rows at all).
+- Gates: `nx build kppdf-web` PASS; `nx test kppdf-web` — 103/103 suites PASS (685 passed = 683
+  baseline + 2 new, 0 regressions), including `supply.page.spec.ts`'s 11 tests.
+- `docs/pages/supply.page.md` — NX UX note added to the `TZ-NX-SUPPLY-S1-PAGE` section, test count
+  updated 9→11.

@@ -84,7 +84,7 @@ const GRID_COLS =
             <span>Фильтр: заказ {{ orderFilterLabel() }}</span>
             <button
               type="button"
-              class="underline underline-offset-2 hover:text-sunrise-warm"
+              class="pi-outline-btn"
               (click)="clearOrderFilter()"
               data-test="supply-order-filter-clear"
             >
@@ -213,9 +213,14 @@ const GRID_COLS =
             </div>
             @for (row of tasks(); track row._id) {
               <div
-                class="grid ${GRID_COLS} gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0"
+                class="grid ${GRID_COLS} gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0 cursor-pointer pi-focus-ring"
                 role="row"
                 data-test="supply-row"
+                tabindex="0"
+                [attr.aria-expanded]="expandedId() === row._id"
+                (click)="toggleExpand(row._id)"
+                (keydown.enter)="toggleExpand(row._id)"
+                (keydown.space)="onRowSpace($event, row._id)"
               >
                 <div role="cell" class="min-w-0">
                   <div class="text-sm truncate">{{ row.title || 'Без названия' }}</div>
@@ -228,6 +233,7 @@ const GRID_COLS =
                     class="text-sm underline-offset-2 hover:underline"
                     [routerLink]="['/orders', row.orderId]"
                     data-test="supply-order-link"
+                    (click)="$event.stopPropagation()"
                   >
                     {{ orderLabel(row.orderId) }}
                   </a>
@@ -242,7 +248,7 @@ const GRID_COLS =
                     {{ statusLabel(row.status) }}
                   </span>
                 </div>
-                <div class="flex items-center gap-2 justify-end" role="cell">
+                <div class="flex items-center gap-2 justify-end" role="cell" (click)="$event.stopPropagation()">
                   @if (row.status === 'draft') {
                     <button
                       class="pi-button pi-button-primary"
@@ -278,6 +284,24 @@ const GRID_COLS =
                   }
                 </div>
               </div>
+              @if (expandedId() === row._id) {
+                <div class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2" data-test="supply-row-expand">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <div class="pi-label text-muted-foreground">Линия заказа</div>
+                      <div class="text-sm">{{ row.orderLineId || '—' }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Дата подтверждения</div>
+                      <div class="text-sm">{{ row.confirmedAt ? fmtDate(row.confirmedAt) : '—' }}</div>
+                    </div>
+                    <div class="sm:col-span-2">
+                      <div class="pi-label text-muted-foreground">Примечание</div>
+                      <div class="text-sm">{{ row.notes || '—' }}</div>
+                    </div>
+                  </div>
+                </div>
+              }
             }
           </div>
         </div>
@@ -303,6 +327,8 @@ export class SupplyPage {
   protected readonly showCreate = signal(false);
   protected readonly creating = signal(false);
   protected readonly exploding = signal(false);
+  /** Single expand (registry pattern) — reloading the list collapses it. */
+  protected readonly expandedId = signal<string | null>(null);
 
   protected createOrderId = '';
   protected explodeOrderId = '';
@@ -348,10 +374,25 @@ export class SupplyPage {
     return id ? this.orderLabel(id) : '';
   }
 
+  protected fmtDate(value: string): string {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString('ru-RU');
+  }
+
+  protected toggleExpand(taskId: string): void {
+    this.expandedId.update((current) => (current === taskId ? null : taskId));
+  }
+
+  protected onRowSpace(event: Event, taskId: string): void {
+    event.preventDefault();
+    this.toggleExpand(taskId);
+  }
+
   protected load(): void {
     const version = ++this.loadVersion;
     this.status.set('loading');
     this.error.set('');
+    this.expandedId.set(null);
     const orderId = this.orderFilterId() ?? undefined;
     const status = this.statusFilter() || undefined;
     void firstValueFrom(this.supplyApi.list({ orderId, status })).then((res) => {
