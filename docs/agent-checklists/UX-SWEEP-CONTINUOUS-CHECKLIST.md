@@ -4,9 +4,9 @@
 > Cursor/PO смотрят сюда, если сессия оборвалась.  
 > Промпт: `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md`
 
-updated_at: 2026-09-09T19:42:00Z  
+updated_at: 2026-09-09T19:52:00Z  
 agent_id: claude  
-status: **RUNNING** — 08b+09+10+12+13+14+15 закрыты, 11 SKIP, continuous с 16  
+status: **RUNNING** — 08b+09+10+12+13+14+15+16 закрыты, 11 SKIP, continuous с 17 (последняя стадия)  
 prompt: `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md` (фаза 1)
 
 ## Правило отметки
@@ -29,8 +29,8 @@ prompt: `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md` (фаза 1)
 | 13 | counterparties AUDIT→FIX | `tasks/_ready/nx-ux/counterparties/` | **DONE** | `47e2d199` | 2026-09-09T19:20:00Z |
 | 14 | contracts AUDIT→FIX | `tasks/_ready/nx-ux/contracts/` | **DONE** | `19ff92fc` | 2026-09-09T19:30:00Z |
 | 15 | studio-list AUDIT→FIX | `tasks/_ready/nx-ux/studio-list/` | **DONE** | `99b0197b` | 2026-09-09T19:42:00Z |
-| 16 | admin-devices AUDIT→FIX | `tasks/_ready/nx-ux/admin-devices/` | IN_WORK | — | — |
-| 17 | admin-roles AUDIT→FIX | `tasks/_ready/nx-ux/admin-roles/` | PENDING | — | — |
+| 16 | admin-devices AUDIT→FIX | `tasks/_ready/nx-ux/admin-devices/` | **DONE** | `aaad4cb2` | 2026-09-09T19:52:00Z |
+| 17 | admin-roles AUDIT→FIX | `tasks/_ready/nx-ux/admin-roles/` | IN_WORK | — | — |
 
 ## Resume
 
