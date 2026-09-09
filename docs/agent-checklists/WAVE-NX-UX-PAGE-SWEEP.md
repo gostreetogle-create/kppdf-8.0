@@ -10,7 +10,7 @@
 |---|-------|--------|--------|
 | 00 | `/kit/overview` | `tasks/PROMPT-CLAUDE-UX-00-kit-overview.md` | **DONE** — audit PASS-EMPTY, FIX N/A `c516e40d` |
 | 01 | `/kit/forms` | `tasks/PROMPT-CLAUDE-UX-01-kit-forms.md` | **DONE** — audit `b46d239e`, FIX `4f7afcc8` (P1+P2) |
-| 02 | `/kit/overlays` | `tasks/PROMPT-CLAUDE-UX-02-kit-overlays.md` | **DONE** — audit `2f1765dc`, FIX applied (P1 + extra EN-copy smell) |
+| 02 | `/kit/overlays` | `tasks/PROMPT-CLAUDE-UX-02-kit-overlays.md` | **DONE** — audit `2f1765dc`, FIX `7307e97b` (P1 + extra EN-copy smell) |
 | 03 | `/registries` | `tasks/PROMPT-CLAUDE-UX-03-registries.md` | READY (gold verify) |
 | 04 | `/orders` | `tasks/PROMPT-CLAUDE-UX-04-orders.md` | READY |
 | 05 | `/shipping` | `tasks/PROMPT-CLAUDE-UX-05-shipping.md` | READY |
