@@ -19,7 +19,7 @@
 | 08 | `/warehouses` | `tasks/PROMPT-CLAUDE-UX-08-warehouses.md` | **DONE** — FIX `71b57377` (`app-pi-button`) |
 | **08b** | **cross-cut `pi-button-*` → `<app-pi-button>`** | `tasks/PROMPT-CLAUDE-UX-08b-PI-BUTTON-SWEEP.md` | **DONE** — `f491c5d8`, 16 files, `rg` count=0 |
 | 09 | `/storage-items` | `tasks/PROMPT-CLAUDE-UX-09-storage-items.md` | **DONE** — `d0458654` (expand-in-row + material chip reset) |
-| 10 | `/stock-movements` | `tasks/PROMPT-CLAUDE-UX-10-stock-movements.md` | **DONE** — `<pending SHA>` (expand-in-row via TableComponent's own [expandedRow]) |
+| 10 | `/stock-movements` | `tasks/PROMPT-CLAUDE-UX-10-stock-movements.md` | **DONE** — `5906bf4a` (expand-in-row via TableComponent's own [expandedRow]) |
 | 11 | `/production` | — | **SKIP** (Гант ок — PO 2026-09-09, не трогать) |
 | 12 | `/proposals` | `tasks/PROMPT-CLAUDE-UX-12-proposals.md` | READY |
 | 13 | `/counterparties` | `tasks/PROMPT-CLAUDE-UX-13-counterparties.md` | READY |
