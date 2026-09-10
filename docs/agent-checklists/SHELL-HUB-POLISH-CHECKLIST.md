@@ -9,7 +9,7 @@ status: **COMPLETE**
 | # | Stage | Status | SHA | stopped_at |
 |---|-------|--------|-----|------------|
 | 01 | TZ-NX-SHELL-01-IDLE-RAILS | DONE | `6e2a5efa` | 2026-09-10T18:20:00+03:00 |
-| 02 | TZ-NX-HUB-06-EXPAND-CARDS | DONE | _pending-commit_ | 2026-09-10T18:45:00+03:00 |
+| 02 | TZ-NX-HUB-06-EXPAND-CARDS | DONE | `2296a326` | 2026-09-10T18:45:00+03:00 |
 
 ## Resume
 

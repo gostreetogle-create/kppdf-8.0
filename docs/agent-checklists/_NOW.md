@@ -16,7 +16,7 @@ updated_at: 2026-09-10T18:45:00Z
 
 - HUB table parity 01–05 COMPLETE (earlier)
 - SHELL-01 idle rails: убраны disabled «скоро»-заглушки, history ←→ в header, rails только при реальных tools — `6e2a5efa`
-- HUB-06 expand cards: `/supply` + `/warehouses` expand переписаны под gold card-язык `counterparty-hub-tray`; `/orders` verified (уже gold) — SHA после коммита
+- HUB-06 expand cards: `/supply` + `/warehouses` expand переписаны под gold card-язык `counterparty-hub-tray`; `/orders` verified (уже gold) — `2296a326`
 
 ## PARK
 
