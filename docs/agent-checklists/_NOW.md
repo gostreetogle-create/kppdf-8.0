@@ -1,26 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-10T17:35:00Z
+updated_at: 2026-09-10T14:35:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — HUB visual parity (TZ-NX-HUB-05) COMPLETE, PASS, no fix needed. Чеклист `docs/agent-checklists/HUB-VISUAL-PARITY-CHECKLIST.md` status: COMPLETE.
+- **Claude:** READY — `tasks/PROMPT-CLAUDE-SHELL-HUB-POLISH.md` (idle rails + supply expand cards). Чеклист `docs/agent-checklists/SHELL-HUB-POLISH-CHECKLIST.md`.
 - **Deploy stamp:** READY
 
 ## NEXT
 
-Нет активной задачи — HUB wave (01–05) полностью закрыта, включая глазную сверку. PO решает следующий шаг.
+1. Claude SHELL-01 idle rails → HUB-06 expand cards
 
 ## DONE
 
-- UX #00–#08 (до warehouses) + 08b–17 continuous COMPLETE (earlier 2026-09-09)
-- HUB #01 counterparties — hub expand (Реквизиты/Объекты/Заказы/КП/Договоры) + `app-pi-row-actions`, `aa58e7fd`
-- HUB #02 orders — ▸/▾ affordance + denser list + icon «карточка», `d26cce66`
-- HUB #03 supply — dense table + one-CTA-per-status compact actions + richer expand, `beccfcaf`
-- HUB #04 warehouses — expand остатки preview + deep-link chip + icon actions, `fba0ed88`
-- HUB #05 visual parity — real-browser (Chrome CDP) check of all 4 pages vs `/registries`, 44/44 checks PASS, no fix needed, `docs/audits/2026-09-10-nx-hub-visual-parity.md`
+- HUB table parity 01–05 COMPLETE (earlier)
 
 ## PARK
 
-- Deploy · G12 · desk · wipe · `/production` SKIP · Documents review later
+- Deploy · G12 · desk · wipe · `/production` SKIP · Documents later

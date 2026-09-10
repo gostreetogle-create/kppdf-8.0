@@ -1,6 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
 import type { LucideIcon } from './nav-categories';
-import { LEFT_TOOL_RAIL_ITEMS, RIGHT_TOOL_RAIL_ITEMS } from './tool-rail-definitions';
 
 export interface ShellToolRailItem {
   readonly id: string;
@@ -21,36 +20,12 @@ interface ShellToolRailState {
 }
 
 /**
- * No page has registered real rail tools yet (or it just cleared its own) —
- * fall back to the same disabled demo placeholders every page used to show
- * (TZ-NX-SHELL-rail-layout-fix), not an empty rail. A page opts in by
- * calling setTools(); until/unless it does, this is what renders.
+ * TZ-NX-SHELL-01-IDLE-RAILS — no page has registered real rail tools yet (or
+ * it just cleared its own): empty, not a disabled-placeholder fallback. A
+ * page opts in by calling setTools(); `AppShellComponent` only renders an
+ * `<aside>` for a side that actually has tools.
  */
-const DEFAULT_LEFT: readonly ShellToolRailItem[] = LEFT_TOOL_RAIL_ITEMS.map((item) => ({
-  id: item.id,
-  side: 'left' as const,
-  ariaLabel: item.ariaLabel,
-  title: item.title,
-  icon: item.icon,
-  disabled: true,
-  onClick: () => {
-    // never invoked — invoke() short-circuits on tool.disabled before calling this
-  },
-}));
-
-const DEFAULT_RIGHT: readonly ShellToolRailItem[] = RIGHT_TOOL_RAIL_ITEMS.map((item) => ({
-  id: item.id,
-  side: 'right' as const,
-  ariaLabel: item.ariaLabel,
-  title: item.title,
-  icon: item.icon,
-  disabled: true,
-  onClick: () => {
-    // never invoked — invoke() short-circuits on tool.disabled before calling this
-  },
-}));
-
-const DEFAULT_STATE: ShellToolRailState = { owner: null, left: DEFAULT_LEFT, right: DEFAULT_RIGHT };
+const DEFAULT_STATE: ShellToolRailState = { owner: null, left: [], right: [] };
 
 @Injectable({ providedIn: 'root' })
 export class ShellToolRailService {

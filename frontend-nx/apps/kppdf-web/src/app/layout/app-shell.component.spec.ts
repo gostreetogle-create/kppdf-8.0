@@ -78,26 +78,24 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
   const clientsQuickNav = (): HTMLAnchorElement | null =>
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-clients"]');
 
-  it('uses grid workspace with left rail, main, right rail — no sidebar', async () => {
+  it('idle route (no setTools) renders no rails — full-width main workspace (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
     await setup('/admin/devices');
-    expect(fixture.nativeElement.querySelector('[data-test="shell-workspace-grid"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeTruthy();
+    const grid = fixture.nativeElement.querySelector('[data-test="shell-workspace-grid"]') as HTMLElement;
+    expect(grid).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="shell-sidebar"]')).toBeNull();
+    expect(grid.style.gridTemplateColumns).toBe('minmax(0,1fr)');
   });
 
-  it('places back only on left rail and forward only on right rail', async () => {
+  it('places back/forward history buttons once in the header, not duplicated in idle rails (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
     await setup('/admin/devices');
-    const left = fixture.nativeElement.querySelector('[data-test="shell-rail-left"]');
-    const right = fixture.nativeElement.querySelector('[data-test="shell-rail-right"]');
     const header = fixture.nativeElement.querySelector('header');
-
-    expect(left?.querySelector('[data-test="shell-nav-back"]')).toBeTruthy();
-    expect(left?.querySelector('[data-test="shell-nav-forward"]')).toBeNull();
-    expect(right?.querySelector('[data-test="shell-nav-forward"]')).toBeTruthy();
-    expect(right?.querySelector('[data-test="shell-nav-back"]')).toBeNull();
-    expect(header?.querySelector('[data-test="shell-nav-back"]')).toBeNull();
-    expect(header?.querySelector('[data-test="shell-nav-forward"]')).toBeNull();
+    expect(header?.querySelector('[data-test="shell-nav-back"]')).toBeTruthy();
+    expect(header?.querySelector('[data-test="shell-nav-forward"]')).toBeTruthy();
+    // no rails at all on an idle route — nothing to duplicate into
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeNull();
   });
 
   it('shows only existing-route header chips (admin, registries, docs, deals, production, clients, supply, warehouse) — no dead links', async () => {
@@ -134,14 +132,34 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     expect(adminQuickNav()!.getAttribute('aria-current')).toBe('page');
   });
 
-  it('renders demo tool buttons as disabled placeholders on rails', async () => {
+  it('never renders disabled "скоро" demo placeholder tools (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
     await setup('/admin/devices');
-    const leftTool = fixture.nativeElement.querySelector('[data-test="shell-tool-left-filters"]') as HTMLButtonElement;
-    const rightTool = fixture.nativeElement.querySelector('[data-test="shell-tool-right-search"]') as HTMLButtonElement;
-    expect(leftTool).toBeTruthy();
-    expect(rightTool).toBeTruthy();
-    expect(leftTool.disabled).toBe(true);
-    expect(rightTool.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test="shell-tool-left-filters"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-tool-right-search"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('скоро');
+  });
+
+  it('shows rails with grid columns for both sides when a page registers tools on both, then hides them again on clear() (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
+    await setup('/admin/devices');
+    const rail = TestBed.inject(ShellToolRailService);
+    rail.setTools('demo-owner', {
+      left: [{ id: 'l1', side: 'left', ariaLabel: 'L1', title: 'L1', icon: {} as never, onClick: jest.fn() }],
+      right: [{ id: 'r1', side: 'right', ariaLabel: 'R1', title: 'R1', icon: {} as never, onClick: jest.fn() }],
+    });
+    fixture.detectChanges();
+
+    const grid = fixture.nativeElement.querySelector('[data-test="shell-workspace-grid"]') as HTMLElement;
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeTruthy();
+    expect(grid.style.gridTemplateColumns).toBe('var(--shell-rail-w, 4rem) minmax(0,1fr) var(--shell-rail-w, 4rem)');
+
+    rail.clear('demo-owner');
+    fixture.detectChanges();
+
+    // Regression guard: clearing must NOT fall back to placeholder rails (old bug).
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeNull();
+    expect(grid.style.gridTemplateColumns).toBe('minmax(0,1fr)');
   });
 
   it('delegates back/forward clicks to NavHistoryService', async () => {
@@ -195,6 +213,8 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     ]);
     expect(tools[1].getAttribute('aria-label')).toBe('Выбрано');
     expect(tools[1].querySelector('[data-test="shell-tool-badge"]')?.textContent?.trim()).toBe('15');
+    // right side got no tools in this call — its rail must not render either.
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeNull();
     rail.clear('studio-editor');
   });
 

@@ -119,6 +119,26 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 - Прямой заход по закладке (нет previous) → всегда fallback на список.
 - Helper: `frontend/src/app/shared/navigation/catalog-return.util.ts` (`CatalogReturnStore`).
 
+## NX shell rails (frontend-nx, TZ-NX-SHELL-01-IDLE-RAILS, 2026-09-10)
+
+Всё выше в этом файле — **legacy** `frontend/` chrome (`PiChromeToolsService`,
+`app-chrome-rail-left/right`, `data-test="app-nav-back"`). NX (`frontend-nx`)
+имеет свою, более простую реализацию — `AppShellComponent` +
+`ShellToolRailService` (`frontend-nx/apps/kppdf-web/src/app/layout/`).
+
+| Что | NX канон |
+|-----|----------|
+| Rails по умолчанию | **Нет disabled placeholder-иконок** («Фильтры (скоро)» и т.п.). Дефолт `ShellToolRailService` = `{ owner: null, left: [], right: [] }` — пусто, не demo-заглушки. |
+| Когда рендерится `<aside>` | Только если на этой стороне `tools.length > 0` (страница вызвала `setTools`). Пустая сторона — `aside` вообще не в DOM (`@if`), не `hidden`/`display:none`. |
+| Grid | `.shell-workspace` colonnes — `computed()` (`gridTemplateColumns`) в `AppShellComponent`: обе стороны пусты → `minmax(0,1fr)` (контент во всю ширину); одна сторона → 2 колонки; обе → 3 колонки (`var(--shell-rail-w) minmax(0,1fr) var(--shell-rail-w)`). |
+| История ←→ | **Один SoT — header** (рядом с уведомлениями/темой), `data-test="shell-nav-back"` / `"shell-nav-forward"`. **Не** дублируется внутри rails (в отличие от legacy-канона ниже, где ←→ сидят в самих rail-панелях). |
+| Page tools API | `ShellToolRailService.setTools(owner, { left, right })` / `clear(owner)` — не поменялось; только рендер-условие в `AppShellComponent` и дефолт стали honest-empty. |
+| Живые консьюмеры | `/production` (Гант) и `/studio/:id` — оба зовут `setTools` из `effect()` в конструкторе; регрессия проверена в `app-shell.component.spec.ts` + `production-cockpit.page.spec.ts` + `studio-editor-chrome-ia.spec.ts`. |
+| `tool-rail-definitions.ts` | **Удалён** (2026-09-10) — единственная цель файла была отдавать disabled demo-иконки; больше не нужен. |
+
+Аудит/канон повода: PO-скрин `/counterparties` с зачёркнутыми пустыми L/R
+menu. См. `docs/agent-checklists/WAVE-NX-SHELL-HUB-POLISH.md`.
+
 ## Системные ← → в полях (TZ-UX-317 + TZ-UX-320/321, канон 2026-08-12)
 
 Глобальные **←** / **→** в **gutters** app shell (поля слева/справа от max-width
