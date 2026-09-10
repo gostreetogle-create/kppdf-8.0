@@ -1,8 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { signal } from '@angular/core';
-import { PiCounterpartiesService, type Counterparty } from '@kppdf/data-access';
+import {
+  PiContractsService,
+  PiCounterpartiesService,
+  PiOrdersService,
+  PiQuotationsService,
+  PiSitesService,
+  type Counterparty,
+} from '@kppdf/data-access';
 import { AlertDialogComponent, PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import type { SilentResult } from '@kppdf/util-http';
@@ -14,6 +22,10 @@ describe('CounterpartiesListPage (TZ-NX-DEALS-D3-COUNTERPARTIES)', () => {
   let api: { list: jest.Mock; create: jest.Mock; update: jest.Mock; remove: jest.Mock };
   let toast: { error: jest.Mock; success: jest.Mock };
   let dialog: { open: jest.Mock };
+  let hubSitesApi: { list: jest.Mock };
+  let hubOrdersApi: { list: jest.Mock };
+  let hubQuotationsApi: { list: jest.Mock };
+  let hubContractsApi: { list: jest.Mock };
 
   const rows: Counterparty[] = [
     { _id: 'cp-1', name: 'ООО Альфа', inn: '7707083893', roles: ['customer'], isActive: true, phone: '+7 999 000-00-00' },
@@ -29,13 +41,22 @@ describe('CounterpartiesListPage (TZ-NX-DEALS-D3-COUNTERPARTIES)', () => {
     };
     toast = { error: jest.fn(), success: jest.fn() };
     dialog = { open: jest.fn() };
+    hubSitesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    hubOrdersApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    hubQuotationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    hubContractsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
 
     await TestBed.configureTestingModule({
       imports: [CounterpartiesListPage],
       providers: [
+        provideRouter([]),
         { provide: PiCounterpartiesService, useValue: api },
         { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: dialog },
+        { provide: PiSitesService, useValue: hubSitesApi },
+        { provide: PiOrdersService, useValue: hubOrdersApi },
+        { provide: PiQuotationsService, useValue: hubQuotationsApi },
+        { provide: PiContractsService, useValue: hubContractsApi },
       ],
     }).compileComponents();
 
@@ -182,5 +203,37 @@ describe('CounterpartiesListPage (TZ-NX-DEALS-D3-COUNTERPARTIES)', () => {
 
     expect(api.remove).toHaveBeenCalledWith('cp-1');
     expect(toast.success).toHaveBeenCalled();
+  });
+
+  it('expands the hub tray on row click and collapses on a second click (TZ-NX-HUB-01)', async () => {
+    await setup();
+    const rowEls = fixture.nativeElement.querySelectorAll('[data-test="counterparty-row"]');
+
+    (rowEls[0] as HTMLElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="counterparty-hub-tray"]')).toBeTruthy();
+    expect(fixture.componentInstance.expandedId()).toBe('cp-1');
+
+    (rowEls[0] as HTMLElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="counterparty-hub-tray"]')).toBeNull();
+    expect(fixture.componentInstance.expandedId()).toBeNull();
+  });
+
+  it('does not toggle the hub expand when clicking a row action (stopPropagation)', async () => {
+    await setup();
+    const closedSignal = signal<{ name: string; inn: string; roles: string[] } | undefined>(undefined);
+    const ref = { closed: closedSignal, close: (v?: unknown) => closedSignal.set(v as never) } as unknown as DialogRef<unknown>;
+    dialog.open.mockReturnValue(ref);
+    const editButtons = fixture.nativeElement.querySelectorAll('[data-test="counterparty-edit"]');
+
+    (editButtons[0] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      CounterpartyFormDialogComponent,
+      expect.objectContaining({ data: { counterparty: rows[0] } }),
+    );
+    expect(fixture.componentInstance.expandedId()).toBeNull();
   });
 });

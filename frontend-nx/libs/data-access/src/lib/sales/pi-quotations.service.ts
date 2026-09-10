@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL, silentGet, silentPatch, silentPost, type SilentResult } from '@kppdf/util-http';
 import type {
@@ -15,8 +15,11 @@ export class PiQuotationsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  list(): Observable<SilentResult<Quotation[]>> {
-    return silentGet<Quotation[]>(this.http, `${this.baseUrl}/quotations`);
+  /** TZ-NX-HUB-01 — optional `counterpartyId` filter (BE already supports it) for the hub tray. */
+  list(params?: { counterpartyId?: string }): Observable<SilentResult<Quotation[]>> {
+    let httpParams = new HttpParams();
+    if (params?.counterpartyId) httpParams = httpParams.set('counterpartyId', params.counterpartyId);
+    return silentGet<Quotation[]>(this.http, `${this.baseUrl}/quotations`, { params: httpParams });
   }
 
   getById(id: string): Observable<SilentResult<Quotation>> {

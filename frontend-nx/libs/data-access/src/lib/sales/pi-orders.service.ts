@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   API_BASE_URL,
@@ -24,8 +24,11 @@ export class PiOrdersService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  list(): Observable<SilentResult<Order[]>> {
-    return silentGet<Order[]>(this.http, `${this.baseUrl}/orders`);
+  /** TZ-NX-HUB-01 — optional `counterpartyId` filter (BE already supports it) for the hub tray. */
+  list(params?: { counterpartyId?: string }): Observable<SilentResult<Order[]>> {
+    let httpParams = new HttpParams();
+    if (params?.counterpartyId) httpParams = httpParams.set('counterpartyId', params.counterpartyId);
+    return silentGet<Order[]>(this.http, `${this.baseUrl}/orders`, { params: httpParams });
   }
 
   getById(id: string): Observable<SilentResult<Order>> {

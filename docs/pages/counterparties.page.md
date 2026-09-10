@@ -14,15 +14,26 @@
 
 Тонкий список + диалог create/edit (`counterparties-list.page.ts` + `counterparty-form-dialog.component.ts`) — **не** портирует legacy FullEditor kind C (секции Основные/Реквизиты/Банк/Подписант, справочник ролей). Поля формы: Название, ИНН, Телефон, Email. `roles` не выбирается в UI — всегда `['customer']` (create) или сохраняется как есть у существующей записи (edit), тот же дефолт, что у backend `quickCreateParty`.
 
-- Список: Название (`shortName` приоритетнее `name`) · ИНН (+ «(временный)» при `innIsStub`) · Контакт (телефон/email) · действия (Изменить/Удалить).
+- Список: Название (`shortName` приоритетнее `name`) · ИНН (+ «(временный)» при `innIsStub`) · Контакт (телефон/email) · действия.
 - **NX UX sweep (2026-09-09, `TZ-NX-UX-13-counterparties-FIX`):** когда `shortName` задан и
   отличается от `name`, полное юридическое название теперь показывается подписью под коротким
   (`counterparty-full-name`) — раньше было нигде не видно. Приоритет `shortName` для основной
   строки не изменился. См. `docs/audits/2026-09-09-nx-ux-counterparties-audit.md`.
+- **NX hub/table parity (2026-09-10, `TZ-NX-HUB-01`):** денсер ряды + колонка ▸/▾, клик по
+  строке (или Enter/Space) — single-expand хаб `CounterpartyHubTrayComponent` (мирроит
+  `OrderHubTrayComponent`): **Реквизиты** (из уже загруженной строки, без запроса) ·
+  **Объекты** (`PiSitesService.list(id)`, до 5) · **Заказы** (`PiOrdersService.list({ counterpartyId })`,
+  номер+статус+ссылка `/orders/:id`, чип «Все заказы» → `/orders`) · **КП**
+  (`PiQuotationsService.list({ counterpartyId })`, чип «Все КП» → `/proposals`; нет `/proposals/:id`
+  route, поэтому строки без ссылки) · **Договоры** (`PiContractsService.list({ counterpartyId })`,
+  ссылка `/contracts/:id`, чип «Все договоры» → `/contracts`). Lazy load только при первом
+  expand (row-expand-lazy, ≤5 HTTP на один expand). Действия строки — `app-pi-row-actions`
+  (edit/delete icon-кнопки, ранее широкие «Изменить»/«Удалить»); `stopPropagation` не даёт
+  клику по кнопке тоглить expand. См. `docs/audits/2026-09-10-nx-hub-table-parity-canon.md`.
 - Create/Edit — один диалог `CounterpartyFormDialogComponent`; POST/PATCH через `PiCounterpartiesService` (новые методы `create`/`update`/`remove`, добавлены в D3 — раньше клиент был read-only list/getById).
 - Delete — `AlertDialogComponent` confirm → `DELETE /counterparties/:id` (soft delete на сервере, как в legacy).
 - Nav: пункт «Заказчики» в категории «Клиенты» (`nav-categories.ts`) уже существовал, но был скрыт фильтром «route не существует» — с этим TZ роут появился, пункт нав появляется автоматически (без правок nav-categories.ts).
-- Не портировано (сознательно, per TZ «НЕ»): полный EAV-редактор, справочник ролей, банковские/подписант поля, площадки (sites) заказчика, `/desk`.
+- Не портировано (сознательно, per TZ «НЕ»): полный EAV-редактор, справочник ролей, банковские/подписант поля, `/desk`. Объекты (площадки) теперь видны **read-only** в hub-блоке (TZ-NX-HUB-01) — полный CRUD площадок всё ещё не здесь.
 
 ## Query params
 
@@ -86,10 +97,12 @@
 
 - **Бейдж «временный»** — на колонке ИНН, если `innIsStub` (TZ-PARTY-301); в тулбаре счётчик
   «N с временным ИНН».
-- **Row actions** — `<app-pi-row-actions>` через `[rowActions]` шаблон pi-table.
+- **Row actions** — `<app-pi-row-actions>` напрямую в ряду (hand-rolled grid, не `pi-table`
+  `[rowActions]` шаблон — список не мигрировал на `app-pi-table`, TZ-NX-HUB-01).
 - **Удаление** — подтверждение через `AlertDialogComponent`; на сервере soft delete, заказы
   остаются.
-- **Объекты (площадки)** — не здесь: карточка заказчика, волна ORDERS-303.
+- **Объекты (площадки)** — read-only список в hub-блоке (TZ-NX-HUB-01, до 5 строк); полный
+  CRUD площадок всё ещё не на этой странице.
 
 ## TZ reference
 
@@ -99,6 +112,7 @@
 | TZ-NAV-302 | Чипы группы «Клиенты» (Заказчики / Люди) |
 | TZ-PARTY-301 | Tenant-scope, soft-delete, per-tenant ИНН, бейдж «временный» |
 | TZ-PARTY-303 | FullEditor kind C + CRUD со страницы, роли из справочника |
+| TZ-NX-HUB-01 | Hub expand (`CounterpartyHubTrayComponent`) + denser table + `app-pi-row-actions` icons |
 
 ---
 

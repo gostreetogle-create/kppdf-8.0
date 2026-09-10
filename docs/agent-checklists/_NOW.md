@@ -1,31 +1,22 @@
 ﻿# NOW
 
-updated_at: 2026-09-09T20:02:00Z
+updated_at: 2026-09-10T12:25:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — continuous UX sweep COMPLETE (08b, 09, 10, 12–17 DONE; 11 SKIP). Живой чеклист `docs/agent-checklists/UX-SWEEP-CONTINUOUS-CHECKLIST.md` status: COMPLETE.
+- **Claude:** READY — next continuous `tasks/PROMPT-CLAUDE-HUB-CONTINUOUS.md` (WAVE-NX-HUB-TABLE-PARITY). Живой чеклист `docs/agent-checklists/HUB-TABLE-CONTINUOUS-CHECKLIST.md`.
 - **Deploy stamp:** READY
 
 ## NEXT
 
-Нет активной задачи — sweep закрыт. PO решает следующий шаг.
+1. Claude: hub+table parity `/counterparties` → `/orders` → `/supply` → `/warehouses`
+2. SKIP: `/production`, Документы (PO later)
 
 ## DONE
 
-- UX #00–#08 (до warehouses)
-- UX #08b pi-button sweep — 16 файлов, audit `docs/audits/2026-09-09-nx-ux-pi-button-sweep.md`, `f491c5d8`
-- UX #09 storage-items — expand-in-row + material filter reset, audit `docs/audits/2026-09-09-nx-ux-storage-items-audit.md`, `d0458654`
-- UX #10 stock-movements — expand-in-row via TableComponent, audit `docs/audits/2026-09-09-nx-ux-stock-movements-audit.md`, `5906bf4a`
-- UX #11 `/production` — SKIP (Гант ok, PO lock, не claim)
-- UX #12 proposals — counterparty subtitle + underline→.pi-outline-btn, audit `docs/audits/2026-09-09-nx-ux-proposals-audit.md`, `d91dd517`
-- UX #13 counterparties — full legal name subtitle, audit `docs/audits/2026-09-09-nx-ux-counterparties-audit.md`, `47e2d199`
-- UX #14 contracts — detail card attachment status + signed/expires + notes, audit `docs/audits/2026-09-09-nx-ux-contracts-audit.md`, `19ff92fc`
-- UX #15 studio-list — RU status label + pi-icon-button fix (list/templates only), audit `docs/audits/2026-09-09-nx-ux-studio-list-audit.md`, `99b0197b`
-- UX #16 admin-devices — inviteKind column + row actions → pi-outline-btn, audit `docs/audits/2026-09-09-nx-ux-admin-devices-audit.md`, `aaad4cb2`
-- UX #17 admin-roles — custom-role Смотреть fallback + data-test fix, audit `docs/audits/2026-09-09-nx-ux-admin-roles-audit.md`, `cb389b98` — **final stage, queue COMPLETE**
+- UX #00–#08 (до warehouses) + 08b–17 continuous COMPLETE (earlier 2026-09-09)
 
 ## PARK
 
-- Deploy · G12 · desk · wipe · `/production` SKIP
+- Deploy · G12 · desk · wipe · `/production` SKIP · Documents review later

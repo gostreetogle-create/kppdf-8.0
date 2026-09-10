@@ -27,6 +27,22 @@ describe('PiQuotationsService (TZ-NX-SALES-PI-QUOTATIONS-CRUD)', () => {
     httpMock.verify();
   });
 
+  it('list() GETs /quotations', () => {
+    service.list().subscribe();
+    const req = httpMock.expectOne(listUrl);
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
+  it('list({ counterpartyId }) GETs /quotations?counterpartyId=… (TZ-NX-HUB-01)', () => {
+    const counterpartyId = '507f1f77bcf86cd799439012';
+    service.list({ counterpartyId }).subscribe();
+    const req = httpMock.expectOne((r) => r.url === listUrl);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('counterpartyId')).toBe(counterpartyId);
+    req.flush([]);
+  });
+
   it('create() POSTs /quotations', () => {
     const payload = {
       organizationId: '507f1f77bcf86cd799439011',

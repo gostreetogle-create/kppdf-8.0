@@ -4,7 +4,7 @@
 **Очередь промптов:** `docs/agent-checklists/CLAUDE-UX-PAGE-PROMPTS.md`  
 **Правило PO:** один промпт = одна страница; выдавать только по «дай следующий промпт».  
 **Агент:** `agent_id: claude` — сначала AUDIT, потом FIX (находки на той же странице — чинить сразу).  
-**Статус:** continuous tail READY · `tasks/PROMPT-CLAUDE-UX-CONTINUOUS-REMAINING.md` · чеклист `UX-SWEEP-CONTINUOUS-CHECKLIST.md`
+**Статус:** **COMPLETE** (00–10 + 08b + 12–17 DONE; 11 SKIP) · чеклист `UX-SWEEP-CONTINUOUS-CHECKLIST.md` · финал docs `810fe88b`
 
 | # | Route | PROMPT | Status |
 |---|-------|--------|--------|

@@ -36,6 +36,14 @@ describe('PiOrdersService (TZ-NX-SALES-S33-PI-ORDERS-CRUD)', () => {
     request.flush([{ _id: orderId, number: 'ORD-001' }]);
   });
 
+  it('list({ counterpartyId }) GETs /orders?counterpartyId=… (TZ-NX-HUB-01)', () => {
+    service.list({ counterpartyId }).subscribe();
+    const request = httpMock.expectOne((req) => req.url === `${baseUrl}/orders`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('counterpartyId')).toBe(counterpartyId);
+    request.flush([{ _id: orderId, number: 'ORD-001', counterpartyId }]);
+  });
+
   it('getById() GETs /orders/:id', () => {
     service.getById(orderId).subscribe();
     const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}`);
