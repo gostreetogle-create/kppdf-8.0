@@ -110,7 +110,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/inventory` | inventory-dashboard.page.md | **UX-301 DONE**; **WAREHOUSE-UX-301 DONE** (dedupe TOC buttons); **UX-342 DONE** drop dead pager total |
 | `/storage-items` | storage-items.page.md | **UX-301 DONE**, **UX-305 DONE**, **MATERIALS-308 DONE** (фильтр склада ✅); **UX-342 DONE** drop dead pager total · **WAVE-NX-WAREHOUSE W2 DONE** live balances (list/filters/put-on-stock/adjust) |
 | `/stock-movements` | stock-movements.page.md | type filter ✅; **WAREHOUSE-UX-301 DONE** (+warehouse filter); **UX-342 DONE** drop dead pager total · **WAVE-NX-WAREHOUSE W3 DONE** live journal + in/out create (no transfer-create) |
-| `/warehouses` | warehouses.page.md | legacy CRUD reference; **WAVE-NX-WAREHOUSE W1 DONE** live thin name+active+description (type/zones hidden) · **TZ-NX-HUB-04 READY** expand остатки + icon actions (`WAVE-NX-HUB-TABLE-PARITY`) |
+| `/warehouses` | warehouses.page.md | legacy CRUD reference; **WAVE-NX-WAREHOUSE W1 DONE** live thin name+active+description (type/zones hidden) · **TZ-NX-HUB-04 DONE** expand остатки + icon actions (`WAVE-NX-HUB-TABLE-PARITY`) |
 
 ## Admin / auth
 

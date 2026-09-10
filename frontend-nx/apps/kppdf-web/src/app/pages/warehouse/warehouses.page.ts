@@ -1,19 +1,32 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, OnInit, inject, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { PiWarehousesService, type Warehouse, type WarehouseWritePayload } from '@kppdf/data-access';
+import {
+  PiStorageItemsService,
+  PiWarehousesService,
+  storageItemName,
+  type StorageItem,
+  type Warehouse,
+  type WarehouseWritePayload,
+} from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
+import { PiRowActionsComponent } from '@kppdf/ui/row-actions';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './warehouse-form-dialog.component';
 
+/** Hub expand preview stays short — full balances live on `/storage-items`. */
+const EXPAND_ITEMS_LIMIT = 8;
+
 @Component({
   selector: 'pi-warehouses-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, ButtonComponent],
+  imports: [PiStatusBannerComponent, ButtonComponent, PiRowActionsComponent, RouterLink],
   template: `
     <main class="px-panel-inset py-6" data-test="warehouses-page">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -59,13 +72,29 @@ import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './wa
       }
       @if (status() === 'success' && filteredRows().length > 0) {
         <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised" role="table" aria-label="Склады" data-test="warehouses-table">
-          <div class="grid grid-cols-[minmax(0,1fr)_minmax(7rem,0.35fr)_minmax(10rem,0.7fr)] gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
+          <div class="grid grid-cols-[1.5rem_minmax(0,1fr)_minmax(7rem,0.35fr)_minmax(9rem,0.6fr)] gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
+            <span role="columnheader" aria-hidden="true"></span>
             <span role="columnheader">Название</span>
             <span role="columnheader">Статус</span>
             <span role="columnheader" aria-label="Действия"></span>
           </div>
           @for (row of filteredRows(); track row._id) {
-            <div class="grid grid-cols-[minmax(0,1fr)_minmax(7rem,0.35fr)_minmax(10rem,0.7fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0" role="row" data-test="warehouse-row">
+            <div
+              class="grid grid-cols-[1.5rem_minmax(0,1fr)_minmax(7rem,0.35fr)_minmax(9rem,0.6fr)] gap-4 items-center px-4 py-2 hairline-bottom last:border-b-0 cursor-pointer hover:bg-paper-2 pi-focus-ring border-l-2"
+              role="row"
+              data-test="warehouse-row"
+              tabindex="0"
+              [class.bg-paper-2]="expandedId() === row._id"
+              [class.border-l-gold-deep]="expandedId() === row._id"
+              [class.border-l-transparent]="expandedId() !== row._id"
+              [attr.aria-expanded]="expandedId() === row._id"
+              (click)="toggleExpand(row._id)"
+              (keydown.enter)="toggleExpand(row._id)"
+              (keydown.space)="onRowSpace($event, row._id)"
+            >
+              <span role="cell" aria-hidden="true" class="text-muted-foreground" data-test="warehouse-row-chevron">
+                {{ expandedId() === row._id ? '▾' : '▸' }}
+              </span>
               <div role="cell">
                 <div class="font-medium truncate flex items-center gap-1.5">
                   {{ row.name }}
@@ -78,14 +107,60 @@ import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './wa
                 }
               </div>
               <span class="text-sm" role="cell" [class.text-muted-foreground]="!row.isActive">{{ row.isActive ? 'Активен' : 'Неактивен' }}</span>
-              <div class="flex items-center gap-2 justify-end" role="cell">
+              <div class="flex items-center justify-end gap-2" role="cell" (click)="$event.stopPropagation()">
                 @if (!row.isDefault) {
-                  <app-pi-button variant="secondary" type="button" (click)="makeDefault(row)" data-test="warehouse-make-default">Сделать по умолчанию</app-pi-button>
+                  <button
+                    type="button"
+                    class="pi-icon-btn pi-focus-ring"
+                    aria-label="Сделать складом по умолчанию"
+                    data-test="warehouse-make-default"
+                    (click)="makeDefault(row)"
+                  >
+                    <span aria-hidden="true">★</span>
+                  </button>
                 }
-                <app-pi-button variant="secondary" type="button" (click)="openEdit(row)" data-test="warehouse-edit">Изменить</app-pi-button>
-                <app-pi-button variant="secondary" type="button" (click)="confirmDelete(row)" data-test="warehouse-delete">Удалить</app-pi-button>
+                <app-pi-row-actions
+                  [row]="row"
+                  editLabel="Редактировать склад"
+                  dataTestEdit="warehouse-edit"
+                  deleteLabel="Удалить склад"
+                  dataTestDelete="warehouse-delete"
+                  (edit)="openEdit($event)"
+                  (delete)="confirmDelete($event)"
+                />
               </div>
             </div>
+            @if (expandedId() === row._id) {
+              <div class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2" data-test="warehouse-row-expand">
+                <p class="text-xs text-muted-foreground m-0 mb-3">Склад / {{ row.name }} / Остатки</p>
+                @if (itemsLoading()) {
+                  <p class="text-sm text-muted-foreground m-0">Загрузка…</p>
+                } @else if (itemsError()) {
+                  <p class="text-sm text-destructive m-0" role="alert" data-test="warehouse-expand-error">
+                    {{ itemsError() }}
+                  </p>
+                } @else if (items().length === 0) {
+                  <p class="text-sm text-muted-foreground m-0">Нет остатков на этом складе.</p>
+                } @else {
+                  <ul class="m-0 p-0 list-none flex flex-col gap-1 text-sm" data-test="warehouse-expand-items">
+                    @for (item of items(); track item._id) {
+                      <li class="flex items-center justify-between gap-2" data-test="warehouse-expand-item">
+                        <span class="truncate">{{ itemName(item) }}</span>
+                        <span class="text-muted-foreground tabular-nums shrink-0">{{ item.quantity }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+                <a
+                  routerLink="/storage-items"
+                  [queryParams]="{ warehouseId: row._id }"
+                  class="pi-outline-btn mt-3"
+                  data-test="warehouse-expand-all-link"
+                >
+                  Все остатки склада
+                </a>
+              </div>
+            }
           }
         </div>
       }
@@ -94,6 +169,7 @@ import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './wa
 })
 export class WarehousesPage implements OnInit {
   private readonly api = inject(PiWarehousesService);
+  private readonly storageItemsApi = inject(PiStorageItemsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -108,6 +184,13 @@ export class WarehousesPage implements OnInit {
     return query ? this.rows().filter((row) => row.name.toLowerCase().includes(query)) : this.rows();
   });
 
+  /** Single expand (HUB pattern) — mirrors counterparties/orders/supply. */
+  readonly expandedId = signal<string | null>(null);
+  readonly items = signal<readonly StorageItem[]>([]);
+  readonly itemsLoading = signal(false);
+  readonly itemsError = signal<string | null>(null);
+  protected readonly itemName = storageItemName;
+
   ngOnInit(): void {
     this.load();
   }
@@ -116,8 +199,41 @@ export class WarehousesPage implements OnInit {
     this.search.set((event.target as HTMLInputElement).value);
   }
 
+  toggleExpand(warehouseId: string): void {
+    if (this.expandedId() === warehouseId) {
+      this.expandedId.set(null);
+      return;
+    }
+    this.expandedId.set(warehouseId);
+    this.loadItems(warehouseId);
+  }
+
+  protected onRowSpace(event: Event, warehouseId: string): void {
+    event.preventDefault();
+    this.toggleExpand(warehouseId);
+  }
+
+  private loadItems(warehouseId: string): void {
+    this.itemsLoading.set(true);
+    this.itemsError.set(null);
+    this.items.set([]);
+    this.storageItemsApi
+      .list({ warehouseId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (this.expandedId() !== warehouseId) return; // stale guard — collapsed/switched while loading
+        this.itemsLoading.set(false);
+        if (!res.ok) {
+          this.itemsError.set(extractErrorMessage(res.error) || 'Не удалось загрузить остатки');
+          return;
+        }
+        this.items.set((res.data?.items ?? []).slice(0, EXPAND_ITEMS_LIMIT));
+      });
+  }
+
   load(): void {
     this.status.set('loading');
+    this.expandedId.set(null);
     void firstValueFrom(this.api.list()).then((result) => {
       if (!result.ok) {
         this.error.set(extractErrorMessage(result.error));

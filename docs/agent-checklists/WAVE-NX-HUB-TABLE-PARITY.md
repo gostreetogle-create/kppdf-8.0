@@ -6,15 +6,15 @@
 **Executor:** `agent_id: claude` · **sequential** (один `kppdf-web` build)  
 **SKIP:** `/production` · Документы/DocStudio
 
-updated_at: 2026-09-10T15:20:00+03:00  
-status: **READY**
+updated_at: 2026-09-10T16:55:00+03:00  
+status: **COMPLETE**
 
 | # | Route | TZ | PROMPT | Status |
 |---|-------|-----|--------|--------|
 | 01 | `/counterparties` | `tasks/_ready/nx-hub/counterparties/TZ-NX-HUB-01-counterparties.md` | `tasks/PROMPT-CLAUDE-HUB-01-counterparties.md` | DONE |
 | 02 | `/orders` | `tasks/_ready/nx-hub/orders/TZ-NX-HUB-02-orders.md` | `tasks/PROMPT-CLAUDE-HUB-02-orders.md` | DONE |
 | 03 | `/supply` | `tasks/_ready/nx-hub/supply/TZ-NX-HUB-03-supply.md` | `tasks/PROMPT-CLAUDE-HUB-03-supply.md` | DONE |
-| 04 | `/warehouses` | `tasks/_ready/nx-hub/warehouses/TZ-NX-HUB-04-warehouses.md` | `tasks/PROMPT-CLAUDE-HUB-04-warehouses.md` | READY |
+| 04 | `/warehouses` | `tasks/_ready/nx-hub/warehouses/TZ-NX-HUB-04-warehouses.md` | `tasks/PROMPT-CLAUDE-HUB-04-warehouses.md` | DONE |
 
 ## Правило
 
