@@ -188,3 +188,5 @@ frontend/.tmp-*
 reports/full-route-crash-sweep.json
 reports/TZ-UI-404-counterparties-toc.png
 reports/TZ-UI-404-toc-parity-smoke.json
+reports/TZ-NX-HUB-05-visual-parity.json
+docs/audits/evidence/

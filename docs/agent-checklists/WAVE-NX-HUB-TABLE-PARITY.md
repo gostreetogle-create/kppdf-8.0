@@ -6,8 +6,8 @@
 **Executor:** `agent_id: claude` · **sequential** (один `kppdf-web` build)  
 **SKIP:** `/production` · Документы/DocStudio
 
-updated_at: 2026-09-10T16:55:00+03:00  
-status: **COMPLETE**
+updated_at: 2026-09-10T17:35:00+03:00  
+status: **COMPLETE** (01–05, incl. visual parity verification)
 
 | # | Route | TZ | PROMPT | Status |
 |---|-------|-----|--------|--------|
@@ -15,6 +15,7 @@ status: **COMPLETE**
 | 02 | `/orders` | `tasks/_ready/nx-hub/orders/TZ-NX-HUB-02-orders.md` | `tasks/PROMPT-CLAUDE-HUB-02-orders.md` | DONE |
 | 03 | `/supply` | `tasks/_ready/nx-hub/supply/TZ-NX-HUB-03-supply.md` | `tasks/PROMPT-CLAUDE-HUB-03-supply.md` | DONE |
 | 04 | `/warehouses` | `tasks/_ready/nx-hub/warehouses/TZ-NX-HUB-04-warehouses.md` | `tasks/PROMPT-CLAUDE-HUB-04-warehouses.md` | DONE |
+| 05 | visual parity (глаз) | `tasks/_ready/nx-hub/visual-parity/TZ-NX-HUB-05-VISUAL-PARITY.md` | `tasks/PROMPT-CLAUDE-HUB-VISUAL-PARITY.md` | DONE — PASS, no fix needed, `docs/audits/2026-09-10-nx-hub-visual-parity.md` |
 
 ## Правило
 
@@ -23,4 +24,5 @@ status: **COMPLETE**
 
 ## Resume
 
-Смотри `HUB-TABLE-CONTINUOUS-CHECKLIST.md` — первая `PENDING` / `IN_WORK`.
+01–04: `HUB-TABLE-CONTINUOUS-CHECKLIST.md` COMPLETE.  
+05: `HUB-VISUAL-PARITY-CHECKLIST.md` — первая PENDING/IN_WORK.
