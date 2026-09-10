@@ -110,12 +110,13 @@ Query `orderId` **сохраняется** при переключении Бы�
 
 ### UI (`supply.page.ts`)
 
-Ручная CSS-grid таблица (текущая NX-конвенция, как `storage-items.page.ts`, без `<app-pi-table>`): позиция/линия, заказ (`routerLink` на `/orders/:id`), qty, статус, действие по статусу (draft→Подтвердить, confirmed→Заказано, ordered→Получено).
+Ручная CSS-grid таблица (текущая NX-конвенция, как `storage-items.page.ts`, без `<app-pi-table>`): ▸/▾ · позиция · заказ (`routerLink` на `/orders/:id`) · qty · статус · **создано** (`createdAt`) · действие по статусу (draft→Подтвердить, confirmed→Заказано, ordered→Получено).
 
 - Фильтр по статусу (`<select>`), фильтр `?orderId=` (query-param, deep-link) с chip + «Сбросить» (`router.navigate` с `queryParamsHandling: 'merge'`)
 - «+ Задача»: explode из состава заказа ИЛИ ручное создание (заказ + название + qty)
 - `data-test` атрибуты на всех интерактивных элементах для тестов
 - **TZ-NX-UX-06-supply-FIX:** клик по строке — expand-in-row (registry pattern) с полной линией заказа / датой подтверждения / примечанием read-only. `confirmedBy` (raw `ObjectId`, backend не резолвит в имя) **сознательно не показан** — не заводим сырой ObjectId в UI без lookup; `confirmedAt` покрывает практическую часть значения («когда подтверждено»). Filter-chip «Сбросить» переведён на `.pi-outline-btn`.
+- **TZ-NX-HUB-03 (2026-09-10):** ▸/▾ chevron + денсер ряды (`py-2`) + expanded-row accent (`bg-paper-2` + `border-l-gold-deep`), как `/orders` (HUB-02). Основная колонка «Позиция» больше не показывает сырой `orderLineId` подписью (перенесено в expand). Row actions — один компактный `.pi-outline-btn` на статус (был широкий `app-pi-button`). Expand обогащён: **Материал**/**Модуль** — честные плейсхолдеры «Материал задан»/«Модуль задан» (BE не отдаёт имя на list/find, поэтому не рисуем название) вместо `—`, если id есть; **Линия заказа** — полный текст только если это НЕ похоже на raw ObjectId (regex `^[a-f0-9]{24}$`), иначе `—` (H5, `orderLineLabel()`); **Обновлено** (`updatedAt`); chip-ссылка на заказ (`.pi-outline-btn`) прямо в expand, в дополнение к текстовой ссылке в строке. `confirmedBy` по-прежнему нигде не отображается.
 
 ### Known limitation (унаследовано от backend, не изобретено во фронтенде)
 
@@ -124,7 +125,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 ### Tests
 
 - `pi-supply-tasks.service.spec.ts` — 8 tests (все методы, HTTP mock)
-- `supply.page.spec.ts` — 11 tests (фильтры, transitions, explode, create, no-mock-UI assertion, router-based filter clear, expand-in-row shows/hides detail, row action click does not toggle expand)
+- `supply.page.spec.ts` — фильтры, transitions, explode, create, no-mock-UI assertion, router-based filter clear, expand-in-row shows/hides detail, row action click does not toggle expand; **TZ-NX-HUB-03**: chevron toggle, «Создано» column, honest материал/модуль placeholders (no raw ObjectId), `confirmedBy` never rendered, orderLineId ObjectId-mask vs free-text pass-through, expand order chip link
 
 ## NX — TZ-NX-SUPPLY-S2-HUB-CONFIRM (order hub «Подтвердить материалы»)
 
@@ -250,3 +251,4 @@ typeahead:
 | **TZ-DESKTOP-SUPPLY-EXCEL-A** | Desktop Excel-импорт `supplyRequest`: колонки `invoiceNo`/`deliveryNote`/`paid`/`orderLabel`/`supplierName`/`orderNumber`; match по артикулу/имени/номеру → materialId/supplierId/orderId, miss = invalid-строка (не silent create) — см. `desktop/README.md` §Снабжение |
 | **TZ-NX-SUPPLY-S6-CHROME** | `/supply-requests` — фильтры (status/paid/дата), ссылка на Order при совпадении `orderId`, различённые empty-состояния; **WAVE-NX-SUPPLY-OPS DONE (7/7)** |
 | **TZ-DESKTOP-SUPPLY-EXCEL-B** | Desktop multi-sheet шаблон (`Заявки`+`Материалы`+`Поставщики`+`Заказы`), нативные Excel dropdown на «Артикул»/«Поставщик»/«№ заказа» → те же match-правила пути A на импорте — см. `desktop/README.md` §Снабжение путь B; **WAVE-NX-SUPPLY-OPS Excel B DONE** |
+| **TZ-NX-HUB-03** | `/supply` только (`supply.page.ts`, не `/supply-requests`): ▸/▾ chevron + denser rows + expanded-row accent (parity с `/orders`); one-CTA-per-status compact `.pi-outline-btn` actions; richer expand (honest material/module placeholders, ObjectId-masked line key, updatedAt, order chip link). `WAVE-NX-HUB-TABLE-PARITY` #03 — DONE |

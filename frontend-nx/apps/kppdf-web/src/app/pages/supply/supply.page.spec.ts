@@ -226,4 +226,61 @@ describe('SupplyPage (NX S1)', () => {
     const row = fixture.nativeElement.querySelector('[data-test="supply-row"]') as HTMLElement;
     expect(row.getAttribute('aria-expanded')).toBe('false');
   });
+
+  it('shows a ▸/▾ chevron reflecting aria-expanded (TZ-NX-HUB-03)', async () => {
+    await setup();
+    const row = fixture.nativeElement.querySelector('[data-test="supply-row"]') as HTMLElement;
+    expect(row.querySelector('[data-test="supply-row-chevron"]')?.textContent?.trim()).toBe('▸');
+
+    row.click();
+    fixture.detectChanges();
+    expect(row.querySelector('[data-test="supply-row-chevron"]')?.textContent?.trim()).toBe('▾');
+  });
+
+  it('shows the creation date column (TZ-NX-HUB-03)', async () => {
+    await setup({}, [task({ createdAt: '2026-09-01T00:00:00.000Z' })]);
+    const table = fixture.nativeElement.querySelector('[data-test="supply-tasks-table"]') as HTMLElement;
+    expect(table.textContent).toContain('01.09.2026');
+  });
+
+  it('never shows raw material/module ObjectIds — honest placeholders instead (TZ-NX-HUB-03)', async () => {
+    await setup(
+      {},
+      [task({ materialId: '507f1f77bcf86cd799439011', moduleId: '507f1f77bcf86cd799439012' })],
+    );
+    row(0).click();
+    fixture.detectChanges();
+    const expandEl = fixture.nativeElement.querySelector('[data-test="supply-row-expand"]') as HTMLElement;
+    expect(expandEl.textContent).toContain('Материал задан');
+    expect(expandEl.textContent).toContain('Модуль задан');
+    expect(expandEl.textContent).not.toContain('507f1f77bcf86cd799439011');
+    expect(expandEl.textContent).not.toContain('507f1f77bcf86cd799439012');
+  });
+
+  it('never shows confirmedBy in the UI (TZ-NX-HUB-03 AC3)', async () => {
+    await setup({}, [task({ confirmedBy: '507f1f77bcf86cd799439099', status: 'confirmed' })]);
+    row(0).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('507f1f77bcf86cd799439099');
+  });
+
+  it('masks a raw-ObjectId-looking orderLineId, but shows a free-text line key as-is (TZ-NX-HUB-03)', async () => {
+    await setup({}, [task({ orderLineId: '507f1f77bcf86cd799439055' })]);
+    row(0).click();
+    fixture.detectChanges();
+    const line = fixture.nativeElement.querySelector('[data-test="supply-expand-line"]') as HTMLElement;
+    expect(line.textContent?.trim()).toBe('—');
+  });
+
+  it('links to the order from the expanded detail (TZ-NX-HUB-03)', async () => {
+    await setup();
+    row(0).click();
+    fixture.detectChanges();
+    const link = fixture.nativeElement.querySelector('[data-test="supply-expand-order-link"]') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/orders/o1');
+  });
+
+  function row(index: number): HTMLElement {
+    return fixture.nativeElement.querySelectorAll('[data-test="supply-row"]')[index] as HTMLElement;
+  }
 });

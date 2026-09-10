@@ -29,7 +29,12 @@ const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
 };
 
 const GRID_COLS =
-  'grid-cols-[minmax(0,1.7fr)_minmax(8rem,0.9fr)_minmax(5.5rem,0.55fr)_minmax(8rem,0.7fr)_minmax(11rem,0.9fr)]';
+  'grid-cols-[1.5rem_minmax(0,1.5fr)_minmax(7rem,0.8fr)_minmax(4.5rem,0.45fr)_minmax(7rem,0.6fr)_minmax(6rem,0.55fr)_minmax(8rem,0.7fr)]';
+
+/** TZ-NX-HUB-03 — canon H5: never show a raw ObjectId; a free-text line key is fine. */
+function looksLikeObjectId(value: string): boolean {
+  return /^[a-f0-9]{24}$/i.test(value);
+}
 
 /**
  * TZ-NX-SUPPLY-S1 — live SupplyTask registry only. The legacy «Быстрый
@@ -206,28 +211,33 @@ const GRID_COLS =
         <div class="pi-table-surface hairline rounded-sm overflow-x-auto bg-paper-raised" data-test="supply-tasks-table">
           <div class="min-w-[60rem]" role="table" aria-label="Задачи снабжения">
             <div class="grid ${GRID_COLS} gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
+              <span role="columnheader" aria-hidden="true"></span>
               <span role="columnheader">Позиция</span>
               <span role="columnheader">Заказ</span>
               <span role="columnheader" class="text-right">Кол-во</span>
               <span role="columnheader">Статус</span>
+              <span role="columnheader">Создано</span>
               <span role="columnheader" aria-label="Действия"></span>
             </div>
             @for (row of tasks(); track row._id) {
               <div
-                class="grid ${GRID_COLS} gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0 cursor-pointer pi-focus-ring"
+                class="grid ${GRID_COLS} gap-4 items-center px-4 py-2 hairline-bottom last:border-b-0 cursor-pointer hover:bg-paper-2 pi-focus-ring border-l-2"
                 role="row"
                 data-test="supply-row"
                 tabindex="0"
+                [class.bg-paper-2]="expandedId() === row._id"
+                [class.border-l-gold-deep]="expandedId() === row._id"
+                [class.border-l-transparent]="expandedId() !== row._id"
                 [attr.aria-expanded]="expandedId() === row._id"
                 (click)="toggleExpand(row._id)"
                 (keydown.enter)="toggleExpand(row._id)"
                 (keydown.space)="onRowSpace($event, row._id)"
               >
+                <span role="cell" aria-hidden="true" class="text-muted-foreground" data-test="supply-row-chevron">
+                  {{ expandedId() === row._id ? '▾' : '▸' }}
+                </span>
                 <div role="cell" class="min-w-0">
                   <div class="text-sm truncate">{{ row.title || 'Без названия' }}</div>
-                  @if (row.orderLineId) {
-                    <div class="text-xs text-muted-foreground truncate">линия {{ row.orderLineId }}</div>
-                  }
                 </div>
                 <div role="cell">
                   <a
@@ -249,39 +259,42 @@ const GRID_COLS =
                     {{ statusLabel(row.status) }}
                   </span>
                 </div>
-                <div class="flex items-center gap-2 justify-end" role="cell" (click)="$event.stopPropagation()">
+                <div class="text-sm text-muted-foreground tabular-nums" role="cell">
+                  {{ row.createdAt ? fmtDate(row.createdAt) : '—' }}
+                </div>
+                <div class="flex items-center justify-end" role="cell" (click)="$event.stopPropagation()">
                   @if (row.status === 'draft') {
-                    <app-pi-button
-                      variant="default"
+                    <button
                       type="button"
+                      class="pi-outline-btn"
                       (click)="onConfirm(row)"
                       [disabled]="busyId() === row._id"
                       [attr.data-test]="'supply-confirm-' + row._id"
                     >
-                      Подтвердить
-                    </app-pi-button>
+                      {{ busyId() === row._id ? '…' : 'Подтвердить' }}
+                    </button>
                   }
                   @if (row.status === 'confirmed') {
-                    <app-pi-button
-                      variant="secondary"
+                    <button
                       type="button"
+                      class="pi-outline-btn"
                       (click)="onOrdered(row)"
                       [disabled]="busyId() === row._id"
                       [attr.data-test]="'supply-ordered-' + row._id"
                     >
-                      Заказано
-                    </app-pi-button>
+                      {{ busyId() === row._id ? '…' : 'Заказано' }}
+                    </button>
                   }
                   @if (row.status === 'ordered') {
-                    <app-pi-button
-                      variant="secondary"
+                    <button
                       type="button"
+                      class="pi-outline-btn"
                       (click)="onReceived(row)"
                       [disabled]="busyId() === row._id"
                       [attr.data-test]="'supply-received-' + row._id"
                     >
-                      Получено
-                    </app-pi-button>
+                      {{ busyId() === row._id ? '…' : 'Получено' }}
+                    </button>
                   }
                 </div>
               </div>
@@ -290,15 +303,36 @@ const GRID_COLS =
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <div class="pi-label text-muted-foreground">Линия заказа</div>
-                      <div class="text-sm">{{ row.orderLineId || '—' }}</div>
+                      <div class="text-sm" data-test="supply-expand-line">{{ orderLineLabel(row) }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Материал</div>
+                      <div class="text-sm">{{ row.materialId ? 'Материал задан' : '—' }}</div>
+                    </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Модуль</div>
+                      <div class="text-sm">{{ row.moduleId ? 'Модуль задан' : '—' }}</div>
                     </div>
                     <div>
                       <div class="pi-label text-muted-foreground">Дата подтверждения</div>
                       <div class="text-sm">{{ row.confirmedAt ? fmtDate(row.confirmedAt) : '—' }}</div>
                     </div>
+                    <div>
+                      <div class="pi-label text-muted-foreground">Обновлено</div>
+                      <div class="text-sm">{{ row.updatedAt ? fmtDate(row.updatedAt) : '—' }}</div>
+                    </div>
                     <div class="sm:col-span-2">
                       <div class="pi-label text-muted-foreground">Примечание</div>
                       <div class="text-sm">{{ row.notes || '—' }}</div>
+                    </div>
+                    <div class="sm:col-span-2">
+                      <a
+                        class="pi-outline-btn"
+                        [routerLink]="['/orders', row.orderId]"
+                        data-test="supply-expand-order-link"
+                      >
+                        Заказ {{ orderLabel(row.orderId) }}
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -373,6 +407,12 @@ export class SupplyPage {
   protected orderFilterLabel(): string {
     const id = this.orderFilterId();
     return id ? this.orderLabel(id) : '';
+  }
+
+  /** TZ-NX-HUB-03 — full id only when it reads as a business key, not a raw ObjectId (H5). */
+  protected orderLineLabel(row: SupplyTask): string {
+    if (!row.orderLineId) return '—';
+    return looksLikeObjectId(row.orderLineId) ? '—' : row.orderLineId;
   }
 
   protected fmtDate(value: string): string {
