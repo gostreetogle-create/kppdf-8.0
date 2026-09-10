@@ -124,6 +124,17 @@ describe('OrdersListPage (TZ-NX-SALES-S34-ORDERS-LIST)', () => {
     expect(link).toBeTruthy();
     expect(link.getAttribute('href')).toBe('/orders/order-1');
   });
+
+  it('shows an icon card link, not the former wide «Карточка» text button (TZ-NX-HUB-02)', async () => {
+    await setup(of({ ok: true, data: orders } satisfies SilentResult<Order[]>));
+    await settle();
+
+    const link = fixture.nativeElement.querySelector('[data-test="orders-row-link"]') as HTMLAnchorElement;
+    expect(link.textContent?.trim()).toBe('');
+    expect(link.getAttribute('aria-label')).toBe('Открыть карточку заказа');
+    expect(link.querySelector('svg')).toBeTruthy();
+  });
+
 });
 
 describe('OrdersListPage — hub expand (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
@@ -187,11 +198,23 @@ describe('OrdersListPage — hub expand (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     expect(trays.length).toBe(1);
   });
 
-  it('clicking the «Карточка» link does not toggle expand (stopPropagation)', async () => {
+  it('clicking the card icon link does not toggle expand (stopPropagation)', async () => {
     await setup();
     const link = rowAt(0).querySelector('[data-test="orders-row-link"]') as HTMLAnchorElement;
     link.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="orders-row-expand"]')).toBeFalsy();
+  });
+
+  it('shows a ▸/▾ chevron reflecting aria-expanded (TZ-NX-HUB-02)', async () => {
+    await setup();
+    const row = rowAt(0);
+    expect(row.querySelector('[data-test="orders-row-chevron"]')?.textContent?.trim()).toBe('▸');
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+
+    row.click();
+    fixture.detectChanges();
+    expect(row.querySelector('[data-test="orders-row-chevron"]')?.textContent?.trim()).toBe('▾');
+    expect(row.getAttribute('aria-expanded')).toBe('true');
   });
 });

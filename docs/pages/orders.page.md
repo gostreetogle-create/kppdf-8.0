@@ -17,9 +17,9 @@
 
 `frontend-nx` exposes the authenticated `/orders` route as a thin, read-only journal backed by `PiOrdersService.list()` and `GET /api/orders`. The list renders the order number, Russian lifecycle status, payment fact (`Оплачен` / `Не оплачен`), and `Без КП` for direct orders without `quotationId`.
 
-The list has explicit loading, retryable API-error, and empty states. Since S35 each row links to the card via `Карточка` → `/orders/:id`. The page does not add create/edit actions or lifecycle writes.
+The list has explicit loading, retryable API-error, and empty states. Since S35 each row links to the card — **TZ-NX-HUB-02 (2026-09-10):** the former wide «Карточка» text link is now an icon (`pi-icon-btn-doc`, `aria-label="Открыть карточку заказа"`) → `/orders/:id`. The page does not add create/edit actions or lifecycle writes.
 
-Columns (D2): Номер · Дата · Статус · Оплата · КП · Готовность (X из Y). Клик по строке (или Enter/Space) раскрывает hub tray под ней (single-expand — открытие другой строки/перезагрузка списка сворачивает предыдущую); клик по «Карточка» не триггерит expand (`stopPropagation`).
+Columns (D2): ▸/▾ · Номер · Дата · Статус · Оплата · КП · Готовность (X из Y). **TZ-NX-HUB-02:** a leading ▸/▾ chevron column makes the row's expand affordance visible (mirrors `/registries`); the expanded row gets a `bg-paper-2` + gold left-accent border (`.border-l-gold-deep`), rows are denser (`py-2`). Клик по строке (или Enter/Space) раскрывает hub tray под ней (single-expand — открытие другой строки/перезагрузка списка сворачивает предыдущую); клик по card-иконке не триггерит expand (`stopPropagation`).
 
 ## NX order hub tray (D2, `order-hub-tray.component.ts`)
 
@@ -247,6 +247,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-NX-SHIP-S3** | Hub «Отгружено» без документа: `order-ship-button` → `ShipConfirmDialogComponent` → `PiOrdersService.ship()` whole-order → reload; WAVE-NX-SHIPPING S0–S3 DONE |
 | **TZ-NX-SHIP-S4** | Hub «Отменить отгрузку» (`order-cancel-shipment-button`) до dispatch — TZ-SHIP-433 gate, confirm → `PiShipmentsService.cancelShipment` → reload; WAVE-NX-SHIPPING S0–S4 DONE |
 | **TZ-NX-UX-04-orders-FIX** | `order-hub-tray.component.ts`: hub-tray action controls (Снабжение/Производство/Готовность/Склад/Отгрузка/Документы links, «Подтвердить материалы», «Отменить отгрузку», «Отгружено») переведены с ad-hoc `border-rule-strong` класса на канонический `.pi-outline-btn`/`.pi-outline-btn-destructive` — первое реальное применение этого класса в репо; фиксит отсутствующий keyboard focus-ring на 8 из 9 контролов и убирает единственную `<a class="underline">` («Шаблоны документов»). Чисто copy/class-level, поведение не менялось. WAVE-NX-UX-PAGE-SWEEP #04 — DONE |
+| **TZ-NX-HUB-02** | `orders-list.page.ts` only (hub-tray логика не тронута): ▸/▾ chevron column + expanded-row accent + denser rows; «Карточка» text button → `pi-icon-btn-doc` icon link. `WAVE-NX-HUB-TABLE-PARITY` #02 — DONE |
 
 ## Особенности
 

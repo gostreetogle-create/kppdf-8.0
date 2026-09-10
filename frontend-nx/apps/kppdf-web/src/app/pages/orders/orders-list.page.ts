@@ -55,7 +55,8 @@ import { OrderHubTrayComponent } from './order-hub-tray.component';
           aria-label="Заказы"
           data-test="orders-table"
         >
-          <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(6rem,0.7fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(6rem,0.6fr)] gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
+          <div class="grid grid-cols-[1.5rem_minmax(0,1.2fr)_minmax(6rem,0.7fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(3rem,0.4fr)] gap-4 px-4 py-2 text-xs text-muted-foreground hairline-bottom" role="row">
+            <span role="columnheader" aria-hidden="true"></span>
             <span role="columnheader">Номер</span>
             <span role="columnheader">Дата</span>
             <span role="columnheader">Статус</span>
@@ -66,15 +67,21 @@ import { OrderHubTrayComponent } from './order-hub-tray.component';
           </div>
           @for (row of rows(); track row._id) {
             <div
-              class="grid grid-cols-[minmax(0,1.2fr)_minmax(6rem,0.7fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(6rem,0.6fr)] gap-4 items-center px-4 py-3 hairline-bottom last:border-b-0 cursor-pointer pi-focus-ring"
+              class="grid grid-cols-[1.5rem_minmax(0,1.2fr)_minmax(6rem,0.7fr)_minmax(7rem,0.8fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(5rem,0.7fr)_minmax(3rem,0.4fr)] gap-4 items-center px-4 py-2 hairline-bottom last:border-b-0 cursor-pointer hover:bg-paper-2 pi-focus-ring border-l-2"
               role="row"
               data-test="orders-row"
               tabindex="0"
+              [class.bg-paper-2]="expandedId() === row._id"
+              [class.border-l-gold-deep]="expandedId() === row._id"
+              [class.border-l-transparent]="expandedId() !== row._id"
               [attr.aria-expanded]="expandedId() === row._id"
               (click)="toggleExpand(row._id)"
               (keydown.enter)="toggleExpand(row._id)"
               (keydown.space)="onRowSpace($event, row._id)"
             >
+              <span role="cell" aria-hidden="true" class="text-muted-foreground" data-test="orders-row-chevron">
+                {{ expandedId() === row._id ? '▾' : '▸' }}
+              </span>
               <span class="font-medium truncate" role="cell">{{ row.number }}</span>
               <span class="text-sm text-muted-foreground" role="cell">{{ dateLabel(row.date) }}</span>
               <span class="text-sm" role="cell">{{ statusLabel(row.status) }}</span>
@@ -83,15 +90,32 @@ import { OrderHubTrayComponent } from './order-hub-tray.component';
               <span class="text-sm" role="cell" data-test="orders-row-readiness">{{ readinessLabel(row) }}</span>
               <!-- Native <a> (not app-pi-button): ButtonComponent doesn't forward routerLink's
                    href host binding, which would silently drop hover-URL/open-in-new-tab.
-                   Classes mirror <app-pi-button variant="secondary"> exactly (button.component.ts). -->
+                   TZ-NX-HUB-02 — icon (pi-icon-btn-doc), not a wide text button. -->
               <a
-                class="inline-flex items-center justify-center gap-2 font-medium font-mono uppercase tracking-wider rounded-sm transition-all pi-focus-ring bg-paper-2 text-ink hairline hover:bg-paper-3 h-10 px-4 text-sm"
+                class="pi-icon-btn pi-icon-btn-doc pi-focus-ring justify-self-end"
                 [routerLink]="['/orders', row._id]"
                 role="cell"
+                aria-label="Открыть карточку заказа"
                 data-test="orders-row-link"
                 (click)="$event.stopPropagation()"
               >
-                Карточка
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="13" y2="17" />
+                </svg>
               </a>
             </div>
             @if (expandedId() === row._id) {
