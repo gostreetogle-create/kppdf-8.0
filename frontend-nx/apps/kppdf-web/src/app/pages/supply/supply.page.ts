@@ -299,33 +299,31 @@ function looksLikeObjectId(value: string): boolean {
                 </div>
               </div>
               @if (expandedId() === row._id) {
-                <div class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2" data-test="supply-row-expand">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <div class="pi-label text-muted-foreground">Линия заказа</div>
-                      <div class="text-sm" data-test="supply-expand-line">{{ orderLineLabel(row) }}</div>
-                    </div>
-                    <div>
-                      <div class="pi-label text-muted-foreground">Материал</div>
-                      <div class="text-sm">{{ row.materialId ? 'Материал задан' : '—' }}</div>
-                    </div>
-                    <div>
-                      <div class="pi-label text-muted-foreground">Модуль</div>
-                      <div class="text-sm">{{ row.moduleId ? 'Модуль задан' : '—' }}</div>
-                    </div>
-                    <div>
-                      <div class="pi-label text-muted-foreground">Дата подтверждения</div>
-                      <div class="text-sm">{{ row.confirmedAt ? fmtDate(row.confirmedAt) : '—' }}</div>
-                    </div>
-                    <div>
-                      <div class="pi-label text-muted-foreground">Обновлено</div>
-                      <div class="text-sm">{{ row.updatedAt ? fmtDate(row.updatedAt) : '—' }}</div>
-                    </div>
-                    <div class="sm:col-span-2">
-                      <div class="pi-label text-muted-foreground">Примечание</div>
-                      <div class="text-sm">{{ row.notes || '—' }}</div>
-                    </div>
-                    <div class="sm:col-span-2">
+                <div
+                  class="supply-task-hub-tray bg-paper-2 border-t hairline"
+                  data-test="supply-row-expand"
+                  role="region"
+                  [attr.aria-label]="'Сводка задачи снабжения: ' + (row.title || 'Без названия')"
+                >
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                    <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="supply-expand-position">
+                      <h3 class="text-sm font-medium text-ink m-0 mb-3">Позиция</h3>
+                      <dl class="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                        <dt class="text-muted-foreground">Название</dt>
+                        <dd class="m-0">{{ row.title || 'Без названия' }}</dd>
+                        <dt class="text-muted-foreground">Кол-во</dt>
+                        <dd class="m-0 tabular-nums">{{ row.qty }}</dd>
+                        <dt class="text-muted-foreground">Статус</dt>
+                        <dd class="m-0">{{ statusLabel(row.status) }}</dd>
+                      </dl>
+                    </section>
+
+                    <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="supply-expand-order">
+                      <h3 class="text-sm font-medium text-ink m-0 mb-3">Связь с заказом</h3>
+                      <dl class="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs mb-3">
+                        <dt class="text-muted-foreground">Линия заказа</dt>
+                        <dd class="m-0" data-test="supply-expand-line">{{ orderLineLabel(row) }}</dd>
+                      </dl>
                       <a
                         class="pi-outline-btn"
                         [routerLink]="['/orders', row.orderId]"
@@ -333,7 +331,30 @@ function looksLikeObjectId(value: string): boolean {
                       >
                         Заказ {{ orderLabel(row.orderId) }}
                       </a>
-                    </div>
+                    </section>
+
+                    <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="supply-expand-composition">
+                      <h3 class="text-sm font-medium text-ink m-0 mb-3">Состав</h3>
+                      <dl class="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                        <dt class="text-muted-foreground">Материал</dt>
+                        <dd class="m-0">{{ row.materialId ? 'Материал задан' : '—' }}</dd>
+                        <dt class="text-muted-foreground">Модуль</dt>
+                        <dd class="m-0">{{ row.moduleId ? 'Модуль задан' : '—' }}</dd>
+                      </dl>
+                    </section>
+
+                    <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="supply-expand-dates">
+                      <h3 class="text-sm font-medium text-ink m-0 mb-3">Сроки и заметки</h3>
+                      <dl class="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs mb-2">
+                        <dt class="text-muted-foreground">Создано</dt>
+                        <dd class="m-0">{{ row.createdAt ? fmtDate(row.createdAt) : '—' }}</dd>
+                        <dt class="text-muted-foreground">Подтверждено</dt>
+                        <dd class="m-0">{{ row.confirmedAt ? fmtDate(row.confirmedAt) : '—' }}</dd>
+                        <dt class="text-muted-foreground">Обновлено</dt>
+                        <dd class="m-0">{{ row.updatedAt ? fmtDate(row.updatedAt) : '—' }}</dd>
+                      </dl>
+                      <p class="text-xs text-muted-foreground m-0">{{ row.notes || 'Без примечаний' }}</p>
+                    </section>
                   </div>
                 </div>
               }

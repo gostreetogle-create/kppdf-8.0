@@ -218,6 +218,27 @@ describe('SupplyPage (NX S1)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="supply-row-expand"]')).toBeFalsy();
   });
 
+  it('expands into 4 category cards — gold hub markup, not a flat label sheet (TZ-NX-HUB-06)', async () => {
+    await setup({}, [task({ qty: 7, status: 'confirmed' })]);
+    row(0).click();
+    fixture.detectChanges();
+
+    const sections = ['supply-expand-position', 'supply-expand-order', 'supply-expand-composition', 'supply-expand-dates'];
+    for (const testId of sections) {
+      const section = fixture.nativeElement.querySelector(`[data-test="${testId}"]`) as HTMLElement;
+      expect(section).toBeTruthy();
+      expect(section.tagName).toBe('SECTION');
+      expect(section.className).toContain('hairline');
+      expect(section.className).toContain('rounded-sm');
+      expect(section.className).toContain('bg-paper');
+      expect(section.querySelector('h3')).toBeTruthy();
+    }
+    expect(fixture.nativeElement.querySelector('[data-test="supply-expand-position"]').textContent).toContain('Позиция');
+    expect(fixture.nativeElement.querySelector('[data-test="supply-expand-order"]').textContent).toContain('Связь с заказом');
+    expect(fixture.nativeElement.querySelector('[data-test="supply-expand-composition"]').textContent).toContain('Состав');
+    expect(fixture.nativeElement.querySelector('[data-test="supply-expand-dates"]').textContent).toContain('Сроки и заметки');
+  });
+
   it('does not toggle expand when clicking a row action button', async () => {
     await setup({}, [task({ status: 'draft' })]);
     (fixture.nativeElement.querySelector('[data-test="supply-confirm-t1"]') as HTMLButtonElement).click();

@@ -131,34 +131,56 @@ const EXPAND_ITEMS_LIMIT = 8;
               </div>
             </div>
             @if (expandedId() === row._id) {
-              <div class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2" data-test="warehouse-row-expand">
-                <p class="text-xs text-muted-foreground m-0 mb-3">Склад / {{ row.name }} / Остатки</p>
-                @if (itemsLoading()) {
-                  <p class="text-sm text-muted-foreground m-0">Загрузка…</p>
-                } @else if (itemsError()) {
-                  <p class="text-sm text-destructive m-0" role="alert" data-test="warehouse-expand-error">
-                    {{ itemsError() }}
-                  </p>
-                } @else if (items().length === 0) {
-                  <p class="text-sm text-muted-foreground m-0">Нет остатков на этом складе.</p>
-                } @else {
-                  <ul class="m-0 p-0 list-none flex flex-col gap-1 text-sm" data-test="warehouse-expand-items">
-                    @for (item of items(); track item._id) {
-                      <li class="flex items-center justify-between gap-2" data-test="warehouse-expand-item">
-                        <span class="truncate">{{ itemName(item) }}</span>
-                        <span class="text-muted-foreground tabular-nums shrink-0">{{ item.quantity }}</span>
-                      </li>
+              <div
+                class="warehouse-hub-tray bg-paper-2 border-t hairline"
+                data-test="warehouse-row-expand"
+                role="region"
+                [attr.aria-label]="'Сводка склада: ' + row.name"
+              >
+                <p class="text-xs text-muted-foreground m-0 px-4 pt-3">Склад / {{ row.name }} / Остатки</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                  <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="warehouse-expand-about">
+                    <h3 class="text-sm font-medium text-ink m-0 mb-3">О складе</h3>
+                    <dl class="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                      <dt class="text-muted-foreground">Название</dt>
+                      <dd class="m-0">{{ row.name }}</dd>
+                      <dt class="text-muted-foreground">Описание</dt>
+                      <dd class="m-0">{{ row.description || '—' }}</dd>
+                      <dt class="text-muted-foreground">Статус</dt>
+                      <dd class="m-0">{{ row.isActive ? 'Активен' : 'Неактивен' }}</dd>
+                    </dl>
+                  </section>
+
+                  <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="warehouse-expand-balances">
+                    <h3 class="text-sm font-medium text-ink m-0 mb-3">Остатки</h3>
+                    @if (itemsLoading()) {
+                      <p class="text-xs text-muted-foreground m-0">Загрузка…</p>
+                    } @else if (itemsError()) {
+                      <p class="text-xs text-destructive m-0" role="alert" data-test="warehouse-expand-error">
+                        {{ itemsError() }}
+                      </p>
+                    } @else if (items().length === 0) {
+                      <p class="text-xs text-muted-foreground m-0">Нет остатков на этом складе.</p>
+                    } @else {
+                      <ul class="m-0 p-0 list-none flex flex-col gap-1 text-xs" data-test="warehouse-expand-items">
+                        @for (item of items(); track item._id) {
+                          <li class="flex items-center justify-between gap-2" data-test="warehouse-expand-item">
+                            <span class="truncate">{{ itemName(item) }}</span>
+                            <span class="text-muted-foreground tabular-nums shrink-0">{{ item.quantity }}</span>
+                          </li>
+                        }
+                      </ul>
                     }
-                  </ul>
-                }
-                <a
-                  routerLink="/storage-items"
-                  [queryParams]="{ warehouseId: row._id }"
-                  class="pi-outline-btn mt-3"
-                  data-test="warehouse-expand-all-link"
-                >
-                  Все остатки склада
-                </a>
+                    <a
+                      routerLink="/storage-items"
+                      [queryParams]="{ warehouseId: row._id }"
+                      class="pi-outline-btn mt-3"
+                      data-test="warehouse-expand-all-link"
+                    >
+                      Все остатки склада
+                    </a>
+                  </section>
+                </div>
               </div>
             }
           }

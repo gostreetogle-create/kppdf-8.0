@@ -5,14 +5,14 @@
 **Чеклист:** `docs/agent-checklists/SHELL-HUB-POLISH-CHECKLIST.md`  
 **Continuous:** `tasks/PROMPT-CLAUDE-SHELL-HUB-POLISH.md`
 
-updated_at: 2026-09-10T17:30:00+03:00  
-status: **READY**  
+updated_at: 2026-09-10T18:45:00+03:00  
+status: **COMPLETE**  
 executor: claude · sequential
 
 | # | Focus | TZ | Status |
 |---|-------|-----|--------|
 | 01 | Idle L/R rails hide + history → header | `tasks/_ready/nx-shell-hub/TZ-NX-SHELL-01-IDLE-RAILS.md` | DONE |
-| 02 | Supply/warehouses expand = card categories | `tasks/_ready/nx-shell-hub/TZ-NX-HUB-06-EXPAND-CARDS.md` | READY |
+| 02 | Supply/warehouses expand = card categories | `tasks/_ready/nx-shell-hub/TZ-NX-HUB-06-EXPAND-CARDS.md` | DONE |
 
 ## SKIP
 

@@ -116,6 +116,28 @@ describe('WarehousesPage (W1)', () => {
     expect(expandEl.textContent).toContain('Нет остатков');
   });
 
+  it('expands into 2 category cards — gold hub markup, not a flat list (TZ-NX-HUB-06)', async () => {
+    const row = fixture.nativeElement.querySelectorAll('[data-test="warehouse-row"]')[0] as HTMLElement;
+    row.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const about = fixture.nativeElement.querySelector('[data-test="warehouse-expand-about"]') as HTMLElement;
+    const balances = fixture.nativeElement.querySelector('[data-test="warehouse-expand-balances"]') as HTMLElement;
+    for (const section of [about, balances]) {
+      expect(section).toBeTruthy();
+      expect(section.tagName).toBe('SECTION');
+      expect(section.className).toContain('hairline');
+      expect(section.className).toContain('rounded-sm');
+      expect(section.className).toContain('bg-paper');
+      expect(section.querySelector('h3')).toBeTruthy();
+    }
+    expect(about.textContent).toContain('О складе');
+    expect(about.textContent).toContain('Металл');
+    expect(balances.textContent).toContain('Остатки');
+  });
+
   it('the "Все остатки склада" chip deep-links to /storage-items with warehouseId (TZ-NX-HUB-04)', async () => {
     const row = fixture.nativeElement.querySelectorAll('[data-test="warehouse-row"]')[0] as HTMLElement;
     row.click();
