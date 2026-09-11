@@ -23,6 +23,11 @@ export function studioPanelSide(section: string | null): 'left' | 'right' {
   return section === 'data' || section === 'selected' ? 'left' : 'right';
 }
 
+/** TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH — wide `kp-ws-panel--table` only for the table properties editor, not text/image properties. */
+export function studioPanelIsTable(section: string | null, blockType: string | null | undefined): boolean {
+  return section === 'properties' && blockType === 'table';
+}
+
 export function onStudioSectionClick(
   id: StudioWorkspaceSection,
   activeSection: { (): string | null; set(v: string | null): void },

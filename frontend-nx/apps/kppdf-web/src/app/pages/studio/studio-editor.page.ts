@@ -82,6 +82,7 @@ import {
 import { StudioTemplatePanelComponent } from './studio-template-panel.component';
 import {
   onStudioSectionClick,
+  studioPanelIsTable,
   studioPanelSide,
   studioPanelTitle,
   type StudioWorkspaceSection,
@@ -161,6 +162,7 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
         [pageLabel]="currentPage() + ' / ' + pageCount()"
         [sheetHost]="false"
         [panelWide]="activeSection() === 'data'"
+        [panelTable]="panelIsTable()"
         [zoomMode]="zoomMode()"
         (fitZoom)="setZoomMode('fit')"
         (actualZoom)="setZoomMode('100')"
@@ -538,6 +540,9 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   });
 
   readonly propertiesBlock = computed(() => this.selectedBlock() ?? this.activeLayerBlock());
+
+  /** TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH — wide panel only for the table properties editor. */
+  readonly panelIsTable = computed(() => studioPanelIsTable(this.activeSection(), this.propertiesBlock()?.type));
 
   readonly previewSafeHtml = computed<SafeHtml | null>(() => {
     const html = this.previewHtml();

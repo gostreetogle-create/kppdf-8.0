@@ -33,6 +33,8 @@ export class StudioWorkspaceShellComponent {
   readonly statusText = input('');
   readonly debugText = input('');
   readonly panelWide = input(false);
+  /** TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH — scoped wide variant for the table properties editor only (text/image properties stay at the default width). */
+  readonly panelTable = input(false);
   readonly sheetHost = input(false);
   readonly showDesktopRail = input(true);
   readonly pageLabel = input('1 / 1');

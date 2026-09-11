@@ -257,6 +257,12 @@
   max-width: min(58rem, calc(100% - 1rem));
 }
 
+/* TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH — table properties only (PO: ×2–2.5 of 340px); scoped so text/image properties keep the compact default. */
+.kp-ws-panel--table {
+  width: min(820px, calc(100% - 1rem));
+  max-width: min(820px, calc(100% - 1rem));
+}
+
 .kp-ws-panel__head {
   flex-shrink: 0;
   padding: 10px 12px;
