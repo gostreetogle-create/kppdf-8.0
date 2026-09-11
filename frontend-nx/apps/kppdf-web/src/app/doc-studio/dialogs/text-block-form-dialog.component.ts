@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { PiTextBlockCategoriesService, PiTextBlocksService, type TextBlock } from '@kppdf/data-access';
+import {
+  PiTextBlockCategoriesService,
+  PiTextBlocksService,
+  type TextBlock,
+  type TextBlockCategory,
+} from '@kppdf/data-access';
 import { PiRichTextEditorComponent } from '@kppdf/ui/rich-text';
 import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF, type DialogRef } from '@kppdf/ui/dialog';
 import { ButtonComponent } from '@kppdf/ui/button';
@@ -15,6 +20,13 @@ export interface TextBlockFormDialogData {
   readonly textBlock?: TextBlock | null;
 }
 
+/**
+ * TZ-NX-TEXT-PICKER-FORM — cat -> subcat -> name -> body. `slug` is no
+ * longer a form field (server auto-generates it, TZ-DOC-322/`slugify`).
+ * `categoryId` submitted is always a LEAF (subcategory) — required;
+ * `TextBlockCategoryService.assertAssignable` (TZ-NX-TEXT-CAT-PARENT) is
+ * the server-side backstop if this form is ever bypassed.
+ */
 @Component({
   selector: 'pi-text-block-form-dialog',
   standalone: true,
@@ -31,9 +43,19 @@ export interface TextBlockFormDialogData {
     <form body [formGroup]="form" (ngSubmit)="submit()" class="space-y-3" data-test="text-block-form">
       <div class="grid md:grid-cols-2 gap-form-field">
         <app-pi-form-field label="Название" htmlFor="text-name" [required]="true"><app-pi-input id="text-name" formControlName="name" /></app-pi-form-field>
-        <app-pi-form-field label="Slug" htmlFor="text-slug" [required]="true"><app-pi-input id="text-slug" formControlName="slug" /></app-pi-form-field>
         <app-pi-form-field label="Теги" htmlFor="text-tags"><app-pi-input id="text-tags" formControlName="tags" placeholder="через запятую" /></app-pi-form-field>
-        <app-pi-form-field label="Категория" htmlFor="text-category"><select id="text-category" formControlName="categoryId" class="pi-input w-full"><option value="">Без выбора</option>@for (category of categories(); track category._id) {<option [value]="category._id">{{ category.name }}</option>}</select></app-pi-form-field>
+        <app-pi-form-field label="Категория" htmlFor="text-root-category" [required]="true">
+          <select id="text-root-category" [value]="rootId()" (change)="onRootChange($any($event.target).value)" class="pi-input w-full" data-test="text-root-category">
+            <option value="">— выберите категорию —</option>
+            @for (root of roots(); track root._id) {<option [value]="root._id">{{ root.name }}</option>}
+          </select>
+        </app-pi-form-field>
+        <app-pi-form-field label="Подкатегория" htmlFor="text-category" [required]="true">
+          <select id="text-category" formControlName="categoryId" class="pi-input w-full" [attr.disabled]="rootId() ? null : ''" data-test="text-sub-category">
+            <option value="">{{ rootId() ? '— выберите подкатегорию —' : 'сначала выберите категорию' }}</option>
+            @for (sub of subs(); track sub._id) {<option [value]="sub._id">{{ sub.name }}</option>}
+          </select>
+        </app-pi-form-field>
         <app-pi-form-field label="Порядок" htmlFor="text-sort"><app-pi-input id="text-sort" type="number" formControlName="sortOrder" /></app-pi-form-field>
       </div>
       <app-pi-form-field label="Содержание" htmlFor="text-content"><app-pi-rich-text [(value)]="content" /></app-pi-form-field>
@@ -50,14 +72,23 @@ export class TextBlockFormDialogComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
-  protected readonly categories = signal<readonly { _id: string; name: string }[]>([]);
+  protected readonly roots = signal<readonly TextBlockCategory[]>([]);
+  protected readonly subs = signal<readonly TextBlockCategory[]>([]);
+  protected readonly rootId = signal('');
   /** PiRichTextEditorComponent exposes a signal `model()`, not ControlValueAccessor — cannot live inside the reactive form as a formControlName. */
   protected readonly content = signal('');
   protected readonly form = this.fb.group({
     name: ['', Validators.required],
-    slug: ['', Validators.required],
     tags: [''],
-    categoryId: [''],
+    // Always enabled — a disabled FormControl is excluded from the parent
+    // FormGroup's validity rollup, so disabling this via the control itself
+    // (rather than the template's [attr.disabled] cosmetic gate below)
+    // would silently defeat Validators.required and let an empty
+    // categoryId through submit(). The visual "pick a category first"
+    // gate is DOM-only, via [attr.disabled] on the <select> (not Angular's
+    // [disabled] property binding, which would also warn about conflicting
+    // with formControlName).
+    categoryId: ['', Validators.required],
     sortOrder: [0],
   });
 
@@ -66,19 +97,37 @@ export class TextBlockFormDialogComponent {
     if (row) {
       this.form.patchValue({
         name: row.name,
-        slug: row.slug,
         tags: row.tags.join(', '),
-        categoryId: row.categoryId ?? '',
         sortOrder: row.sortOrder,
       });
       this.content.set(row.content);
     }
-    void this.loadCategories();
+    void this.initCategories(row?.categoryId);
   }
 
-  private async loadCategories(): Promise<void> {
-    const result = await firstValueFrom(this.categoryService.list());
-    if (result.ok) this.categories.set(result.data);
+  private async initCategories(leafId: string | undefined): Promise<void> {
+    const [rootsResult, leaf] = await Promise.all([
+      firstValueFrom(this.categoryService.list({ rootsOnly: true })),
+      leafId ? firstValueFrom(this.categoryService.getById(leafId)) : Promise.resolve(null),
+    ]);
+    if (rootsResult.ok) this.roots.set(rootsResult.data);
+    const parentId = leaf?.ok ? leaf.data.parentId : undefined;
+    if (!parentId) return;
+    this.rootId.set(parentId);
+    await this.loadSubs(parentId);
+    this.form.patchValue({ categoryId: leafId });
+  }
+
+  protected async onRootChange(rootId: string): Promise<void> {
+    this.rootId.set(rootId);
+    this.form.patchValue({ categoryId: '' });
+    this.subs.set([]);
+    if (rootId) await this.loadSubs(rootId);
+  }
+
+  private async loadSubs(rootId: string): Promise<void> {
+    const result = await firstValueFrom(this.categoryService.list({ parentId: rootId }));
+    if (result.ok) this.subs.set(result.data);
   }
 
   protected async submit(): Promise<void> {

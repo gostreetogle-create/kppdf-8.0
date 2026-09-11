@@ -8,12 +8,12 @@ export function createTextBlocksRegistry(deps: DocStudioDialogDeps ): RegistryDe
     { key: 'name', header: 'Название', format: (row) => row.name },
     { key: 'slug', header: 'Slug', format: (row) => row.slug },
     { key: 'tags', header: 'Теги', format: (row) => row.tags.join(', ') || '—' },
-    { key: 'categoryId', header: 'Категория', format: (row) => row.categoryId ?? '—' },
+    { key: 'categoryName', header: 'Категория', format: (row) => row.categoryName },
     { key: 'isActive', header: 'Статус', format: (row) => row.isActive ? 'Активен' : 'Архивирован' },
     { key: 'columns', header: 'Колонки', format: (row) => `${row.columns.length}` },
   ], filters: [
     { key: 'search', label: 'Поиск', type: 'text', placeholder: 'Название, slug, тег…' },
     { key: 'categoryId', label: 'Категория', type: 'text' },
     { key: 'isActive', label: 'Статус', type: 'select', options: [{ value: 'true', label: 'Активные' }, { value: 'false', label: 'Архивированные' }] },
-  ], createAction: buildTextBlockCreateAction(deps), rowActions: buildTextBlockActions(deps), dataSource: createTextBlocksHttpDataSource(service), emptyMessage: 'Тексты не найдены.' });
+  ], createAction: buildTextBlockCreateAction(deps), rowActions: buildTextBlockActions(deps), dataSource: createTextBlocksHttpDataSource(service, deps.categories), emptyMessage: 'Тексты не найдены.' });
 }

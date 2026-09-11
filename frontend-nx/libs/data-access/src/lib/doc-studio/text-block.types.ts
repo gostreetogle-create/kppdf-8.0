@@ -19,9 +19,10 @@ export interface TextBlock {
   readonly updatedAt?: string;
 }
 
+/** `slug` is optional — the server auto-generates it from `name` on create (TZ-NX-TEXT-PICKER-FORM). */
 export interface TextBlockPayload {
   readonly name: string;
-  readonly slug: string;
+  readonly slug?: string;
   readonly tags: readonly string[];
   readonly content: string;
   readonly categoryId?: string;

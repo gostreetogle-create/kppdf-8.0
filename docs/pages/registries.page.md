@@ -129,7 +129,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `supply-requests` | Заявки снабжения | `api` (`GET /supply-requests`) | read-only; filters status/priority/search/orderId; **client** pagination (API cap 500) |
 | `organizations` | Организации | `api` (`GET /organizations`) | read-only; supplier = `type` filter; server pagination |
 | `product-passports` | Паспорта изделий | `api` (`GET /passports`) | read-only collection registry; product form dialog has **no** embedded passport preview (removed, `TZ-NX-REGISTRY-PRODUCT-FORM-UX`) — open passports only from this registry; **client** pagination |
-| `text-blocks` | Тексты | `api` (`GET/POST/PATCH/DELETE /text-blocks`) | client pagination; search client-side, categoryId/isActive API filters; create/edit/archive dialogs |
+| `text-blocks` | Тексты | `api` (`GET/POST/PATCH/DELETE /text-blocks`) | client pagination; search client-side, categoryId/isActive API filters; create/edit/archive dialogs; колонка «Категория» показывает резолвленное имя «Корень › Подкатегория» (`TZ-NX-TEXT-PICKER-FORM`), не raw `categoryId` |
 | `table-templates` | Виды таблиц | `api` (`GET/POST/PATCH/DELETE /table-templates`) | client pagination; search/category client-side; column editor and data-source picker |
 | `work-types` | Виды работ | `api` (`GET/POST/PATCH/DELETE /work-types`) | client pagination; search по названию/секции/отделу/описанию; create/edit/soft archive; поля days, hourlyRate, accentHue и isActive |
 | `workers` | Люди | `api` (`GET/POST/PATCH/DELETE /workers`) | server pagination; search/status filters; create/edit/soft archive; workTypeIds skills used by Gantt labels |
@@ -266,7 +266,7 @@ supplier dedup, passport↔Product matching, invoice field).
 
 ### Doc Studio dialogs
 
-«Тексты» используют `TextBlockFormDialogComponent`: name, slug, tags, categoryId, sortOrder и rich-text content. Поле legacy `category` намеренно не формируется и не отправляется. «Виды таблиц» используют `TableTemplateFormDialogComponent`: category с RU-метками, dataSource и редактор колонок с добавлением/удалением строк. Для обоих реестров диалоги получают page-scoped DestroyRef.
+«Тексты» используют `TextBlockFormDialogComponent`: name, tags, категория→подкатегория (cascade select, `categoryId` = обязательный лист — `TZ-NX-TEXT-PICKER-FORM`), sortOrder и rich-text content. Поле legacy `category` намеренно не формируется и не отправляется; `slug` больше не поле формы — сервер генерирует его из name. «Виды таблиц» используют `TableTemplateFormDialogComponent`: category с RU-метками, dataSource и редактор колонок с добавлением/удалением строк. Для обоих реестров диалоги получают page-scoped DestroyRef.
 
 ## Browser verification (TZ-NX-REGISTRY-READINESS-MARATHON)
 

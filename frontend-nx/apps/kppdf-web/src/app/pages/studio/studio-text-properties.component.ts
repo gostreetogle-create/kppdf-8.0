@@ -21,6 +21,7 @@ import {
   type StudioBlock,
   type StudioBlockStyle,
   type TextBlock,
+  type TextBlockCategory,
   type StudioBlockAlign,
 } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
@@ -77,14 +78,29 @@ const ALIGN_OPTIONS: readonly {
           <span class="text-props__label">Категория</span>
           <select
             class="text-props__select"
-            [ngModel]="filterCategoryId()"
-            (ngModelChange)="onCategoryFilterChange($event)"
+            [ngModel]="filterRootId()"
+            (ngModelChange)="onRootFilterChange($event)"
             [disabled]="disabled"
             data-test="studio-text-category-filter"
           >
             <option value="">Все категории</option>
-            @for (cat of categories(); track cat._id) {
-              <option [value]="cat._id">{{ cat.name }}</option>
+            @for (root of roots(); track root._id) {
+              <option [value]="root._id">{{ root.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="text-props__field">
+          <span class="text-props__label">Подкатегория</span>
+          <select
+            class="text-props__select"
+            [ngModel]="filterSubId()"
+            (ngModelChange)="onSubFilterChange($event)"
+            [disabled]="disabled || !filterRootId() || loadingSubs()"
+            data-test="studio-text-subcategory-filter"
+          >
+            <option value="">{{ filterRootId() ? 'Все подкатегории' : 'сначала выберите категорию' }}</option>
+            @for (sub of subs(); track sub._id) {
+              <option [value]="sub._id">{{ sub.name }}</option>
             }
           </select>
         </label>
@@ -314,9 +330,12 @@ export class StudioTextPropertiesComponent implements OnChanges {
   protected readonly selectedFormulaId = signal('');
 
   protected readonly content = signal('');
-  protected readonly filterCategoryId = signal('');
+  protected readonly filterRootId = signal('');
+  protected readonly filterSubId = signal('');
   protected readonly pickedTextBlockId = signal('');
-  protected readonly categories = signal<readonly { _id: string; name: string }[]>([]);
+  protected readonly roots = signal<readonly TextBlockCategory[]>([]);
+  protected readonly subs = signal<readonly TextBlockCategory[]>([]);
+  protected readonly loadingSubs = signal(false);
   protected readonly textBlocks = signal<readonly TextBlock[]>([]);
   protected readonly loadingTexts = signal(false);
   protected readonly libraryHint = signal<string | null>(null);
@@ -329,7 +348,7 @@ export class StudioTextPropertiesComponent implements OnChanges {
   }
 
   constructor() {
-    void this.loadCategories();
+    void this.loadRoots();
     void this.loadTextBlocks();
   }
 
@@ -421,8 +440,17 @@ export class StudioTextPropertiesComponent implements OnChanges {
     return Math.min(96, Math.max(6, Math.round(n)));
   }
 
-  protected onCategoryFilterChange(categoryId: string): void {
-    this.filterCategoryId.set(categoryId);
+  protected onRootFilterChange(rootId: string): void {
+    this.filterRootId.set(rootId);
+    this.filterSubId.set('');
+    this.subs.set([]);
+    this.pickedTextBlockId.set('');
+    if (rootId) void this.loadSubs(rootId);
+    void this.loadTextBlocks();
+  }
+
+  protected onSubFilterChange(subId: string): void {
+    this.filterSubId.set(subId);
     this.pickedTextBlockId.set('');
     void this.loadTextBlocks();
   }
@@ -434,19 +462,26 @@ export class StudioTextPropertiesComponent implements OnChanges {
     if (picked) this.applyLibraryText.emit(picked);
   }
 
-  private async loadCategories(): Promise<void> {
-    const result = await firstValueFrom(this.categoriesService.list());
+  private async loadRoots(): Promise<void> {
+    const result = await firstValueFrom(this.categoriesService.list({ rootsOnly: true }));
     if (result.ok) {
-      this.categories.set(result.data);
+      this.roots.set(result.data);
       if (result.data.length === 0) {
-        this.libraryHint.set('Категории создаются в реестре «Тексты» → справочник категорий.');
+        this.libraryHint.set('Категории создаются в справочнике «Категории текстов».');
       }
     }
   }
 
+  private async loadSubs(rootId: string): Promise<void> {
+    this.loadingSubs.set(true);
+    const result = await firstValueFrom(this.categoriesService.list({ parentId: rootId }));
+    this.loadingSubs.set(false);
+    if (result.ok) this.subs.set(result.data);
+  }
+
   private async loadTextBlocks(): Promise<void> {
     this.loadingTexts.set(true);
-    const categoryId = this.filterCategoryId().trim();
+    const categoryId = this.filterSubId().trim();
     const result = await firstValueFrom(
       this.textBlocksService.list({
         isActive: true,
