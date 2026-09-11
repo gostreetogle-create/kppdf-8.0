@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import {
+  PiCategoriesService,
   PiCompositionService,
   PiPhotosService,
   PiProductsService,
@@ -17,7 +18,13 @@ const SAMPLE: ProductDetail = {
   sku: 'WIN-1',
   kind: 'good',
   unit: 'pcs',
+  // TZ-NX-REG-CATEGORY-WIRE-PRODUCTS: категория теперь обязательна — без неё
+  // onSubmit() в тестах ниже был бы блокирован формой.
+  categoryId: 'cat-1',
 };
+
+/** TZ-NX-REG-CATEGORY-WIRE-PRODUCTS — every dialog instance now loads categories on init. */
+const CATEGORIES_MOCK = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
 
 const UNITS_MOCK = {
   list: jest.fn().mockReturnValue(
@@ -79,6 +86,7 @@ describe('ProductFormDialogComponent (Phase 2)', () => {
             useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
           },
           { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+          { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
         ],
       }).compileComponents();
 
@@ -125,6 +133,7 @@ describe('ProductFormDialogComponent (Phase 2)', () => {
             useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
           },
           { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+          { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
         ],
       }).compileComponents();
 
@@ -139,6 +148,63 @@ describe('ProductFormDialogComponent (Phase 2)', () => {
       expect(el.querySelector('[data-test="product-complex-hint"]')?.textContent).toContain('Комплекс');
       expect(el.querySelector('pi-product-passport-preview')).toBeNull();
     });
+  });
+});
+
+describe('ProductFormDialogComponent — категория (TZ-NX-REG-CATEGORY-WIRE-PRODUCTS)', () => {
+  let fixture: ComponentFixture<ProductFormDialogComponent>;
+  const productCategories = [
+    { _id: 'cat-1', name: 'Мебель', slug: 'furniture', type: 'product' as const, skuPrefix: 'FUR', sortOrder: 0, isActive: true },
+    { _id: 'cat-2', name: 'Вывески', slug: 'signage', type: 'product' as const, skuPrefix: 'SGN', sortOrder: 0, isActive: true },
+  ];
+
+  async function setup(data: Record<string, unknown>): Promise<void> {
+    await TestBed.configureTestingModule({
+      imports: [ProductFormDialogComponent],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: data },
+        { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+        {
+          provide: PiProductsService,
+          useValue: {
+            create: jest.fn().mockReturnValue(of({ ok: true, data: { ...SAMPLE, isComplex: false } })),
+            update: jest.fn().mockReturnValue(of({ ok: true, data: SAMPLE })),
+          },
+        },
+        { provide: PiUnitsService, useValue: UNITS_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiDialogService, useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) } },
+        { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+        { provide: PiCategoriesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: productCategories })) } },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProductFormDialogComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('offers the live type=product category list and blocks create until one is chosen', async () => {
+    await setup({ mode: 'create' });
+
+    const select = fixture.nativeElement.querySelector('[data-test="prod-category"]') as HTMLSelectElement;
+    const labels = Array.from(select.options).map((o) => o.textContent?.trim());
+    expect(labels).toEqual(['— выберите —', 'Мебель', 'Вывески']);
+
+    const service = TestBed.inject(PiProductsService);
+    fixture.componentInstance['form'].patchValue({ sku: 'X-1', kind: 'good', unit: 'pcs' });
+    await fixture.componentInstance['onSubmit']();
+    expect(service.create).not.toHaveBeenCalled();
+
+    fixture.componentInstance['form'].patchValue({ categoryId: 'cat-1' });
+    await fixture.componentInstance['onSubmit']();
+    expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ categoryId: 'cat-1' }));
+  });
+
+  it('extracts the id from a populated categoryId ref when patching edit data (GET /products populates it)', async () => {
+    await setup({ mode: 'edit', product: { ...SAMPLE, categoryId: { _id: 'cat-2', name: 'Вывески' } } });
+
+    expect(fixture.componentInstance['form'].controls.categoryId.value).toBe('cat-2');
   });
 });
 
@@ -168,6 +234,7 @@ describe('ProductFormDialogComponent фото (TZ-NX-PHOTO-P1)', () => {
           useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) },
         },
         { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 

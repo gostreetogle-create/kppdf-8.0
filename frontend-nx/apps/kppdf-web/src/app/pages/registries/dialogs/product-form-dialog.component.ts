@@ -18,9 +18,11 @@ import {
 } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import {
+  PiCategoriesService,
   PiProductsService,
   PiPhotosService,
   PiUnitsService,
+  type Category,
   type CreateProductPayload,
   type ProductDetail,
   type ProductKind,
@@ -117,8 +119,13 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
             <app-pi-form-field label="Цена, ₽" htmlFor="prod-price" class="md:col-span-3">
               <app-pi-input id="prod-price" type="number" formControlName="listPrice" />
             </app-pi-form-field>
-            <app-pi-form-field label="Категория (ID)" htmlFor="prod-category" class="md:col-span-6">
-              <app-pi-input id="prod-category" formControlName="categoryId" />
+            <app-pi-form-field label="Категория" htmlFor="prod-category" [required]="true" class="md:col-span-6">
+              <select id="prod-category" formControlName="categoryId" class="pi-input w-full" data-test="prod-category">
+                <option value="">— выберите —</option>
+                @for (c of categories(); track c._id) {
+                  <option [value]="c._id">{{ c.name }}</option>
+                }
+              </select>
             </app-pi-form-field>
             <app-pi-form-field label="Масса, кг" htmlFor="prod-weight" class="md:col-span-3">
               <app-pi-input id="prod-weight" type="number" formControlName="weightKg" />
@@ -195,6 +202,7 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
   private readonly productsService = inject(PiProductsService);
   private readonly photosService = inject(PiPhotosService);
   private readonly unitsService = inject(PiUnitsService);
+  private readonly categoriesService = inject(PiCategoriesService);
   private readonly data = inject<ProductFormDialogData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<ProductDetail | null | undefined>>(PI_DIALOG_REF);
   private readonly dialog = inject(PiDialogService);
@@ -206,6 +214,7 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
   protected readonly savedId = signal<string | null>(null);
   protected readonly focusComposition = signal(!!this.data.focusComposition);
   protected readonly units = signal<Unit[]>([]);
+  protected readonly categories = signal<Category[]>([]);
   protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
   protected readonly productEntity = signal<ProductDetail | undefined>(this.data.product);
 
@@ -228,7 +237,7 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
     unit: this.fb.control('', [Validators.required, Validators.maxLength(16)]),
     status: this.fb.control<ProductStatus>('new'),
     listPrice: this.fb.control<number | null>(null),
-    categoryId: this.fb.control(''),
+    categoryId: this.fb.control('', Validators.required),
     weightKg: this.fb.control<number | null>(null),
     description: this.fb.control(''),
     notes: this.fb.control(''),
@@ -236,6 +245,7 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     void this.loadUnits();
+    void this.loadCategories();
     if (this.data.product) {
       this.savedId.set(this.data.product._id);
       this.patchProduct(this.data.product);
@@ -288,6 +298,11 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
   private async loadUnits(): Promise<void> {
     const res = await firstValueFrom(this.unitsService.list({ limit: 100, isActive: true }));
     if (res.ok) this.units.set(res.data.items.filter((u) => u.isActive));
+  }
+
+  private async loadCategories(): Promise<void> {
+    const res = await firstValueFrom(this.categoriesService.list({ type: 'product' }));
+    if (res.ok) this.categories.set(res.data.filter((c) => c.isActive));
   }
 
   /** P1 write-path: upload → append id, main = first when empty. */
@@ -363,7 +378,7 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
       unit: p.unit,
       status: p.status ?? 'new',
       listPrice: p.listPrice ?? null,
-      categoryId: typeof p.categoryId === 'string' ? p.categoryId : '',
+      categoryId: refId(p.categoryId) ?? '',
       weightKg: p.weightKg ?? null,
       description: p.description ?? '',
       notes: p.notes ?? '',
@@ -428,4 +443,19 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
     }
     return payload;
   }
+}
+
+/**
+ * `categoryId` (and other refs) arrive populated (`GET /products` and detail
+ * both `.populate('categoryId')`) — extracts the id either way. Same small
+ * helper as `material-form-dialog.component.ts`'s own `refId()`; no shared
+ * util exists for it yet (also duplicated in `production-read.facade.ts`).
+ */
+function refId(value: unknown): string | null {
+  if (value == null || value === '') return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value !== null && '_id' in value) {
+    return refId((value as { _id: unknown })._id);
+  }
+  return null;
 }

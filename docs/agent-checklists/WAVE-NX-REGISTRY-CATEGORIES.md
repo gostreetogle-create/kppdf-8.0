@@ -10,7 +10,7 @@
 | 01 | S | `tasks/TZ-NX-REG-UNITS-TO-REFERENCES.md` | `units.category` → `Справочники`; audit note секций | DONE |
 | 02 | L | `tasks/TZ-NX-REG-CATEGORIES-CRUD.md` | BE `type: module`; NX registry «Категории» (type filter + CRUD); data-access | DONE |
 | 03 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-DETAILS.md` | Детали (+ материалы raw optional): select Category type=material **required** на create детали | DONE |
-| 04 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-PRODUCTS.md` | Изделия: select type=product **required** | READY after 02 |
+| 04 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-PRODUCTS.md` | Изделия: select type=product **required** | DONE |
 | 05 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-MODULES.md` | Module.categoryId BE + form select type=module **required** | READY after 02 |
 
 **PROMPT (после PUT-typeahead / когда слот свободен):** `tasks/PROMPT-CLAUDE-REGISTRY-CATEGORIES.md`

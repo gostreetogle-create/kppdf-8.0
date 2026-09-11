@@ -96,3 +96,17 @@ work-types/workers. Wiring в material/product/module формы — TZ-03/04/05
 делать это только для одного поля — диспропорциональный scope для этой TZ.
 Плейсхолдер фильтра поправлен на «ID из реестра «Категории»» — честная
 подсказка, куда за ID идти, вместо голого «MongoDB ObjectId».
+
+## 8. Closeout 04/5 (2026-09-11) — `TZ-NX-REG-CATEGORY-WIRE-PRODUCTS` DONE
+
+`ProductFormDialogComponent`: тот же паттерн, `categoryId` → `<select>`
+`type=product`, **обязателен без исключений** (в отличие от деталей, для
+изделий TZ не называл никакого «optional» случая). Найден и исправлен
+реальный баг при переносе: `patchProduct()` раньше принимал только
+`typeof categoryId === 'string'`, отбрасывая populated-объект целиком — при
+редактировании изделия с категорией поле всегда открывалось пустым. Добавлен
+локальный `refId()` helper (тот же паттерн, что уже дублирован в
+`material-form-dialog.component.ts` и `production-read.facade.ts` — нет
+общего util). Legacy `Product.subcategory` (BE schema/DTO, свободная
+строка) — не тронут, не показан в форме; TZ явно просил не раздувать его в
+«второй SoT», он и не был.

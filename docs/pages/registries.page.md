@@ -126,7 +126,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `materials` | Материалы | `api` (`GET/POST/PATCH/DELETE /materials`, duplicate) | сырьё (`materialKind=raw`); toolbar «Создать материал»; row actions: Редактировать, Копировать, Архивировать, Открыть в Конструкторе |
 | `details` | Детали | `api` (тот же `/materials`, один `materialKind` за запрос) | Material с kind part/fastener/purchased/other; **по умолчанию** список только `part` (не «все non-raw»); фильтр «Вид» честно подписан; toolbar «Создать деталь»; тот же dialog/actions, kind выбирается в форме |
 | `modules` | Модули | `api` (`GET/POST/PATCH/DELETE /modules`, composition) | toolbar create; row: Редактировать, Открыть состав (dialog), Архивировать; module dialog also edits separate `workTypes[]` planning links |
-| `products` | Изделия | `api` (`GET/POST/PATCH/DELETE /products`, duplicate, composition) | toolbar create; row: edit/copy/archive, Открыть состав (dialog), Открыть в Конструкторе; badge «Комплекс» только при `isComplex` |
+| `products` | Изделия | `api` (`GET/POST/PATCH/DELETE /products`, duplicate, composition) | toolbar create; row: edit/copy/archive, Открыть состав (dialog), Открыть в Конструкторе; badge «Комплекс» только при `isComplex`; категория — обязательный select `type=product` (`TZ-NX-REG-CATEGORY-WIRE-PRODUCTS`) |
 | `supply-requests` | Заявки снабжения | `api` (`GET /supply-requests`) | read-only; filters status/priority/search/orderId; **client** pagination (API cap 500) |
 | `organizations` | Организации | `api` (`GET /organizations`) | read-only; supplier = `type` filter; server pagination |
 | `product-passports` | Паспорта изделий | `api` (`GET /passports`) | read-only collection registry; product form dialog has **no** embedded passport preview (removed, `TZ-NX-REGISTRY-PRODUCT-FORM-UX`) — open passports only from this registry; **client** pagination |
@@ -340,6 +340,7 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 - **TZ-NX-REG-TEXT-BLOCK-CATEGORIES (2026-09-11)** — «Категории текстов» registry (Документы group), replacing the deleted standalone `/dictionaries/text-block-categories` master-detail page; `RegistryCrudActionOptions` gained `isDeleteDisabled`/`deleteDisabledReason`.
 - **TZ-NX-REG-UNITS-TO-REFERENCES / TZ-NX-REG-CATEGORIES-CRUD (2026-09-11)** — `units` moved to section «Справочники»; new `categories` registry (`Category` API, `type` extended with `module`).
 - **TZ-NX-REG-CATEGORY-WIRE-DETAILS (2026-09-11)** — `MaterialFormDialogComponent`'s `categoryId` ObjectId text field replaced with a live `type=material` select; required for «деталь», optional for raw material.
+- **TZ-NX-REG-CATEGORY-WIRE-PRODUCTS (2026-09-11)** — same for `ProductFormDialogComponent`: `categoryId` is a required `type=product` select. Fixed a pre-existing bug found while wiring it: `patchProduct()` discarded a populated `categoryId` ref entirely (only handled a plain string), so an edited product with a category always re-opened blank.
 
 ## Массовый Excel = Desktop (TZD-73 pointer)
 
