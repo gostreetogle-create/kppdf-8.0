@@ -34,4 +34,4 @@ IMPLICIT CONFLICT: nx build kppdf-web
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-11T21:50:00Z — see docs/agent-checklists/TZ-NX-DOCSTUDIO-TABLE-KINDS-DISCOVER.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-11T21:50:00Z — SHA `ee243aca` (main, pushed)
