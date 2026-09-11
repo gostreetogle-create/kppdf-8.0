@@ -42,4 +42,4 @@ IMPLICIT CONFLICT: nx build kppdf-web
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-11T19:35:00Z — see docs/agent-checklists/TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-11T19:35:00Z — SHA `24e2ae14` (main, pushed)

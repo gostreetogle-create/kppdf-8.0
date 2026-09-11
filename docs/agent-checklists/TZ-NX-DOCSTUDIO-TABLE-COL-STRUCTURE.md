@@ -2,7 +2,7 @@
 
 > Status: **DONE**
 > Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE.done.md`
-> Commit/push: по `docs/GIT-POLICY.md`
+> Commit/push: `24e2ae14` (pushed to origin/main)
 
 ## Claim slot
 
