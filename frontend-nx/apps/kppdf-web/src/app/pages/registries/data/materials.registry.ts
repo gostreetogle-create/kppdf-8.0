@@ -103,7 +103,7 @@ function buildSharedFilters() {
       key: 'categoryId',
       label: 'Категория (ID)',
       type: 'text' as const,
-      placeholder: 'MongoDB ObjectId категории',
+      placeholder: 'ID из реестра «Категории»',
       ariaLabel: 'Фильтр по идентификатору категории',
     },
   ];

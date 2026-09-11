@@ -119,7 +119,7 @@ export function createDetailsRegistryDefinition(
         key: 'categoryId',
         label: 'Категория (ID)',
         type: 'text',
-        placeholder: 'MongoDB ObjectId категории',
+        placeholder: 'ID из реестра «Категории»',
         ariaLabel: 'Фильтр по идентификатору категории',
       },
       {

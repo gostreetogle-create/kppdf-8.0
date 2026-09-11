@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import {
+  PiCategoriesService,
   PiCompositionService,
   PiMaterialsService,
   PiPhotosService,
@@ -13,6 +14,9 @@ import { MaterialFormDialogComponent } from './material-form-dialog.component';
 
 // jsdom lacks Element.scrollIntoView; composition focus uses it via queueMicrotask.
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView ?? jest.fn();
+
+/** TZ-NX-REG-CATEGORY-WIRE-DETAILS — every dialog instance now loads categories on init. */
+const CATEGORIES_MOCK = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
 
 const PHOTOS_MOCK = {
   upload: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'mph-1', storageUrl: '/uploads/mph-1.jpg' } })),
@@ -60,6 +64,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
           },
         },
         { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
         {
           provide: PiMaterialsService,
           useValue: {
@@ -157,6 +162,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
           },
         },
         { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 
@@ -211,6 +217,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
           useValue: { create: jest.fn(), update: jest.fn() },
         },
         { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 
@@ -233,6 +240,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
           { provide: PiMaterialsService, useValue: { create: jest.fn(), update: jest.fn() } },
           { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
           { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+          { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
         ],
       }).compileComponents();
 
@@ -263,6 +271,7 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
           { provide: PiMaterialsService, useValue: { create: jest.fn(), update: jest.fn() } },
           { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
           { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+          { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
         ],
       }).compileComponents();
 
@@ -276,6 +285,70 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
       expect(el.querySelector('[data-test="detail-bom-add"]')).toBeNull();
       expect(el.querySelector('[data-test^="detail-bom-row-"]')).toBeNull();
     });
+  });
+});
+
+describe('MaterialFormDialogComponent — категория (TZ-NX-REG-CATEGORY-WIRE-DETAILS)', () => {
+  let fixture: ComponentFixture<MaterialFormDialogComponent>;
+  const materialCategories = [
+    { _id: 'cat-1', name: 'Метизы', slug: 'metizy', type: 'material' as const, skuPrefix: 'MTZ', sortOrder: 0, isActive: true },
+    { _id: 'cat-2', name: 'Металлы', slug: 'metally', type: 'material' as const, skuPrefix: 'MTL', sortOrder: 0, isActive: true },
+  ];
+
+  async function setup(data: Record<string, unknown>): Promise<void> {
+    await TestBed.configureTestingModule({
+      imports: [MaterialFormDialogComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PI_DIALOG_DATA, useValue: data },
+        { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+        { provide: PiUnitsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) } },
+        { provide: PiCategoriesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: materialCategories })) } },
+        {
+          provide: PiMaterialsService,
+          useValue: {
+            create: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'new-1', name: 'X', article: 'A', unit: 'pcs' } })),
+            update: jest.fn(),
+          },
+        },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(MaterialFormDialogComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('offers the live type=material category list, by name, for сырьё — and does not require it', async () => {
+    await setup({ mode: 'create', lockMaterialKind: 'raw', allowKindSelect: false, entityLabel: 'материал' });
+
+    const select = fixture.nativeElement.querySelector('[data-test="mat-category"]') as HTMLSelectElement;
+    const optionLabels = Array.from(select.options).map((o) => o.textContent?.trim());
+    expect(optionLabels).toEqual(['Без категории', 'Метизы', 'Металлы']);
+
+    const service = TestBed.inject(PiMaterialsService);
+    fixture.componentInstance['form'].patchValue({ name: 'X', article: 'A', unit: 'pcs' });
+    await fixture.componentInstance['onSubmit']();
+    expect(service.create).toHaveBeenCalled();
+    expect((service.create as jest.Mock).mock.calls[0][0].categoryId).toBeUndefined();
+  });
+
+  it('requires a category for деталь and blocks submit until one is chosen', async () => {
+    await setup({ mode: 'create', lockMaterialKind: 'part', allowKindSelect: true, entityLabel: 'деталь' });
+
+    const select = fixture.nativeElement.querySelector('[data-test="mat-category"]') as HTMLSelectElement;
+    expect(select.options[0].textContent?.trim()).toBe('— выберите —');
+
+    const service = TestBed.inject(PiMaterialsService);
+    fixture.componentInstance['form'].patchValue({ name: 'Болт', article: 'B-1', unit: 'pcs' });
+    await fixture.componentInstance['onSubmit']();
+    expect(service.create).not.toHaveBeenCalled();
+
+    fixture.componentInstance['form'].patchValue({ categoryId: 'cat-1' });
+    await fixture.componentInstance['onSubmit']();
+    expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ categoryId: 'cat-1' }));
   });
 });
 
@@ -308,6 +381,9 @@ describe('MaterialFormDialogComponent фото (TZ-NX-PHOTO-P1, деталь = m
               article: 'PRT-1',
               unit: 'pcs',
               materialKind: 'part',
+              // TZ-NX-REG-CATEGORY-WIRE-DETAILS: категория теперь обязательна для
+              // «деталь» — без неё onSubmit() ниже был бы блокирован формой.
+              categoryId: 'cat-1',
               photoIds: ['mph-1'],
               mainPhotoId: 'mph-1',
             },
@@ -326,6 +402,7 @@ describe('MaterialFormDialogComponent фото (TZ-NX-PHOTO-P1, деталь = m
         { provide: PiMaterialsService, useValue: { create: jest.fn(), update } },
         { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
         { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 

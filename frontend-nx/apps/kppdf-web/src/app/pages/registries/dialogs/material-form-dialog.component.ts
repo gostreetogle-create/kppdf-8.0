@@ -17,9 +17,11 @@ import {
 import { firstValueFrom } from 'rxjs';
 import {
   MATERIAL_KINDS,
+  PiCategoriesService,
   PiMaterialsService,
   PiPhotosService,
   PiUnitsService,
+  type Category,
   type CreateMaterialPayload,
   type Material,
   type MaterialDimensionType,
@@ -148,8 +150,24 @@ type DimensionGroup = FormGroup<{
               </app-pi-form-field>
             }
 
-            <app-pi-form-field label="Категория (ID)" htmlFor="mat-category" class="md:col-span-6">
-              <app-pi-input id="mat-category" formControlName="categoryId" placeholder="MongoDB ObjectId" />
+            <app-pi-form-field
+              label="Категория"
+              htmlFor="mat-category"
+              [required]="categoryRequired()"
+              [error]="fieldError('categoryId')"
+              class="md:col-span-6"
+            >
+              <select
+                id="mat-category"
+                formControlName="categoryId"
+                class="pi-input w-full"
+                data-test="mat-category"
+              >
+                <option value="">{{ categoryRequired() ? '— выберите —' : 'Без категории' }}</option>
+                @for (c of categories(); track c._id) {
+                  <option [value]="c._id">{{ c.name }}</option>
+                }
+              </select>
             </app-pi-form-field>
 
             <app-pi-form-field label="Цена, ₽" htmlFor="mat-price" class="md:col-span-3">
@@ -276,12 +294,14 @@ export class MaterialFormDialogComponent implements OnInit {
   private readonly materialsService = inject(PiMaterialsService);
   private readonly photosService = inject(PiPhotosService);
   private readonly unitsService = inject(PiUnitsService);
+  private readonly categoriesService = inject(PiCategoriesService);
   private readonly data = inject<MaterialFormDialogData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<Material | null | undefined>>(PI_DIALOG_REF);
 
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly units = signal<Unit[]>([]);
+  protected readonly categories = signal<Category[]>([]);
   protected readonly savedId = signal<string | null>(null);
   protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
   private materialEntity = signal<Material | undefined>(undefined);
@@ -295,6 +315,14 @@ export class MaterialFormDialogComponent implements OnInit {
   protected readonly isDetailForm = computed(
     () => this.data.lockMaterialKind === 'part' || this.data.entityLabel === 'деталь',
   );
+
+  /**
+   * TZ-NX-REG-CATEGORY-WIRE-DETAILS — категория обязательна для «деталь»
+   * (метиз/покупное/прочее наследуют то же требование через тот же
+   * `isDetailForm`); для сырья (raw, materials registry) select виден, но
+   * необязателен (PO 2026-09-11).
+   */
+  protected readonly categoryRequired = this.isDetailForm;
 
   protected readonly dialogTitle = computed(() => {
     const label = this.data.entityLabel ?? 'материал';
@@ -316,7 +344,7 @@ export class MaterialFormDialogComponent implements OnInit {
     unit: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
     sku: this.fb.control(''),
     materialKind: this.fb.control<MaterialKind>('part'),
-    categoryId: this.fb.control(''),
+    categoryId: this.fb.control('', this.isDetailForm() ? [Validators.required] : []),
     pricePerUnit: this.fb.control<number | null>(null),
     weightKg: this.fb.control<number | null>(null),
     assortment: this.fb.control(''),
@@ -334,6 +362,7 @@ export class MaterialFormDialogComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadUnits();
+    void this.loadCategories();
     if (this.data.lockMaterialKind) {
       this.form.controls.materialKind.setValue(this.data.lockMaterialKind);
       this.form.controls.materialKind.disable();
@@ -475,6 +504,13 @@ export class MaterialFormDialogComponent implements OnInit {
     const res = await firstValueFrom(this.unitsService.list({ limit: 100, isActive: true }));
     if (res.ok) {
       this.units.set(res.data.items.filter((u) => u.isActive));
+    }
+  }
+
+  private async loadCategories(): Promise<void> {
+    const res = await firstValueFrom(this.categoriesService.list({ type: 'material' }));
+    if (res.ok) {
+      this.categories.set(res.data.filter((c) => c.isActive));
     }
   }
 

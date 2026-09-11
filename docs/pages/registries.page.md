@@ -232,6 +232,7 @@ Row actions и toolbar create — **icon-only** Lucide через app-layer ко
 
 - `RegistryDefinition.createAction` — optional toolbar hook; panel рендерит `[data-test="registry-create"]`.
 - Единый `MaterialFormDialogComponent` (`PiDialogComponent`, `variant="content"`, max-width до 1120px): поля из backend `CreateMaterialDto` (name, article, unit, sku, materialKind, categoryId, price, weight, assortment/standard/grade, colors, description, notes, dimensions). Без composition, photos, suppliers.
+- **Категория (2026-09-11, `TZ-NX-REG-CATEGORY-WIRE-DETAILS`):** `categoryId` — не ObjectId-текст, а `<select>` живых категорий `type=material` (`PiCategoriesService.list({type:'material'})`, только активные). **Обязательна** для «деталь» (`entityLabel === 'деталь'` — то же условие, что уже решает видимость BOM-панели, `Validators.required` добавлен на сборке формы); для сырья (`materials` registry) — тот же select, поле видно, но не обязательно (PO 2026-09-11). Значение всегда отправляется как реальный `_id` категории; список «Категория» в таблице деталей/материалов уже показывал резолвленное имя и раньше (BE `.populate('categoryId')` на `GET /materials`), тут это не менялось.
 - Materials: `materialKind` зафиксирован `raw` (поле disabled, не перезаписывается patch из list row);
   icon-only «удалить размер» — `aria-label`.
 - Copy — `POST /materials/:id/duplicate`; Archive — `DELETE /materials/:id` с confirm; success → toast + `ctx.reload()`, error → toast / inline error в dialog.
@@ -337,6 +338,8 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 - **TZ-NX-REGISTRIES-WORKERS (2026-09-05)** — API-backed «Люди» registry with typed CRUD, `workTypeIds[]` skill selection, and a Gantt link to `/registries/workers`.
 - **TZ-NX-REGISTRIES-MODULE-WORK-TYPES (2026-09-05)** — module create/edit dialog loads active Work Types and persists `workTypes[]` planning links independently from material composition.
 - **TZ-NX-REG-TEXT-BLOCK-CATEGORIES (2026-09-11)** — «Категории текстов» registry (Документы group), replacing the deleted standalone `/dictionaries/text-block-categories` master-detail page; `RegistryCrudActionOptions` gained `isDeleteDisabled`/`deleteDisabledReason`.
+- **TZ-NX-REG-UNITS-TO-REFERENCES / TZ-NX-REG-CATEGORIES-CRUD (2026-09-11)** — `units` moved to section «Справочники»; new `categories` registry (`Category` API, `type` extended with `module`).
+- **TZ-NX-REG-CATEGORY-WIRE-DETAILS (2026-09-11)** — `MaterialFormDialogComponent`'s `categoryId` ObjectId text field replaced with a live `type=material` select; required for «деталь», optional for raw material.
 
 ## Массовый Excel = Desktop (TZD-73 pointer)
 

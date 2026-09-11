@@ -81,3 +81,18 @@ auto-suggest транслитерацией из name до первого руч
 (`categoriesService`, `categoryDialogHost`) — тот же паттерн, что
 work-types/workers. Wiring в material/product/module формы — TZ-03/04/05,
 следующие в этой волне.
+
+## 7. Closeout 03/5 (2026-09-11) — `TZ-NX-REG-CATEGORY-WIRE-DETAILS` DONE
+
+`MaterialFormDialogComponent`: `categoryId` — ObjectId text → `<select>` живых
+категорий `type=material` (`PiCategoriesService`, только `isActive`).
+Обязательна для «деталь» (`isDetailForm()` — то же условие, что уже решает
+видимость BOM-панели); для сырья — та же select, не обязательна (PO). Список
+«Категория» в details/materials уже показывал имя (BE
+`.populate('categoryId')` на `GET /materials` существовал раньше этой TZ) —
+не менялся. Фильтр `categoryId` на details/materials registries **оставлен
+текстовым** (не превращён в live-select) — платформа реестров (`RegistryFilter`)
+не поддерживает async-загруженные опции ни для одного существующего фильтра;
+делать это только для одного поля — диспропорциональный scope для этой TZ.
+Плейсхолдер фильтра поправлен на «ID из реестра «Категории»» — честная
+подсказка, куда за ID идти, вместо голого «MongoDB ObjectId».
