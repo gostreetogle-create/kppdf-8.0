@@ -21,9 +21,9 @@ export class CreateCategoryDto {
   @Matches(/^[a-z0-9-]+$/, { message: 'slug must be lowercase, a-z, 0-9, -' })
   slug!: string;
 
-  @ApiProperty({ enum: ['material', 'product', 'general'], description: 'Тип категории' })
-  @IsIn(['material', 'product', 'general'])
-  type!: 'material' | 'product' | 'general';
+  @ApiProperty({ enum: ['material', 'product', 'module', 'general'], description: 'Тип категории' })
+  @IsIn(['material', 'product', 'module', 'general'])
+  type!: 'material' | 'product' | 'module' | 'general';
 
   @ApiPropertyOptional({ description: 'ID родительской категории' })
   @IsOptional()

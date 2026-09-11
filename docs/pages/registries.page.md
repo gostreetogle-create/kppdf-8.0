@@ -122,6 +122,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | key | title | source | Демонстрирует |
 |-----|-------|--------|----------------|
 | `units` | Единицы измерения | `api` (`GET /units`, `PATCH /units/:key`) | реальный backend, server-side search/filter/pagination, `sortable: false` (backend не поддерживает sort), toggle-active row actions, без delete (TZ-NX-REGISTRY-UNITS-READ-SLICE) |
+| `categories` | Категории | `api` (`GET/POST/PATCH/DELETE /categories`, reuse) | детали (`material`) / изделия (`product`) / модули (`module`); колонка «Путь»→«Родитель» (имя, не raw ObjectId); toolbar «Создать категорию»; skuPrefix auto-suggest (RU→translit) до первого ручного правки; `slug` не отдельное поле формы — производится из skuPrefix; delete — тот же BE 409 (дети/ссылки в products/materials), без нового client-side правила (`TZ-NX-REG-CATEGORIES-CRUD`) |
 | `materials` | Материалы | `api` (`GET/POST/PATCH/DELETE /materials`, duplicate) | сырьё (`materialKind=raw`); toolbar «Создать материал»; row actions: Редактировать, Копировать, Архивировать, Открыть в Конструкторе |
 | `details` | Детали | `api` (тот же `/materials`, один `materialKind` за запрос) | Material с kind part/fastener/purchased/other; **по умолчанию** список только `part` (не «все non-raw»); фильтр «Вид» честно подписан; toolbar «Создать деталь»; тот же dialog/actions, kind выбирается в форме |
 | `modules` | Модули | `api` (`GET/POST/PATCH/DELETE /modules`, composition) | toolbar create; row: Редактировать, Открыть состав (dialog), Архивировать; module dialog also edits separate `workTypes[]` planning links |
@@ -145,7 +146,7 @@ alongside materials/details/modules/products). Target section map:
 | Секция | Реестры |
 |--------|---------|
 | Каталог | `materials`, `details`, `modules`, `products` |
-| Справочники | `units`, + `categories` (`TZ-NX-REG-CATEGORIES-CRUD`, следующий TZ этой волны) |
+| Справочники | `units`, `categories` (`TZ-NX-REG-CATEGORIES-CRUD`, DONE) |
 | остальные | без изменений |
 
 Not the top-nav «Справ.» tab dropped in `WAVE-NX-DROP-REFERENCE-NAV` — this is
@@ -170,6 +171,7 @@ mechanism entirely.
 | key | filters (query params) | paginationMode | API notes |
 |-----|------------------------|----------------|----------|
 | `units` | `search`, `status` → `isActive` | `server` | `GET /units` page/limit/search |
+| `categories` | `search` (client), `type` (server, `?type=`) | `client` | `GET /categories?type=` — no server pagination |
 | `materials` | `search`, `categoryId` | `server` | всегда `materialKind=raw` в data source (не фиктивный UI-filter) |
 | `details` | `search`, `categoryId`, `materialKind` | `server` | один `materialKind` за запрос; пустой select = `part` |
 | `modules` | — | `client` | `GET /modules` list-all; **без** page/limit в API |

@@ -8,7 +8,7 @@
 | # | SIZE | TZ | Суть | Status |
 |---|------|-----|------|--------|
 | 01 | S | `tasks/TZ-NX-REG-UNITS-TO-REFERENCES.md` | `units.category` → `Справочники`; audit note секций | DONE |
-| 02 | L | `tasks/TZ-NX-REG-CATEGORIES-CRUD.md` | BE `type: module`; NX registry «Категории» (type filter + CRUD); data-access | READY after 01 |
+| 02 | L | `tasks/TZ-NX-REG-CATEGORIES-CRUD.md` | BE `type: module`; NX registry «Категории» (type filter + CRUD); data-access | DONE |
 | 03 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-DETAILS.md` | Детали (+ материалы raw optional): select Category type=material **required** на create детали | READY after 02 |
 | 04 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-PRODUCTS.md` | Изделия: select type=product **required** | READY after 02 |
 | 05 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-MODULES.md` | Module.categoryId BE + form select type=module **required** | READY after 02 |

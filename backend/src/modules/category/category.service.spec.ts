@@ -93,6 +93,15 @@ describe('CategoryService (CATALOG-377)', () => {
     ]);
   });
 
+  it('persists a module-type category (TZ-NX-REG-CATEGORIES-CRUD)', async () => {
+    const { service, model } = setup();
+    model.create.mockResolvedValue(category({ name: 'Модули сборки', slug: 'assembly-modules', type: 'module', fullPath: 'Модули сборки' }));
+
+    await service.create({ name: 'Модули сборки', slug: 'assembly-modules', type: 'module', skuPrefix: 'MOD' }, null);
+
+    expect(model.create).toHaveBeenCalledWith(expect.objectContaining({ type: 'module' }));
+  });
+
   it('rejects moving a category under its own descendant', async () => {
     const { service, model, parent } = setup();
     model.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(parent) });

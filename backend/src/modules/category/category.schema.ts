@@ -12,8 +12,8 @@ export class Category {
   @Prop({ required: true, index: true })
   slug!: string;
 
-  @Prop({ required: true, enum: ['material', 'product', 'general'], index: true })
-  type!: 'material' | 'product' | 'general';
+  @Prop({ required: true, enum: ['material', 'product', 'module', 'general'], index: true })
+  type!: 'material' | 'product' | 'module' | 'general';
 
   @Prop({ type: Types.ObjectId, ref: 'Category', index: true })
   parentId?: Types.ObjectId;

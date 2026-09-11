@@ -2,6 +2,7 @@ import { inject, InjectionToken, DestroyRef, Injector, type Provider } from '@an
 import { Router } from '@angular/router';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import {
+  PiCategoriesService,
   PiMaterialsService,
   PiModulesService,
   PiOrganizationsService,
@@ -18,6 +19,9 @@ import {
 import { collectPageRoutePaths } from '../../../layout/route-paths';
 import type { RegistryDefinition, RegistryRow } from '../model/registry.types';
 import { createCatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import { createCategoriesRegistry } from './categories.registry';
+import type { CategoryRegistryDeps } from './category-registry-actions';
+import { createCategoryRegistryDialogHost } from './category-registry-dialog-host';
 import { createDetailsRegistry } from './details.registry';
 import { createMaterialRegistryDialogHost } from './material-registry-dialog-host';
 import { createMaterialsRegistry, type MaterialRegistryDeps } from './materials.registry';
@@ -93,6 +97,8 @@ export function buildRegistriesCatalogDefault(
   workTypeDialogHost?: WorkTypeRegistryDeps['dialogHost'],
   peopleService?: PiPeopleService,
   workerDialogHost?: WorkerRegistryDeps['dialogHost'],
+  categoriesService?: PiCategoriesService,
+  categoryDialogHost?: CategoryRegistryDeps['dialogHost'],
 ): readonly RegistryDefinition<RegistryRow>[] {
   const materialDeps = buildMaterialRegistryDeps(materialsService, router, materialDialogHost);
   const moduleDeps = buildModuleRegistryDeps(modulesService, catalogDialogHost);
@@ -101,6 +107,9 @@ export function buildRegistriesCatalogDefault(
   const registryDialog = (() => { try { return inject(PiDialogService, { optional: true }); } catch { return undefined; } })();
   return [
     createUnitsRegistry(unitsService, unitsDialogHost),
+    ...(categoriesService && categoryDialogHost
+      ? [createCategoriesRegistry({ categoriesService, dialogHost: categoryDialogHost })]
+      : []),
     createMaterialsRegistry(materialDeps),
     createDetailsRegistry(materialDeps),
     createModulesRegistry(moduleDeps),
@@ -138,6 +147,7 @@ export function createRegistriesCatalog(
   const organizationsService = inject(PiOrganizationsService);
   const productPassportsService = inject(PiProductPassportsService);
   const unitsService = inject(PiUnitsService);
+  const categoriesService = inject(PiCategoriesService);
   const textBlocksService = inject(PiTextBlocksService);
   const textBlockCategoriesService = inject(PiTextBlockCategoriesService);
   const tableTemplatesService = inject(PiTableTemplatesService);
@@ -160,6 +170,7 @@ export function createRegistriesCatalog(
   });
 
   const unitsDialogHost = createUnitsDialogHost({ dialog, destroyRef, injector, unitsService });
+  const categoryDialogHost = createCategoryRegistryDialogHost({ dialog, destroyRef, injector, categoriesService });
   const workTypeDialogHost = createWorkTypeRegistryDialogHost({
     dialog,
     destroyRef,
@@ -195,6 +206,8 @@ export function createRegistriesCatalog(
     workTypeDialogHost,
     peopleService,
     workerDialogHost,
+    categoriesService,
+    categoryDialogHost,
   );
 }
 

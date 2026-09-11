@@ -1,5 +1,6 @@
 import { of } from 'rxjs';
 import {
+  PiCategoriesService,
   PiMaterialsService, PiModulesService, PiOrganizationsService, PiProductPassportsService,
   PiProductsService, PiUnitsService, PiTextBlocksService,
   PiTextBlockCategoriesService, PiTableTemplatesService, PiRegistryDataSourcesService,
@@ -7,25 +8,33 @@ import {
 import { buildRegistriesCatalogDefault } from './registries.catalog';
 import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
 import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { CategoryRegistryDialogHost } from './category-registry-dialog-host';
 
 const host = (): MaterialRegistryDialogHost => ({ openCreate: jest.fn(), openEdit: jest.fn() });
 const catalogHost = (): CatalogRegistryDialogHost => ({ openModuleCreate: jest.fn(), openModuleEdit: jest.fn(), openProductCreate: jest.fn(), openProductEdit: jest.fn() });
 const unitsHost = () => ({ openEdit: jest.fn() });
+const categoryHost = (): CategoryRegistryDialogHost => ({ openCreate: jest.fn(), openEdit: jest.fn() });
 const empty = (value: unknown) => value;
 
 function buildCatalog() {
   const units = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })), update: jest.fn(), remove: jest.fn() } as unknown as PiUnitsService;
+  const categories = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), getById: jest.fn(), create: jest.fn(), update: jest.fn(), remove: jest.fn() } as unknown as PiCategoriesService;
   const materials = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 25 } })), getById: jest.fn() } as unknown as PiMaterialsService;
   const modules = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), getById: jest.fn() } as unknown as PiModulesService;
   const products = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 25 } })), getById: jest.fn() } as unknown as PiProductsService;
   const organizations = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 25 } })), getById: jest.fn(), create: jest.fn(), update: jest.fn(), remove: jest.fn() } as unknown as PiOrganizationsService;
   const passports = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), getById: jest.fn(), getByProductId: jest.fn(), create: jest.fn(), update: jest.fn(), remove: jest.fn() } as unknown as PiProductPassportsService;
-  return buildRegistriesCatalogDefault(units, materials, modules, products, organizations, passports, { config: [], navigate: jest.fn() } as never, host(), catalogHost(), unitsHost(), { textBlocks: empty({}), categories: empty({}), templates: empty({}), dataSources: empty({}) } as never);
+  return buildRegistriesCatalogDefault(
+    units, materials, modules, products, organizations, passports, { config: [], navigate: jest.fn() } as never, host(), catalogHost(), unitsHost(),
+    { textBlocks: empty({}), categories: empty({}), templates: empty({}), dataSources: empty({}) } as never,
+    undefined, undefined, undefined, undefined,
+    categories, categoryHost(),
+  );
 }
 
 describe('registries.catalog CRUD unify', () => {
   it('contains production registries and excludes the fixture departments registry', () => {
-    expect(buildCatalog().map((registry) => registry.key)).toEqual(['units', 'materials', 'details', 'modules', 'products', 'organizations', 'vat-rate', 'formulas', 'product-passports', 'text-block-categories', 'text-blocks', 'table-templates']);
+    expect(buildCatalog().map((registry) => registry.key)).toEqual(['units', 'categories', 'materials', 'details', 'modules', 'products', 'organizations', 'vat-rate', 'formulas', 'product-passports', 'text-block-categories', 'text-blocks', 'table-templates']);
   });
 
   it('does not expose constructor actions or route capability', () => {

@@ -64,3 +64,20 @@
 секций (см. §1) частично реализована — Каталог = materials/details/modules/products;
 Справочники = units (+ будущий `categories`, TZ-02). `docs/pages/registries.page.md`
 получил новую секцию «Master-table section grouping» с этой картой.
+
+## 6. Closeout 02/5 (2026-09-11) — `TZ-NX-REG-CATEGORIES-CRUD` DONE
+
+BE: `Category.type` enum `+= 'module'` (schema + `CreateCategoryDto`, `@IsIn`).
+NX: `PiCategoriesService` (data-access, list/getById/create/update/remove) +
+реестр `categories` (секция «Справочники», рядом с `units`) — колонки
+имя/тип(RU)/skuPrefix/родитель/статус; фильтры search+type; toolbar «Создать
+категорию»; row edit/delete (delete = существующий BE 409 на детях/ссылках,
+без нового client-правила). `CategoryFormDialogComponent`: select типа
+(Детали/Изделия/Модули — `general` не в списке создания), select родителя
+(фильтр по тому же типу, сбрасывается при смене типа), `skuPrefix`
+auto-suggest транслитерацией из name до первого ручного правки; `slug`
+никогда не отдельное поле — всегда `skuPrefix.toLowerCase()`.
+`registries.catalog.ts` расширен 2 опциональными trailing-параметрами
+(`categoriesService`, `categoryDialogHost`) — тот же паттерн, что
+work-types/workers. Wiring в material/product/module формы — TZ-03/04/05,
+следующие в этой волне.

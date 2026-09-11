@@ -21,6 +21,7 @@
 | Остаток на складе | **`StorageItem`** | `Material.stockQty` / `Product.stockQty` (deprecated, не SoT) |
 | Занос инвентаризации / opening balance | `StockMovement` **`in`** (или `adjust`) — никогда голый `create` количества | второй write-path в обход ledger |
 | Деталь (каталог / витрина студии) | обычно **`Material`** (или composition-узел); на **Ганте не уровень** | путать с Module / отдельной сущностью Part |
+| Категория (реестр «Категории», `/registries`) | **`Category`** (`type: material\|product\|module\|general`), reuse `/api/categories` | `materialKind` (part/fastener/purchased — техвид материала, отдельный контур, не замена категории); `TextBlockCategory` (категории текстов, отдельная коллекция, TZ-NX-REG-TEXT-BLOCK-CATEGORIES) |
 
 1 клиент → N КП / N заказов. Unique обычно на **номере** документа, не на FK клиента.
 
