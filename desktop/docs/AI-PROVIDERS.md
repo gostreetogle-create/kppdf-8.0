@@ -30,6 +30,36 @@
 > «Вариант 2» ниже — тот же remote-провайдер, TokenRouter лишь один из
 > примеров, не единственный вариант.
 
+## AI-нормализация импорта (TZD-AI-IMPORT-GENERAL-BASELINE)
+
+Отдельный контур от чата вкладки «ИИ»: `pipeline.normalizeStep(rows, schemaId, provider)`
+превращает сырые строки Excel/CSV в структурированные поля целевой таблицы
+(`IMPORT_TARGETS`), не пишет в БД — только возвращает `NormalizedRow[]` +
+`_questions/_errors/_skipped` для HITL-подтверждения (студия импорта).
+
+- **Промпт** — `ai/system-prompts/general.md` (fenced ```` ```text ```` блок,
+  как у `desktop-chat.md`) через `buildSystemPrompt(entitySchema)`;
+  `{entitySchema}` заменяется на JSON-схему из `IMPORT_TARGETS[schemaId]`
+  (`buildEntitySchemaJson`, `core/ai/normalize.ts`).
+- **Провайдер — параметр, не жёстко Ollama.** `normalizeStep` принимает
+  `ResolvedProvider` (см. «Выбор провайдера» ниже) — вызывающий код решает
+  local-Ollama/remote через `resolveProvider(config.aiProvider)`, а не
+  встроенный `.gguf`-раннер (TZD-76 не блокер).
+- **1 повтор при невалидном JSON** (`buildNormalizeRetryMessage`) — не все
+  модели/кванты держат формат стабильно с первого раза.
+- **Фильтр выдуманных полей.** `parseNormalizeResponse` (`core/ai/normalize.ts`)
+  оставляет в `rows` только ключи из схемы; всё остальное — в
+  `inventedFields`, не тихо принимается.
+- **Eval-baseline** — `core/ai/normalize-eval.fixtures.ts` (59 синтетических
+  fixtures: RU-даты/ИНН/деньги/enum-miss/invented-fields/malformed-JSON) +
+  `normalize-eval.test.ts` считает `parse_ok% / required_field_fill% /
+  invented_field_rate` и проверяет Soup-reopen gate (`>=75%` на `>=50`
+  fixtures, `docs/agent-checklists/WAVE-DESKTOP-AI-IMPORT-BASELINE.md`).
+  **Важно:** это синтетические ответы модели (без сети/Ollama), метрика
+  измеряет робастность парсера, не точность реальной модели — прогон на
+  живой Ollama с этим же набором `rawRows` остаётся отдельным шагом до
+  решения по Soup.
+
 ## Чат и Inbox (TZD-77, 0.5.9)
 
 До TZD-77 чат вкладки «ИИ» и папка Inbox вкладки «Импорт» были не связаны —

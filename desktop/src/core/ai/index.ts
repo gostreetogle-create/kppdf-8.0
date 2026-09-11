@@ -8,6 +8,13 @@ export { normalizeChatCompletionsUrl } from './chat-url';
 export { resolveProvider, pingProvider, OLLAMA_DEFAULT } from './providers';
 export type { ResolvedProvider } from './providers';
 export { buildSystemPrompt, buildDesktopChatSystemPrompt, loadDesktopChatSystemPrompt } from './prompts';
+export {
+  buildEntitySchemaJson,
+  buildNormalizePrompt,
+  buildNormalizeRetryMessage,
+  parseNormalizeResponse,
+} from './normalize';
+export type { ParsedNormalizeResult } from './normalize';
 export { API_PRESETS, apiPresetById } from './api-presets';
 export type { ApiPreset } from './api-presets';
 export { parseApiSnippet, isEmptySnippetResult } from './snippet-parse';

@@ -1,27 +1,22 @@
 ﻿# NOW
 
-updated_at: 2026-09-11T21:50:00Z
+updated_at: 2026-09-11T23:10:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — WAVE-NX-DOCSTUDIO-TABLE-PROPS COMPLETE (5/5 DONE).
+- **Claude:** IN PROGRESS — WAVE-DESKTOP-AI-IMPORT-BASELINE 01/03 DONE, continuing 02 `TZD-AI-IMPORT-HITL-DATASET-LOG`.
 - **Deploy stamp:** READY
 
 ## NEXT
 
-`tasks/PROMPT-CLAUDE-AI-IMPORT-BASELINE.md` (queued, WAVE-DESKTOP-AI-IMPORT-BASELINE: general.md → HITL JSONL → mapping Ollama) — не начато без явного промпта PO.
+После DONE AI-IMPORT-BASELINE → Soup всё ещё PARK (гейты в WAVE); иначе «промптов нет» или новый накид PO.
 
 ## DONE
 
-- TZ-NX-DOCSTUDIO-TABLE-KINDS-DISCOVER — CTA-ссылка на реестр видов; миграция дедупнула 3× «Продукты» → 1 канонический + колонка «Количество» (реально прогнана на dev-БД)
-- TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE — DB-аудит: photoIds уже в alias-листе (verified-OK); нашёл 237/304 orphaned photo-файлов, fix в resolveCatalogPhotoUrls
-- TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — qty override на блоке (tableQtyOverrides), total=price*qty fix, живые строки: только qty editable
-- TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE — columnsEditable() unlocked (было 2 условия, стало 1); quick-add палитра стандартных полей
-- TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH — свойства таблицы 340→820px (scoped `panelTable`, не global)
-- WAVE-NX-REGISTRY-CATEGORIES — `1a345822` `70a3e777` `a5b4c429` `b0b5ddd1` `09f41ed1`
-- WAVE-NX-DROP-REFERENCE-NAV — `b822c2cf` `1ae9260b`
+- TZD-AI-IMPORT-GENERAL-BASELINE — general.md wired; normalizeStep (chatCompletion+retry+invented-field filter); eval 59 fixtures parse_ok=88.1%
+- WAVE-NX-DOCSTUDIO-TABLE-PROPS — `0df45baf` `24e2ae14` `d042de05` `7d904839` `ee243aca`
 
 ## PARK
 
-- Deploy · G12 · desk · wipe
+- Deploy · G12 · desk · wipe · Soup SFT
