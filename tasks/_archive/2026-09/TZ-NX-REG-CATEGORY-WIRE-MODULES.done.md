@@ -37,4 +37,4 @@ IMPLICIT CONFLICT: nx build kppdf-web
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-11T15:45:00Z — see docs/agent-checklists/TZ-NX-REG-CATEGORY-WIRE-MODULES.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-11T15:45:00Z — SHA `09f41ed1` (main, pushed)

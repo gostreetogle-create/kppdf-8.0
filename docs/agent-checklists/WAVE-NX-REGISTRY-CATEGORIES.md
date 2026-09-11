@@ -18,4 +18,4 @@
 **Default business:** category **обязательна** при create детали/модуля/изделия; raw Material — select **есть**, required **нет** (PO 2026-09-11).  
 **Связь:** top-nav «Справ.» убирается отдельно — `WAVE-NX-DROP-REFERENCE-NAV` (не путать с группой «Справочники» внутри `/registries` для units+Category).
 
-**WAVE COMPLETE (2026-09-11).** Все 5 задач DONE. SHA: 01 `1a345822` · 02 `70a3e777` · 03 `a5b4c429` · 04 `b0b5ddd1` · 05 см. `docs/agent-checklists/TZ-NX-REG-CATEGORY-WIRE-MODULES.md`. Итог: `Category` (`type: material|product|module|general`) — единая категоризация каталога (обязательна деталь/изделие/модуль, опциональна raw); `materialKind`/`TextBlockCategory` не тронуты.
+**WAVE COMPLETE (2026-09-11).** Все 5 задач DONE. SHA: 01 `1a345822` · 02 `70a3e777` · 03 `a5b4c429` · 04 `b0b5ddd1` · 05 `09f41ed1`. Итог: `Category` (`type: material|product|module|general`) — единая категоризация каталога (обязательна деталь/изделие/модуль, опциональна raw); `materialKind`/`TextBlockCategory` не тронуты.
