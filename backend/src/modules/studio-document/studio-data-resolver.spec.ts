@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Types } from 'mongoose';
 import {
   ensureTableDataSetsFromBlocks,
@@ -8,6 +10,10 @@ import {
   StudioDataResolverService,
 } from './studio-data-resolver';
 import type { TemplateBlockDocument } from '../template-block/template-block.schema';
+
+/** TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE — real file on disk, same convention as document-render.utils.spec.ts's PDF-inline fixture. */
+const PHOTO_SMOKE_DIR = join(process.cwd(), 'uploads', 'studio-photo-smoke-test');
+const EXISTING_PHOTO_URL = '/uploads/studio-photo-smoke-test/stol.webp';
 
 describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
   const columns = [
@@ -189,6 +195,15 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
   const orgId = new Types.ObjectId();
   const quotationId = new Types.ObjectId().toString();
 
+  beforeAll(async () => {
+    await mkdir(PHOTO_SMOKE_DIR, { recursive: true });
+    await writeFile(join(PHOTO_SMOKE_DIR, 'stol.webp'), Buffer.from([0x52, 0x49, 0x46, 0x46]));
+  });
+
+  afterAll(async () => {
+    await rm(PHOTO_SMOKE_DIR, { recursive: true, force: true });
+  });
+
   const tableBlock = {
     _id: blockId,
     type: 'table',
@@ -285,7 +300,7 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
       }),
     };
     const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
-    const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: photo, storageUrl: '/uploads/stol.webp' }]) }) };
+    const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: photo, storageUrl: EXISTING_PHOTO_URL }]) }) };
     const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
     const poCanonBlock = {
       ...tableBlock,
@@ -308,7 +323,75 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
     );
 
     expect(resolved[0]).toMatchObject({
-      rows: [['P-1', '/uploads/stol.webp', 'Стол', 'Дубовый стол', 'шт', '1200']],
+      rows: [['P-1', EXISTING_PHOTO_URL, 'Стол', 'Дубовый стол', 'шт', '1200']],
+    });
+  });
+
+  describe('orphaned photo references (TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE)', () => {
+    it('resolves to empty (renders «Нет фото») when the Photo doc exists but the file is missing on disk', async () => {
+      const product = new Types.ObjectId();
+      const photo = new Types.ObjectId();
+      const productModel = {
+        find: jest.fn().mockReturnValue({
+          lean: jest.fn().mockReturnThis(),
+          exec: jest.fn().mockResolvedValue([
+            { _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200, mainPhotoId: photo },
+          ]),
+        }),
+      };
+      const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+      const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: photo, storageUrl: '/uploads/studio-photo-smoke-test/does-not-exist.webp' }]) }) };
+      const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+      const blockWithPhoto = {
+        ...tableBlock,
+        settings: {
+          tableTemplateColumns: [
+            { key: 'name', label: 'Наименование' },
+            { key: 'photo', label: 'Фото' },
+          ],
+        },
+      } as unknown as TemplateBlockDocument;
+
+      const resolved = await resolver.resolveDataSets(
+        { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+        [blockWithPhoto],
+        true,
+      );
+
+      expect(resolved[0]).toMatchObject({ rows: [['Стол', '']] });
+    });
+
+    it('rejects a path-traversal storageUrl instead of resolving outside uploads/', async () => {
+      const product = new Types.ObjectId();
+      const photo = new Types.ObjectId();
+      const productModel = {
+        find: jest.fn().mockReturnValue({
+          lean: jest.fn().mockReturnThis(),
+          exec: jest.fn().mockResolvedValue([
+            { _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200, mainPhotoId: photo },
+          ]),
+        }),
+      };
+      const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+      const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: photo, storageUrl: '/uploads/../../etc/passwd' }]) }) };
+      const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+      const blockWithPhoto = {
+        ...tableBlock,
+        settings: {
+          tableTemplateColumns: [
+            { key: 'name', label: 'Наименование' },
+            { key: 'photo', label: 'Фото' },
+          ],
+        },
+      } as unknown as TemplateBlockDocument;
+
+      const resolved = await resolver.resolveDataSets(
+        { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+        [blockWithPhoto],
+        true,
+      );
+
+      expect(resolved[0]).toMatchObject({ rows: [['Стол', '']] });
     });
   });
 

@@ -1,6 +1,8 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { access } from 'node:fs/promises';
+import { join, relative, resolve } from 'node:path';
 import { Product, ProductDocument } from '../product/product.schema';
 import { ProductModule, ProductModuleDocument } from '../product-module/product-module.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
@@ -498,6 +500,28 @@ export class StudioDataResolverService {
     return Array.isArray(ids) && ids.length > 0 ? refId(ids[0]) : '';
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE — a `Photo.storageUrl` can outlive its
+   * on-disk file (orphaned reference: doc restored/copied without `uploads/`,
+   * file manually removed, etc). Rendered raw, that's a browser broken-image
+   * icon on canvas/preview/PDF — indistinguishable from a real bug to the
+   * operator. Verify the file actually exists so a stale reference degrades
+   * to the same "Нет фото" empty-state as a genuinely absent photo, same
+   * traversal-safe path resolution as `document-render.utils.ts`'s PDF inliner.
+   */
+  private async localUploadFileExists(url: string): Promise<boolean> {
+    if (!url.startsWith('/uploads/') || url.includes('..')) return false;
+    const uploadsRoot = resolve(join(process.cwd(), 'uploads'));
+    const filePath = resolve(uploadsRoot, url.slice('/uploads/'.length));
+    if (relative(uploadsRoot, filePath).startsWith('..')) return false;
+    try {
+      await access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   /** Batch-resolve catalog docs' photo refs to `Photo.storageUrl` (S48 renders the thumbnail). */
   private async resolveCatalogPhotoUrls(
     docs: Array<Record<string, unknown>>,
@@ -509,9 +533,14 @@ export class StudioDataResolverService {
       .select('storageUrl')
       .lean()
       .exec();
-    return new Map(
-      photos.map((photo) => [String((photo as { _id: unknown })._id), String((photo as { storageUrl?: string }).storageUrl ?? '')]),
+    const entries = await Promise.all(
+      photos.map(async (photo) => {
+        const url = String((photo as { storageUrl?: string }).storageUrl ?? '');
+        const verified = url && (await this.localUploadFileExists(url)) ? url : '';
+        return [String((photo as { _id: unknown })._id), verified] as const;
+      }),
     );
+    return new Map(entries);
   }
 
   private defaultColumns(): StudioTableColumn[] {

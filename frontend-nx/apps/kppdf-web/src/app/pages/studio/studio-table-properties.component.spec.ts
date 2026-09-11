@@ -187,6 +187,57 @@ describe('StudioTablePropertiesComponent — live rows qty editing', () => {
 });
 
 /**
+ * TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE — an empty photo cell in the live-rows
+ * editor gets an actionable hint, not a bare «—» (which reads as "no data"
+ * rather than "go fix this specific thing").
+ */
+describe('StudioTablePropertiesComponent — live rows photo hint', () => {
+  const LIVE_TABLE_WITH_PHOTO: StudioBlock = {
+    _id: 'tbl-4',
+    type: 'table',
+    order: 0,
+    title: 'Продукты',
+    content: '',
+    layout: { page: 1, x: 0.1, y: 0.1, width: 0.5, height: 0.4, zIndex: 1, rotation: 0 },
+    settings: {
+      tableTemplateColumns: [
+        { key: 'photoIds', label: 'Фото', type: 'text', align: 'left', width: 15 },
+        { key: 'name', label: 'Наименование', type: 'text', align: 'left', width: 50 },
+      ],
+      dataSource: { type: 'catalog-products' },
+      liveRows: [
+        ['/uploads/stol.webp', 'Стол'],
+        ['', 'Стул без фото'],
+      ],
+    },
+  };
+
+  let fixture: ComponentFixture<StudioTablePropertiesComponent>;
+  const templatesService = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [StudioTablePropertiesComponent],
+      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(StudioTablePropertiesComponent);
+    fixture.componentRef.setInput('block', LIVE_TABLE_WITH_PHOTO);
+    fixture.detectChanges();
+  });
+
+  it('shows the photo URL as text for a row that has one, and a hint for a row that does not', () => {
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.textContent).toContain('/uploads/stol.webp');
+    expect(host.querySelector('[data-test="studio-table-live-photo-hint-1"]')).not.toBeNull();
+    expect(host.querySelector('[data-test="studio-table-live-photo-hint-1"]')!.textContent).toContain(
+      'Загрузите фото в карточке изделия',
+    );
+    // Row 0 has a photo — no hint for it.
+    expect(host.querySelector('[data-test="studio-table-live-photo-hint-0"]')).toBeNull();
+  });
+});
+
+/**
  * TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE — a selected «Вид» (tableTemplateId set)
  * used to lock reorder/add-column entirely. PO: structure lives on the block
  * (override), editable regardless of template/rowSource; only an explicit

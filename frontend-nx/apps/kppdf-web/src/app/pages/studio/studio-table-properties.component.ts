@@ -27,6 +27,7 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { ChevronDown, LucideAngularModule } from 'lucide-angular';
 import {
   buildTableSettingsFromTemplate,
+  isStudioPhotoColumnKey,
   isStudioQtyColumnKey,
   studioLiveTableRows,
   studioTableColumns,
@@ -337,6 +338,8 @@ import {
                             [disabled]="disabled"
                             [attr.data-test]="'studio-table-live-qty-' + rowIdx"
                           />
+                        } @else if (isPhotoColumnAt(colIdx) && !row[colIdx]) {
+                          <span class="table-props__photo-hint" [attr.data-test]="'studio-table-live-photo-hint-' + rowIdx">Загрузите фото в карточке изделия</span>
                         } @else {
                           {{ row[colIdx] || '—' }}
                         }
@@ -546,6 +549,12 @@ import {
       color: var(--color-muted-foreground);
     }
 
+    .table-props__photo-hint {
+      font-size: 10px;
+      font-style: italic;
+      color: var(--color-muted-foreground);
+    }
+
     /* TZ-NX-DOCSTUDIO-S45 — rows editor (moved from the A4 canvas) */
     .table-props__rows { display: flex; flex-direction: column; gap: 6px; }
     .table-props__rows-head {
@@ -667,6 +676,12 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   protected isQtyColumnAt(colIdx: number): boolean {
     const col = studioTableColumns(this.block)[colIdx];
     return col ? isStudioQtyColumnKey(col.key) : false;
+  }
+
+  /** TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE — empty photo cell gets an actionable RU hint here, not a bare «—». */
+  protected isPhotoColumnAt(colIdx: number): boolean {
+    const col = studioTableColumns(this.block)[colIdx];
+    return col ? isStudioPhotoColumnKey(col.key) : false;
   }
 
   /** `type="number"`'s NumberValueAccessor emits a `number` (or `null` when cleared), not a string — normalize before emitting. */

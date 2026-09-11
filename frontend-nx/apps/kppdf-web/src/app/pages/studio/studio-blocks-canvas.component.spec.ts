@@ -205,4 +205,33 @@ describe('StudioBlocksCanvasComponent — photo column renders image or empty st
     expect(nameCell.querySelector('img')).toBeNull();
     expect(nameCell.textContent?.trim()).toBe('Мангал');
   });
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE — the real «Продукты» table templates
+   * in the live DB key their photo column `photoIds` (matches the catalog
+   * Product/Material field name they were built from), not the shorter
+   * canonical `photo` used in the other fixtures above. Locks that the alias
+   * list already covers it case-insensitively — audited, not assumed.
+   */
+  it('recognizes the real-world "photoIds" column key (not just canonical "photo")', () => {
+    const tableWithPhotoIds: StudioBlock = {
+      ...TABLE_WITH_PHOTO,
+      _id: 'tbl-photoids',
+      settings: {
+        tableTemplateColumns: [
+          { key: 'sku', label: 'Артикул', type: 'text', width: 20, align: 'left' },
+          { key: 'photoIds', label: 'Фото', type: 'text', width: 20, align: 'center' },
+          { key: 'name', label: 'Наименование', type: 'text', width: 60, align: 'left' },
+        ],
+        tableTemplateSampleRows: [['1101', '/uploads/vorota.png', 'Ворота мини-футбольные']],
+      },
+    };
+    createCanvas([tableWithPhotoIds]);
+    const host: HTMLElement = fixture.nativeElement;
+    const photoCell = host.querySelectorAll('tbody tr')[0]!.querySelectorAll('td')[1]!;
+
+    const img = photoCell.querySelector('img.table-preview__photo');
+    expect(img).not.toBeNull();
+    expect(img!.getAttribute('src')).toBe('/uploads/vorota.png');
+  });
 });
