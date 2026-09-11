@@ -76,8 +76,44 @@ export class StudioQuotationLifecycleService {
     if (!doc.linkedQuotationId) return null;
 
     const quotationId = doc.linkedQuotationId.toString();
-    const quotation = await this.quotationService.findById(quotationId);
-    this.assertQuotationOrg(quotation, organizationId);
+    let quotation: QuotationDocument;
+    try {
+      quotation = await this.quotationService.findById(quotationId);
+      this.assertQuotationOrg(quotation, organizationId);
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) throw error;
+      // Dead/foreign linkedQuotationId (deleted or cross-org Quotation): heal
+      // the stale FK instead of surfacing a hard 404 to the operator.
+      return this.healOrphanQuotationLink(doc, organizationId, quotationId);
+    }
+
+    return this.performSync(doc, quotation);
+  }
+
+  private async healOrphanQuotationLink(
+    doc: StudioDocumentDocument,
+    organizationId: string,
+    deadQuotationId: string,
+  ): Promise<QuotationDocument | null> {
+    doc.linkedQuotationId = undefined;
+    if (doc.context?.['quotationId'] === deadQuotationId) {
+      const rest = { ...doc.context };
+      delete rest['quotationId'];
+      doc.context = rest;
+    }
+    await doc.save();
+
+    const { quotation } = await this.ensureLinkedQuotation(doc, organizationId);
+    if (!quotation) return null;
+
+    return this.performSync(doc, quotation);
+  }
+
+  private async performSync(
+    doc: StudioDocumentDocument,
+    quotation: QuotationDocument,
+  ): Promise<QuotationDocument> {
+    const quotationId = quotation._id.toString();
     const blocks = await this.blockService.findAllByStudioDocument(doc._id.toString());
     const resolved = await this.dataResolver.resolveDataSets(doc, blocks, true);
     const items = this.extractItemsFromDataSets(resolved, doc.context ?? {});

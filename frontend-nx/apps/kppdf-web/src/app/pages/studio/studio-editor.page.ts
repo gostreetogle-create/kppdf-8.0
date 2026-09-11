@@ -1860,6 +1860,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (!doc || !this.isKpDoc() || !this.quotationId()) return Promise.resolve(true);
     return firstValueFrom(this.documents.syncQuotation(doc._id)).then((result) => {
       if (result.ok) {
+        // BE may have soft-healed a dead linkedQuotationId (cleared + re-ensured
+        // for KP docs) — refresh the local document so a stale context.quotationId
+        // isn't PATCHed back over the healed link on the next save.
+        if (result.data.studioDocument) this.document.set(result.data.studioDocument);
         const quotation = result.data.quotation as Quotation | null;
         if (quotation?.status) this.linkedQuotationStatus.set(quotation.status);
         void this.reloadQuotations();

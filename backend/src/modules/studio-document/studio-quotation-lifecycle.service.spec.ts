@@ -164,25 +164,99 @@ describe('StudioQuotationLifecycleService (S20)', () => {
     expect(result.quotation?._id).toEqual(quotationId);
   });
 
-  it('syncQuotationItems rejects before update when the quotation org mismatches', async () => {
-    const quotationId = new Types.ObjectId();
+  it('syncQuotationItems heals a cross-org linkedQuotationId (KP doc): clears the dead FK, creates a fresh draft, and syncs — no 404', async () => {
+    const deadQuotationId = new Types.ObjectId();
+    const freshQuotationId = new Types.ObjectId();
+    const freshQuotation = {
+      _id: freshQuotationId,
+      organizationId: new Types.ObjectId(orgId),
+      status: 'draft',
+    };
     quotationService.findById.mockResolvedValue({
-      _id: quotationId,
-      organizationId: new Types.ObjectId(),
+      _id: deadQuotationId,
+      organizationId: new Types.ObjectId(), // foreign org
       status: 'draft',
     });
+    quotationService.create.mockResolvedValue(freshQuotation);
+    quotationService.update.mockResolvedValue(freshQuotation);
     const doc = {
       _id: new Types.ObjectId(),
       docTypeId: proposalDocTypeId,
       organizationId: new Types.ObjectId(orgId),
-      linkedQuotationId: quotationId,
-      context: {},
-      save: jest.fn(),
+      linkedQuotationId: deadQuotationId,
+      context: { quotationId: deadQuotationId.toString(), counterpartyId: 'cust-1' },
+      save: jest.fn().mockResolvedValue(undefined),
     } as unknown as StudioDocumentDocument;
 
-    await expect(service.syncQuotationItems(doc, orgId)).rejects.toThrow(
-      NotFoundException,
+    const result = await service.syncQuotationItems(doc, orgId);
+
+    expect(doc.linkedQuotationId).toEqual(freshQuotationId);
+    expect(doc.context['quotationId']).toBe(freshQuotationId.toString());
+    expect(doc.save).toHaveBeenCalled();
+    expect(quotationService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: orgId, status: 'draft', counterpartyId: 'cust-1' }),
     );
+    expect(quotationService.update).toHaveBeenCalledWith(
+      freshQuotationId.toString(),
+      expect.objectContaining({ items: [] }),
+    );
+    expect(result).toBe(freshQuotation);
+  });
+
+  it('syncQuotationItems heals a deleted linkedQuotationId (KP doc, findById 404): same recovery, no throw', async () => {
+    const deadQuotationId = new Types.ObjectId();
+    const freshQuotationId = new Types.ObjectId();
+    const freshQuotation = {
+      _id: freshQuotationId,
+      organizationId: new Types.ObjectId(orgId),
+      status: 'draft',
+    };
+    quotationService.findById.mockRejectedValue(
+      new NotFoundException(`Quotation ${deadQuotationId.toString()} not found`),
+    );
+    quotationService.create.mockResolvedValue(freshQuotation);
+    quotationService.update.mockResolvedValue(freshQuotation);
+    const doc = {
+      _id: new Types.ObjectId(),
+      docTypeId: proposalDocTypeId,
+      organizationId: new Types.ObjectId(orgId),
+      linkedQuotationId: deadQuotationId,
+      context: { quotationId: deadQuotationId.toString() },
+      save: jest.fn().mockResolvedValue(undefined),
+    } as unknown as StudioDocumentDocument;
+
+    const result = await service.syncQuotationItems(doc, orgId);
+
+    expect(result).toBe(freshQuotation);
+    expect(quotationService.create).toHaveBeenCalled();
+  });
+
+  it('syncQuotationItems heals a dead linkedQuotationId on a non-KP doc by clearing the FK and returning null (not 404)', async () => {
+    docTypeModel.findById.mockReturnValueOnce({
+      lean: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ slug: 'invoice' }),
+      }),
+    });
+    const deadQuotationId = new Types.ObjectId();
+    quotationService.findById.mockRejectedValue(
+      new NotFoundException(`Quotation ${deadQuotationId.toString()} not found`),
+    );
+    const doc = {
+      _id: new Types.ObjectId(),
+      docTypeId: new Types.ObjectId(),
+      organizationId: new Types.ObjectId(orgId),
+      linkedQuotationId: deadQuotationId,
+      context: { quotationId: deadQuotationId.toString() },
+      save: jest.fn().mockResolvedValue(undefined),
+    } as unknown as StudioDocumentDocument;
+
+    const result = await service.syncQuotationItems(doc, orgId);
+
+    expect(result).toBeNull();
+    expect(doc.linkedQuotationId).toBeUndefined();
+    expect(doc.context['quotationId']).toBeUndefined();
+    expect(doc.save).toHaveBeenCalledTimes(1);
+    expect(quotationService.create).not.toHaveBeenCalled();
     expect(quotationService.update).not.toHaveBeenCalled();
   });
 
