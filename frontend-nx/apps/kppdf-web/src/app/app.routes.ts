@@ -58,18 +58,13 @@ export const appRoutes: Route[] = [
         ],
       },
       {
-        // TZ-NX-TEXT-CAT-NX-CRUD — static `children` (not `loadChildren`), same
-        // reasoning as `registries`/`studio` above: the nav dead-link filter
-        // only walks `route.children`. nav-categories.ts already pointed the
-        // "Категории текстов" item here; only this one child route is wired —
-        // the sibling dead `/dictionaries/*` nav entries stay out of scope.
+        // TZ-NX-REG-TEXT-BLOCK-CATEGORIES — "Категории текстов" moved into the
+        // `/registries` platform (dup of the dead top-nav «Справочники» tab,
+        // audit 2026-09-11-reference-nav-vs-registries.md). Old bookmarked URL
+        // kept alive as a redirect rather than deleted outright.
         path: 'dictionaries',
         children: [
-          {
-            path: 'text-block-categories',
-            data: { pageKey: 'text-block-categories' },
-            loadComponent: () => import('./pages/dictionaries/text-block-categories.page').then((m) => m.TextBlockCategoriesPage),
-          },
+          { path: 'text-block-categories', redirectTo: '/registries/text-block-categories' },
         ],
       },
       {

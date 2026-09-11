@@ -1,11 +1,42 @@
-# Страница: Категории текстовых блоков (`TextBlockCategoriesPage`)
+# Страница: Категории текстовых блоков
 
 **Краткое описание:** плоский справочник категорий текстовых блоков (CRUD через
 `/text-block-categories`). Питает select категории в редакторе блока и фильтр
 реестра на `/doc-constructor/texts`. Отличается и от дерева `/categories`, и от
 `DocumentTemplateCategory` (TZ-DOC-308).
 
-## Route
+## SoT (2026-09-11, `TZ-NX-REG-TEXT-BLOCK-CATEGORIES`) — `/registries/text-block-categories`
+
+Аудит `docs/audits/2026-09-11-reference-nav-vs-registries.md`: отдельная top-nav
+вкладка «Справочники» существовала **только** ради этого одного живого экрана
+(остальные пункты — мёртвые stubs, скрыты `filterNavCategories`); «Тексты» уже
+жили в `/registries`. Категории текстов перенесены туда же (группа
+«Документы», рядом с «Тексты») — плоский `defineRegistry`, не отдельная
+master-detail страница.
+
+- Registry: `text-block-categories.registry.ts` + `text-block-categories-http-data-source.ts`
+  (`frontend-nx/apps/kppdf-web/src/app/pages/registries/data/`). Колонка «Путь»
+  несёт «Root › Sub» (или просто имя корня для root-строки) вместо двухуровневой
+  master-detail разметки старой страницы; сортировка по этой строке естественно
+  группирует каждый корень над его же подкатегориями.
+- Actions (`doc-studio-registry-actions.ts`): toolbar «Создать категорию» → root;
+  row «Создать подкатегорию» (accent Plus, `id: 'create-sub'`) — только на
+  root-строках (`isDisabled` на подкатегории); edit — тот же
+  `TextBlockCategoryFormDialogComponent`; delete задизейблен для системной
+  категории («Общее») вместо того, чтобы прятать кнопку — то же поведение, что
+  было на старой странице, другой механизм показа.
+- Старый URL `/dictionaries/text-block-categories` — `redirectTo` на новый путь
+  (`app.routes.ts`), бывший компонент `TextBlockCategoriesPage` удалён.
+- `RegistryCrudActionOptions` (`registry-crud-actions.ts`) получил опциональные
+  `isDeleteDisabled`/`deleteDisabledReason` — раньше только `domainActions` умели
+  disable-with-reason (см. `units.registry.ts`), у самого «delete» такого хука
+  не было.
+
+Разделы ниже (Route/Dialogs/Services/State/Особенности) описывают
+**удалённую** master-detail страницу — оставлены как UX-референс миграции, не
+SoT.
+
+## Route (устарело — удалено, redirect на `/registries/text-block-categories`)
 
 ```
 /dictionaries/text-block-categories — «KPPDF — Категории текстов»
@@ -45,7 +76,13 @@
 всё ещё указывает на корень — читаются как есть (без миграции); следующее
 редактирование обязано перенести их на лист.
 
-## NX (2026-09-11, `TZ-NX-TEXT-CAT-NX-CRUD`) — `/dictionaries/text-block-categories`
+## NX (2026-09-11, `TZ-NX-TEXT-CAT-NX-CRUD`) — superseded, see «SoT» above
+
+**Historical.** This section described the original bespoke master-detail
+`TextBlockCategoriesPage` — replaced same-day by the `/registries` flat
+registry (`TZ-NX-REG-TEXT-BLOCK-CATEGORIES`, see «SoT» above). The component
+file is deleted; kept below only as migration context for the dialog/service
+pieces that carried over unchanged.
 
 Fixes the dead nav link (`nav-categories.ts` already pointed here; no NX route
 existed until this TZ). **Not** a `defineRegistry`/`/registries/*` page — a

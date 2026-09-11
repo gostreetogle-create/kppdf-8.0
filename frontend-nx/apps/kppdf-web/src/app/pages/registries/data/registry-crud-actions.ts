@@ -9,6 +9,9 @@ export interface RegistryCrudActionOptions<TRow> {
   readonly copy?: (row: TRow, ctx: RegistryActionContext) => void | Promise<void>;
   readonly remove: (row: TRow, ctx: RegistryActionContext) => void | Promise<void>;
   readonly domainActions?: readonly RegistryRowAction<TRow>[];
+  /** Grey out delete for rows that can never be removed (e.g. a system row) instead of hiding it. */
+  readonly isDeleteDisabled?: (row: TRow) => boolean;
+  readonly deleteDisabledReason?: (row: TRow) => string | null;
 }
 
 export function createRegistryCrudActions<TRow>(
@@ -45,6 +48,8 @@ export function createRegistryCrudActions<TRow>(
       confirmLabel: 'Удалить',
       cancelLabel: 'Отмена',
     },
+    isDisabled: options.isDeleteDisabled,
+    disabledReason: options.deleteDisabledReason,
     run: options.remove,
   });
   return actions;

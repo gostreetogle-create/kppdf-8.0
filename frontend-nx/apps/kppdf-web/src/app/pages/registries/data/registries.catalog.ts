@@ -28,6 +28,7 @@ import { createProductPassportsRegistry } from './product-passports.registry';
 import { createUnitsRegistry } from './units.registry';
 import { createUnitsDialogHost } from './units-dialog-host';
 import { createDocStudioDialogDeps, type DocStudioDialogDeps } from './doc-studio-registry-actions';
+import { createTextBlockCategoriesRegistry } from './text-block-categories.registry';
 import { createTextBlocksRegistry } from './text-blocks.registry';
 import { createTableTemplatesRegistry } from './table-templates.registry';
 import { createVatRateRegistry } from './vat-rate.registry';
@@ -114,7 +115,10 @@ export function buildRegistriesCatalogDefault(
       ? [createWorkersRegistry({ peopleService, dialogHost: workerDialogHost })]
       : []),
     createProductPassportsRegistry(productPassportsService, registryDialog ?? undefined),
-    ...(studio ? [createTextBlocksRegistry(studio), createTableTemplatesRegistry(studio)] : []).map((definition) => definition as RegistryDefinition<RegistryRow>),
+    ...(studio
+      ? [createTextBlockCategoriesRegistry(studio), createTextBlocksRegistry(studio), createTableTemplatesRegistry(studio)]
+      : []
+    ).map((definition) => definition as RegistryDefinition<RegistryRow>),
   ];
 }
 

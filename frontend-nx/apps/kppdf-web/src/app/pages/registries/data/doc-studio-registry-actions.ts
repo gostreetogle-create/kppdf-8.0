@@ -1,14 +1,19 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
-import { PiRegistryDataSourcesService, PiTableTemplatesService, PiTextBlockCategoriesService, PiTextBlocksService, type RegistryDataSource, type TableTemplate, type TextBlock } from '@kppdf/data-access';
+import { PiRegistryDataSourcesService, PiTableTemplatesService, PiTextBlockCategoriesService, PiTextBlocksService, type RegistryDataSource, type TableTemplate, type TextBlock, type TextBlockCategory } from '@kppdf/data-access';
 import type { DestroyRef, Injector } from '@angular/core';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../../on-dialog-close-once';
 import { TextBlockFormDialogComponent } from '../../../doc-studio/dialogs/text-block-form-dialog.component';
 import { TableTemplateFormDialogComponent } from '../../../doc-studio/dialogs/table-template-form-dialog.component';
+import {
+  TextBlockCategoryFormDialogComponent,
+  type TextBlockCategoryFormDialogData,
+} from '../../dictionaries/text-block-category-form-dialog.component';
 import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
 import type { TextBlockRow } from './text-blocks-http-data-source';
 import type { TableTemplateRow } from './table-templates-http-data-source';
+import type { TextBlockCategoryRow } from './text-block-categories-http-data-source';
 import { createRegistryCrudActions, copyName } from './registry-crud-actions';
 
 export interface DocStudioDialogDeps { readonly dialog: PiDialogService; readonly destroyRef: DestroyRef; readonly injector: Injector; textBlocks: PiTextBlocksService; categories: PiTextBlockCategoriesService; templates: PiTableTemplatesService; dataSources: PiRegistryDataSourcesService; }
@@ -26,4 +31,52 @@ function openTextCreate(deps: DocStudioDialogDeps, ctx: RegistryActionContext, s
 function openTextEdit(deps: DocStudioDialogDeps, row: TextBlockRow, ctx: RegistryActionContext): void { void firstValueFrom(deps.textBlocks.getById(row._id)).then((result) => { if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error'); const ref = deps.dialog.open<TextBlock | null | undefined>(TextBlockFormDialogComponent, { data: { mode: 'edit', textBlock: result.data }, parentDestroyRef: deps.destroyRef }); onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Текст обновлён', 'success'); ctx.reload(); } }); }); }
 function openTemplateCreate(deps: DocStudioDialogDeps, ctx: RegistryActionContext, source?: TableTemplateRow): void { const ref = deps.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, { data: { mode: 'create', template: source ? { ...source, name: copyName(source.name) } : undefined }, parentDestroyRef: deps.destroyRef }); onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Вид таблицы создан', 'success'); ctx.reload(); } }); }
 function openTemplateEdit(deps: DocStudioDialogDeps, row: TableTemplateRow, ctx: RegistryActionContext): void { void firstValueFrom(deps.templates.getById(row._id)).then((result) => { if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error'); const ref = deps.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, { data: { mode: 'edit', template: result.data }, parentDestroyRef: deps.destroyRef }); onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Вид таблицы обновлён', 'success'); ctx.reload(); } }); }); }
+export function buildTextBlockCategoryActions(deps: DocStudioDialogDeps): readonly RegistryRowAction<TextBlockCategoryRow>[] {
+  return createRegistryCrudActions({
+    entityLabel: 'категорию',
+    edit: (row, ctx) => openTextBlockCategoryForm(deps, { mode: 'edit', category: row }, ctx),
+    remove: async (row, ctx) => {
+      const result = await firstValueFrom(deps.categories.remove(row._id));
+      if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error');
+      ctx.notify('Категория удалена', 'success');
+      ctx.reload();
+    },
+    isDeleteDisabled: (row) => row.isSystem === true,
+    deleteDisabledReason: (row) => (row.isSystem ? 'Системную категорию нельзя удалить' : null),
+    domainActions: [
+      {
+        id: 'create-sub',
+        label: 'Создать подкатегорию',
+        icon: 'plus',
+        tone: 'accent',
+        isDisabled: (row) => Boolean(row.parentId),
+        disabledReason: (row) => (row.parentId ? 'Только у корневых категорий' : null),
+        run: (row, ctx) =>
+          openTextBlockCategoryForm(deps, { mode: 'create', parentId: row._id, parentName: row.name }, ctx),
+      },
+    ],
+  });
+}
+export function buildTextBlockCategoryCreateAction(deps: DocStudioDialogDeps) {
+  return {
+    label: 'Создать категорию',
+    run: (ctx: RegistryActionContext) => openTextBlockCategoryForm(deps, { mode: 'create' }, ctx),
+  };
+}
+function openTextBlockCategoryForm(
+  deps: DocStudioDialogDeps,
+  data: TextBlockCategoryFormDialogData,
+  ctx: RegistryActionContext,
+): void {
+  const ref = deps.dialog.open<TextBlockCategory | undefined>(TextBlockCategoryFormDialogComponent, {
+    data,
+    parentDestroyRef: deps.destroyRef,
+  });
+  onDialogCloseOnce(ref, deps.injector, (value) => {
+    if (value) {
+      ctx.notify(data.mode === 'edit' ? 'Категория обновлена' : 'Категория создана', 'success');
+      ctx.reload();
+    }
+  });
+}
 export type DataSourceOption = RegistryDataSource;

@@ -103,15 +103,17 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
   it('shows only existing-route header chips (admin, registries, docs, deals, production, clients, supply, warehouse) — no dead links', async () => {
     await setup('/admin/devices');
     // TZD-72 cleanup: W1 (warehouse) + S1 (supply) added chips without updating this pin (6 -> 8).
-    // TZ-NX-TEXT-CAT-NX-CRUD: `reference` (Справочники) gained its first live
-    // route (/dictionaries/text-block-categories) — the dead-link filter no
-    // longer hides the whole group's own header chip (8 -> 9).
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(9);
+    // TZ-NX-REG-TEXT-BLOCK-CATEGORIES (2026-09-11): `/dictionaries/text-block-categories`
+    // is now a `redirectTo` (no `loadComponent`) — the dead-link filter drops
+    // `reference`'s only live item again, so the whole group's chip is gone
+    // (was briefly 9 under TZ-NX-TEXT-CAT-NX-CRUD; back to 8). `reference` is
+    // fully deleted from NAV_CATEGORIES next, in TZ-NX-NAV-DROP-REFERENCE.
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(8);
     expect(adminQuickNav()).toBeTruthy();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
     expect(clientsQuickNav()).toBeTruthy();
-    expect(referenceQuickNav()).toBeTruthy();
+    expect(referenceQuickNav()).toBeNull();
     const productionQuickNav = fixture.nativeElement.querySelector('[data-test="shell-quicknav-production"]') as HTMLAnchorElement;
     expect(productionQuickNav).toBeTruthy();
     const categories = (
@@ -230,13 +232,14 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     fixture.detectChanges();
     // `registries`, `docs`, `clients` and `reference` deliberately carry no `systemRoles`/`capabilities`.
     // TZD-72 cleanup: warehouse + supply chips remain for user (6 + 2 wave chips -> 7).
-    // TZ-NX-TEXT-CAT-NX-CRUD: `reference` group's chip now shows too (7 -> 8) — see the previous test.
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(8);
+    // TZ-NX-REG-TEXT-BLOCK-CATEGORIES (2026-09-11): `reference`'s chip is gone
+    // again (dead-link filter, see the previous test) — back to 7.
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(7);
     expect(adminQuickNav()).toBeNull();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
     expect(clientsQuickNav()).toBeTruthy();
-    expect(referenceQuickNav()).toBeTruthy();
+    expect(referenceQuickNav()).toBeNull();
   });
 
   it('shows Реестры chip for restrictive pages[] ACL (TZ-NX-REGISTRIES-NAV-VISIBILITY-FIX)', async () => {

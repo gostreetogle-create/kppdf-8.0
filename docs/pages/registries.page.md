@@ -129,6 +129,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `supply-requests` | Заявки снабжения | `api` (`GET /supply-requests`) | read-only; filters status/priority/search/orderId; **client** pagination (API cap 500) |
 | `organizations` | Организации | `api` (`GET /organizations`) | read-only; supplier = `type` filter; server pagination |
 | `product-passports` | Паспорта изделий | `api` (`GET /passports`) | read-only collection registry; product form dialog has **no** embedded passport preview (removed, `TZ-NX-REGISTRY-PRODUCT-FORM-UX`) — open passports only from this registry; **client** pagination |
+| `text-block-categories` | Категории текстов | `api` (`GET/POST/PATCH/DELETE /text-block-categories`) | client pagination; search + rootsOnly filters; колонка «Путь» = «Root › Sub» (или имя корня); toolbar create = root; row «Создать подкатегорию» (accent Plus) только на root-строках; delete задизейблен для системной категории (`TZ-NX-REG-TEXT-BLOCK-CATEGORIES`, заменяет удалённую `/dictionaries/text-block-categories`) |
 | `text-blocks` | Тексты | `api` (`GET/POST/PATCH/DELETE /text-blocks`) | client pagination; search client-side, categoryId/isActive API filters; create/edit/archive dialogs; колонка «Категория» показывает резолвленное имя «Корень › Подкатегория» (`TZ-NX-TEXT-PICKER-FORM`), не raw `categoryId` |
 | `table-templates` | Виды таблиц | `api` (`GET/POST/PATCH/DELETE /table-templates`) | client pagination; search/category client-side; column editor and data-source picker |
 | `work-types` | Виды работ | `api` (`GET/POST/PATCH/DELETE /work-types`) | client pagination; search по названию/секции/отделу/описанию; create/edit/soft archive; поля days, hourlyRate, accentHue и isActive |
@@ -159,6 +160,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `organizations` | `search`, `type` | `server` | `GET /organizations` page/limit/search/type |
 | `product-passports` | `search` (client), `productId` (API) | `client` | `GET /passports` list-all; optional `productId` query |
 | `departments` | `search`, `status` | `fixture` | in-memory demo adapter |
+| `text-block-categories` | `search` (client), `rootsOnly` (client) | `client` | GET /text-block-categories returns full list (roots+subs); no server pagination |
 | `text-blocks` | `search` (client), `categoryId`, `isActive` | `client` | GET /text-blocks returns full list; no server pagination |
 | `table-templates` | `search`, `category` (client) | `client` | GET /table-templates returns full list; no server pagination |
 | `work-types` | `search` (client) | `client` | GET /work-types returns full list; no server pagination |
@@ -314,6 +316,7 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 - **TZ-NX-REGISTRIES-WORK-TYPES (2026-09-05)** — API-backed «Виды работ» registry with typed CRUD and client-side list controls.
 - **TZ-NX-REGISTRIES-WORKERS (2026-09-05)** — API-backed «Люди» registry with typed CRUD, `workTypeIds[]` skill selection, and a Gantt link to `/registries/workers`.
 - **TZ-NX-REGISTRIES-MODULE-WORK-TYPES (2026-09-05)** — module create/edit dialog loads active Work Types and persists `workTypes[]` planning links independently from material composition.
+- **TZ-NX-REG-TEXT-BLOCK-CATEGORIES (2026-09-11)** — «Категории текстов» registry (Документы group), replacing the deleted standalone `/dictionaries/text-block-categories` master-detail page; `RegistryCrudActionOptions` gained `isDeleteDisabled`/`deleteDisabledReason`.
 
 ## Массовый Excel = Desktop (TZD-73 pointer)
 
