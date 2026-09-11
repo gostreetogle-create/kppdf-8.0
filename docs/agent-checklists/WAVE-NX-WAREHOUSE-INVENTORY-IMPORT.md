@@ -7,7 +7,7 @@
 | # | SIZE | TZ | Суть | Status |
 |---|------|-----|------|--------|
 | 01 | S | `tasks/TZ-NX-WH-INV-DOCS.md` | Docs: матрица метиз/ГП + канон opening = StockMovement IN; page notes | DONE |
-| 02 | L | `tasks/TZ-NX-WH-INV-BE-BATCH.md` | BE batch IN: match article/sku → Material\|Product + warehouse; qty only; reject miss | READY after 01 |
+| 02 | L | `tasks/TZ-NX-WH-INV-BE-BATCH.md` | BE batch IN: match article/sku → Material\|Product + warehouse; qty only; reject miss | DONE |
 | 03 | L | `tasks/TZ-NX-WH-INV-DESKTOP-EXCEL.md` | Desktop Excel pack «Инвентаризация» (как Supply B): validate → HITL → batch API | READY after 02 |
 
 **PROMPT:** `tasks/PROMPT-CLAUDE-WAREHOUSE-INVENTORY-IMPORT.md` — **не выдавать в чат**, пока text-library continuous не DONE (слот Claude).

@@ -98,6 +98,29 @@ The tests cover envelope/query parameters, material and product XOR POST bodies,
 opening balance». Bulk-занос сотен строк из Excel — `WAVE-NX-WAREHOUSE-INVENTORY-IMPORT`
 (batch API вокруг этого же `create` в транзакции, не второй write-path).
 
+### Batch inventory IN (2026-09-11, `TZ-NX-WH-INV-BE-BATCH`)
+
+```text
+POST /api/stock-movements/batch-in
+{
+  rows: [{ materialId | productId | article | sku, warehouseId? | warehouseName?, qty, documentRef? }],
+  documentRef?  // default for rows that omit their own
+}
+→ { created: number, errors: [{ index, message }] }
+```
+
+- Каждая строка резолвится независимо (article → `Material.article`; иначе
+  `sku` — сначала `Material.sku`, затем `Product.sku`; явный `materialId`/`productId`
+  всегда приоритетнее) и пишется через тот же `StockMovementService.create()`
+  (`type: 'in'`), что и ручной «+ Приход» — одна транзакция на строку, не второй
+  write-path. `warehouseId` → `warehouseName` (case-insensitive точное совпадение) →
+  склад по умолчанию (`isDefault: true`).
+- **Partial success by design** (задокументировано, не all-or-nothing): плохая
+  строка попадает в `errors[]` по своему индексу и не блокирует соседние строки.
+  AC: батч из 2 известных материалов → 2 `in`-записи + оба `StorageItem.quantity`
+  обновлены; неизвестный `article` → ошибка по индексу, остальные строки уходят.
+- Consumer: Desktop Excel pack «Инвентаризация» (`TZ-NX-WH-INV-DESKTOP-EXCEL`, следующий TZ).
+
 ## Legacy reference
 
 The legacy inventory page remains the cutover reference. NX W3 deliberately does not expose transfer creation or modify backend ledger logic; the backend Z-001 transaction remains the source of atomic stock updates.

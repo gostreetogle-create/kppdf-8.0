@@ -3,7 +3,15 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Connection, Model, Types } from 'mongoose';
 import { StockMovement, StockMovementDocument } from './stock-movement.schema';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
+import {
+  BatchInventoryInDto,
+  InventoryBatchRowDto,
+  type InventoryBatchResult,
+} from './dto/batch-inventory-in.dto';
 import { StorageItem, StorageItemDocument } from '../storage-item/storage-item.schema';
+import { Material, MaterialDocument } from '../material/material.schema';
+import { Product, ProductDocument } from '../product/product.schema';
+import { Warehouse, WarehouseDocument } from '../warehouse/warehouse.schema';
 
 type StockTarget = { productId?: string; materialId?: string };
 
@@ -17,6 +25,12 @@ export class StockMovementService {
     private readonly model: Model<StockMovementDocument>,
     @InjectModel(StorageItem.name)
     private readonly storageModel: Model<StorageItemDocument>,
+    @InjectModel(Material.name)
+    private readonly materialModel: Model<MaterialDocument>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
+    @InjectModel(Warehouse.name)
+    private readonly warehouseModel: Model<WarehouseDocument>,
   ) {}
 
   async create(
@@ -269,6 +283,109 @@ export class StockMovementService {
     } finally {
       await session.endSession();
     }
+  }
+
+  /**
+   * TZ-NX-WH-INV-BE-BATCH — bulk physical-count IN. Each row is resolved
+   * (nomenclature + warehouse) and then written through the SAME
+   * `create()` this class already exposes — one atomic transaction per
+   * row, exactly like a single manual «+ Приход». Partial success by
+   * design (documented, not all-or-nothing): a bad row is reported at
+   * its index in `errors[]` and does not block the rows around it.
+   */
+  async batchInventoryIn(dto: BatchInventoryInDto): Promise<InventoryBatchResult> {
+    const errors: { index: number; message: string }[] = [];
+    let created = 0;
+    for (let index = 0; index < dto.rows.length; index += 1) {
+      const row = dto.rows[index];
+      try {
+        const target = await this.resolveInventoryTarget(row);
+        const warehouseId = await this.resolveInventoryWarehouse(row);
+        await this.create({
+          type: 'in',
+          qty: row.qty,
+          warehouseId,
+          documentRef: row.documentRef ?? dto.documentRef,
+          ...target,
+        } as CreateStockMovementDto);
+        created += 1;
+      } catch (err) {
+        errors.push({
+          index,
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+    return { created, errors };
+  }
+
+  /** Explicit id wins; otherwise article (Material) then sku (Material, then Product). */
+  private async resolveInventoryTarget(row: InventoryBatchRowDto): Promise<StockTarget> {
+    if (row.materialId && row.productId) {
+      throw new BadRequestException('Укажите либо materialId, либо productId — не оба');
+    }
+    if (row.materialId) {
+      const exists = await this.materialModel
+        .exists({ _id: new Types.ObjectId(row.materialId), deletedAt: null })
+        .exec();
+      if (!exists) throw new BadRequestException(`Материал ${row.materialId} не найден`);
+      return { materialId: row.materialId };
+    }
+    if (row.productId) {
+      const exists = await this.productModel
+        .exists({ _id: new Types.ObjectId(row.productId), deletedAt: null })
+        .exec();
+      if (!exists) throw new BadRequestException(`Товар ${row.productId} не найден`);
+      return { productId: row.productId };
+    }
+    if (row.article) {
+      const material = await this.materialModel
+        .findOne({ article: row.article, deletedAt: null })
+        .exec();
+      if (material) return { materialId: material._id.toString() };
+    }
+    if (row.sku) {
+      const material = await this.materialModel
+        .findOne({ sku: row.sku, deletedAt: null })
+        .exec();
+      if (material) return { materialId: material._id.toString() };
+      const product = await this.productModel
+        .findOne({ sku: row.sku, deletedAt: null })
+        .exec();
+      if (product) return { productId: product._id.toString() };
+    }
+    const key = row.article ?? row.sku;
+    if (!key) {
+      throw new BadRequestException('Укажите materialId/productId либо article/sku');
+    }
+    throw new BadRequestException(`Не найдено по article/sku «${key}»`);
+  }
+
+  private async resolveInventoryWarehouse(row: InventoryBatchRowDto): Promise<string> {
+    if (row.warehouseId) {
+      const warehouse = await this.warehouseModel
+        .findOne({ _id: new Types.ObjectId(row.warehouseId), deletedAt: null })
+        .exec();
+      if (!warehouse) throw new BadRequestException(`Склад ${row.warehouseId} не найден`);
+      return warehouse._id.toString();
+    }
+    if (row.warehouseName) {
+      const warehouse = await this.warehouseModel
+        .findOne({ name: new RegExp(`^${this.escapeRegex(row.warehouseName)}$`, 'i'), deletedAt: null })
+        .exec();
+      if (!warehouse) throw new BadRequestException(`Склад «${row.warehouseName}» не найден`);
+      return warehouse._id.toString();
+    }
+    const def = await this.warehouseModel.findOne({ isDefault: true, deletedAt: null }).exec();
+    if (!def) {
+      throw new BadRequestException('Склад не указан, и нет склада по умолчанию');
+    }
+    return def._id.toString();
+  }
+
+  /** Escape user input for safe inclusion in a RegExp. */
+  private escapeRegex(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   private resolveTarget(dto: Pick<CreateStockMovementDto, 'productId' | 'materialId'>): StockTarget {
