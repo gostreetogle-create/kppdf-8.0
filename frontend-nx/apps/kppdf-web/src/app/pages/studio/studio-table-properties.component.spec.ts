@@ -1,4 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { PiTableTemplatesService } from '@kppdf/data-access';
 import type { StudioBlock } from '@kppdf/data-access';
@@ -35,7 +36,7 @@ describe('StudioTablePropertiesComponent — S45 rows editor', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [StudioTablePropertiesComponent],
-      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }],
+      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }, provideRouter([])],
     }).compileComponents();
   });
 
@@ -45,6 +46,14 @@ describe('StudioTablePropertiesComponent — S45 rows editor', () => {
     fixture.detectChanges();
     return fixture.componentInstance;
   }
+
+  it('links to the «Виды таблиц» registry, opening in a new tab (TZ-NX-DOCSTUDIO-TABLE-KINDS-DISCOVER)', () => {
+    create(TABLE);
+    const link = fixture.nativeElement.querySelector<HTMLAnchorElement>('[data-test="studio-table-open-registry"]')!;
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toBe('/registries/table-templates');
+    expect(link.getAttribute('target')).toBe('_blank');
+  });
 
   it('manual table shows the rows editor with + Строка and emits rows changes', () => {
     const component = create(TABLE);
@@ -137,7 +146,7 @@ describe('StudioTablePropertiesComponent — live rows qty editing', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [StudioTablePropertiesComponent],
-      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }],
+      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }, provideRouter([])],
     }).compileComponents();
   });
 
@@ -218,7 +227,7 @@ describe('StudioTablePropertiesComponent — live rows photo hint', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [StudioTablePropertiesComponent],
-      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }],
+      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }, provideRouter([])],
     }).compileComponents();
     fixture = TestBed.createComponent(StudioTablePropertiesComponent);
     fixture.componentRef.setInput('block', LIVE_TABLE_WITH_PHOTO);
@@ -269,7 +278,7 @@ describe('StudioTablePropertiesComponent — column structure unlock', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [StudioTablePropertiesComponent],
-      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }],
+      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }, provideRouter([])],
     }).compileComponents();
   });
 

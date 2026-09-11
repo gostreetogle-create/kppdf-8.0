@@ -14,6 +14,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   PiTableTemplatesService,
@@ -24,7 +25,7 @@ import {
 import type { StudioBlock } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { extractErrorMessage } from '@kppdf/util-http';
-import { ChevronDown, LucideAngularModule } from 'lucide-angular';
+import { ArrowUpRight, ChevronDown, LucideAngularModule } from 'lucide-angular';
 import {
   buildTableSettingsFromTemplate,
   isStudioPhotoColumnKey,
@@ -51,7 +52,7 @@ import {
 @Component({
   selector: 'pi-studio-table-properties',
   standalone: true,
-  imports: [FormsModule, ButtonComponent, LucideAngularModule],
+  imports: [FormsModule, RouterLink, ButtonComponent, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="table-props" data-test="studio-table-properties">
@@ -401,7 +402,18 @@ import {
       >
         Сохранить как вид таблицы
       </app-pi-button>
-      <p class="table-props__hint">Реестр видов — «Реестры → Документы → Виды таблиц».</p>
+      <p class="table-props__hint">
+        Создать, изменить или удалить вид можно только в реестре — здесь «Сохранить как вид таблицы» лишь копирует туда текущую структуру.
+      </p>
+      <a
+        class="table-props__registry-link"
+        routerLink="/registries/table-templates"
+        target="_blank"
+        data-test="studio-table-open-registry"
+      >
+        <lucide-angular [img]="externalLinkIcon" [size]="12" aria-hidden="true" />
+        Реестры → Виды таблиц
+      </a>
     </div>
   `,
   styles: [`
@@ -555,6 +567,19 @@ import {
       color: var(--color-muted-foreground);
     }
 
+    .table-props__registry-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-gold-deep);
+      text-decoration: none;
+    }
+    .table-props__registry-link:hover {
+      text-decoration: underline;
+    }
+
     /* TZ-NX-DOCSTUDIO-S45 — rows editor (moved from the A4 canvas) */
     .table-props__rows { display: flex; flex-direction: column; gap: 6px; }
     .table-props__rows-head {
@@ -636,6 +661,7 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   protected readonly selectedTemplateId = signal('');
   protected readonly columnsOpen = signal(false);
   protected readonly chevronDown = ChevronDown;
+  protected readonly externalLinkIcon = ArrowUpRight;
 
   protected readonly columns = studioTableColumns;
 
