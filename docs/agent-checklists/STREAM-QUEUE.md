@@ -1,6 +1,6 @@
 # STREAM QUEUE — Claude-only (Freebuff PARK)
 
-updated_at: 2026-09-11T23:10:00Z
+updated_at: 2026-09-12T00:00:00Z
 
 ## Режим (PO 2026-09-11)
 

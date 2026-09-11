@@ -60,6 +60,31 @@
   живой Ollama с этим же набором `rawRows` остаётся отдельным шагом до
   решения по Soup.
 
+## Опт-ин датасет-лог HITL-подтверждений (TZD-AI-IMPORT-HITL-DATASET-LOG)
+
+Вкладка «Импорт» → чекбокс **«Сохранять пары для обучения (только этот
+ПК)»**, **выключен по умолчанию**. Файл:
+`app-data/ai-dataset-log.jsonl` (JSON-строка на подтверждение,
+`app-data/ai-dataset-log-enabled.json` — переключатель, отдельно от
+основного `config.json`).
+
+Каждая строка — `{ schemaId, rawRows, confirmedPayload, ts,
+source: "hitl-confirm" }`: `rawRows` — исходные строки файла (до
+маппинга), `confirmedPayload` — то, что реально ушло в SoT/журнал
+(`core/ai/dataset-log.ts` пишет её в двух местах — `sendBlocks()` для
+non-material (прямая запись) и `confirmBlockProposals()` для material
+(после подтверждения в журнале), только для строк со статусом
+`ok_new`/`ok_update`). Длинные строковые значения обрезаются (500 симв.) —
+гигиена размера файла, не PII-фильтр.
+
+**Никуда не отправляется** — ни в облако, ни на HuggingFace, ни в
+mutation-journal Mongo. Чисто локальный файл на диске оператора.
+
+**Soup reopen gate** (медиана cannon 002,
+`docs/agent-checklists/WAVE-DESKTOP-AI-IMPORT-BASELINE.md`): `>=300` строк
+этого лога (или эквивалентного экспорта `import_task`) — до этого разговор
+о LoRA/SFT не начинается.
+
 ## Чат и Inbox (TZD-77, 0.5.9)
 
 До TZD-77 чат вкладки «ИИ» и папка Inbox вкладки «Импорт» были не связаны —

@@ -123,6 +123,12 @@
     parseMappingJson,
     pickBestTableSuggestion,
   } from './core/ai/suggest-mapping';
+  import {
+    buildDatasetLogEntry,
+    appendDatasetLogEntry,
+    isDatasetLogEnabled,
+    setDatasetLogEnabled,
+  } from './core/ai/dataset-log';
   import ChatPanel from './ChatPanel.svelte';
 
   // Placeholder вынесен в JS: фигурные скобки в атрибуте Svelte парсит как выражение.
@@ -726,6 +732,16 @@
   );
   let mappingBusy = $state(false);
   let mappingMessage = $state('');
+  /**
+   * TZD-AI-IMPORT-HITL-DATASET-LOG — опт-ин локальный JSONL лог (raw → confirmed)
+   * для будущего Soup-датасета. Выключен по умолчанию; читается на mount.
+   */
+  let datasetLogEnabled = $state(false);
+  async function toggleDatasetLogEnabled(): Promise<void> {
+    const next = !datasetLogEnabled;
+    await setDatasetLogEnabled(next);
+    datasetLogEnabled = next;
+  }
   /** TZD-70 — «зелёный UX»: чистая логика готовности вынесена в multi-import.ts (тестируется отдельно). */
   let sendReadiness = $derived(evaluateSendReadiness(importBlocks, mappingBusy));
   /** Строк, готовых к отправке (новые/обновления) — для копии кнопки CTA. */
@@ -1825,6 +1841,20 @@
   }
 
   /** Отправить блоки: материалы → предложения журнала; остальные → прямое создание. */
+  /**
+   * TZD-AI-IMPORT-HITL-DATASET-LOG — успешный HITL-confirm (прямая запись
+   * для non-material в sendBlocks, журнальный confirm для material в
+   * confirmBlockProposals) → одна строка JSONL, если оператор включил
+   * настройку. `row.rowIndex` указывает на исходную сырую строку в
+   * `importRows` (до маппинга) — пара (raw, confirmed) для будущего датасета.
+   */
+  async function logDatasetPairIfEnabled(targetKey: ImportTargetKey, allowed: ValidatedImportRow[]): Promise<void> {
+    if (!datasetLogEnabled || allowed.length === 0) return;
+    const rawRows = allowed.map((row) => importRows[row.rowIndex] ?? {});
+    const confirmedPayload = allowed.map((row) => row.values);
+    await appendDatasetLogEntry(buildDatasetLogEntry(targetKey, rawRows, confirmedPayload));
+  }
+
   async function sendBlocks() {
     const cfg = await loadConfig();
     if (!cfg.apiBaseUrl || !cfg.apiKey) {
@@ -1871,11 +1901,13 @@
           created += result.created;
           errors.push(...result.errors.map((f) => `${f.rowName}: ${f.error}`));
           next.push(block);
+          await logDatasetPairIfEnabled(block.targetKey, allowed);
         } else {
           const result = await createEntities(block.targetKey, allowed.map((row) => row.values));
           created += result.created;
           errors.push(...result.errors.map((f) => `${f.rowName}: ${f.error}`));
           next.push(block);
+          await logDatasetPairIfEnabled(block.targetKey, allowed);
         }
       }
       importBlocks = next;
@@ -1950,6 +1982,8 @@
         index === blockIndex ? { ...item, proposalIds: [] } : item,
       );
       mappingMessage = `Подтверждено: ${result.applied}. Изменения записаны через журнал.`;
+      const allowed = block.validated.filter((row) => row.status === 'ok_new' || row.status === 'ok_update');
+      await logDatasetPairIfEnabled(block.targetKey, allowed);
       await finalizeInboxFileIfDone();
     } finally {
       mappingBusy = false;
@@ -2166,6 +2200,7 @@
     await rescanModels();
     await loadProviderSettings();
     desktopChatSystemPrompt = await loadDesktopChatSystemPrompt();
+    datasetLogEnabled = await isDatasetLogEnabled();
     // Закрытие по крестику (Tauri 2): listener + destroy ACL.
     // Без preventDefault→destroy и без core:window:allow-destroy крестик «молчит».
     await getCurrentWindow().onCloseRequested(async (event) => {
@@ -3238,6 +3273,19 @@
         Шпаргалка: <strong>1</strong> скачайте форму → <strong>2</strong> заполните лист «Данные» →
         <strong>3</strong> загрузите файл обратно и подтвердите сопоставление.
       </p>
+
+      <label
+        class="mcp-lan"
+        data-test="dataset-log-toggle"
+        onmouseenter={() =>
+          showHint(
+            'Сохраняет пары «сырая строка → подтверждённые данные» локально (app-data/ai-dataset-log.jsonl) для будущего обучения. Никуда не отправляется, выключено по умолчанию.',
+          )}
+        onmouseleave={clearHint}
+      >
+        <input type="checkbox" checked={datasetLogEnabled} onchange={toggleDatasetLogEnabled} />
+        Сохранять пары для обучения (только этот ПК)
+      </label>
 
       <section class="form-studio" aria-label="Формы Excel">
         <div class="form-studio__head">

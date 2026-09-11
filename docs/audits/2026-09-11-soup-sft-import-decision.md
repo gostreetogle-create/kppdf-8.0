@@ -80,3 +80,17 @@ refused) — harness намеренно построен на **синтетич
 `required_field_fill=86.3%` (82/95 required-слотов) ·
 `invented_field_rate=16.9%` (10/59 — каждый специально тестирует фильтр
 выдуманных полей). `parse_ok` выше порога WAVE (`>=75%` на `>=50` fixtures).
+
+## 6. Closeout 02/3 (2026-09-11) — `TZD-AI-IMPORT-HITL-DATASET-LOG` DONE
+
+Опт-ин JSONL (`app-data/ai-dataset-log.jsonl`, выключен по умолчанию,
+отдельный флаг-файл — не в основном `config.json`). Найдено ДВА реальных
+момента confirm, не один: `sendBlocks()` для non-material (прямая запись —
+это и есть confirm) и `confirmBlockProposals()` для material (реальный
+коммит через журнал предложений, `sendBlocks()` там только предлагает).
+Оба захукнуты. `rawRows` восстанавливается через уже существующий
+`ValidatedImportRow.rowIndex → importRows[rowIndex]` — новой прокладки не
+требовалось. Опциональный экспорт готовых `import_task` в тот же формат —
+сознательно не сделан (см. checklist, пункт 6 «ЧТО ДЕЛАТЬ»): живой хук уже
+пишет новые confirms в нужном формате, backfill — отдельная небольшая
+задача при необходимости.
