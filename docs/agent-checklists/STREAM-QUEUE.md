@@ -11,7 +11,7 @@ PO накидывает → Cursor: TZ + PROMPT → после DONE Claude: **о
 | # | WAVE | PROMPT | Статус |
 |---|------|--------|--------|
 | 3 | DOCSTUDIO-TABLE-PROPS | spent | COMPLETE `0df45baf`…`ee243aca` |
-| 4 | AI-IMPORT-BASELINE | spent | COMPLETE `0a4bbe76`…(03 SHA после push) |
+| 4 | AI-IMPORT-BASELINE | spent | COMPLETE `0a4bbe76`…`88e80537` |
 | PARK | Soup SFT | — | РАНО |
 
 ## Freebuff

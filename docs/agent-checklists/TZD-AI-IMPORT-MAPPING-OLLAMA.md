@@ -2,7 +2,7 @@
 
 > Status: **DONE**
 > Archive: `tasks/_archive/2026-09/TZD-AI-IMPORT-MAPPING-OLLAMA.done.md`
-> Commit/push: по `docs/GIT-POLICY.md`
+> Commit/push: `88e80537` (pushed to origin/main)
 
 ## Claim slot
 

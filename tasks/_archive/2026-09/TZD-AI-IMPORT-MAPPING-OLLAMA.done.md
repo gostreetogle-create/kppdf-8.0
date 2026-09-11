@@ -37,4 +37,4 @@ Cannon 002: many models ranked **f** right after **a**. Today `suggestWithAi` re
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-12T00:35:00Z — see docs/agent-checklists/TZD-AI-IMPORT-MAPPING-OLLAMA.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-12T00:35:00Z — SHA `88e80537` (main, pushed)
