@@ -21,9 +21,11 @@ import {
 } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import {
+  PiCategoriesService,
   PiModulesService,
   PiPhotosService,
   PiWorkTypesService,
+  type Category,
   type CreateProductModulePayload,
   type ProductModule,
   type ProductModuleWorkTypePayload,
@@ -83,6 +85,14 @@ export interface ModuleFormDialogData {
             </app-pi-form-field>
             <app-pi-form-field label="Артикул" htmlFor="mod-article" [required]="true" class="md:col-span-4">
               <app-pi-input id="mod-article" formControlName="article" />
+            </app-pi-form-field>
+            <app-pi-form-field label="Категория" htmlFor="mod-category" [required]="true" class="md:col-span-6">
+              <select id="mod-category" formControlName="categoryId" class="pi-input w-full" data-test="mod-category">
+                <option value="">— выберите —</option>
+                @for (c of categories(); track c._id) {
+                  <option [value]="c._id">{{ c.name }}</option>
+                }
+              </select>
             </app-pi-form-field>
             <app-pi-form-field label="Ширина" htmlFor="mod-w" class="md:col-span-3">
               <app-pi-input id="mod-w" type="number" formControlName="width" />
@@ -196,6 +206,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   private readonly modulesService = inject(PiModulesService);
   private readonly photosService = inject(PiPhotosService);
   private readonly workTypesService = inject(PiWorkTypesService);
+  private readonly categoriesService = inject(PiCategoriesService);
   private readonly data = inject<ModuleFormDialogData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<ProductModule | null | undefined>>(PI_DIALOG_REF);
   private readonly dialog = inject(PiDialogService);
@@ -210,6 +221,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
   protected readonly moduleEntity = signal<ProductModule | undefined>(this.data.module);
   protected readonly workTypes = signal<WorkType[]>([]);
+  protected readonly categories = signal<Category[]>([]);
 
   /** WAVE-NX-CATALOG-PHOTOS P1: локальное состояние фото; write — только на Save. */
   protected readonly photoItems = signal<PiPhotoItem[]>([]);
@@ -224,6 +236,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   protected readonly form = this.fb.group({
     name: this.fb.control('', [Validators.required, Validators.maxLength(200)]),
     article: this.fb.control('', [Validators.required, Validators.maxLength(64)]),
+    categoryId: this.fb.control('', Validators.required),
     width: this.fb.control<number | null>(null),
     height: this.fb.control<number | null>(null),
     depth: this.fb.control<number | null>(null),
@@ -239,6 +252,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     void this.loadWorkTypes();
+    void this.loadCategories();
     if (this.data.module) {
       this.savedId.set(this.data.module._id);
       this.patchModule(this.data.module);
@@ -392,10 +406,16 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
     if (result.ok) this.workTypes.set(result.data.items);
   }
 
+  private async loadCategories(): Promise<void> {
+    const result = await firstValueFrom(this.categoriesService.list({ type: 'module' }));
+    if (result.ok) this.categories.set(result.data.filter((c) => c.isActive));
+  }
+
   private patchModule(m: ProductModule): void {
     this.form.patchValue({
       name: m.name,
       article: m.article,
+      categoryId: refId(m.categoryId) ?? '',
       width: m.dimensions?.width ?? null,
       height: m.dimensions?.height ?? null,
       depth: m.dimensions?.depth ?? null,
@@ -442,6 +462,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
     const payload: CreateProductModulePayload = {
       name: v.name.trim(),
       article: v.article.trim(),
+      categoryId: v.categoryId,
     };
     if (v.weight != null) payload.weight = Number(v.weight);
     if (v.sortOrder != null) payload.sortOrder = Number(v.sortOrder);
@@ -484,4 +505,18 @@ type WorkTypeFormGroup = FormGroup<{
 function resolveWorkTypeId(row: NonNullable<ProductModule['workTypes']>[number] | undefined): string {
   if (!row) return '';
   return typeof row.workTypeId === 'string' ? row.workTypeId : row.workTypeId._id;
+}
+
+/**
+ * `categoryId` arrives populated on list/detail (BE `.populate('categoryId')`).
+ * Same small helper as `material-form-dialog.component.ts`'s own `refId()`;
+ * no shared util exists for it yet.
+ */
+function refId(value: unknown): string | null {
+  if (value == null || value === '') return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value !== null && '_id' in value) {
+    return refId((value as { _id: unknown })._id);
+  }
+  return null;
 }

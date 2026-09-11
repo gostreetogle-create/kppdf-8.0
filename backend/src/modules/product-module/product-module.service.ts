@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { ProductModule, ProductModuleDocument } from './product-module.schema';
 import { Product, ProductDocument } from '../product/product.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
+import { Category, CategoryDocument } from '../category/category.schema';
 import { CompositionLineDocumentShape } from '../catalog/composition-line.schema';
 import { CompositionLineService } from '../catalog/composition-line.service';
 import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
@@ -15,7 +16,7 @@ import {
 
 export interface MaterialInModuleDto { materialId: string; quantity?: number; unit?: string; isPurchased?: boolean; overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string }; sortOrder?: number; }
 export interface WorkTypeInModuleDto { workTypeId: string; estimatedHours?: number; sortOrder?: number; days?: number | null; }
-export interface UpsertProductModuleDto { name: string; article: string; dimensions?: { width?: number; height?: number; depth?: number; unit?: string }; weight?: number; sortOrder?: number; workTypes?: WorkTypeInModuleDto[]; materials?: MaterialInModuleDto[]; photoIds?: string[]; mainPhotoId?: string | null; }
+export interface UpsertProductModuleDto { name: string; article: string; categoryId?: string; dimensions?: { width?: number; height?: number; depth?: number; unit?: string }; weight?: number; sortOrder?: number; workTypes?: WorkTypeInModuleDto[]; materials?: MaterialInModuleDto[]; photoIds?: string[]; mainPhotoId?: string | null; }
 
 type DimensionKey = 'length' | 'width' | 'height';
 
@@ -27,6 +28,7 @@ export class ProductModuleService {
     @InjectModel(ProductModule.name) private readonly model: Model<ProductModuleDocument>,
     @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
     @InjectModel(Material.name) private readonly materialModel: Model<MaterialDocument>,
+    @InjectModel(Category.name) private readonly categoryModel: Model<CategoryDocument>,
     @Optional() compositionLines: CompositionLineService | undefined,
     private readonly catalogGraph: CatalogGraphService,
     private readonly costCalculation: CostCalculationService,
@@ -35,6 +37,7 @@ export class ProductModuleService {
   async create(dto: UpsertProductModuleDto, organizationId?: string | null): Promise<ProductModuleDocument> {
     this.rejectLegacyMaterialsWrite(dto.materials);
     const article = this.normalizeRequiredArticle(dto.article);
+    await this.assertModuleCategory(dto.categoryId);
     try {
       return await this.model.create(this.toPersistence({ ...dto, article }, organizationId));
     } catch (err) {
@@ -52,9 +55,9 @@ export class ProductModuleService {
         ? product.composition.filter((line) => line.lineType === 'module').map((line) => line.refId)
         : product.productModuleIds;
       if (moduleIds.length === 0) return [];
-      return this.model.find({ ...activeFilter, _id: { $in: moduleIds } }).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
+      return this.model.find({ ...activeFilter, _id: { $in: moduleIds } }).populate('workTypes.workTypeId').populate('categoryId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
     }
-    return this.model.find(activeFilter).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
+    return this.model.find(activeFilter).populate('workTypes.workTypeId').populate('categoryId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
   }
 
   async findByIds(ids: string[]): Promise<ProductModuleDocument[]> {
@@ -75,7 +78,7 @@ export class ProductModuleService {
 
   async findById(id: string): Promise<ProductModuleDocument> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`ProductModule ${id} not found`);
-    const doc = await this.model.findById(id).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).exec();
+    const doc = await this.model.findById(id).populate('workTypes.workTypeId').populate('categoryId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).exec();
     if (!doc || doc.deletedAt) throw new NotFoundException(`ProductModule ${id} not found`);
     return doc;
   }
@@ -94,6 +97,10 @@ export class ProductModuleService {
     const doc = await this.findById(id);
     if (dto.name !== undefined) doc.name = dto.name;
     if (dto.article !== undefined) doc.article = this.normalizeRequiredArticle(dto.article);
+    if (dto.categoryId !== undefined) {
+      await this.assertModuleCategory(dto.categoryId);
+      doc.categoryId = new Types.ObjectId(dto.categoryId);
+    }
     if (dto.dimensions !== undefined) doc.dimensions = dto.dimensions;
     if (dto.weight !== undefined) doc.weight = dto.weight;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
@@ -212,6 +219,17 @@ export class ProductModuleService {
     }
   }
 
+  /** TZ-NX-REG-CATEGORY-WIRE-MODULES — required on create, validated (type=module, active) whenever set. */
+  private async assertModuleCategory(categoryId: string | undefined): Promise<void> {
+    if (!categoryId) throw new BadRequestException('Категория модуля обязательна');
+    if (!Types.ObjectId.isValid(categoryId)) throw new BadRequestException(`Некорректный categoryId: ${categoryId}`);
+    const category = await this.categoryModel.findById(categoryId).exec();
+    if (!category || category.deletedAt) throw new BadRequestException(`Категория ${categoryId} не найдена`);
+    if (category.type !== 'module' || category.isActive === false) {
+      throw new BadRequestException(`Категория «${category.name}» недоступна для создания модуля`);
+    }
+  }
+
   private normalizeRequiredArticle(value: string | undefined): string {
     const article = value?.trim() ?? '';
     if (!article) throw new BadRequestException('Артикул модуля обязателен');
@@ -237,6 +255,7 @@ export class ProductModuleService {
   private toPersistence(dto: UpsertProductModuleDto, organizationId?: string | null) {
     return {
       ...dto,
+      categoryId: dto.categoryId ? new Types.ObjectId(dto.categoryId) : undefined,
       organizationId: organizationId ? this.organizationId(organizationId) : undefined,
       workTypes: (dto.workTypes ?? []).map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0, days: this.normalizeWorkTypeDays(w.days) })),
       materials: [],

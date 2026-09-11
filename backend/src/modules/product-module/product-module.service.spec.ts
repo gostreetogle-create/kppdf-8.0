@@ -3,19 +3,23 @@ import { Types } from 'mongoose';
 import { ProductModuleService, UpsertProductModuleDto, MaterialInModuleDto } from './product-module.service';
 
 const MATERIAL_ID = new Types.ObjectId().toString();
+/** TZ-NX-REG-CATEGORY-WIRE-MODULES — a valid module-type category, reused by every test that doesn't specifically test category rejection. */
+const CATEGORY_ID = new Types.ObjectId().toString();
+const MODULE_CATEGORY = { _id: new Types.ObjectId(CATEGORY_ID), name: 'Модули', type: 'module', isActive: true, deletedAt: null };
 function query<T>(value: T) {
   return { select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue(value) };
 }
 function graphStub() {
   return { assertNoCycleAndDepth: jest.fn().mockResolvedValue(undefined) };
 }
-function serviceWith(materials: unknown[]) {
+function serviceWith(materials: unknown[], categoryDoc: unknown = MODULE_CATEGORY) {
   const model = {
     create: jest.fn().mockResolvedValue({ materials: [] }),
     findById: jest.fn(),
   } as any;
   const productModel = {} as any;
   const materialModel = { find: jest.fn().mockReturnValue(query(materials)) } as any;
+  const categoryModel = { findById: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(categoryDoc) }) } as any;
   const compositionLines = {
     toStoredLine: jest.fn((dto: any, existing?: any) => ({
       _id: existing?._id ?? new Types.ObjectId(),
@@ -36,15 +40,16 @@ function serviceWith(materials: unknown[]) {
     ),
   };
   return {
-    service: new ProductModuleService(model, productModel, materialModel, compositionLines as any, graphStub() as any, {
+    service: new ProductModuleService(model, productModel, materialModel, categoryModel, compositionLines as any, graphStub() as any, {
       previewModuleCost: jest.fn(),
     } as any),
     model,
     materialModel,
+    categoryModel,
   };
 }
 function legacyMaterialsDto(overrideDimensions?: MaterialInModuleDto['overrideDimensions']): UpsertProductModuleDto {
-  return { name: 'Тестовый модуль', article: 'MOD-TEST', materials: [{ materialId: MATERIAL_ID, quantity: 1, overrideDimensions }] };
+  return { name: 'Тестовый модуль', article: 'MOD-TEST', categoryId: CATEGORY_ID, materials: [{ materialId: MATERIAL_ID, quantity: 1, overrideDimensions }] };
 }
 
 describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
@@ -57,7 +62,7 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
   it('maps duplicate module articles to a Russian conflict (TZ-CATALOG-338)', async () => {
     const { service, model } = serviceWith([]);
     model.create.mockRejectedValueOnce({ code: 11000, keyPattern: { organizationId: 1, article: 1 } });
-    await expect(service.create({ name: 'Дубликат', article: 'MOD-DUP' })).rejects.toMatchObject({
+    await expect(service.create({ name: 'Дубликат', article: 'MOD-DUP', categoryId: CATEGORY_ID })).rejects.toMatchObject({
       constructor: ConflictException,
       message: 'Артикул уже используется',
     });
@@ -84,13 +89,13 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
 
   it('allows create when materials is omitted', async () => {
     const { service, model } = serviceWith([]);
-    await expect(service.create({ name: 'Empty materials module', article: 'MOD-EMPTY', workTypes: [] })).resolves.toBeDefined();
+    await expect(service.create({ name: 'Empty materials module', article: 'MOD-EMPTY', categoryId: CATEGORY_ID, workTypes: [] })).resolves.toBeDefined();
     expect(model.create).toHaveBeenCalledTimes(1);
   });
 
   it('allows create when materials is an empty array (treated as omit)', async () => {
     const { service, model } = serviceWith([]);
-    await expect(service.create({ name: 'Empty array module', article: 'MOD-EMPTY-ARRAY', materials: [], workTypes: [] })).resolves.toBeDefined();
+    await expect(service.create({ name: 'Empty array module', article: 'MOD-EMPTY-ARRAY', categoryId: CATEGORY_ID, materials: [], workTypes: [] })).resolves.toBeDefined();
     expect(model.create).toHaveBeenCalledTimes(1);
   });
 
@@ -100,6 +105,7 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
     await service.create({
       name: 'Дни на связке',
       article: 'MOD-DAYS',
+      categoryId: CATEGORY_ID,
       workTypes: [{ workTypeId, estimatedHours: 8, days: 4 }],
     });
     expect(model.create).toHaveBeenCalledWith(
@@ -110,7 +116,7 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
   it('defaults binding days to null when omitted so Gantt falls back to catalog (TZ-NX-MODULE-WT-DAYS-SOT)', async () => {
     const { service, model } = serviceWith([]);
     const workTypeId = new Types.ObjectId().toString();
-    await service.create({ name: 'Без дней', article: 'MOD-NO-DAYS', workTypes: [{ workTypeId, estimatedHours: 8 }] });
+    await service.create({ name: 'Без дней', article: 'MOD-NO-DAYS', categoryId: CATEGORY_ID, workTypes: [{ workTypeId, estimatedHours: 8 }] });
     expect(model.create).toHaveBeenCalledWith(
       expect.objectContaining({ workTypes: [expect.objectContaining({ days: null })] }),
     );
@@ -120,7 +126,7 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
     const { service, model } = serviceWith([]);
     const workTypeId = new Types.ObjectId().toString();
     await expect(
-      service.create({ name: 'Плохие дни', article: 'MOD-BAD-DAYS', workTypes: [{ workTypeId, days: 0 }] }),
+      service.create({ name: 'Плохие дни', article: 'MOD-BAD-DAYS', categoryId: CATEGORY_ID, workTypes: [{ workTypeId, days: 0 }] }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(model.create).not.toHaveBeenCalled();
   });
@@ -236,5 +242,67 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
     expect(lines).toHaveLength(1);
     expect(lines[0].refId.toString()).toBe(MATERIAL_ID);
     expect(lines[0].quantity).toBe(2);
+  });
+
+  describe('categoryId (TZ-NX-REG-CATEGORY-WIRE-MODULES)', () => {
+    it('rejects create without a categoryId', async () => {
+      const { service, model } = serviceWith([]);
+      await expect(service.create({ name: 'Без категории', article: 'MOD-NO-CAT' })).rejects.toMatchObject({
+        constructor: BadRequestException,
+        message: 'Категория модуля обязательна',
+      });
+      expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a categoryId whose Category.type is not module', async () => {
+      const { service, model } = serviceWith([], { _id: new Types.ObjectId(CATEGORY_ID), name: 'Детали', type: 'material', isActive: true, deletedAt: null });
+      await expect(
+        service.create({ name: 'Не та категория', article: 'MOD-WRONG-TYPE', categoryId: CATEGORY_ID }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a categoryId that does not exist', async () => {
+      const { service, model } = serviceWith([], null);
+      await expect(
+        service.create({ name: 'Нет категории', article: 'MOD-MISSING-CAT', categoryId: CATEGORY_ID }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('persists a valid module-type categoryId on create', async () => {
+      const { service, model } = serviceWith([]);
+      await service.create({ name: 'С категорией', article: 'MOD-WITH-CAT', categoryId: CATEGORY_ID });
+      expect(model.create).toHaveBeenCalledWith(
+        expect.objectContaining({ categoryId: new Types.ObjectId(CATEGORY_ID) }),
+      );
+    });
+
+    it('does not require categoryId on update, but validates it when provided', async () => {
+      const save = jest.fn().mockResolvedValue(undefined);
+      const doc = { _id: new Types.ObjectId(), save, workTypes: [], materials: [] };
+      const { service } = serviceWith([]);
+      (service as any).model.findById.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(doc),
+      });
+      await service.update(String(doc._id), { name: 'Переименован' });
+      expect(save).toHaveBeenCalled();
+      expect((doc as any).categoryId).toBeUndefined();
+    });
+
+    it('rejects update when the provided categoryId is not type=module', async () => {
+      const save = jest.fn();
+      const doc = { _id: new Types.ObjectId(), save, workTypes: [], materials: [] };
+      const { service } = serviceWith([], { _id: new Types.ObjectId(CATEGORY_ID), name: 'Изделия', type: 'product', isActive: true, deletedAt: null });
+      (service as any).model.findById.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(doc),
+      });
+      await expect(
+        service.update(String(doc._id), { categoryId: CATEGORY_ID }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(save).not.toHaveBeenCalled();
+    });
   });
 });

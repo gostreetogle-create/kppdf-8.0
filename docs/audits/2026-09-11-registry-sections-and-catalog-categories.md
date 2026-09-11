@@ -110,3 +110,43 @@ work-types/workers. Wiring в material/product/module формы — TZ-03/04/05
 общего util). Legacy `Product.subcategory` (BE schema/DTO, свободная
 строка) — не тронут, не показан в форме; TZ явно просил не раздувать его в
 «второй SoT», он и не был.
+
+## 9. Closeout 05/5 (2026-09-11) — `TZ-NX-REG-CATEGORY-WIRE-MODULES` DONE — WAVE COMPLETE
+
+`ProductModule` — единственная из трёх сущностей волны без существующего
+поля `categoryId`, поэтому здесь не «замена text-input на select», а полное
+добавление: BE `product-module.schema.ts` (`categoryId?: Types.ObjectId`,
+ref `Category`, indexed), `create-product-module.dto.ts`
+(`@IsMongoId({message:'Категория модуля обязательна'})` — тот же idiom без
+`@IsOptional()`, что уже использует `article`), `product-module.service.ts`
+(новый `assertModuleCategory()`, зеркало `Material`'ного
+`loadAssignableMaterialCategory` — проверяет существование + `type=module` +
+`isActive`; конструктор получил 4-й позиционный параметр `categoryModel`),
+`product-module.module.ts` (регистрация `Category`/`CategorySchema` в
+`MongooseModule.forFeature`). `categoryId` сделан **обязательным** без
+исключений (как products, не как materials/сырьё) — для модулей PO не
+называл никакого «optional» случая, а «модуль без категории» не имеет
+доменного смысла (в отличие от сырья).
+
+`findAll()` (оба paginated/list-all branch) и `findById()` теперь
+`.populate('categoryId')` — этого не было для модулей раньше (Material и
+Product это уже делали до волны). NX: `ModuleFormDialogComponent` получил
+select `type=module` (тот же `PiCategoriesService`, `isActive`-only паттерн,
+что material/product), `modules.registry.ts` — новая колонка «Категория»
+(`formatMaterialRef`, тот же форматтер, что уже использует details/products
+для populated-ref). Найден и исправлен побочный баг: 4-й позиционный
+параметр конструктора `ProductModuleService` сдвинул все прежние прямые
+`new ProductModuleService(...)` вызовы — `grep -rln` нашёл 2 такие точки в
+`catalog-314.archive.spec.ts` (несвязанный файл про `remove()`/архивацию),
+исправлены добавлением недостающего 4-го аргумента.
+
+Платформенное решение по фильтру `categoryId` на `modules` registry — то же,
+что в 03/04: фильтра по категории у `modules` registry нет вообще (только
+`search`), так что вопрос live-select vs text не возникает для этой TZ.
+
+**WAVE-NX-REGISTRY-CATEGORIES — все 5 задач DONE.** Итог волны: единая
+`Category` (`type: material|product|module|general`) через `/api/categories`
+теперь реально используется как категоризация для всех трёх каталожных
+сущностей (materials/details, products, modules) — обязательна для
+деталей/изделий/модулей, опциональна для сырья; `materialKind` не тронут и
+не смешан с `Category` ни в одной задаче; `TextBlockCategory` не тронута.

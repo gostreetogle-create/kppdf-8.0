@@ -43,6 +43,10 @@ export class CreateProductModuleDto {
   @Length(1, 64, { message: 'Артикул модуля: от 1 до 64 символов' })
   article!: string;
 
+  @ApiProperty({ description: 'ID категории (Category.type = module)' })
+  @IsMongoId({ message: 'Категория модуля обязательна' })
+  categoryId!: string;
+
   @ApiPropertyOptional({ type: ModuleDimensionsDto })
   @IsOptional()
   @IsObject()

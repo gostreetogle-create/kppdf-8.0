@@ -53,6 +53,8 @@ export class ProductModule {
   /** Required external article; sparse compound index keeps legacy empty rows readable. */
   @Prop({ required: true, trim: true }) article!: string;
   @Prop({ type: Types.ObjectId, index: true, sparse: true }) organizationId?: Types.ObjectId;
+  /** TZ-NX-REG-CATEGORY-WIRE-MODULES — required on create; Category.type must be `module`. */
+  @Prop({ type: Types.ObjectId, ref: 'Category', index: true }) categoryId?: Types.ObjectId;
   @Prop({ type: ModuleDimensionsSchemaFactory }) dimensions?: { width?: number; height?: number; depth?: number; unit?: string };
   @Prop({ default: 0 }) weight?: number;
   @Prop({ default: 0 }) sortOrder!: number;

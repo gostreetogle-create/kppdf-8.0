@@ -32,6 +32,8 @@ export interface ProductModule {
   _id: string;
   name: string;
   article: string;
+  /** TZ-NX-REG-CATEGORY-WIRE-MODULES — populated on list/detail (`Category.type === 'module'`). */
+  categoryId?: ModuleRef;
   dimensions?: ModuleDimensions;
   weight?: number;
   sortOrder?: number;
@@ -58,6 +60,8 @@ export interface ModulesListParams {
 export interface CreateProductModulePayload {
   name: string;
   article: string;
+  /** Required — Category.type === 'module' (backend 400s без него). */
+  categoryId: string;
   dimensions?: ModuleDimensions;
   weight?: number;
   sortOrder?: number;

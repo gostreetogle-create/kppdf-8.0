@@ -1,5 +1,6 @@
 import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
 import { createModulesHttpDataSource, type ModuleRow } from './modules-http-data-source';
+import { formatMaterialRef } from './material-formatters';
 import { formatModuleDimensions } from './product-formatters';
 import {
   buildModuleCreateAction,
@@ -44,6 +45,13 @@ export function createModulesRegistryDefinition(
         sortable: false,
         width: '10rem',
         format: (r) => r.article,
+      },
+      {
+        key: 'categoryId',
+        header: 'Категория',
+        sortable: false,
+        width: '11rem',
+        format: (r) => formatMaterialRef(r.categoryId),
       },
       {
         key: 'sortOrder',

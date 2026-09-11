@@ -5,6 +5,7 @@ import { ProductModuleService } from './product-module.service';
 import { ProductModuleController } from './product-module.controller';
 import { Product, ProductSchema } from '../product/product.schema';
 import { Material, MaterialSchema } from '../material/material.schema';
+import { Category, CategorySchema } from '../category/category.schema';
 import { CompositionLineService } from '../catalog/composition-line.service';
 import { CatalogGraphModule } from '../catalog-graph/catalog-graph.module';
 import { CostCalculationModule } from '../cost-calculation/cost-calculation.module';
@@ -20,6 +21,7 @@ import { CostCalculationModule } from '../cost-calculation/cost-calculation.modu
       { name: ProductModuleEntity.name, schema: ProductModuleSchema },
       { name: Product.name, schema: ProductSchema },
       { name: Material.name, schema: MaterialSchema },
+      { name: Category.name, schema: CategorySchema },
     ]),
     CatalogGraphModule,
     CostCalculationModule,

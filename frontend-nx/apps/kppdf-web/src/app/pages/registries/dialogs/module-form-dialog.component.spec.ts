@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import {
+  PiCategoriesService,
   PiCompositionService,
   PiModulesService,
   PiPhotosService,
@@ -21,10 +22,20 @@ const PHOTOS_MOCK = {
   updateFrame: jest.fn(),
 };
 
+/** TZ-NX-REG-CATEGORY-WIRE-MODULES — every dialog instance now loads categories on init. */
+const CATEGORIES_MOCK = {
+  list: jest.fn().mockReturnValue(
+    of({ ok: true, data: [{ _id: 'cat-1', name: 'Модули', slug: 'modules', type: 'module', skuPrefix: 'MOD', sortOrder: 0, isActive: true }] }),
+  ),
+};
+
 const SAMPLE: ProductModule = {
   _id: 'mod-1',
   name: 'Каркас',
   article: 'MOD-1',
+  // TZ-NX-REG-CATEGORY-WIRE-MODULES: категория теперь обязательна — без неё
+  // onSubmit() в тестах ниже был бы блокирован формой.
+  categoryId: 'cat-1',
   workTypes: [
     {
       workTypeId: { _id: 'wt-1', name: 'Сварка', days: 2 },
@@ -83,6 +94,7 @@ describe('ModuleFormDialogComponent (Phase 2)', () => {
             getModuleComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
           },
         },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 
@@ -200,6 +212,7 @@ describe('ModuleFormDialogComponent (Phase 2)', () => {
             getModuleComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
           },
         },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 
@@ -235,6 +248,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
             getModuleComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
           },
         },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 
@@ -246,6 +260,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
         controls: {
           name: { setValue: (value: string) => void };
           article: { setValue: (value: string) => void };
+          categoryId: { setValue: (value: string) => void };
           workTypes: { at: (index: number) => { patchValue: (value: Record<string, unknown>) => void } };
         };
       };
@@ -254,6 +269,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
     };
     component.form.controls.name.setValue('Новый модуль');
     component.form.controls.article.setValue('MOD-NEW');
+    component.form.controls.categoryId.setValue('cat-1');
     component.addWorkType();
     component.form.controls.workTypes.at(0).patchValue({
       workTypeId: 'wt-1',
@@ -294,6 +310,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
             getModuleComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
           },
         },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 
@@ -333,6 +350,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
             getModuleComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
           },
         },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
       ],
     }).compileComponents();
 
@@ -340,7 +358,13 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
     fixture2.detectChanges();
     await fixture2.whenStable();
     const component = fixture2.componentInstance as unknown as {
-      form: { controls: { name: { setValue: (v: string) => void }; article: { setValue: (v: string) => void } } };
+      form: {
+        controls: {
+          name: { setValue: (v: string) => void };
+          article: { setValue: (v: string) => void };
+          categoryId: { setValue: (v: string) => void };
+        };
+      };
       addWorkType: () => void;
       seedDaysFromCatalog: (index: number) => void;
       onSubmit: () => Promise<void>;
@@ -348,6 +372,7 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
     };
     component.form.controls.name.setValue('Тяжёлый модуль');
     component.form.controls.article.setValue('MOD-HEAVY');
+    component.form.controls.categoryId.setValue('cat-1');
     component.addWorkType();
     component.workTypesArray.at(0).patchValue({ workTypeId: 'wt-1', days: 4 });
     component.seedDaysFromCatalog(0);
@@ -356,5 +381,59 @@ describe('ModuleFormDialogComponent Work Types create mode', () => {
       expect.objectContaining({ workTypes: [expect.objectContaining({ workTypeId: 'wt-1', days: 4 })] }),
     );
     TestBed.resetTestingModule();
+  });
+});
+
+describe('ModuleFormDialogComponent — категория (TZ-NX-REG-CATEGORY-WIRE-MODULES)', () => {
+  async function setup(data: Record<string, unknown>): Promise<ComponentFixture<ModuleFormDialogComponent>> {
+    await TestBed.configureTestingModule({
+      imports: [ModuleFormDialogComponent],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: data },
+        { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+        { provide: PiModulesService, useValue: { create: jest.fn().mockReturnValue(of({ ok: true, data: SAMPLE })), update: jest.fn() } },
+        { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiDialogService, useValue: { open: jest.fn().mockReturnValue({ closed: () => undefined, close: jest.fn() }) } },
+        {
+          provide: PiCompositionService,
+          useValue: {
+            getModuleTree: jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'mod-1', name: 'K', kind: 'module', quantity: 1, children: [] } })),
+            getModuleComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+          },
+        },
+        { provide: PiCategoriesService, useValue: CATEGORIES_MOCK },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ModuleFormDialogComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('offers the live type=module category list and blocks create until one is chosen', async () => {
+    const fixture = await setup({ mode: 'create' });
+
+    const select = fixture.nativeElement.querySelector('[data-test="mod-category"]') as HTMLSelectElement;
+    const labels = Array.from(select.options).map((o) => o.textContent?.trim());
+    expect(labels).toEqual(['— выберите —', 'Модули']);
+
+    const service = TestBed.inject(PiModulesService);
+    fixture.componentInstance['form'].patchValue({ name: 'Новый', article: 'MOD-X' });
+    await fixture.componentInstance['onSubmit']();
+    expect(service.create).not.toHaveBeenCalled();
+
+    fixture.componentInstance['form'].patchValue({ categoryId: 'cat-1' });
+    await fixture.componentInstance['onSubmit']();
+    expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ categoryId: 'cat-1' }));
+  });
+
+  it('extracts the id from a populated categoryId ref when patching edit data (GET /modules populates it)', async () => {
+    const fixture = await setup({ mode: 'edit', module: { ...SAMPLE, categoryId: { _id: 'cat-1', name: 'Модули' } } });
+
+    expect(fixture.componentInstance['form'].controls.categoryId.value).toBe('cat-1');
   });
 });
