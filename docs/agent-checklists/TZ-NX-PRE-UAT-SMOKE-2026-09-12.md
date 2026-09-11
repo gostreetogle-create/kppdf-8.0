@@ -2,7 +2,7 @@
 
 > Status: **DONE**
 > Archive: `tasks/_archive/2026-09/TZ-NX-PRE-UAT-SMOKE-2026-09-12.done.md`
-> Commit/push: по `docs/GIT-POLICY.md`
+> Commit/push: `af78049d` (pushed to origin/main)
 
 ## Claim slot
 

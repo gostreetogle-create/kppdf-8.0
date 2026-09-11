@@ -94,4 +94,4 @@ JSON report → `docs/audits/evidence/pre-uat-2026-09-12/report.json`.
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-12T01:45:00Z — see docs/agent-checklists/TZ-NX-PRE-UAT-SMOKE-2026-09-12.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-12T01:45:00Z — SHA `af78049d` (main, pushed)

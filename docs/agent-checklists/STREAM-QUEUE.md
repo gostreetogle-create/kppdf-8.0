@@ -12,7 +12,7 @@ PO накидывает → Cursor: TZ + PROMPT → после DONE Claude: **о
 |---|------|--------|--------|
 | 4 | AI-IMPORT-BASELINE | spent | COMPLETE |
 | hygiene | prompts-spent | spent | `22ff260c` |
-| 5 | PRE-UAT-SMOKE | spent | COMPLETE — 18/18 PASS, 0 FAIL |
+| 5 | PRE-UAT-SMOKE | spent | COMPLETE `af78049d` — 18/18 PASS, 0 FAIL |
 | PARK | Soup SFT | — | РАНО |
 
 ## Freebuff
