@@ -4,6 +4,11 @@
 **NX route:** `/stock-movements` is the live W3 movement journal inside the operational shell.
 **SoT:** stock movements are the atomic ledger write path; balances remain `StorageItem.quantity`.
 
+## TOC chips (2026-09-11, `TZ-NX-WH-GROUP-CHIPS`)
+
+Same shared `WAREHOUSE_TOC_CHIPS` row as `/storage-items` and `/warehouses`
+— see `storage-items.page.md` §«TOC chips» for the full note.
+
 ## NX W3 implementation
 
 | Surface | Path |

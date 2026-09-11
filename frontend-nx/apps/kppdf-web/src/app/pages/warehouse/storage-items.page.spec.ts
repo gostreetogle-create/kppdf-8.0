@@ -8,6 +8,7 @@ import {
 import { signal } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
 import {
+  AuthService,
   PiMaterialsService,
   PiStorageItemsService,
   PiWarehousesService,
@@ -87,6 +88,7 @@ describe('StorageItemsPage (NX W2)', () => {
         { provide: PiWarehousesService, useValue: warehousesApi },
         { provide: PiMaterialsService, useValue: materialsApi },
         { provide: PiDialogService, useValue: dialog },
+        { provide: AuthService, useValue: { user: () => null } },
       ],
     }).compileComponents();
 

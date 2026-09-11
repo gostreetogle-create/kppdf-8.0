@@ -3,7 +3,7 @@ import { NAV_CATEGORIES, filterNavCategories } from './nav-categories';
 describe('W1 warehouse navigation', () => {
   it('exposes named warehouses, balances, movements, and shipping without dashboard', () => {
     const warehouse = NAV_CATEGORIES.find((category) => category.id === 'warehouse');
-    expect(warehouse?.entryPath).toBe('/warehouses');
+    expect(warehouse?.entryPath).toBe('/storage-items');
     expect(warehouse?.items.map((item) => item.path)).toEqual([
       '/warehouses',
       '/storage-items',

@@ -98,7 +98,7 @@ aria/title **«Рабочий стол — главная»** (не «Комба
 | Рабочий стол | brand-home → `/desk` | `/desk` — chips-only chrome, см. выше |
 | Документы | `Документы` | documents, templates, texts, tables |
 | Справочники | `Справочники` | dictionary group-workspace |
-| Склад | `Склад` | inventory group-workspace |
+| Склад | `Склад` | inventory group-workspace — **DONE** `TZ-NX-WH-GROUP-CHIPS` (2026-09-11): Остатки \| Склады \| Движения chips, entry → `/storage-items` |
 | Админ | `Администрирование` | users/roles |
 
 ## Не путать

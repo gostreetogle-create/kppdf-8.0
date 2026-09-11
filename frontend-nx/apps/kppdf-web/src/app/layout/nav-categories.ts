@@ -137,7 +137,7 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
     label: 'Склад',
     shortLabel: 'Склад',
     icon: Warehouse,
-    entryPath: '/warehouses',
+    entryPath: '/storage-items',
     items: [
       { path: '/warehouses', pageKey: 'inventory', label: 'Склады', capabilities: ['warehouse:read'] },
       { path: '/storage-items', pageKey: 'storage-items', label: 'Остатки', capabilities: ['warehouse:read'] },

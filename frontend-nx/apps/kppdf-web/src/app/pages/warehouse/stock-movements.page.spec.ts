@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
 import {
+  AuthService,
   PiStockMovementsService,
   PiWarehousesService,
   type StockMovement,
@@ -17,7 +18,7 @@ describe('StockMovementsPage (NX W3)', () => {
   let movementApi: { list: jest.Mock };
   let warehousesApi: { list: jest.Mock };
   let dialog: { open: jest.Mock };
-  let router: { navigate: jest.Mock };
+  let navigateSpy: jest.SpyInstance;
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const warehouses: Warehouse[] = [
@@ -51,21 +52,23 @@ describe('StockMovementsPage (NX W3)', () => {
       list: jest.fn().mockReturnValue(of({ ok: true, data: warehouses })),
     };
     dialog = { open: jest.fn() };
-    router = { navigate: jest.fn().mockResolvedValue(true) };
 
     await TestBed.configureTestingModule({
       imports: [StockMovementsPage],
       providers: [
+        provideRouter([]),
         {
           provide: ActivatedRoute,
           useValue: { queryParamMap: queryParams$ },
         },
-        { provide: Router, useValue: router },
         { provide: PiStockMovementsService, useValue: movementApi },
         { provide: PiWarehousesService, useValue: warehousesApi },
         { provide: PiDialogService, useValue: dialog },
+        { provide: AuthService, useValue: { user: () => null } },
       ],
     }).compileComponents();
+
+    navigateSpy = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
     fixture = TestBed.createComponent(StockMovementsPage);
     fixture.detectChanges();
@@ -107,7 +110,7 @@ describe('StockMovementsPage (NX W3)', () => {
     ) as HTMLSelectElement;
     typeFilter.value = 'out';
     typeFilter.dispatchEvent(new Event('change'));
-    expect(router.navigate).toHaveBeenCalledWith([], {
+    expect(navigateSpy).toHaveBeenCalledWith([], {
       relativeTo: expect.anything(),
       queryParams: { type: 'out', warehouseId: null },
     });
@@ -124,7 +127,7 @@ describe('StockMovementsPage (NX W3)', () => {
     ) as HTMLSelectElement;
     warehouseFilter.value = 'w2';
     warehouseFilter.dispatchEvent(new Event('change'));
-    expect(router.navigate).toHaveBeenLastCalledWith([], {
+    expect(navigateSpy).toHaveBeenLastCalledWith([], {
       relativeTo: expect.anything(),
       queryParams: { type: 'out', warehouseId: 'w2' },
     });
@@ -212,17 +215,17 @@ describe('StockMovementsPage (NX W3)', () => {
       list: jest.fn().mockReturnValue(of({ ok: true, data: warehouses })),
     };
     dialog = { open: jest.fn() };
-    router = { navigate: jest.fn().mockResolvedValue(true) };
     queryParams$ = new BehaviorSubject(convertToParamMap({}));
 
     await TestBed.configureTestingModule({
       imports: [StockMovementsPage],
       providers: [
+        provideRouter([]),
         { provide: ActivatedRoute, useValue: { queryParamMap: queryParams$ } },
-        { provide: Router, useValue: router },
         { provide: PiStockMovementsService, useValue: movementApi },
         { provide: PiWarehousesService, useValue: warehousesApi },
         { provide: PiDialogService, useValue: dialog },
+        { provide: AuthService, useValue: { user: () => null } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(StockMovementsPage);

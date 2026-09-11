@@ -4,6 +4,17 @@
 **NX route:** `/storage-items` is the live W2 balances page inside the operational shell.
 **SoT:** `StorageItem.quantity` / `reservedQty`; stock movements remain the ledger source for balance writes.
 
+## TOC chips (2026-09-11, `TZ-NX-WH-GROUP-CHIPS`)
+
+`/storage-items`, `/warehouses`, and `/stock-movements` share one sticky
+`app-pi-group-workspace` chip row — **Остатки | Склады | Движения**
+(`WAREHOUSE_TOC_CHIPS`, `frontend-nx/apps/kppdf-web/src/app/pages/warehouse-group-chips.ts`),
+same pattern as `/orders`/`/contracts`/`/proposals` (`DEALS_TOC_CHIPS`). PO
+order: the balances screen operators actually work from day to day comes
+first, not the warehouse registry. Top-menu **«Склад»** now opens
+`/storage-items` directly (`nav-categories.ts` `entryPath`); the warehouse
+`<select>` filter and `?warehouseId=`/`?materialId=` deep-links are unchanged.
+
 ## NX W2 implementation
 
 | Surface | Path |

@@ -4,6 +4,12 @@
 **Legacy route:** `/warehouses` remains the reference until cutover.
 **Scope:** named warehouse sections such as «Металл» and «Метизы», not a warehouse-type or zone editor.
 
+## TOC chips (2026-09-11, `TZ-NX-WH-GROUP-CHIPS`)
+
+Same shared `WAREHOUSE_TOC_CHIPS` row as `/storage-items` and `/stock-movements`
+— see `storage-items.page.md` §«TOC chips» for the full note. Top-menu
+**«Склад»** now enters on `/storage-items`, not this registry page.
+
 ## NX W1 surface
 
 - List and client-side search by name.

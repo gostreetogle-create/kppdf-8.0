@@ -27,6 +27,8 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { TableComponent, type ColumnDef } from '@kppdf/ui/table';
+import { PiGroupWorkspaceComponent } from '@kppdf/features';
+import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import {
   StockMovementFormDialogComponent,
@@ -45,9 +47,10 @@ const MOVEMENT_TYPES: readonly (MovementType | '')[] = [
   selector: 'pi-stock-movements-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, PiStatusBannerComponent, TableComponent],
+  imports: [ButtonComponent, PiStatusBannerComponent, TableComponent, PiGroupWorkspaceComponent],
   template: `
-    <main class="px-panel-inset py-6" data-test="stock-movements-page">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="stock-movements" [chips]="[]" activeId="">
+    <main class="py-6" data-test="stock-movements-page">
       <div class="flex items-center justify-between gap-4 mb-6">
         <div>
           <div class="eyebrow">Склад</div>
@@ -177,9 +180,11 @@ const MOVEMENT_TYPES: readonly (MovementType | '')[] = [
         </div>
       </ng-template>
     </main>
+    </app-pi-group-workspace>
   `,
 })
 export class StockMovementsPage {
+  protected readonly toc = WAREHOUSE_TOC_CHIPS;
   private readonly movementsApi = inject(PiStockMovementsService);
   private readonly warehousesApi = inject(PiWarehousesService);
   private readonly dialog = inject(PiDialogService);

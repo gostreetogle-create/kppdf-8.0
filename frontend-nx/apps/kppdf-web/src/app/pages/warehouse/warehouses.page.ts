@@ -16,6 +16,8 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { PiRowActionsComponent } from '@kppdf/ui/row-actions';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
+import { PiGroupWorkspaceComponent } from '@kppdf/features';
+import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './warehouse-form-dialog.component';
 
@@ -26,9 +28,10 @@ const EXPAND_ITEMS_LIMIT = 8;
   selector: 'pi-warehouses-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, ButtonComponent, PiRowActionsComponent, RouterLink],
+  imports: [PiStatusBannerComponent, ButtonComponent, PiRowActionsComponent, RouterLink, PiGroupWorkspaceComponent],
   template: `
-    <main class="px-panel-inset py-6" data-test="warehouses-page">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="warehouses" [chips]="[]" activeId="">
+    <main class="py-6" data-test="warehouses-page">
       <div class="flex items-center justify-between gap-4 mb-6">
         <div>
           <div class="eyebrow">Склад</div>
@@ -187,9 +190,11 @@ const EXPAND_ITEMS_LIMIT = 8;
         </div>
       }
     </main>
+    </app-pi-group-workspace>
   `,
 })
 export class WarehousesPage implements OnInit {
+  protected readonly toc = WAREHOUSE_TOC_CHIPS;
   private readonly api = inject(PiWarehousesService);
   private readonly storageItemsApi = inject(PiStorageItemsService);
   private readonly dialog = inject(PiDialogService);

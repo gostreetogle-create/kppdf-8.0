@@ -26,6 +26,8 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
+import { PiGroupWorkspaceComponent } from '@kppdf/features';
+import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import {
   StorageAdjustDialogComponent,
@@ -39,9 +41,10 @@ import {
   selector: 'pi-storage-items-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, ButtonComponent],
+  imports: [PiStatusBannerComponent, ButtonComponent, PiGroupWorkspaceComponent],
   template: `
-    <main class="px-panel-inset py-6" data-test="storage-items-page">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="storage-items" [chips]="[]" activeId="">
+    <main class="py-6" data-test="storage-items-page">
       <div class="flex items-center justify-between gap-4 mb-6">
         <div>
           <div class="eyebrow">Склад</div>
@@ -236,9 +239,12 @@ import {
         </div>
       }
     </main>
+    </app-pi-group-workspace>
   `,
 })
 export class StorageItemsPage {
+  protected readonly toc = WAREHOUSE_TOC_CHIPS;
+
   private readonly storageApi = inject(PiStorageItemsService);
   private readonly warehousesApi = inject(PiWarehousesService);
   private readonly materialsApi = inject(PiMaterialsService);

@@ -1,11 +1,11 @@
 ﻿# NOW
 
-updated_at: 2026-09-11T09:50:00Z
+updated_at: 2026-09-11T12:05:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE. TZ-OPS-CLAUDE-UNATTENDED-HIDDEN-TASK COMPLETE.
+- **Claude:** IDLE. TZ-NX-WH-GROUP-CHIPS COMPLETE.
 - **Deploy stamp:** READY
 
 ## NEXT
@@ -14,10 +14,10 @@ updated_at: 2026-09-11T09:50:00Z
 
 ## DONE
 
-- TZ-OPS-CLAUDE-UNATTENDED-HIDDEN-TASK COMPLETE — `e128556f`, hidden PowerShell schtask wrapper, `LastTaskResult=0` verified live
-- WAVE-NX-WAREHOUSE-INVENTORY-IMPORT COMPLETE — `a5438890` / `16796162` / `55551302`
-- Text-library hierarchy earlier
+- TZ-NX-WH-GROUP-CHIPS COMPLETE — Остатки|Склады|Движения chips + entry → `/storage-items`
+- Hidden schtask — `e128556f`
+- WH-INV / text-library earlier
 
 ## PARK
 
-- Deploy · G12 · desk · wipe · `/production` SKIP · weight→qty (отклонено)
+- Deploy · G12 · desk · wipe · weight→qty

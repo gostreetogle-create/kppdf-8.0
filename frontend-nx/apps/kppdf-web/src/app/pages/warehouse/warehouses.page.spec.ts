@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { PiStorageItemsService, PiWarehousesService, type Warehouse } from '@kppdf/data-access';
+import { AuthService, PiStorageItemsService, PiWarehousesService, type Warehouse } from '@kppdf/data-access';
 import { AlertDialogComponent, PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { WarehousesPage } from './warehouses.page';
@@ -38,6 +38,7 @@ describe('WarehousesPage (W1)', () => {
         { provide: PiStorageItemsService, useValue: storageItemsApi },
         { provide: PiDialogService, useValue: dialog },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+        { provide: AuthService, useValue: { user: () => null } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(WarehousesPage);
