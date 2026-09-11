@@ -41,15 +41,21 @@ export class TextBlockCategoryController {
   @ApiOperation({ summary: 'List text-block categories' })
   @ApiQuery({ name: 'activeOnly', required: false })
   @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'parentId', required: false, description: 'Subcategories of this root' })
+  @ApiQuery({ name: 'rootsOnly', required: false, description: 'Top-level categories only' })
   @ApiResponse({ status: 200, description: 'List of categories' })
   list(
     @Query('activeOnly') activeOnly?: string,
     @Query('search') search?: string,
+    @Query('parentId') parentId?: string,
+    @Query('rootsOnly') rootsOnly?: string,
     @Req() req?: Request & { user?: { organizationId?: string | null } },
   ) {
     return this.service.findAll({
       activeOnly: activeOnly === 'true',
       search,
+      parentId,
+      rootsOnly: rootsOnly === 'true',
       organizationId: req?.user?.organizationId ?? null,
     });
   }

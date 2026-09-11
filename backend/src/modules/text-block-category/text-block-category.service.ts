@@ -25,6 +25,10 @@ export interface TextBlockCategoryListQuery {
   /** Organization scope of the requesting user; system categories always included. */
   organizationId?: string | null;
   search?: string;
+  /** Children of this specific category (subcategories under a root). */
+  parentId?: string;
+  /** Root (top-level) categories only — mutually exclusive with `parentId`. */
+  rootsOnly?: boolean;
 }
 
 /**
@@ -67,6 +71,10 @@ export class TextBlockCategoryService {
     organizationId?: string | null,
   ): Promise<TextBlockCategoryDocument> {
     const org = this.toOrgId(organizationId);
+    if (dto.parentId) {
+      await this.assertValidParent(dto.parentId, organizationId);
+    }
+    this.assertDefaultNotOnSubcategory(Boolean(dto.parentId), dto.isDefault);
     const slug = dto.slug ?? this.slugify(dto.name);
     const existing = await this.model
       .findOne({ organizationId: org, slug })
@@ -85,6 +93,7 @@ export class TextBlockCategoryService {
       sortOrder: dto.sortOrder ?? 0,
       organizationId: org,
       isSystem: false,
+      parentId: dto.parentId ? new Types.ObjectId(dto.parentId) : undefined,
     });
     this.logger.log(`Created text-block category ${slug}`);
     return doc;
@@ -103,8 +112,11 @@ export class TextBlockCategoryService {
   async findAll(
     query: TextBlockCategoryListQuery = {},
   ): Promise<TextBlockCategoryDocument[]> {
-    const filter: Record<string, unknown> = {};
-    if (query.activeOnly === true) filter.isActive = true;
+    // Every constraint below is an independent clause combined via $and,
+    // so parentId/rootsOnly compose cleanly with search + org-scope
+    // instead of fighting over a single $or/$and slot.
+    const clauses: Record<string, unknown>[] = [];
+    if (query.activeOnly === true) clauses.push({ isActive: true });
 
     const scope: Record<string, unknown>[] = [];
     if (query.organizationId) {
@@ -118,14 +130,22 @@ export class TextBlockCategoryService {
     if (query.search) {
       const safeTerm = this.escapeRegex(query.search);
       const nameRe = { name: new RegExp(safeTerm, 'i') };
-      if (scope.length > 0) {
-        filter.$and = [nameRe, { $or: scope }];
-      } else {
-        filter.$or = [nameRe];
-      }
+      clauses.push(scope.length > 0 ? { $and: [nameRe, { $or: scope }] } : nameRe);
     } else if (scope.length > 0) {
-      filter.$or = scope;
+      clauses.push({ $or: scope });
     }
+
+    if (query.parentId) {
+      if (!Types.ObjectId.isValid(query.parentId)) {
+        throw new BadRequestException(`Invalid parentId ${query.parentId}`);
+      }
+      clauses.push({ parentId: new Types.ObjectId(query.parentId) });
+    } else if (query.rootsOnly) {
+      clauses.push({ $or: [{ parentId: { $exists: false } }, { parentId: null }] });
+    }
+
+    const filter: Record<string, unknown> =
+      clauses.length === 0 ? {} : clauses.length === 1 ? clauses[0] : { $and: clauses };
 
     return this.model
       .find(filter)
@@ -161,6 +181,13 @@ export class TextBlockCategoryService {
         `Системную категорию «${doc.name}» изменять нельзя — она управляется сервером`,
       );
     }
+    const nextHasParent = dto.parentId !== undefined ? Boolean(dto.parentId) : Boolean(doc.parentId);
+    const nextIsDefault = dto.isDefault !== undefined ? dto.isDefault : doc.isDefault;
+    this.assertDefaultNotOnSubcategory(nextHasParent, nextIsDefault);
+    if (dto.parentId !== undefined) {
+      await this.assertValidParent(dto.parentId, organizationId);
+      doc.parentId = new Types.ObjectId(dto.parentId);
+    }
     const newSlug = dto.slug ?? doc.slug;
     if (dto.slug !== undefined && dto.slug !== doc.slug) {
       const org = doc.organizationId ?? undefined;
@@ -193,6 +220,12 @@ export class TextBlockCategoryService {
     if (doc.isSystem) {
       throw new ConflictException(
         `Системную категорию «${doc.name}» удалить нельзя`,
+      );
+    }
+    const childCount = await this.model.countDocuments({ parentId: doc._id }).exec();
+    if (childCount > 0) {
+      throw new ConflictException(
+        `У категории «${doc.name}» есть подкатегории (${childCount}) — сначала удалите или перенесите их`,
       );
     }
     const used = await this.blockModel
@@ -266,7 +299,51 @@ export class TextBlockCategoryService {
         `Категория «${doc.name}» принадлежит другой организации`,
       );
     }
+    if (!doc.parentId) {
+      throw new BadRequestException(
+        `Категория «${doc.name}» — корневая; выберите подкатегорию`,
+      );
+    }
     return doc;
+  }
+
+  /**
+   * TZ-NX-TEXT-CAT-PARENT — validates a would-be `parentId`: it must exist
+   * and be a ROOT category (depth capped at 1) in a scope the caller may
+   * nest under (their own org, or a system/global root).
+   */
+  private async assertValidParent(
+    parentId: string,
+    organizationId?: string | null,
+  ): Promise<TextBlockCategoryDocument> {
+    if (!Types.ObjectId.isValid(parentId)) {
+      throw new BadRequestException(`Invalid parentId ${parentId}`);
+    }
+    const parent = await this.model.findById(parentId).exec();
+    if (!parent) {
+      throw new NotFoundException(`Родительская категория ${parentId} не найдена`);
+    }
+    if (parent.parentId) {
+      throw new BadRequestException(
+        `«${parent.name}» уже подкатегория — глубина категорий ограничена одним уровнем`,
+      );
+    }
+    const org = this.toOrgId(organizationId);
+    if (parent.organizationId && String(parent.organizationId) !== String(org ?? '')) {
+      throw new BadRequestException(
+        `Родительская категория «${parent.name}» принадлежит другой организации`,
+      );
+    }
+    return parent;
+  }
+
+  /** `isDefault` is a root-only concept — the system/org default stays a top-level category. */
+  private assertDefaultNotOnSubcategory(hasParent: boolean, isDefault?: boolean): void {
+    if (hasParent && isDefault) {
+      throw new BadRequestException(
+        'У подкатегории нельзя включить «по умолчанию» — по умолчанию поддерживается только для корневых категорий',
+      );
+    }
   }
 
   /** IDOR guard: only the owning org (or a system caller) may manage a category. */

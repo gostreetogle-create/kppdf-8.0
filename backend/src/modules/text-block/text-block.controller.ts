@@ -66,8 +66,12 @@ export class TextBlockController {
   @Patch(':id')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'TextBlock' })
-  update(@Param('id') id: string, @Body() dto: UpdateTextBlockDto) {
-    return this.service.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateTextBlockDto,
+    @Req() req?: Request & { user?: { organizationId?: string | null } },
+  ) {
+    return this.service.update(id, dto, req?.user?.organizationId ?? null);
   }
 
   @Delete(':id')

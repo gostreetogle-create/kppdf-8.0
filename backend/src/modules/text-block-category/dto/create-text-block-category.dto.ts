@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsInt,
+  IsMongoId,
   IsOptional,
   IsString,
   Length,
@@ -56,4 +57,12 @@ export class CreateTextBlockCategoryDto {
   @IsInt()
   @Min(0)
   sortOrder?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'ID родительской (корневой) категории — делает эту категорию подкатегорией. Родитель должен сам быть корневой категорией (глубина ограничена одним уровнем).',
+  })
+  @IsOptional()
+  @IsMongoId()
+  parentId?: string;
 }

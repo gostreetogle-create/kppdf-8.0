@@ -29,6 +29,16 @@ import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
  *     deterministic 4xx so ops notices missing-default-category instead
  *     of silently self-healing via a hidden upsert (TZ-DOC-320 ladder).
  *
+ * TZ-NX-TEXT-CAT-PARENT — the silent-«Общее»-fallback above is GONE for
+ * `create()`. PO decision: a subcategory is now mandatory for every new
+ * text block. `dto.categoryId` is required and must resolve to a LEAF
+ * (subcategory) via `assertAssignable` (which itself now rejects root
+ * categories) — omitting it is a deterministic 400, not a silent
+ * `resolveDefault()` upsert. Pre-existing blocks that still point at a
+ * root category are left readable (no mass migration); only a NEW
+ * create or an explicit `categoryId` on `update()` enforces the leaf
+ * rule going forward.
+ *
  * TZ-DOC-323 — the legacy `category: 'legal'|'intro'|'outro'|'custom'`
  * enum is GONE. The schema no longer has the field, the DTO rejects any
  * incoming `category` property via `ValidationPipe.forbidNonWhitelisted`
@@ -51,28 +61,14 @@ export class TextBlockService {
     const slug = dto.slug ?? this.slugify(dto.name);
     const sanitizedTags = (dto.tags ?? []).map((t: string) => this.tagSanitize(t));
 
-    let categoryId: Types.ObjectId;
-    if (dto.categoryId) {
-      const cat = await this.categoryService.assertAssignable(
-        dto.categoryId,
-        organizationId ?? '',
-      );
-      categoryId = cat._id;
-    } else {
-      // TZ-DOC-322 — explicit contract: rely on the seed-inserted system
-      // «Общее» (TZ-DOC-321). When it is missing, fail loudly rather than
-      // silently upsert in the service path.
-      const def = await this.categoryService.resolveDefault(organizationId);
-      if (!def) {
-        throw new BadRequestException(
-          `Default text-block category unavailable. The AppModule-wired ` +
-            `TextBlockCategoriesSeed (slug SYSTEM_DEFAULT_TEXT_BLOCK_CATEGORY_SLUG) ` +
-            `must be present and active. Run the seed or activate the system default in ` +
-            `the dictionary.`,
-        );
-      }
-      categoryId = def._id;
+    if (!dto.categoryId) {
+      throw new BadRequestException('Укажите подкатегорию для текстового блока');
     }
+    const cat = await this.categoryService.assertAssignable(
+      dto.categoryId,
+      organizationId ?? '',
+    );
+    const categoryId = cat._id;
 
     try {
       return await this.model.create({
@@ -128,6 +124,7 @@ export class TextBlockService {
   async update(
     id: string,
     dto: UpdateTextBlockDto,
+    organizationId?: string | null,
   ): Promise<TextBlockDocument> {
     const doc = await this.findById(id);
     if (dto.name !== undefined) doc.name = dto.name;
@@ -150,6 +147,18 @@ export class TextBlockService {
     }
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
+    if (dto.categoryId !== undefined) {
+      // TZ-NX-TEXT-CAT-PARENT — an explicit categoryId on update must
+      // resolve to a leaf (assertAssignable rejects roots). Omitting the
+      // field leaves the existing category untouched — a pre-hierarchy
+      // block still pointing at a root stays readable until the operator
+      // explicitly re-files it (no mass migration).
+      const cat = await this.categoryService.assertAssignable(
+        dto.categoryId,
+        organizationId ?? '',
+      );
+      doc.categoryId = cat._id;
+    }
     // Single atomic save at the end — slug uniqueness is enforced by the
     // unique index; if it collides Mongoose throws E11000 and we surface
     // it as ConflictException.

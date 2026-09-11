@@ -24,14 +24,29 @@
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
-| GET | `/text-block-categories?activeOnly&search` | Список; `activeOnly=true` — только активные (кэш) |
+| GET | `/text-block-categories?activeOnly&search&parentId&rootsOnly` | Список; `rootsOnly=true` — только корневые, `parentId=<rootId>` — только подкатегории этого корня |
 | GET | `/text-block-categories/:id` | Одна категория |
-| POST | `/text-block-categories` | Создание |
-| PATCH | `/text-block-categories/:id` | Редактирование / `isActive` |
-| DELETE | `/text-block-categories/:id` | Удаление (в использовании → 409) |
+| POST | `/text-block-categories` | Создание (`parentId?` — делает подкатегорией) |
+| PATCH | `/text-block-categories/:id` | Редактирование / `isActive` / `parentId` |
+| DELETE | `/text-block-categories/:id` | Удаление (в использовании ИЛИ есть подкатегории → 409) |
 
-Контракт ошибок (BE TZ-DOC-315): 409 — дубль slug / системная / в использовании;
-403 — IDOR (чужая org); 404 — нет id; 400 — невалидный slug / неактивная.
+Контракт ошибок (BE TZ-DOC-315): 409 — дубль slug / системная / в использовании /
+есть подкатегории; 403 — IDOR (чужая org); 404 — нет id / нет родителя; 400 —
+невалидный slug / неактивная / глубина>1 (`parentId` подкатегории) / `isDefault`
+на подкатегории.
+
+**Дерево (TZ-NX-TEXT-CAT-PARENT, 2026-09-11):** `parentId?` — undefined/null = корневая
+категория; заполнено = подкатегория. Глубина ограничена **одним уровнем**: родитель
+подкатегории обязан сам быть корневой (его `parentId` — null), иначе 400. `isDefault`
+поддерживается только на корневых категориях. `TextBlock.categoryId` теперь обязан
+указывать на **лист** (подкатегорию) — `assertAssignable` отклоняет корневые id
+400-й; при создании TextBlock без `categoryId` — 400 «Укажите подкатегорию» (больше
+не молчаливый fallback на «Общее»). Существующие TextBlock, у которых `categoryId`
+всё ещё указывает на корень — читаются как есть (без миграции); следующее
+редактирование обязано перенести их на лист. NX CRUD для дерева — `TZ-NX-TEXT-CAT-NX-CRUD`
+(следующий TZ волны); эта страница пока описывает **legacy** реализацию
+(`TextBlockCategoriesService`/`TextBlockCategoryFormDialogComponent` ниже), NX route
+`/dictionaries/text-block-categories` появится в следующем TZ.
 
 ## Dialogs
 

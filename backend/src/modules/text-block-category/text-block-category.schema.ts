@@ -62,6 +62,18 @@ export class TextBlockCategory {
   @Prop({ required: false, sparse: true, index: true })
   organizationId?: Types.ObjectId;
 
+  /**
+   * TZ-NX-TEXT-CAT-PARENT — undefined/null = root (top-level) category.
+   * Set = this category is a SUBCATEGORY whose parent is `parentId`.
+   * Depth is capped at 1: the referenced parent must itself be a root
+   * (its own `parentId` must be null) — enforced in
+   * `TextBlockCategoryService.assertValidParent`, not at the schema level.
+   * `TextBlock.categoryId` must reference a LEAF (subcategory) —
+   * enforced in `TextBlockCategoryService.assertAssignable`.
+   */
+  @Prop({ type: Types.ObjectId, ref: 'TextBlockCategory', index: true })
+  parentId?: Types.ObjectId;
+
   /** TZ-CORE-302: soft-delete timestamp; null = active. */
   @Prop({ type: Date, default: null, index: true })
   deletedAt?: Date | null;
