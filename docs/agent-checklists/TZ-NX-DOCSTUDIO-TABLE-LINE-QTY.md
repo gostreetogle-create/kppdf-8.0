@@ -2,7 +2,7 @@
 
 > Status: **DONE**
 > Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-LINE-QTY.done.md`
-> Commit/push: по `docs/GIT-POLICY.md`
+> Commit/push: `d042de05` (pushed to origin/main)
 
 ## Claim slot
 

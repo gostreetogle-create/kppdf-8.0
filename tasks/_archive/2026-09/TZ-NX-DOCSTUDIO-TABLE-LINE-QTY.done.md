@@ -34,4 +34,4 @@ IMPLICIT CONFLICT: nx build kppdf-web
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-11T20:20:00Z — see docs/agent-checklists/TZ-NX-DOCSTUDIO-TABLE-LINE-QTY.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-11T20:20:00Z — SHA `d042de05` (main, pushed)
