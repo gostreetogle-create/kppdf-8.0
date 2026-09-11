@@ -89,6 +89,15 @@ Focused NX W3 coverage:
 
 The tests cover envelope/query parameters, material and product XOR POST bodies, note-to-`documentRef` mapping, separate `orderId`, journal columns, query navigation, in/out-only actions, local validation, and API error retention.
 
+## Opening balance / inventory count (2026-09-11, `TZ-NX-WH-INV-DOCS`)
+
+Занос физической инвентаризации (бумажная опись → сайт) — тот же атомарный
+`type: 'in'` write, что и обычный приход; PO: **qty only**, без кг→шт (масса —
+паспортное поле каталога, не режим ввода склада). Entity routing (метиз/ГП/модуль)
+и явный запрет `*.stockQty`: `docs/pages/storage-items.page.md` §«Inventory count →
+opening balance». Bulk-занос сотен строк из Excel — `WAVE-NX-WAREHOUSE-INVENTORY-IMPORT`
+(batch API вокруг этого же `create` в транзакции, не второй write-path).
+
 ## Legacy reference
 
 The legacy inventory page remains the cutover reference. NX W3 deliberately does not expose transfer creation or modify backend ledger logic; the backend Z-001 transaction remains the source of atomic stock updates.

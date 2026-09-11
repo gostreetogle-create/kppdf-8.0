@@ -94,6 +94,26 @@ Focused NX W2 coverage:
 
 Covered behavior includes API query/body contracts, `materialId` deep-link loading, warehouse reload, inclusive low-stock filtering, all balance columns, negative adjustment preview/API result, and put-on-stock selection.
 
+## Inventory count → opening balance (2026-09-11, `TZ-NX-WH-INV-DOCS`)
+
+PO decision: qty only — no kg→pcs conversion anywhere on the write path (catalog
+`weightKg` stays a passport field, never a stock-input mode). Entity routing for
+a physical count line:
+
+| Физика | Складская сущность | Каталог |
+|--------|--------------------|---------|
+| Метиз (болт, гайка…) | `StorageItem.materialId` | `Material` с `materialKind: 'fastener'` |
+| Деталь / покупное / сырьё | `StorageItem.materialId` | `Material` (`part` / `purchased` / `raw`) |
+| Готовое изделие (ГП) | `StorageItem.productId` | `Product` |
+| Модуль сборки | **не складируется** | `ProductModule` — только BOM, никогда `StorageItem` |
+
+An opening/inventory balance is **always** a `StockMovement` write (`type: 'in'`,
+or `adjust` for a correction) — never a bare `StorageItem` quantity write and
+never `Material.stockQty` / `Product.stockQty` (deprecated, unread by any live
+write path). Bulk Excel import of a physical count (`WAVE-NX-WAREHOUSE-INVENTORY-IMPORT`)
+batches the same atomic `in` write per row server-side — it is not a second
+write-path, just many calls to the one that already exists.
+
 ## Legacy reference
 
 The legacy page still documents the older `PiGroupWorkspace`/`pi-table` implementation and remains the cutover reference. NX W2 deliberately does not add an inventory dashboard, reservation writes, transfer creation, warehouse types, or zone management. Quantity is never read from `Material.stockQty` as a source of truth.

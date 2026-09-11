@@ -18,7 +18,8 @@
 | Договор | **`Contract`** | КП |
 | Люди / сотрудники цеха | **`Worker`** | `User` (логин) |
 | Пользователь системы | **`User`** + роли | карточка Worker |
-| Остаток на складе | **`StorageItem`** | `Material.stockQty` как SoT |
+| Остаток на складе | **`StorageItem`** | `Material.stockQty` / `Product.stockQty` (deprecated, не SoT) |
+| Занос инвентаризации / opening balance | `StockMovement` **`in`** (или `adjust`) — никогда голый `create` количества | второй write-path в обход ledger |
 | Деталь (каталог / витрина студии) | обычно **`Material`** (или composition-узел); на **Ганте не уровень** | путать с Module / отдельной сущностью Part |
 
 1 клиент → N КП / N заказов. Unique обычно на **номере** документа, не на FK клиента.
