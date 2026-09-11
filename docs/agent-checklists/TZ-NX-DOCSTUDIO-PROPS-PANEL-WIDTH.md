@@ -2,7 +2,7 @@
 
 > Status: **DONE**
 > Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH.done.md`
-> Commit/push: по `docs/GIT-POLICY.md`
+> Commit/push: `0df45baf` (pushed to origin/main)
 
 ## Claim slot
 
