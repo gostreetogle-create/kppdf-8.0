@@ -1,13 +1,14 @@
 # STREAM QUEUE — Claude-only (Freebuff PARK)
 
-updated_at: 2026-09-10T18:45:00+03:00
+updated_at: 2026-09-11T09:50:00Z
 
 ## Claude stream
 
 | # | WAVE | PROMPT | Статус |
 |---|------|--------|--------|
-| HUB | WAVE-NX-HUB-TABLE-PARITY | continuous | **COMPLETE** |
-| **POLISH** | **WAVE-NX-SHELL-HUB-POLISH** | `tasks/PROMPT-CLAUDE-SHELL-HUB-POLISH.md` | **COMPLETE** |
+| TEXT | text-library hierarchy | spent | **COMPLETE** |
+| WH-INV | warehouse inventory import | spent | **COMPLETE** `a5438890`/`16796162`/`55551302` |
+| OPS | hidden schtask | spent | **COMPLETE** — see `_NOW.md` for SHA |
 
 ## Freebuff
 

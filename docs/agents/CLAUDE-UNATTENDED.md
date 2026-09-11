@@ -10,7 +10,7 @@
 | `~/.claude/settings.json` `defaultMode: bypassPermissions` | тот же скрипт |
 | Desktop `bypassPermissionsModeEnabled` + draft mode `bypassPermissions` | тот же скрипт (Windows Store config) |
 | GrowthBook `tengu_quill_harbor` / friction (иначе откат на Accept Edits ~каждые 9 мин) | тот же скрипт |
-| Повтор каждые 5 мин | Windows Scheduled Task `KppdfClaudeUnattended` (ставит скрипт сам) |
+| Повтор каждые 5 мин | Windows Scheduled Task `KppdfClaudeUnattended` (ставит скрипт сам), Action = **hidden PowerShell** wrapper вокруг `node.exe` — иначе каждые 5 мин видна вспышка консоли (`node.exe` сам — консольное приложение) |
 | При `node start.mjs` | start.mjs тихо зовёт ensure |
 
 Запуск вручную не нужен; если чинишь с нуля:
@@ -29,6 +29,24 @@ node scripts/ensure-claude-unattended.mjs
 
 Cursor сам вставляет блок UNATTENDED в PROMPT (запрет «продолжать?» в чате).  
 Permission UI закрывает ensure-скрипт; чат-подтверждения — контракт executor-loop.
+
+## Windows: почему через hidden PowerShell, а не прямой node.exe (2026-09-11, `TZ-OPS-CLAUDE-UNATTENDED-HIDDEN-TASK`)
+
+`ensureWindowsSchedule()` в `scripts/ensure-claude-unattended.mjs` ставит `/TR`
+как `powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -Command "& node <script> --quiet --no-schedule"`,
+**не** `node.exe` напрямую — `node.exe` консольный, без обёртки Планировщик
+каждые 5 мин мигает окном. Ручной PO-фикс делал то же самое; проблема была в
+том, что любой `start.mjs`/ensure с `/F` перетирал его обратно на прямой node.
+Теперь скрипт сам всегда ставит hidden-обёртку — руками через `schtasks` не
+переключать `/TR` назад на прямой `node.exe`.
+
+Без кавычек внутри `-Command`: `schtasks /Create /TR` при сохранении сам
+перезаписывает одинарные кавычки на двойные, а вложенные `""` затем ломают
+разбор аргументов у самого PowerShell (`LastTaskResult=1` при живой проверке).
+Поэтому node вызывается как `node` (через `PATH`, тот же контекст пользователя,
+что и у Scheduled Task с `LogonType=InteractiveToken`), путь к скрипту — без
+пробелов в этом репо. `-EncodedCommand` не подошёл отдельно — у `/TR` жёсткий
+лимит 261 символ, base64 в него не влезает.
 
 ## Риски
 

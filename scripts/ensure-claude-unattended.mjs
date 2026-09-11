@@ -208,7 +208,25 @@ function ensureWindowsSchedule() {
   if (!isWin || noSchedule) return;
   const node = process.execPath;
   const script = join(ROOT, 'scripts', 'ensure-claude-unattended.mjs');
-  const tr = `"${node}" "${script}" --quiet --no-schedule`;
+  // node.exe is a console app: a direct /TR flashes a console window every
+  // run. Wrap it in a hidden PowerShell so the watchdog never shows a window.
+  // No quotes inside -Command: `schtasks /Create /TR` re-parses and stores
+  // its own quote characters, and empirically rewrites embedded single
+  // quotes into double quotes on save — the resulting nested "" then breaks
+  // PowerShell's own -Command argv reconstruction at run time (verified:
+  // identical text with single quotes ran fine invoked directly, exit 0, but
+  // failed with LastTaskResult=1 once round-tripped through schtasks' /TR).
+  // -EncodedCommand avoids the quote mangling but hits schtasks' separate
+  // hard 261-char /TR length cap once base64-inflated. Simplest fix that
+  // survives both: keep every token quote-free — bare `node` resolved via
+  // PATH (Task Scheduler runs this action under the same interactive user,
+  // so it inherits the same PATH `node` resolves through today) and the repo
+  // script path, which has no spaces.
+  const nodeCmd = node.includes(' ') ? 'node' : node;
+  if (script.includes(' ')) {
+    log(`warning: repo path "${script}" contains a space — quoting it would hit the schtasks /TR quote-mangling bug above; scheduled task may fail to resolve the script`);
+  }
+  const tr = `powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -Command "& ${nodeCmd} ${script} --quiet --no-schedule"`;
   const name = 'KppdfClaudeUnattended';
   const create = spawnSync(
     'schtasks',
@@ -216,7 +234,7 @@ function ensureWindowsSchedule() {
     { encoding: 'utf8' },
   );
   if (create.status === 0) {
-    log(`scheduled task "${name}" every 5 min (counters GrowthBook sync)`);
+    log(`scheduled task "${name}" every 5 min via hidden PowerShell wrapper (no console flash) — do not "fix" back to a direct node.exe /TR`);
   } else {
     log(`scheduled task skip: ${(create.stderr || create.stdout || '').trim().slice(0, 200)}`);
   }
