@@ -111,6 +111,8 @@ import { rememberStudioDocument } from './studio-session';
 import {
   STUDIO_DEFAULT_TABLE_COLUMNS,
   STUDIO_DEFAULT_TABLE_ROWS,
+  studioTableQtyOverrides,
+  withStudioTableQtyOverride,
   buildTableTemplatePayloadFromBlock,
 } from './studio-table-defaults';
 import { studioTextBlockSlug } from './studio-text-helpers';
@@ -308,6 +310,7 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
                 (saveTableTemplate)="openSaveTableTemplateDialog()"
                 (tableRowsChange)="patchTableRows($event)"
                 (tableDisabledRowsChange)="patchTableDisabledRows($event)"
+                (tableLiveQtyChange)="onLiveTableQtyChange($event)"
                 (applyLibraryText)="applyLibraryText($event)"
                 (saveTextBlock)="openSaveTextBlockDialog()"
               />
@@ -1545,6 +1548,24 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.patchTableSettingsForBlock(block._id, { tableDisabledRowIndices: indices });
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — a catalog/КП/заказ row's qty is a
+   * property of this table's row, not of Product/Material/Module in Mongo:
+   * stored as a per-row override on the block (`tableQtyOverrides`), applied
+   * by the backend resolver on the next live fetch (triggered below).
+   */
+  onLiveTableQtyChange(event: { rowIndex: number; value: string }): void {
+    const block = this.activeTableBlock();
+    if (!block) return;
+    const qty = Number(event.value);
+    const overrides = withStudioTableQtyOverride(
+      studioTableQtyOverrides(block),
+      event.rowIndex,
+      Number.isFinite(qty) ? qty : 0,
+    );
+    this.patchTableSettingsForBlock(block._id, { tableQtyOverrides: overrides });
+  }
+
   private activeTableBlock(): StudioBlock | null {
     const id = this.activeLayerId();
     const block = id ? this.blocks().find((b) => b._id === id) : null;
@@ -1571,7 +1592,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       if (r.ok) {
         this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
         this.refreshPreviewIfActive();
-        if ('tableTemplateColumns' in patch) {
+        if ('tableTemplateColumns' in patch || 'tableQtyOverrides' in patch) {
           this.rehydrateLiveRowsAfterColumnChange(r.data);
         }
       } else {
@@ -1587,6 +1608,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
    * the old column count and would misalign under the new headers, so drop
    * them and re-put with empty rows to force a clean live re-fetch at the new
    * width/keys instead of `refreshLiveDataSetsOnLoad`'s override-preserving path.
+   *
+   * TZ-NX-DOCSTUDIO-TABLE-LINE-QTY also calls this after a `tableQtyOverrides`
+   * patch — same mechanism (force a fresh live fetch), the backend resolver
+   * picks the new override up from `block.settings` on that fetch.
    */
   private rehydrateLiveRowsAfterColumnChange(block: StudioBlock): void {
     const doc = this.document();

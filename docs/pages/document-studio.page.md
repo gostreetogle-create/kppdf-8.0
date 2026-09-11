@@ -271,6 +271,7 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 - **Quick-add палитра** — чипы «+ Количество/Артикул/Фото/Ед./Описание/Цена» для отсутствующих стандартных полей (ключи = canonical `COLUMN_ALIASES`, см. `studio-data-resolver.ts`), плюс generic «+ Колонка» для произвольного поля.
 - Прозрачный фон таблицы; сохранение вида в реестр.
 - Строки редактируются **в Свойствах** (TZ-NX-DOCSTUDIO-S45 перенёс редактор с листа сюда), не на листе.
+- **Количество в живых строках** (`TZ-NX-DOCSTUDIO-TABLE-LINE-QTY`, 2026-09-11): для catalog-источника строка приходит с `qty=1` по умолчанию; редактируемая ячейка «Количество» — единственная editable-ячейка живой строки (имя/цена/фото остаются read-only, всегда live из каталога). Хранится как `tableQtyOverrides` (per-row override) **на блоке**, не на Product/Material/Module и не как «второй SoT» в `document.dataSets`. `Итого`/`Сумма` пересчитывается вместе с qty (`price * quantity`, было статично `price`).
 - **Flyout ≈ 820px** (`kp-ws-panel--table`) — шире, чем у остальных секций (340px), чтобы редактор строк/колонок не требовал горизонтального скролла на типичных 5–6 колонках (`TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH`, 2026-09-11). Панель остаётся overlay — A4 не reflow (закон 1, `kp-workspace-geometry.md`).
 
 ### 3.7 Свойства (изображение)

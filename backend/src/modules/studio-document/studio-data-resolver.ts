@@ -201,6 +201,32 @@ export function tableColumnsFromBlock(
   return settings?.tableTemplateColumns ?? [];
 }
 
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — per-row quantity overrides for
+ * catalog-sourced table rows, keyed by row index. Lives on the block
+ * (a property of this table's rows), never on Product/Material/Module —
+ * a catalog pick's default is always `1`, this is what survives an
+ * operator's edit across refresh/re-fetch.
+ */
+export function tableQtyOverridesFromBlock(
+  block: TemplateBlockDocument,
+): Record<number, number> {
+  const settings = block.settings as
+    | { tableQtyOverrides?: unknown }
+    | undefined;
+  const raw = settings?.tableQtyOverrides;
+  if (!raw || typeof raw !== 'object') return {};
+  const result: Record<number, number> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    const idx = Number(key);
+    const qty = Number(value);
+    if (Number.isInteger(idx) && idx >= 0 && Number.isFinite(qty) && qty >= 0) {
+      result[idx] = qty;
+    }
+  }
+  return result;
+}
+
 /** Manual table rows stored on the block until baked into document.dataSets. */
 export function sampleRowsFromBlock(block: TemplateBlockDocument): string[][] {
   const settings = block.settings as
@@ -315,6 +341,11 @@ export class StudioDataResolverService {
         .filter((block) => block.type === 'table')
         .map((block) => [tableDataSetKey(block), tableColumnsFromBlock(block)]),
     );
+    const qtyOverridesByKey = new Map(
+      blocks
+        .filter((block) => block.type === 'table')
+        .map((block) => [tableDataSetKey(block), tableQtyOverridesFromBlock(block)]),
+    );
 
     const resolved = await Promise.all(
       entries.map(async (entry) => {
@@ -324,11 +355,13 @@ export class StudioDataResolverService {
         }
         const key = String(entry.key ?? '');
         const columns = columnsByKey.get(key) ?? this.defaultColumns();
+        const qtyOverrides = qtyOverridesByKey.get(key) ?? {};
         const liveRows = await this.fetchLiveRows(
           type,
           context,
           orgId,
           columns,
+          qtyOverrides,
         );
         if (liveRows == null) {
           return { ...entry };
@@ -386,6 +419,7 @@ export class StudioDataResolverService {
     context: Record<string, unknown>,
     organizationId: string,
     columns: StudioTableColumn[],
+    qtyOverrides: Record<number, number> = {},
   ): Promise<string[][] | null> {
     if (type === 'quotation-items') {
       const quotationId = context['quotationId'];
@@ -435,7 +469,7 @@ export class StudioDataResolverService {
           : await this.materialModel.find(scopeFilter).lean().exec() as unknown as Array<Record<string, unknown>>;
       const byId = new Map(docs.map((doc) => [String(doc._id), doc]));
       const photoUrlById = await this.resolveCatalogPhotoUrls(docs);
-      return ids.filter((id) => byId.has(String(id))).map((id) => {
+      return ids.filter((id) => byId.has(String(id))).map((id, index) => {
         const item = byId.get(String(id)) as Record<string, unknown>;
         const name = String(item['name'] ?? item['sku'] ?? item['article'] ?? '');
         const sku = String(item['sku'] ?? item['article'] ?? '');
@@ -443,7 +477,13 @@ export class StudioDataResolverService {
         const price = Number(item['listPrice'] ?? item['basePrice'] ?? item['pricePerUnit'] ?? 0);
         const description = String(item['description'] ?? '');
         const photoUrl = photoUrlById.get(this.catalogPhotoId(item)) ?? '';
-        return mapLineItemsToRows([{ productName: name, productSku: sku, unit, quantity: 1, unitPrice: price, total: price, description, photoUrl }], columns)[0] ?? [];
+        // TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — catalog pick defaults to 1 but an
+        // operator's edit (tableQtyOverrides, keyed by row index) sticks across
+        // refetch; total recomputes with it (was always `price`, i.e. only
+        // correct by coincidence at qty=1).
+        const quantity = qtyOverrides[index] ?? 1;
+        const total = price * quantity;
+        return mapLineItemsToRows([{ productName: name, productSku: sku, unit, quantity, unitPrice: price, total, description, photoUrl }], columns)[0] ?? [];
       });
     }
 

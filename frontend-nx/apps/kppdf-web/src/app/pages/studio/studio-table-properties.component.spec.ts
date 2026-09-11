@@ -94,11 +94,95 @@ describe('StudioTablePropertiesComponent — S45 rows editor', () => {
     expect(rowsSpy).toHaveBeenCalledWith([['Стол «Обеденный»', '1']]);
   });
 
-  it('live-source table shows a hint instead of the manual rows editor', () => {
+  it('live-source table with no liveRows yet shows a hint instead of the manual rows editor', () => {
     create({ ...TABLE, settings: { ...TABLE.settings, dataSource: { type: 'catalog-products' } } });
     const host: HTMLElement = fixture.nativeElement;
     expect(host.querySelector('[data-test="studio-table-rows-editor"]')).toBeNull();
+    expect(host.querySelector('[data-test="studio-table-live-rows-editor"]')).toBeNull();
     expect(host.querySelector('[data-test="studio-table-rows-live-hint"]')).not.toBeNull();
+  });
+});
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — a live-sourced table with liveRows already
+ * hydrated shows those rows with an editable «Количество» cell; every other
+ * cell (name/price/photo) stays read-only display, since it's always live
+ * from the catalog/КП/заказ, not something this editor should let drift.
+ */
+describe('StudioTablePropertiesComponent — live rows qty editing', () => {
+  const LIVE_TABLE: StudioBlock = {
+    _id: 'tbl-3',
+    type: 'table',
+    order: 0,
+    title: 'Продукты',
+    content: '',
+    layout: { page: 1, x: 0.1, y: 0.1, width: 0.5, height: 0.4, zIndex: 1, rotation: 0 },
+    settings: {
+      tableTemplateColumns: [
+        { key: 'name', label: 'Наименование', type: 'text', align: 'left', width: 50 },
+        { key: 'qty', label: 'Кол-во', type: 'number', align: 'right', width: 20 },
+        { key: 'price', label: 'Цена', type: 'currency', align: 'right', width: 30 },
+      ],
+      dataSource: { type: 'catalog-products' },
+      liveRows: [
+        ['Стол', '1', '1200'],
+        ['Стул', '4', '300'],
+      ],
+    },
+  };
+
+  let fixture: ComponentFixture<StudioTablePropertiesComponent>;
+  const templatesService = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [StudioTablePropertiesComponent],
+      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }],
+    }).compileComponents();
+  });
+
+  function create(block: StudioBlock): StudioTablePropertiesComponent {
+    fixture = TestBed.createComponent(StudioTablePropertiesComponent);
+    fixture.componentRef.setInput('block', block);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  it('shows liveRows with name/price read-only and qty as an editable number input', async () => {
+    create(LIVE_TABLE);
+    // Standalone NgModel defers its initial writeValue() to a microtask
+    // (avoids ExpressionChangedAfterItHasBeenCheckedError) — one sync
+    // detectChanges() renders the row/interpolation but not yet the
+    // ngModel-bound input value; flush microtasks then detect again.
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test="studio-table-live-rows-editor"]')).not.toBeNull();
+    expect(host.textContent).toContain('Стол');
+    expect(host.textContent).toContain('Стул');
+
+    const qty0 = host.querySelector<HTMLInputElement>('[data-test="studio-table-live-qty-0"]')!;
+    const qty1 = host.querySelector<HTMLInputElement>('[data-test="studio-table-live-qty-1"]')!;
+    expect(qty0.type).toBe('number');
+    expect(qty0.value).toBe('1');
+    expect(qty1.value).toBe('4');
+    // name/price aren't rendered as inputs at all for a live row.
+    expect(host.querySelector('[data-test="studio-table-cell-0-0"]')).toBeNull();
+  });
+
+  it('editing a live qty cell emits liveQtyChange with the row index and new value, not rowsChange', () => {
+    const component = create(LIVE_TABLE);
+    const liveQtySpy = jest.fn();
+    const rowsSpy = jest.fn();
+    component.liveQtyChange.subscribe(liveQtySpy);
+    component.rowsChange.subscribe(rowsSpy);
+
+    const qty1 = fixture.nativeElement.querySelector<HTMLInputElement>('[data-test="studio-table-live-qty-1"]')!;
+    qty1.value = '7';
+    qty1.dispatchEvent(new Event('input'));
+
+    expect(liveQtySpy).toHaveBeenCalledWith({ rowIndex: 1, value: '7' });
+    expect(rowsSpy).not.toHaveBeenCalled();
   });
 });
 

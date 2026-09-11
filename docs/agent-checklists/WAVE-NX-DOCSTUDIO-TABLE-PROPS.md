@@ -8,7 +8,7 @@
 |---|------|-----|------|--------|
 | 01 | S | `tasks/TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH.md` | `--kp-panel-w` ≈ 820px (×2.4); rows editor без H-scroll на типичных 5–6 кол | DONE |
 | 02 | M | `tasks/TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE.md` | Unlock reorder + palette add «Количество»/стандартные поля при выбранном виде; порядок на блоке | DONE |
-| 03 | M | `tasks/TZ-NX-DOCSTUDIO-TABLE-LINE-QTY.md` | Редактируемое кол-во в строках (manual + catalog hydrate); не хардкод 1 навсегда | READY after 02 |
+| 03 | M | `tasks/TZ-NX-DOCSTUDIO-TABLE-LINE-QTY.md` | Редактируемое кол-во в строках (manual + catalog hydrate); не хардкод 1 навсегда | DONE |
 | 04 | L | `tasks/TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE.md` | Smoke: alias keys → img или «Нет фото»; catalog photo URL path; fix blank cells; hint если у сущности нет фото | READY after 02 |
 | 05 | S | `tasks/TZ-NX-DOCSTUDIO-TABLE-KINDS-DISCOVER.md` | CTA «Реестры → Виды таблиц»; copy; optional seed «Продукты» PO-canon columns | READY after 01 |
 

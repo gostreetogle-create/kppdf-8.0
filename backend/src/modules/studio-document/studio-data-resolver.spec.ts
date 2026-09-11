@@ -312,6 +312,90 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
     });
   });
 
+  describe('tableQtyOverrides (TZ-NX-DOCSTUDIO-TABLE-LINE-QTY)', () => {
+    it('defaults catalog rows to qty=1, total=price when no override is stored', async () => {
+      const product = new Types.ObjectId();
+      const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200 }]) }) };
+      const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+      const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
+      const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+      const blockWithSum = {
+        ...tableBlock,
+        settings: {
+          tableTemplateColumns: [
+            { key: 'name', label: 'Наименование' },
+            { key: 'qty', label: 'Кол-во' },
+            { key: 'price', label: 'Цена' },
+            { key: 'sum', label: 'Сумма' },
+          ],
+        },
+      } as unknown as TemplateBlockDocument;
+
+      const resolved = await resolver.resolveDataSets(
+        { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+        [blockWithSum],
+        true,
+      );
+
+      expect(resolved[0]).toMatchObject({ rows: [['Стол', '1', '1200', '1200']] });
+    });
+
+    it('applies a stored per-row qty override and recomputes the total column', async () => {
+      const product = new Types.ObjectId();
+      const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200 }]) }) };
+      const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+      const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
+      const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+      const blockWithOverride = {
+        ...tableBlock,
+        settings: {
+          tableTemplateColumns: [
+            { key: 'name', label: 'Наименование' },
+            { key: 'qty', label: 'Кол-во' },
+            { key: 'price', label: 'Цена' },
+            { key: 'sum', label: 'Сумма' },
+          ],
+          tableQtyOverrides: { 0: 3 },
+        },
+      } as unknown as TemplateBlockDocument;
+
+      const resolved = await resolver.resolveDataSets(
+        { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+        [blockWithOverride],
+        true,
+      );
+
+      expect(resolved[0]).toMatchObject({ rows: [['Стол', '3', '1200', '3600']] });
+    });
+
+    it('ignores a negative or non-numeric override and falls back to qty=1', async () => {
+      const product = new Types.ObjectId();
+      const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200 }]) }) };
+      const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+      const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
+      const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+      const blockWithBadOverride = {
+        ...tableBlock,
+        settings: {
+          tableTemplateColumns: [
+            { key: 'name', label: 'Наименование' },
+            { key: 'qty', label: 'Кол-во' },
+            { key: 'price', label: 'Цена' },
+          ],
+          tableQtyOverrides: { 0: -5, garbage: 'nope' },
+        },
+      } as unknown as TemplateBlockDocument;
+
+      const resolved = await resolver.resolveDataSets(
+        { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+        [blockWithBadOverride],
+        true,
+      );
+
+      expect(resolved[0]).toMatchObject({ rows: [['Стол', '1', '1200']] });
+    });
+  });
+
   it('bakeSnapshot converts ERP source to manual with rows', async () => {
     const { service } = createResolver([
       { productName: 'Шкаф', quantity: 1, unitPrice: 9000 },

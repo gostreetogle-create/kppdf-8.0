@@ -77,6 +77,7 @@ function layerDisplayName(block: StudioBlock): string {
               (saveTemplate)="saveTableTemplate.emit()"
               (rowsChange)="tableRowsChange.emit($event)"
               (disabledRowsChange)="tableDisabledRowsChange.emit($event)"
+              (liveQtyChange)="tableLiveQtyChange.emit($event)"
             />
           </div>
         }
@@ -323,6 +324,7 @@ export class StudioPropertiesPanelComponent {
   /** TZ-NX-DOCSTUDIO-S45: row editing from Свойства (was canvas-only). */
   @Output() readonly tableRowsChange = new EventEmitter<string[][]>();
   @Output() readonly tableDisabledRowsChange = new EventEmitter<number[]>();
+  @Output() readonly tableLiveQtyChange = new EventEmitter<{ rowIndex: number; value: string }>();
   @Output() readonly applyLibraryText = new EventEmitter<TextBlock>();
   @Output() readonly saveTextBlock = new EventEmitter<void>();
 

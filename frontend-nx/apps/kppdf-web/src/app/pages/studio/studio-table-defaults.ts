@@ -32,6 +32,42 @@ export function studioTableRowCount(block: { settings?: Record<string, unknown> 
   return studioTableRows(block).length;
 }
 
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — rows resolved from a live source
+ * (catalog/quotation/order), cached on the block after `putDataSet`
+ * (`studio-editor.page.ts` `applyLiveRowsFromDataSet`). Separate from
+ * `studioTableRows` (manual-only, `tableTemplateSampleRows`).
+ */
+export function studioLiveTableRows(block: { settings?: Record<string, unknown> }): string[][] {
+  const rows = block.settings?.['liveRows'];
+  if (!Array.isArray(rows)) return [];
+  return rows.map((row) => (Array.isArray(row) ? row.map((c) => String(c ?? '')) : []));
+}
+
+/** Per-row qty overrides for a live-sourced table, keyed by row index (TZ-NX-DOCSTUDIO-TABLE-LINE-QTY). */
+export function studioTableQtyOverrides(block: { settings?: Record<string, unknown> }): Record<number, number> {
+  const raw = block.settings?.['tableQtyOverrides'];
+  if (!raw || typeof raw !== 'object') return {};
+  const result: Record<number, number> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    const idx = Number(key);
+    const qty = Number(value);
+    if (Number.isInteger(idx) && idx >= 0 && Number.isFinite(qty) && qty >= 0) {
+      result[idx] = qty;
+    }
+  }
+  return result;
+}
+
+/** Merges a new qty at `rowIndex` into the existing override map (immutable). */
+export function withStudioTableQtyOverride(
+  existing: Record<number, number>,
+  rowIndex: number,
+  qty: number,
+): Record<number, number> {
+  return { ...existing, [rowIndex]: Math.max(0, qty) };
+}
+
 export type StudioTableRowSource =
   | 'manual'
   | 'quotation-items'
@@ -79,6 +115,11 @@ const STUDIO_STANDARD_COLUMN_ALIASES: Record<string, readonly string[]> = {
   photo: PHOTO_COLUMN_KEY_ALIASES,
   description: ['description', 'desc', 'описание'],
 };
+
+/** TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — parity with backend `COLUMN_ALIASES.qty`. */
+export function isStudioQtyColumnKey(key: string): boolean {
+  return STUDIO_STANDARD_COLUMN_ALIASES['qty']!.includes(key.trim().toLowerCase());
+}
 
 export interface StudioStandardColumnField {
   readonly key: keyof typeof STUDIO_STANDARD_COLUMN_ALIASES;

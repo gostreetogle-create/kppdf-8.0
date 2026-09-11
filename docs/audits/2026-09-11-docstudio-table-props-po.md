@@ -53,3 +53,19 @@ quick-add палитра стандартных полей (qty/sku/photo/unit/d
 колонкой из-за несовпадения ключа. Rehydrate `liveRows` при смене структуры
 для live-источников — уже существовавшая инфраструктура (TZ-NX-DOCSTUDIO-S47),
 сработала без единой правки. SHA `24e2ae14`.
+
+## Closeout 03/5 (2026-09-11) — `TZ-NX-DOCSTUDIO-TABLE-LINE-QTY` DONE
+
+Первый план (переиспользовать `mergeRowOverrides`/`dataSets.rows` sparse-override,
+тот же механизм, что у manual-таблиц) оказался небезопасным при проверке:
+клиент нигде не хранит «чистый» override-массив — и `block.settings.liveRows`,
+и `document.dataSets[key].rows` после любого `putDataSet`/hydrate — это уже
+СМЕШАННЫЙ (merged) результат. Переслать его назад как «manual override» —
+заморозить имя/цену/фото навечно, а не только qty. Вместо этого — qty-override
+хранится **на блоке** (`tableQtyOverrides`, ключ = индекс строки), тот же
+уровень хранения, что и `tableTemplateColumns`; backend-резолвер применяет
+его заново при каждом live-фетче — имя/цена/фото остаются всегда живыми,
+только qty (и пересчитанный `total = price * quantity`) — sticky. Найден и
+исправлен попутный баг формулы: `total` раньше всегда равнялся `price`
+(корректно выглядело только при qty=1 по совпадению). SHA (см. checklist
+после push).

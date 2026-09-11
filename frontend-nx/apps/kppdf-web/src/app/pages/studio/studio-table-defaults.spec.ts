@@ -2,16 +2,20 @@ import type { TableTemplate } from '@kppdf/data-access';
 import {
   buildTableSettingsFromTemplate,
   createStandardStudioTableColumn,
+  isStudioQtyColumnKey,
   missingStandardColumnFields,
   remapRowsForColumnChange,
   filterHiddenColumnKeysForColumns,
+  studioLiveTableRows,
   studioTableHiddenColumnKeys,
+  studioTableQtyOverrides,
   studioTableRowSource,
   studioTableTemplateId,
   studioTableTransparentBackground,
   studioVisibleTableColumns,
   studioVisibleTableRows,
   templateSampleRowsToMatrix,
+  withStudioTableQtyOverride,
 } from './studio-table-defaults';
 
 describe('studio-table-defaults', () => {
@@ -147,5 +151,37 @@ describe('studio-table-defaults', () => {
   it('createStandardStudioTableColumn builds a column at the canonical key with a default width', () => {
     const col = createStandardStudioTableColumn({ key: 'qty', label: 'Количество', type: 'number', align: 'right' });
     expect(col).toEqual({ key: 'qty', label: 'Количество', type: 'number', width: 20, align: 'right' });
+  });
+
+  describe('live rows + qty overrides (TZ-NX-DOCSTUDIO-TABLE-LINE-QTY)', () => {
+    it('isStudioQtyColumnKey recognizes all backend-parity aliases', () => {
+      expect(isStudioQtyColumnKey('qty')).toBe(true);
+      expect(isStudioQtyColumnKey('Количество')).toBe(true);
+      expect(isStudioQtyColumnKey('quantity')).toBe(true);
+      expect(isStudioQtyColumnKey('price')).toBe(false);
+    });
+
+    it('studioLiveTableRows reads settings.liveRows, defaulting to empty', () => {
+      expect(studioLiveTableRows({})).toEqual([]);
+      expect(studioLiveTableRows({ settings: {} })).toEqual([]);
+      expect(
+        studioLiveTableRows({ settings: { liveRows: [['Стол', '1', '1200'], null] } }),
+      ).toEqual([['Стол', '1', '1200'], []]);
+    });
+
+    it('studioTableQtyOverrides parses a stored map, dropping invalid entries', () => {
+      expect(studioTableQtyOverrides({})).toEqual({});
+      expect(
+        studioTableQtyOverrides({ settings: { tableQtyOverrides: { 0: 3, 2: -1, garbage: 'x', 1: 5 } } }),
+      ).toEqual({ 0: 3, 1: 5 });
+    });
+
+    it('withStudioTableQtyOverride merges immutably and clamps negatives to 0', () => {
+      const base = { 0: 3 };
+      const next = withStudioTableQtyOverride(base, 1, 7);
+      expect(next).toEqual({ 0: 3, 1: 7 });
+      expect(base).toEqual({ 0: 3 });
+      expect(withStudioTableQtyOverride(base, 0, -4)).toEqual({ 0: 0 });
+    });
   });
 });

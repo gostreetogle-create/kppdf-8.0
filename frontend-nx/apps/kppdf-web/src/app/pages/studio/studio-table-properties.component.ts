@@ -27,6 +27,8 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { ChevronDown, LucideAngularModule } from 'lucide-angular';
 import {
   buildTableSettingsFromTemplate,
+  isStudioQtyColumnKey,
+  studioLiveTableRows,
   studioTableColumns,
   studioTableHiddenColumnKeys,
   studioTableTemplateId,
@@ -304,6 +306,48 @@ import {
             </table>
           </div>
         </div>
+      } @else if (liveRowsAll(block).length > 0) {
+        <!-- TZ-NX-DOCSTUDIO-TABLE-LINE-QTY: name/price/photo stay read-only (live from catalog/КП/заказ); only «Количество» is editable — persists as a per-row override on the block, survives refetch. -->
+        <div class="table-props__rows" data-test="studio-table-live-rows-editor">
+          <div class="table-props__rows-head">
+            <span class="table-props__label">Строки таблицы</span>
+            <span class="table-props__hint">Из каталога/КП/заказа — редактируется только «Количество»</span>
+          </div>
+          <div class="table-props__rows-scroll">
+            <table>
+              <thead>
+                <tr>
+                  @for (col of visibleColumns(); track col.key) {
+                    <th [style.text-align]="col.align">{{ col.label }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of liveRowsAll(block); track $index; let rowIdx = $index) {
+                  <tr>
+                    @for (colIdx of visibleColumnIndices(); track colIdx) {
+                      <td [style.text-align]="columns(block)[colIdx]?.align">
+                        @if (isQtyColumnAt(colIdx)) {
+                          <input
+                            type="number"
+                            min="0"
+                            class="cell-input"
+                            [ngModel]="row[colIdx] ?? ''"
+                            (ngModelChange)="onLiveQtyCellChange(rowIdx, $event)"
+                            [disabled]="disabled"
+                            [attr.data-test]="'studio-table-live-qty-' + rowIdx"
+                          />
+                        } @else {
+                          {{ row[colIdx] || '—' }}
+                        }
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
       } @else {
         <p class="table-props__hint" data-test="studio-table-rows-live-hint">Строки приходят из раздела «Данные» или КП — редактирование в источнике.</p>
       }
@@ -574,6 +618,8 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   /** TZ-NX-DOCSTUDIO-S45: row editing moved here from the canvas. */
   @Output() readonly rowsChange = new EventEmitter<string[][]>();
   @Output() readonly disabledRowsChange = new EventEmitter<number[]>();
+  /** TZ-NX-DOCSTUDIO-TABLE-LINE-QTY: qty edit on a live (catalog/КП/заказ) row — stored as a per-row override on the block, not a rows[] rewrite. */
+  @Output() readonly liveQtyChange = new EventEmitter<{ rowIndex: number; value: string }>();
 
   protected readonly templates = signal<readonly TableTemplate[]>([]);
   protected readonly loading = signal(false);
@@ -611,6 +657,21 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
 
   protected visibleColumnIndices(): number[] {
     return studioVisibleColumnIndices(this.block);
+  }
+
+  /** TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — live (catalog/КП/заказ) rows, separate from the manual `rowsAll()` matrix. */
+  protected liveRowsAll(block: StudioBlock): string[][] {
+    return studioLiveTableRows(block);
+  }
+
+  protected isQtyColumnAt(colIdx: number): boolean {
+    const col = studioTableColumns(this.block)[colIdx];
+    return col ? isStudioQtyColumnKey(col.key) : false;
+  }
+
+  /** `type="number"`'s NumberValueAccessor emits a `number` (or `null` when cleared), not a string — normalize before emitting. */
+  protected onLiveQtyCellChange(rowIndex: number, value: string | number | null): void {
+    this.liveQtyChange.emit({ rowIndex, value: value == null ? '' : String(value) });
   }
 
   protected isRowEnabled(rowIdx: number): boolean {

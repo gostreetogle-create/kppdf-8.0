@@ -1,11 +1,11 @@
 ﻿# NOW
 
-updated_at: 2026-09-11T19:35:00Z
+updated_at: 2026-09-11T20:20:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IN PROGRESS — WAVE-NX-DOCSTUDIO-TABLE-PROPS 02/05 DONE, continuing 03 `TZ-NX-DOCSTUDIO-TABLE-LINE-QTY`.
+- **Claude:** IN PROGRESS — WAVE-NX-DOCSTUDIO-TABLE-PROPS 03/05 DONE, continuing 04 `TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE`.
 - **Deploy stamp:** READY
 
 ## NEXT
@@ -14,6 +14,7 @@ updated_at: 2026-09-11T19:35:00Z
 
 ## DONE
 
+- TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — qty override на блоке (tableQtyOverrides), total=price*qty fix, живые строки: только qty editable
 - TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE — columnsEditable() unlocked (было 2 условия, стало 1); quick-add палитра стандартных полей
 - TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH — свойства таблицы 340→820px (scoped `panelTable`, не global)
 - WAVE-NX-REGISTRY-CATEGORIES — `1a345822` `70a3e777` `a5b4c429` `b0b5ddd1` `09f41ed1`
