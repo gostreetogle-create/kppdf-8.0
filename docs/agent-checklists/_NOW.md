@@ -1,22 +1,22 @@
 ﻿# NOW
 
-updated_at: 2026-09-11T13:25:00Z
+updated_at: 2026-09-11T13:20:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE. WAVE-NX-DROP-REFERENCE-NAV COMPLETE (01+02).
+- **Claude:** IN PROGRESS — WAVE-NX-REGISTRY-CATEGORIES 01/05 DONE, continuing 02 `TZ-NX-REG-CATEGORIES-CRUD`.
 - **Deploy stamp:** READY
 
 ## NEXT
 
-`tasks/PROMPT-CLAUDE-REGISTRY-CATEGORIES.md` — следующий единичный промпт (PO-режим: один за раз, не пачка).
+После DONE REGISTRY-CATEGORIES (05) → `tasks/PROMPT-CLAUDE-DOCSTUDIO-TABLE-PROPS.md`
 
 ## DONE
 
-- WAVE-NX-DROP-REFERENCE-NAV COMPLETE — `b822c2cf` (01 registry) / `1ae9260b` (02 nav drop)
+- TZ-NX-REG-UNITS-TO-REFERENCES — units → секция Справочники
+- WAVE-NX-DROP-REFERENCE-NAV — `b822c2cf`, `1ae9260b`
 - TZ-NX-WH-PUT-MATERIAL-TYPEAHEAD — `62ee6360`
-- TZ-NX-WH-GROUP-CHIPS — `5c59dde6`
 
 ## PARK
 

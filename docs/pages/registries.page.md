@@ -135,6 +135,24 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `work-types` | Виды работ | `api` (`GET/POST/PATCH/DELETE /work-types`) | client pagination; search по названию/секции/отделу/описанию; create/edit/soft archive; поля days, hourlyRate, accentHue и isActive |
 | `workers` | Люди | `api` (`GET/POST/PATCH/DELETE /workers`) | server pagination; search/status filters; create/edit/soft archive; workTypeIds skills used by Gantt labels |
 
+### Master-table section grouping (2026-09-11, `TZ-NX-REG-UNITS-TO-REFERENCES`)
+
+`units.registry.ts`'s `category` moved from «Каталог» to **«Справочники»**
+(audit `docs/audits/2026-09-11-registry-sections-and-catalog-categories.md`
+§1 — units is a cross-cutting measurement dictionary, not a catalog entity
+alongside materials/details/modules/products). Target section map:
+
+| Секция | Реестры |
+|--------|---------|
+| Каталог | `materials`, `details`, `modules`, `products` |
+| Справочники | `units`, + `categories` (`TZ-NX-REG-CATEGORIES-CRUD`, следующий TZ этой волны) |
+| остальные | без изменений |
+
+Not the top-nav «Справ.» tab dropped in `WAVE-NX-DROP-REFERENCE-NAV` — this is
+the `category` grouping label used **inside** `/registries`'s own master
+table (see `PAGE_GROUP_TITLE_RU`/`RegistryDefinition.category`), a different
+mechanism entirely.
+
 Каталог — `createRegistriesCatalog()` / `provideRegistriesCatalog()` на `RegistriesPage`
 (`REGISTRIES_CATALOG`, `data/registries.catalog.ts`). Dialog hosts получают **page-scoped**
 `DestroyRef` — при уходе со страницы реестров открытые dialog закрываются автоматически.
@@ -255,7 +273,7 @@ Verified matrix: `tasks/_archive/2026-08/TZ-NX-REGISTRIES-SUPPLY-PASSPORT-MATRIX
 
 | Domain area | Registry status | Notes |
 |-------------|-----------------|-------|
-| Catalog (units/materials/details/modules/products) | **PRESENT** on `/registries` | This page documents them |
+| Catalog (materials/details/modules/products) + Справочники (units) | **PRESENT** on `/registries` | This page documents them (units moved out of the Каталог group, `TZ-NX-REG-UNITS-TO-REFERENCES`) |
 | Complex (derived Product) | **PARTIAL** | Badge in products column only; no separate registry; no `isComplex` list filter |
 | SupplyRequest | **PRESENT** | Backend `GET /supply-requests` exists; read-only registry on `/registries/supply-requests`; import still blocked |
 | Organizations / suppliers | **PRESENT** | Read-only `/registries/organizations`; supplier via `type=supplier` filter |
