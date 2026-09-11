@@ -116,6 +116,9 @@
     apiPresetById,
     parseApiSnippet,
     isEmptySnippetResult,
+    resolveProvider,
+    pingProvider,
+    type ResolvedProvider,
   } from './core/ai';
   import {
     buildInboxMappingSummary,
@@ -682,20 +685,23 @@
     }
   }
 
-  /** «Предложить сопоставление» через встроенную модель (если раннер жив и модель загружена). */
+  /**
+   * «Предложить сопоставление» через AI. TZD-AI-IMPORT-MAPPING-OLLAMA:
+   * провайдер — параметр (embedded runner / local Ollama / remote), а не
+   * жёстко `aiState.port` — тот же приём, что `pipeline.normalizeStep`.
+   */
   async function suggestWithAi(
     headers: string[],
     rows: RawRow[],
+    provider: Pick<ResolvedProvider, 'baseUrl' | 'apiKey' | 'model'>,
   ): Promise<Record<ImportTargetKey, MappingResult>> {
-    const port = aiState.port;
-    if (!port) throw new Error('Локальный помощник не готов: нет порта.');
     const out = {} as Record<ImportTargetKey, MappingResult>;
     for (const block of importBlocks) {
       const { system, user } = buildMappingPrompt(headers, block.targetKey);
       const res = await chatCompletion(
-        { baseUrl: aiEndpoint(port), timeoutMs: 120_000 },
+        { baseUrl: provider.baseUrl, apiKey: provider.apiKey, timeoutMs: 120_000 },
         {
-          model: aiState.modelName ?? 'local',
+          model: provider.model,
           messages: [
             { role: 'system', content: system },
             { role: 'user', content: user },
@@ -1481,29 +1487,51 @@
     mappingMessage = '';
     try {
       const headers = Object.keys(importRows[0] ?? {});
+      /** TZD-AI-IMPORT-MAPPING-OLLAMA: какой путь дал предложение — для честного сообщения ниже. */
+      let aiSource: 'embedded' | 'ollama' | 'remote' | null = null;
       if (aiState.status === 'running' && aiState.modelLoaded && aiState.port) {
         // Встроенная модель (Фаза 2): умный подбор нестандартных колонок.
-        const byTable = await suggestWithAi(headers, importRows.slice(0, 5));
+        const byTable = await suggestWithAi(headers, importRows.slice(0, 5), {
+          baseUrl: aiEndpoint(aiState.port),
+          model: aiState.modelName ?? 'local',
+        });
         importBlocks = importBlocks.map((block) => ({
           ...block,
           mapping: byTable[block.targetKey],
         }));
-      } else if (mcpState.status === 'running' && pairedApiKey) {
-        const suggested = await suggestMappingThroughMcp(
-          mcpState.port,
-          pairedApiKey,
-          headers,
-          importRows.slice(0, 5),
-        );
-        importBlocks = importBlocks.map((block) => ({
-          ...block,
-          mapping: applyTableMapping(headers, block.targetKey, suggested),
-        }));
+        aiSource = 'embedded';
       } else {
-        importBlocks = importBlocks.map((block) => ({
-          ...block,
-          mapping: classifyHeaders(headers, IMPORT_TARGETS[block.targetKey].columns),
-        }));
+        const cfg = await loadConfig();
+        const providerAvailable = await pingProvider(cfg.aiProvider);
+        if (providerAvailable) {
+          // TZD-AI-IMPORT-MAPPING-OLLAMA: локальный Ollama или remote — работает
+          // без встроенного раннера (TZD-76 не блокер, тот же провайдер, что normalizeStep).
+          const provider = resolveProvider(cfg.aiProvider);
+          const byTable = await suggestWithAi(headers, importRows.slice(0, 5), provider);
+          importBlocks = importBlocks.map((block) => ({
+            ...block,
+            mapping: byTable[block.targetKey],
+          }));
+          aiSource = provider.isRemote ? 'remote' : 'ollama';
+        } else if (mcpState.status === 'running' && pairedApiKey) {
+          const suggested = await suggestMappingThroughMcp(
+            mcpState.port,
+            pairedApiKey,
+            headers,
+            importRows.slice(0, 5),
+          );
+          importBlocks = importBlocks.map((block) => ({
+            ...block,
+            mapping: applyTableMapping(headers, block.targetKey, suggested),
+          }));
+        } else {
+          // Честный fallback: ни один AI-путь не доступен — детерминированный
+          // подбор (работает всегда, без сети/провайдера).
+          importBlocks = importBlocks.map((block) => ({
+            ...block,
+            mapping: classifyHeaders(headers, IMPORT_TARGETS[block.targetKey].columns),
+          }));
+        }
       }
       const ready = importBlocks.reduce(
         (sum, block) => sum + block.mapping.rows.filter((row) => row.state === 'ready').length,
@@ -1514,8 +1542,10 @@
           sum + block.mapping.rows.filter((row) => row.state !== 'ready' && row.state !== 'ignored').length,
         0,
       );
+      const aiSourceLabel =
+        aiSource === 'embedded' ? ' (AI: встроенная модель)' : aiSource === 'ollama' ? ' (AI: Ollama)' : aiSource === 'remote' ? ' (AI: удалённый провайдер)' : '';
       mappingMessage =
-        `Сопоставление предложено: готово ${ready}, проверить ${needCheck}. ` +
+        `Сопоставление предложено${aiSourceLabel}: готово ${ready}, проверить ${needCheck}. ` +
         (needCheck > 0
           ? 'Исправьте красные строки или выберите «Игнорировать колонку», затем подтвердите.'
           : 'Все колонки определены — можно подтверждать.');
