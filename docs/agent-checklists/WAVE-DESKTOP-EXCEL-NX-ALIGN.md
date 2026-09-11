@@ -1,4 +1,4 @@
-# WAVE-DESKTOP-EXCEL-NX-ALIGN checklist
+﻿# WAVE-DESKTOP-EXCEL-NX-ALIGN checklist
 
 > Status: **DONE** (68–73 archived; см. TZD-73 closeout)
 > Specs: `tasks/_backlog/desktop/WAVE-DESKTOP-EXCEL-NX-ALIGN.md`
@@ -17,8 +17,8 @@
 
 ## Prompts
 
-- Excel 68–70: `tasks/PROMPT-CLAUDE-DESKTOP-EXCEL-NX.md`
-- NX 71–73: `tasks/PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`
+- Excel 68–70: `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-DESKTOP-EXCEL-NX.md`
+- NX 71–73: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-DESKTOP-PAIRING.md`
 
 ## Gate before code
 

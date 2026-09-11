@@ -1,7 +1,7 @@
-# WAVE-DOCSTUDIO-S47-S48 — сопоставление полей таблицы
+﻿# WAVE-DOCSTUDIO-S47-S48 — сопоставление полей таблицы
 
 **Audit:** `docs/audits/2026-09-08-docstudio-table-field-binding-audit.md`  
-**Промпт:** `tasks/PROMPT-CLAUDE-DOCSTUDIO-S47-S48-FIELD-MAP.md`  
+**Промпт:** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-DOCSTUDIO-S47-S48-FIELD-MAP.md`  
 **Исполнитель:** `agent_id: claude`  
 **Статус:** READY
 

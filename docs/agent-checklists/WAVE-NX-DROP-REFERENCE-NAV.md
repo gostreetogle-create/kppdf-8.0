@@ -1,4 +1,4 @@
-# WAVE-NX-DROP-REFERENCE-NAV — убрать «Справ.»; категории текстов → реестры
+﻿# WAVE-NX-DROP-REFERENCE-NAV — убрать «Справ.»; категории текстов → реестры
 
 **Audit:** `docs/audits/2026-09-11-reference-nav-vs-registries.md`  
 **PO:** вкладка справочников = дубль; всё в реестрах.  
@@ -11,5 +11,5 @@
 
 **WAVE COMPLETE (2026-09-11).**
 
-**PROMPT:** `tasks/PROMPT-CLAUDE-DROP-REFERENCE-NAV.md`  
+**PROMPT:** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-DROP-REFERENCE-NAV.md`  
 **Очередь:** после PUT-typeahead; можно **перед или параллельно** WAVE-NX-REGISTRY-CATEGORIES (разные conflict keys; nav/text-cats ≠ catalog Category).

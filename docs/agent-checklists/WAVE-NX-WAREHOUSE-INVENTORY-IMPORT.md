@@ -1,4 +1,4 @@
-# WAVE-NX-WAREHOUSE-INVENTORY-IMPORT — занос остатков (только qty)
+﻿# WAVE-NX-WAREHOUSE-INVENTORY-IMPORT — занос остатков (только qty)
 
 **Canon audit:** `docs/audits/2026-09-11-warehouse-inventory-import-readiness.md`  
 **PO (2026-09-11):** без кг→шт; Excel и UI — **только количество**.  
@@ -12,6 +12,6 @@
 
 **WAVE COMPLETE (2026-09-11).** Audit closeout: `docs/audits/2026-09-11-warehouse-inventory-import-readiness.md` §9.
 
-**PROMPT:** `tasks/PROMPT-CLAUDE-WAREHOUSE-INVENTORY-IMPORT.md` — **не выдавать в чат**, пока text-library continuous не DONE (слот Claude).
+**PROMPT:** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-WAREHOUSE-INVENTORY-IMPORT.md` — **не выдавать в чат**, пока text-library continuous не DONE (слот Claude).
 
 **Entity routing (напоминание):** метиз/деталь = Material; ГП = Product; модуль не складируется.

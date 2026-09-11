@@ -1,8 +1,8 @@
-# WAVE-NX-WAREHOUSE — склад на NX (движок UI)
+﻿# WAVE-NX-WAREHOUSE — склад на NX (движок UI)
 
 **Audit:** `docs/audits/2026-09-05-warehouse-nx-port-audit.md`
 **Параллель:** `PARALLEL-SLOTS-WAREHOUSE-SUPPLY.md`
-**Промпт:** `tasks/PROMPT-FREEBUFF-NX-WAREHOUSE.md`
+**Промпт:** `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-WAREHOUSE.md`
 **BE ledger:** Z-001 DONE — не переписывать транзакции.
 
 | # | SIZE | TZ | Path | Status |

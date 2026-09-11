@@ -1,8 +1,8 @@
-# WAVE — NX Sales canon S30→S39 (continuous chain)
+﻿# WAVE — NX Sales canon S30→S39 (continuous chain)
 
 Status: **DONE** · S30–S39 DONE · Doc Studio S16–S26 DONE
 
-> Resume: `tasks/PROMPT-FREEBUFF-SALES-CANON-RESUME.md`
+> Resume: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-SALES-CANON-RESUME.md`
 > Roadmap: `docs/architecture/nx-sales-canon-roadmap.md`
 
 ### Preflight Check Output

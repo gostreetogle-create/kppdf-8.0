@@ -1,8 +1,8 @@
-# WAVE-S — UX polish (мелочи)
+﻿# WAVE-S — UX polish (мелочи)
 
 Status: **DONE** · 2026-09-05
 Калибр: только **SIZE: S** (`docs/TZ-AUTHORING.md` §2a)
-Промпт: входит в `tasks/PROMPT-FREEBUFF-RESUME-AFTER-LIMIT.md` (шаг 2 после Registries)
+Промпт: входит в `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-RESUME-AFTER-LIMIT.md` (шаг 2 после Registries)
 
 ## Chain
 

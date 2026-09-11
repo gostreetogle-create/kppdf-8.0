@@ -1,9 +1,9 @@
-# WAVE-NX-DEALS — рабочее место сделок на NX
+﻿# WAVE-NX-DEALS — рабочее место сделок на NX
 
 **Peer:** Claude 2026-09-05 (ответ на `PROMPT-CLAUDE-DEALS-NX-PEER`) — принят Cursor.  
 **Audits:** `docs/audits/2026-09-05-deals-nx-migration-audit.md` (+ § Peer ниже)  
 **IA:** гибрид C→A — сначала hub на `/orders`; **`/desk` не в этой волне** (отдельный ADR по команде PO).  
-**Промпт:** `tasks/PROMPT-FREEBUFF-NX-DEALS.md`  
+**Промпт:** `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-DEALS.md`  
 **Не смешивать** с Gantt-registries / DocStudio Data IA / G14 FE.
 
 | # | SIZE | TZ | Path | Status |

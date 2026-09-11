@@ -6,7 +6,7 @@
 
 | Папка | Назначение |
 |-------|------------|
-| **`_active/`** | 0–1 claim |
+| **`_active/`** | 0–1 claim (сейчас пусто + `.gitkeep`) |
 | **`_ready/`** | Готовые к выдаче TZ (ещё не claimed) |
 | **`_archive/YYYY-MM/`** | `.done.md` + locks |
 | **`_archive/YYYY-MM/sources-spent/`** | исходники TZ после DONE |
@@ -15,21 +15,29 @@
 | **`_backlog/`** | PARK / punch-list — **не** LIVE |
 | **`_park/`** | Отложено без PO |
 
-## Корень (служебное)
+## Корень (служебное) — только это
 
 | Файл | Зачем |
 |------|-------|
-| `QUEUE-LIVE.md` | живая очередь |
+| `README.md` | этот канон |
 | `TZ-INVENTORY-ACTIVE.md` | индекс READY/LIVE |
-| `PROMPT-NEXT.md` | следующий executor-старт |
-| `PROMPT-FOLLOW-QUEUE.md` | указатель |
-| `PROMPT-RESUME-ANY.md` | обрыв |
-| `PROMPT-UNIVERSAL-CONTINUOUS.md` | полный loop |
-| `PROMPT-DEPLOY-READY.md` | только по русской команде PO |
+| `QUEUE-LIVE.md` | живая очередь (если есть) |
+| `PROMPT-RESUME-ANY.md` | обрыв сессии |
+| `PROMPT-UNIVERSAL-CONTINUOUS.md` | полный executor loop |
+| `PROMPT-FREEBUFF-TASKS-DRAIN.md` | drain spent prompts |
+| `PROMPT-DEPLOY-READY.md` | **только** по явной русской команде PO на deploy |
 
-**Нет** кучи `TZ-*.md` / `PROMPT-FREEBUFF-*` в корне.
+**Нет** кучи `TZ-*.md` / `PROMPT-CLAUDE-*` / `PROMPT-FREEBUFF-*` в корне после DONE волны → сразу в `prompts-spent/`.
 
-## Сейчас (2026-09-03 cleanup)
+## Executor closeout (обязательно)
 
-Слоты free. READY: `_ready/TZ-FRONTEND-QA-LINT-UI-TOKENS-SLICE-3.md` → `PROMPT-NEXT.md`.  
-Живые WAVE-чеклисты SoT: `docs/agent-checklists/WAVE-*.md`.
+При archive последней TZ волны: **перенести** её `tasks/PROMPT-*.md` в  
+`tasks/_archive/YYYY-MM/prompts-spent/` в том же шаге (`GEMINI.md` §Архивация).  
+Не оставлять spent-промпт в корне «на потом».
+
+## Сейчас (2026-09-12 hygiene)
+
+- `_active/` пусто; Claude IDLE; промптов в очереди нет.
+- Spent prompts: `tasks/_archive/2026-09/prompts-spent/` (вкл. AI-IMPORT / DocStudio / Categories / UX / Hub / Freebuff historical).
+- Живые WAVE-чеклисты SoT: `docs/agent-checklists/WAVE-*.md` (пути PROMPT → `prompts-spent/`).
+- PARK: Soup SFT, TZD-76, deploy/wipe.

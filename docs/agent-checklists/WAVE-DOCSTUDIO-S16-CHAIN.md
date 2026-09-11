@@ -1,8 +1,8 @@
-# WAVE — Doc Studio S16→S26 (continuous chain)
+﻿# WAVE — Doc Studio S16→S26 (continuous chain)
 
 Status: **DONE** · chain S20–S26 closed
 
-> Resume: `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S16-CHAIN-RESUME.md`
+> Resume: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-DOCSTUDIO-S16-CHAIN-RESUME.md`
 
 ## Preflight
 

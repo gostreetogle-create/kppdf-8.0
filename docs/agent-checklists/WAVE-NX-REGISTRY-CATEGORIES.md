@@ -1,4 +1,4 @@
-# WAVE-NX-REGISTRY-CATEGORIES — секции реестров + категории каталога
+﻿# WAVE-NX-REGISTRY-CATEGORIES — секции реестров + категории каталога
 
 **Audit:** `docs/audits/2026-09-11-registry-sections-and-catalog-categories.md`  
 **PO:** units не в Каталоге; категории деталей/модулей/изделий через реестр + обязательный select.  
@@ -13,7 +13,7 @@
 | 04 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-PRODUCTS.md` | Изделия: select type=product **required** | DONE |
 | 05 | L | `tasks/TZ-NX-REG-CATEGORY-WIRE-MODULES.md` | Module.categoryId BE + form select type=module **required** | DONE |
 
-**PROMPT (после PUT-typeahead / когда слот свободен):** `tasks/PROMPT-CLAUDE-REGISTRY-CATEGORIES.md`
+**PROMPT (после PUT-typeahead / когда слот свободен):** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-REGISTRY-CATEGORIES.md`
 
 **Default business:** category **обязательна** при create детали/модуля/изделия; raw Material — select **есть**, required **нет** (PO 2026-09-11).  
 **Связь:** top-nav «Справ.» убирается отдельно — `WAVE-NX-DROP-REFERENCE-NAV` (не путать с группой «Справочники» внутри `/registries` для units+Category).

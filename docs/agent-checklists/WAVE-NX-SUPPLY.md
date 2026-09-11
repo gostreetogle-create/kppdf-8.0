@@ -1,8 +1,8 @@
-# WAVE-NX-SUPPLY — снабжение + «в работу» ↔ склад
+﻿# WAVE-NX-SUPPLY — снабжение + «в работу» ↔ склад
 
 **Audit:** `docs/audits/2026-09-05-warehouse-nx-port-audit.md`  
 **Параллель:** `PARALLEL-SLOTS-WAREHOUSE-SUPPLY.md`  
-**Промпт:** `tasks/PROMPT-CLAUDE-NX-SUPPLY.md`  
+**Промпт:** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-NX-SUPPLY.md`  
 **Зависит:** W1 shell DONE перед S1 (routes); S0 BE может идти параллельно с WAVE-WAREHOUSE.
 
 | # | SIZE | TZ | Path | Status |

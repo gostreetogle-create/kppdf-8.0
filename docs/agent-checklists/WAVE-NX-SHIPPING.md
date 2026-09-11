@@ -1,8 +1,8 @@
-# WAVE-NX-SHIPPING — отгрузка на NX
+﻿# WAVE-NX-SHIPPING — отгрузка на NX
 
 **Audit:** `docs/audits/2026-09-08-shipping-nx-port-audit.md`  
 **Эталон:** legacy `frontend/.../shipping/shipping.page.ts` + `docs/pages/shipping.page.md`  
-**Промпт:** `tasks/PROMPT-CLAUDE-NX-SHIPPING.md`  
+**Промпт:** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-NX-SHIPPING.md`  
 **Исполнитель:** `agent_id: claude` continuous  
 **Статус:** S0–S4 DONE — WAVE DONE
 

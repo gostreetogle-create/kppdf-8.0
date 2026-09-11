@@ -1,6 +1,6 @@
-# WAVE checklist — AUTH RBAC (ведёт Freebuff #2)
+﻿# WAVE checklist — AUTH RBAC (ведёт Freebuff #2)
 
-> Промпт: `tasks/PROMPT-FREEBUFF-AUTH-RBAC.md`
+> Промпт: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-AUTH-RBAC.md`
 > Обрыв → resume с первого незакрытого `[ ]`.
 
 Status: **DONE**

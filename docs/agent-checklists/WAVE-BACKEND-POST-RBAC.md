@@ -1,6 +1,6 @@
-# WAVE checklist — Backend post-RBAC
+﻿# WAVE checklist — Backend post-RBAC
 
-> Промпт: `tasks/PROMPT-FREEBUFF-BE-WAVE.md`
+> Промпт: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-BE-WAVE.md`
 > Обрыв → resume с первого незакрытого `[ ]`.
 
 Status: **DONE**

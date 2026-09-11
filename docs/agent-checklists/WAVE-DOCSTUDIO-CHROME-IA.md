@@ -1,8 +1,8 @@
-# WAVE-DOCSTUDIO-CHROME-IA
+﻿# WAVE-DOCSTUDIO-CHROME-IA
 
 **Цель:** чистая шапка модуля «Докум.» — три раздела + крошки; действия документа в chrome-rails.  
 **Аудит:** `docs/audits/2026-09-06-docstudio-chrome-ia-audit.md`  
-**PROMPT:** `tasks/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md`  
+**PROMPT:** `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-DOCSTUDIO-CHROME-IA.md`  
 **Статус: DONE (2026-09-06, Freebuff).** C1→C4 последовательно; каждый шаг закрыт `nx build kppdf-web` green.
 
 | # | SIZE | TZ | Path | Dep | SHA |

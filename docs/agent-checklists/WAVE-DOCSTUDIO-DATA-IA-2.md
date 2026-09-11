@@ -1,7 +1,7 @@
-# WAVE — Doc Studio Data IA-2 (PO screenshot follow-up)
+﻿# WAVE — Doc Studio Data IA-2 (PO screenshot follow-up)
 
 date: 2026-09-05
-prompt: `tasks/PROMPT-FREEBUFF-DOCSTUDIO-D55-D56.md`
+prompt: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-DOCSTUDIO-D55-D56.md`
 agent: Freebuff (sequential S; один `kppdf-web` slot)
 
 ## Цель

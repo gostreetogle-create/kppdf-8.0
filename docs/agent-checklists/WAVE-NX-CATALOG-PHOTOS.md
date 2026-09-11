@@ -1,8 +1,8 @@
-# WAVE-NX-CATALOG-PHOTOS — фото каталога на NX
+﻿# WAVE-NX-CATALOG-PHOTOS — фото каталога на NX
 
 **Статус:** **DONE** — P0→P3 закрыты (P3 Claude closeout, Freebuff free-session cutoff mid-gates).  
 **Audit:** `docs/audits/2026-09-05-catalog-photos-nx-audit.md`  
-**Промпт:** `tasks/PROMPT-FREEBUFF-NX-CATALOG-PHOTOS.md`  
+**Промпт:** `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-CATALOG-PHOTOS.md`  
 **Эталон:** legacy `photo-dropzone` + TZ-UI-PHOTO-343 · frame API TZ-PHOTO-304 DONE  
 
 ## Цепочка

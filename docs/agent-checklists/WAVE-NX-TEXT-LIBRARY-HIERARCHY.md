@@ -1,4 +1,4 @@
-# WAVE-NX-TEXT-LIBRARY-HIERARCHY — тексты: категория → подкатегория → название
+﻿# WAVE-NX-TEXT-LIBRARY-HIERARCHY — тексты: категория → подкатегория → название
 
 **Canon audit:** `docs/audits/2026-09-11-text-library-category-subcategory-audit.md`  
 **PO model:** создать = категория + **подкатегория** + название + тело; вставка = фильтр cat→subcat → список **названий** → тело на лист.  
@@ -14,5 +14,5 @@
 
 **WAVE COMPLETE (2026-09-11).** Audit closeout: `docs/audits/2026-09-11-text-library-category-subcategory-audit.md` §6.
 
-**PROMPT:** `tasks/PROMPT-CLAUDE-TEXT-LIBRARY-HIERARCHY.md`  
+**PROMPT:** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-TEXT-LIBRARY-HIERARCHY.md`  
 **Executor:** `agent_id: claude` continuous 01→02→03.

@@ -1,8 +1,8 @@
-# WAVE — Doc Studio Data IA (панель «Данные»)
+﻿# WAVE — Doc Studio Data IA (панель «Данные»)
 
 Status: **READY** · 2026-09-05  
 Аудит: `docs/audits/2026-09-05-docstudio-data-panel-ia-audit.md`  
-Промпт continuous: `tasks/PROMPT-FREEBUFF-DOCSTUDIO-DATA-IA.md` (выдать после polish Gantt P5 или параллельно Claude, не параллельно второму Freebuff на kppdf-web)
+Промпт continuous: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-DOCSTUDIO-DATA-IA.md` (выдать после polish Gantt P5 или параллельно Claude, не параллельно второму Freebuff на kppdf-web)
 
 ## Goal
 

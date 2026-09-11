@@ -1,8 +1,8 @@
-# WAVE-NX-HUB-TABLE-PARITY — плотность таблиц + hub expand
+﻿# WAVE-NX-HUB-TABLE-PARITY — плотность таблиц + hub expand
 
 **Canon:** `docs/audits/2026-09-10-nx-hub-table-parity-canon.md`  
 **Живой чеклист:** `docs/agent-checklists/HUB-TABLE-CONTINUOUS-CHECKLIST.md`  
-**Continuous prompt:** `tasks/PROMPT-CLAUDE-HUB-CONTINUOUS.md`  
+**Continuous prompt:** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-HUB-CONTINUOUS.md`  
 **Executor:** `agent_id: claude` · **sequential** (один `kppdf-web` build)  
 **SKIP:** `/production` · Документы/DocStudio
 
@@ -11,11 +11,11 @@ status: **COMPLETE** (01–05, incl. visual parity verification)
 
 | # | Route | TZ | PROMPT | Status |
 |---|-------|-----|--------|--------|
-| 01 | `/counterparties` | `tasks/_ready/nx-hub/counterparties/TZ-NX-HUB-01-counterparties.md` | `tasks/PROMPT-CLAUDE-HUB-01-counterparties.md` | DONE |
-| 02 | `/orders` | `tasks/_ready/nx-hub/orders/TZ-NX-HUB-02-orders.md` | `tasks/PROMPT-CLAUDE-HUB-02-orders.md` | DONE |
-| 03 | `/supply` | `tasks/_ready/nx-hub/supply/TZ-NX-HUB-03-supply.md` | `tasks/PROMPT-CLAUDE-HUB-03-supply.md` | DONE |
-| 04 | `/warehouses` | `tasks/_ready/nx-hub/warehouses/TZ-NX-HUB-04-warehouses.md` | `tasks/PROMPT-CLAUDE-HUB-04-warehouses.md` | DONE |
-| 05 | visual parity (глаз) | `tasks/_ready/nx-hub/visual-parity/TZ-NX-HUB-05-VISUAL-PARITY.md` | `tasks/PROMPT-CLAUDE-HUB-VISUAL-PARITY.md` | DONE — PASS, no fix needed, `docs/audits/2026-09-10-nx-hub-visual-parity.md` |
+| 01 | `/counterparties` | `tasks/_ready/nx-hub/counterparties/TZ-NX-HUB-01-counterparties.md` | `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-HUB-01-counterparties.md` | DONE |
+| 02 | `/orders` | `tasks/_ready/nx-hub/orders/TZ-NX-HUB-02-orders.md` | `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-HUB-02-orders.md` | DONE |
+| 03 | `/supply` | `tasks/_ready/nx-hub/supply/TZ-NX-HUB-03-supply.md` | `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-HUB-03-supply.md` | DONE |
+| 04 | `/warehouses` | `tasks/_ready/nx-hub/warehouses/TZ-NX-HUB-04-warehouses.md` | `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-HUB-04-warehouses.md` | DONE |
+| 05 | visual parity (глаз) | `tasks/_ready/nx-hub/visual-parity/TZ-NX-HUB-05-VISUAL-PARITY.md` | `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-HUB-VISUAL-PARITY.md` | DONE — PASS, no fix needed, `docs/audits/2026-09-10-nx-hub-visual-parity.md` |
 
 ## Правило
 

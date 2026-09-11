@@ -1,8 +1,8 @@
-# WAVE — NX polish after Gantt L0 (Freebuff continuous)
+﻿# WAVE — NX polish after Gantt L0 (Freebuff continuous)
 
 Status: **DONE** · P1–P5 DONE · 2026-09-05
 
-Промпт: `tasks/PROMPT-FREEBUFF-NX-GANTT-POLISH.md`
+Промпт: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-GANTT-POLISH.md`
 Ревью необходимости: `docs/audits/2026-09-05-tz-queue-necessity-review.md`
 
 ## Goal

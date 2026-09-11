@@ -1,8 +1,8 @@
-# WAVE — Claude continuous (после Freebuff D56)
+﻿# WAVE — Claude continuous (после Freebuff D56)
 
 date: 2026-09-05  
 agent: Claude Code (`agent_id: claude`)  
-prompt: `tasks/PROMPT-CLAUDE-CONTINUOUS-S44-REGISTRIES.md`
+prompt: `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-CONTINUOUS-S44-REGISTRIES.md`
 
 ## Цель
 

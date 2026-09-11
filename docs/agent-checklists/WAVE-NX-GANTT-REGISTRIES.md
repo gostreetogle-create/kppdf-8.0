@@ -1,9 +1,9 @@
-# WAVE-NX-GANTT-REGISTRIES — справочники цеха в NX-реестрах
+﻿# WAVE-NX-GANTT-REGISTRIES — справочники цеха в NX-реестрах
 
 **Цель:** всё, без чего Гант не настраивается с NX, — в `/registries` с полным CRUD (как materials/modules).  
 **Audit:** `docs/audits/2026-09-05-gantt-registries-data-audit.md`  
 **Агент:** Freebuff continuous (один слот `kppdf-web`)  
-**Промпт:** `tasks/PROMPT-FREEBUFF-NX-GANTT-REGISTRIES.md`
+**Промпт:** `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-GANTT-REGISTRIES.md`
 
 | Order | SIZE | TZ | Path | Status |
 |-------|------|-----|------|--------|

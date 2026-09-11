@@ -1,9 +1,9 @@
-# WAVE-NX-SHELL-HUB-POLISH — idle rails + expand cards
+﻿# WAVE-NX-SHELL-HUB-POLISH — idle rails + expand cards
 
 **Canon gold expand:** `counterparty-hub-tray` card sections  
 **Canon rails:** no disabled demo tools; rails only when `setTools`  
 **Чеклист:** `docs/agent-checklists/SHELL-HUB-POLISH-CHECKLIST.md`  
-**Continuous:** `tasks/PROMPT-CLAUDE-SHELL-HUB-POLISH.md`
+**Continuous:** `tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-SHELL-HUB-POLISH.md`
 
 updated_at: 2026-09-10T18:45:00+03:00  
 status: **COMPLETE**  

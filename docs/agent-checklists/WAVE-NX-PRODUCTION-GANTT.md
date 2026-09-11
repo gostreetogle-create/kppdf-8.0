@@ -1,9 +1,9 @@
-# WAVE — NX Production Gantt L0 (port)
+﻿# WAVE — NX Production Gantt L0 (port)
 
 Status: **DONE** · 2026-09-05 (live smoke PASS, `docs/audits/2026-09-05-gantt-nx-smoke.md`) · 2026-09-04  
-Master: `tasks/PROMPT-FREEBUFF-NX-GANTT-MASTER.md`  
-START: `tasks/PROMPT-FREEBUFF-NX-GANTT-START.md`  
-RESUME: `tasks/PROMPT-FREEBUFF-NX-GANTT-RESUME.md`
+Master: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-GANTT-MASTER.md`  
+START: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-GANTT-START.md`  
+RESUME: `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-NX-GANTT-RESUME.md`
 
 ## Goal L0
 

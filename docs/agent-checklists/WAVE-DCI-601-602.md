@@ -1,4 +1,4 @@
-# WAVE checklist — DCI 601+602
+﻿# WAVE checklist — DCI 601+602
 
 Status: **DONE**
 agent_id: `claude`
@@ -36,7 +36,7 @@ started_at: `2026-08-31T20:07:13+03:00`
 
 ## Preflight Check Output
 
-- **Context read:** `docs/how-to-connect-ai.md`, `GEMINI.md`, `docs/PROJECT-MEMORY.md`, `docs/PO-CANON.md`, `docs/CONTEXT.md`, `docs/agent-checklists/_NOW.md`, `tasks/PROMPT-FREEBUFF-DCI-601-602.md`, `tasks/TZ-UI-DCI-601-flow-diagram.md`, `docs/agent-checklists/TZ-UI-DCI-601.md`, `.agents/skills/kppdf-project/SKILL.md`, `.agents/skills/kppdf-context-preflight/SKILL.md`, `.agents/skills/kppdf-executor-loop/SKILL.md`, `docs/ui-rules.md`, `docs/paper-and-ink.md`, `docs/audits/2026-08-31-dark-control-interface-audit.md`, `docs/FEATURE-INTEGRATION-CHECKLIST.md`, `docs/AGENT-TASK-MODES.md`, `docs/DOCS-INTEGRITY.md`, `docs/GIT-POLICY.md`
+- **Context read:** `docs/how-to-connect-ai.md`, `GEMINI.md`, `docs/PROJECT-MEMORY.md`, `docs/PO-CANON.md`, `docs/CONTEXT.md`, `docs/agent-checklists/_NOW.md`, `tasks/_archive/2026-09/prompts-spent/PROMPT-FREEBUFF-DCI-601-602.md`, `tasks/TZ-UI-DCI-601-flow-diagram.md`, `docs/agent-checklists/TZ-UI-DCI-601.md`, `.agents/skills/kppdf-project/SKILL.md`, `.agents/skills/kppdf-context-preflight/SKILL.md`, `.agents/skills/kppdf-executor-loop/SKILL.md`, `docs/ui-rules.md`, `docs/paper-and-ink.md`, `docs/audits/2026-08-31-dark-control-interface-audit.md`, `docs/FEATURE-INTEGRATION-CHECKLIST.md`, `docs/AGENT-TASK-MODES.md`, `docs/DOCS-INTEGRITY.md`, `docs/GIT-POLICY.md`
 - **Key Constraints:** continuous executor on `D:\kppdf-8.0` / `main`; `agent_id: claude`; 602 is DONE; frontend-nx only; SVG routes are orthogonal and ResizeObserver-driven; gold-deep pulse only; reduced-motion keeps base routes and hides pulse; no violet/ice/Onest/canvas; build is the last code gate.
 - **Planned Deliverable:** accessible measured `PiFlowDiagram`, public export, RU kit showcase/passport, focused tests/docs, gates, archive, and queue synchronization.
 - **Validation Path:** focused/full Paper & Ink Jest; app tsc; changed-file ESLint; browser/DOM smoke of `/kit/overview`; scoped architecture check; `nx build kppdf-web` as final code gate; Integrity slot and focused diff review.
