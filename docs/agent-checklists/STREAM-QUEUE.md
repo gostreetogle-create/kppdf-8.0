@@ -1,13 +1,13 @@
 # STREAM QUEUE — Claude-only (Freebuff PARK)
 
-updated_at: 2026-09-11T12:05:00Z
+updated_at: 2026-09-11T12:20:00Z
 
 ## Claude stream
 
 | # | WAVE | PROMPT | Статус |
 |---|------|--------|--------|
-| OPS | hidden schtask | spent | **COMPLETE** `e128556f` |
-| WH-CHIPS | warehouse TOC chips | spent | **COMPLETE** — see `_NOW.md` for SHA |
+| WH-CHIPS | warehouse TOC chips | spent | **COMPLETE** `5c59dde6` |
+| WH-PUT | put material typeahead + «+» | spent | **COMPLETE** — see `_NOW.md` for SHA |
 
 ## Freebuff
 

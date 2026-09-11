@@ -13,7 +13,7 @@ import { LucideAngularModule, Plus } from 'lucide-angular';
       class="pi-icon-btn registry-icon-btn-accent pi-focus-ring"
       [attr.aria-label]="label()"
       [attr.title]="label()"
-      data-test="registry-create"
+      [attr.data-test]="dataTest()"
       (click)="createClick.emit()"
     >
       <lucide-angular [img]="plusIcon" [size]="14" aria-hidden="true" />
@@ -37,6 +37,8 @@ import { LucideAngularModule, Plus } from 'lucide-angular';
 })
 export class RegistryCreateButtonComponent {
   readonly label = input.required<string>();
+  /** Override for callers outside the registries toolbar (e.g. dialogs with their own `data-test` scheme). */
+  readonly dataTest = input('registry-create');
   readonly createClick = output<void>();
 
   protected readonly plusIcon = Plus;

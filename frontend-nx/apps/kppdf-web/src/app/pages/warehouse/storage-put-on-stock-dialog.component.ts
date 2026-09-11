@@ -1,7 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
+  DestroyRef,
+  Injector,
   inject,
   signal,
 } from '@angular/core';
@@ -15,6 +16,7 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import {
   PiDialogComponent,
+  PiDialogService,
   PI_DIALOG_DATA,
   PI_DIALOG_REF,
   type DialogRef,
@@ -22,6 +24,16 @@ import {
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 import { firstValueFrom } from 'rxjs';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { RegistryCreateButtonComponent } from '../registries/registry-create-button.component';
+import {
+  MaterialFormDialogComponent,
+  type MaterialFormDialogData,
+} from '../registries/dialogs/material-form-dialog.component';
+
+/** Mirrors `supply-request-form-dialog.component.ts`'s material typeahead. */
+const MIN_MATERIAL_QUERY = 2;
+const MATERIAL_SEARCH_DEBOUNCE_MS = 300;
 
 export interface StoragePutOnStockDialogData {
   readonly warehouses: readonly Warehouse[];
@@ -33,7 +45,7 @@ export interface StoragePutOnStockDialogData {
   selector: 'pi-storage-put-on-stock-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiDialogComponent, ButtonComponent],
+  imports: [PiDialogComponent, ButtonComponent, RegistryCreateButtonComponent],
   template: `
     <app-pi-dialog
       title="Поставить на склад"
@@ -43,27 +55,69 @@ export interface StoragePutOnStockDialogData {
       (userClose)="ref.close(undefined)"
     >
       <div body class="space-y-form-field">
-        <label class="flex flex-col gap-1 text-sm" for="put-material">
+        <div class="flex flex-col gap-1 text-sm">
           <span>Материал *</span>
-          <select
-            id="put-material"
-            class="pi-input pi-focus-ring"
-            [value]="materialId()"
-            (change)="materialId.set(selectValue($event))"
-            [disabled]="materialsLoading()"
-            data-test="put-material"
-          >
-            <option value="">Выберите материал…</option>
-            @for (material of materialOptions(); track material._id) {
-              <option [value]="material._id">{{ material.name }}</option>
+          @if (materialId(); as id) {
+            <div
+              class="flex items-center justify-between gap-2 pi-input"
+              data-test="put-material-chip"
+            >
+              <span class="truncate">{{ materialLabel() }}</span>
+              <button
+                type="button"
+                class="pi-outline-btn shrink-0"
+                (click)="clearMaterial()"
+                data-test="put-material-clear"
+              >
+                Очистить
+              </button>
+            </div>
+          } @else {
+            <div class="flex items-end gap-2">
+              <input
+                id="put-material-search"
+                class="pi-input pi-focus-ring flex-1"
+                type="text"
+                [value]="materialQuery()"
+                (input)="onMaterialQuery(inputValue($event))"
+                placeholder="Название или артикул…"
+                aria-label="Найти материал"
+                data-test="put-material-search"
+              />
+              <pi-registry-create-button
+                label="Создать материал"
+                dataTest="put-material-create"
+                (createClick)="openCreateMaterial()"
+              />
+            </div>
+            @if (materialResults().length > 0) {
+              <ul
+                class="pi-dashed-panel divide-y divide-border"
+                data-test="put-material-results"
+              >
+                @for (m of materialResults(); track m._id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="w-full text-left px-2 py-1.5 text-sm hover:bg-paper-2"
+                      (click)="pickMaterial(m)"
+                      [attr.data-test]="'put-material-pick-' + m._id"
+                    >
+                      {{ m.name }}
+                      @if (m.article) {
+                        <span class="text-muted-foreground">· {{ m.article }}</span>
+                      }
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else if (materialQuery().trim().length >= minMaterialQuery) {
+              <p class="text-xs text-muted-foreground m-0" data-test="put-material-empty">
+                Ничего не найдено.
+              </p>
             }
-          </select>
-          @if (data.materialName && materialId()) {
-            <span class="text-xs text-muted-foreground">{{
-              data.materialName
-            }}</span>
           }
-        </label>
+        </div>
         <label class="flex flex-col gap-1 text-sm" for="put-warehouse">
           <span>Склад *</span>
           <select
@@ -152,26 +206,20 @@ export class StoragePutOnStockDialogComponent {
   private readonly api = inject(PiStorageItemsService);
   private readonly materialsApi = inject(PiMaterialsService);
   private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+
+  protected readonly minMaterialQuery = MIN_MATERIAL_QUERY;
 
   readonly warehouseId = signal('');
-  readonly materialId = signal('');
-  readonly materials = signal<readonly Material[]>([]);
-  readonly materialsLoading = signal(false);
-  readonly materialOptions = computed<readonly Material[]>(() => {
-    const items = this.materials();
-    const selectedId = this.materialId();
-    if (
-      !selectedId ||
-      items.some((material) => material._id === selectedId) ||
-      !this.data.materialName
-    ) {
-      return items;
-    }
-    return [
-      { _id: selectedId, name: this.data.materialName, unit: '' },
-      ...items,
-    ];
-  });
+  readonly materialId = signal<string | null>(null);
+  readonly materialLabel = signal('');
+  readonly materialQuery = signal('');
+  readonly materialResults = signal<Material[]>([]);
+  private materialSearchTimer: ReturnType<typeof setTimeout> | null = null;
+  private materialSearchVersion = 0;
+
   readonly quantity = signal(0);
   readonly minimum = signal(0);
   readonly zoneName = signal('');
@@ -179,12 +227,12 @@ export class StoragePutOnStockDialogComponent {
   readonly error = signal('');
 
   constructor() {
-    this.materialId.set(this.data.materialId ?? '');
+    this.materialId.set(this.data.materialId ?? null);
+    this.materialLabel.set(this.data.materialName ?? '');
     this.warehouseId.set(
       this.data.warehouses.find((warehouse) => warehouse.isActive !== false)
         ?._id ?? '',
     );
-    void this.loadMaterials();
   }
 
   inputValue(event: Event): string {
@@ -199,10 +247,52 @@ export class StoragePutOnStockDialogComponent {
     return Number((event.target as HTMLInputElement).value) || 0;
   }
 
+  onMaterialQuery(value: string): void {
+    this.materialQuery.set(value);
+    if (this.materialSearchTimer) clearTimeout(this.materialSearchTimer);
+    const query = value.trim();
+    if (query.length < MIN_MATERIAL_QUERY) {
+      this.materialResults.set([]);
+      return;
+    }
+    const version = ++this.materialSearchVersion;
+    this.materialSearchTimer = setTimeout(() => {
+      void firstValueFrom(this.materialsApi.list({ search: query, limit: 10 })).then((res) => {
+        if (version !== this.materialSearchVersion) return;
+        this.materialResults.set(res.ok ? res.data.items : []);
+      });
+    }, MATERIAL_SEARCH_DEBOUNCE_MS);
+  }
+
+  pickMaterial(material: Material): void {
+    this.materialId.set(material._id);
+    this.materialLabel.set(
+      material.article ? `${material.name} · ${material.article}` : material.name,
+    );
+    this.materialQuery.set('');
+    this.materialResults.set([]);
+  }
+
+  clearMaterial(): void {
+    this.materialId.set(null);
+    this.materialLabel.set('');
+  }
+
+  openCreateMaterial(): void {
+    const ref = this.dialog.open<Material | null | undefined>(MaterialFormDialogComponent, {
+      data: { mode: 'create', allowKindSelect: true } satisfies MaterialFormDialogData,
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (material) => {
+      if (material) this.pickMaterial(material);
+    });
+  }
+
   async submit(): Promise<void> {
     if (this.saving()) return;
+    const materialId = this.materialId();
     if (
-      !this.materialId() ||
+      !materialId ||
       !this.warehouseId() ||
       this.quantity() < 0 ||
       this.minimum() < 0
@@ -221,7 +311,7 @@ export class StoragePutOnStockDialogComponent {
     this.saving.set(true);
     this.error.set('');
     const result = await firstValueFrom(
-      this.api.createForMaterial(this.materialId(), payload),
+      this.api.createForMaterial(materialId, payload),
     );
     if (result.ok) {
       this.toast.success('Позиция поставлена на склад');
@@ -230,16 +320,5 @@ export class StoragePutOnStockDialogComponent {
       this.error.set(extractErrorMessage(result.error));
       this.saving.set(false);
     }
-  }
-
-  private async loadMaterials(): Promise<void> {
-    this.materialsLoading.set(true);
-    const result = await firstValueFrom(this.materialsApi.list({ limit: 100 }));
-    if (result.ok) {
-      this.materials.set(result.data.items);
-    } else if (!this.materialId()) {
-      this.error.set(extractErrorMessage(result.error));
-    }
-    this.materialsLoading.set(false);
   }
 }

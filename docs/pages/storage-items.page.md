@@ -63,14 +63,29 @@ this fix. The `materialId` deep-link filter now renders as a dismissible chip
 
 ### Поставить на склад
 
-The page action opens a material selector, warehouse selector, quantity, minimum, and optional zone. It uses the existing material endpoint:
+The page action opens a material picker, warehouse selector (native `<select>` — short list), quantity, minimum, and optional zone. It uses the existing material endpoint:
 
 ```text
 POST /api/materials/:materialId/storage-items
 { warehouseId, quantity, minQuantity, zoneName? }
 ```
 
-The deep-linked material is preselected; if it is outside the first catalog response, the dialog keeps a visible fallback option for that ID.
+The deep-linked material (`materialId`/`materialName`) is preselected as a chip on open.
+
+**Material typeahead + create (2026-09-11, `TZ-NX-WH-PUT-MATERIAL-TYPEAHEAD`):** the material field
+is no longer a full-catalog `<select>` (previously a flat list of every material, no search). It is
+now the same gold pattern as `supply-request-form-dialog.component.ts`'s material picker: a search
+input (`PiMaterialsService.list({ search, limit: 10 })`, debounced 300ms, min 2 chars) returning
+name/article matches to pick from, plus an accent-styled Lucide `Plus` icon button
+(`pi-registry-create-button`, `dataTest="put-material-create"`, same component the registries
+toolbar uses for its own create action — no new colors outside the Paper & Ink accent tokens)
+that opens the shared `MaterialFormDialogComponent` in `create` mode; the newly-created material is
+auto-selected on close. Once a material is chosen (found or newly created) it renders as a chip
+with a **Очистить** button to search again — never both a search box and a stale selection at once.
+
+Files: `storage-put-on-stock-dialog.component.ts`; icon button reused from
+`../registries/registry-create-button.component.ts` (gained an optional `dataTest` input so this
+dialog's own `data-test` naming doesn't collide with the registries toolbar's `registry-create`).
 
 ### Корректировать
 
