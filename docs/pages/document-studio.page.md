@@ -20,8 +20,10 @@
 раньше рендерился как есть — «draft» вместо «Черновик»). Кнопка «×» удаления на обеих страницах
 (`/studio` и `/studio/templates`) переведена с мёртвого `class="pi-icon-button"` (нет CSS, тот же
 класс мёртвых кнопок, что и `pi-button-*` из `08b`) на реальный `.pi-icon-btn .pi-icon-btn-danger`.
-Третье место с тем же мёртвым классом, `studio-template-picker-dialog.component.ts`, вне glob'а
-этого TZ (`studio-*.page.ts`) — флагнуто, не тронуто. См.
+Третье место с тем же мёртвым классом, `studio-template-picker-dialog.component.ts` (модалка
+«Выберите шаблон»), было вне glob'а этого TZ (`studio-*.page.ts`) — закрыто отдельным
+`TZ-NX-STUDIO-TEMPLATE-PICKER-ICONS` (2026-09-11): та же замена на `.pi-icon-btn .pi-icon-btn-danger`.
+`rg pi-icon-button frontend-nx` → 0 hits, мёртвого класса в репо больше нет. См.
 `docs/audits/2026-09-09-nx-ux-studio-list-audit.md`.
 
 **Live-данные таблиц (S46):** строки таблиц с живым источником (`catalog-*`, ERP) живут в клиенте (`settings.liveRows`, ephemeral — **не** пишутся в Mongo); после сохранения layout (drag/resize) клиентские строки восстанавливаются merge'ем ответа API с локальным блоком, иначе — one-shot re-hydrate через `putDataSet`. Аудит: [`../audits/2026-09-06-docstudio-live-data-hydrate-audit.md`](../audits/2026-09-06-docstudio-live-data-hydrate-audit.md).

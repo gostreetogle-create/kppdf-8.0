@@ -23,7 +23,7 @@ export interface StudioTemplatePickerDialogData {
             <strong>{{ template.name }}</strong>
             <span class="block text-xs text-muted-foreground">{{ template.orientation === 'landscape' ? 'Альбомная' : 'Книжная' }} · {{ template.pageSize ?? 'A4' }}</span>
           </button>
-          <button class="pi-icon-button pi-focus-ring shrink-0" type="button" aria-label="Удалить шаблон" title="Удалить" [attr.data-test]="'studio-template-delete-' + template._id" (click)="removeTemplate(template, $event)">×</button>
+          <button class="pi-icon-btn pi-icon-btn-danger pi-focus-ring shrink-0" type="button" aria-label="Удалить шаблон" title="Удалить" [attr.data-test]="'studio-template-delete-' + template._id" (click)="removeTemplate(template, $event)">×</button>
         </div>
       }
     </div>
