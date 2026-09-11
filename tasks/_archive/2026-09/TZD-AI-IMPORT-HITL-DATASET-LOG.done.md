@@ -37,4 +37,4 @@ IMPLICIT: prefer **local app-data JSONL only** — do **not** add raw Excel to M
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-12T00:00:00Z — see docs/agent-checklists/TZD-AI-IMPORT-HITL-DATASET-LOG.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-12T00:00:00Z — SHA `9e79911d` (main, pushed)

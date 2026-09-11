@@ -2,7 +2,7 @@
 
 > Status: **DONE**
 > Archive: `tasks/_archive/2026-09/TZD-AI-IMPORT-HITL-DATASET-LOG.done.md`
-> Commit/push: по `docs/GIT-POLICY.md`
+> Commit/push: `9e79911d` (pushed to origin/main)
 
 ## Claim slot
 
