@@ -14,7 +14,7 @@ updated_at: 2026-09-11T13:25:00Z
 
 ## DONE
 
-- WAVE-NX-DROP-REFERENCE-NAV COMPLETE — `b822c2cf` (01 registry) / TZ-02 SHA см. ниже после push
+- WAVE-NX-DROP-REFERENCE-NAV COMPLETE — `b822c2cf` (01 registry) / `1ae9260b` (02 nav drop)
 - TZ-NX-WH-PUT-MATERIAL-TYPEAHEAD — `62ee6360`
 - TZ-NX-WH-GROUP-CHIPS — `5c59dde6`
 

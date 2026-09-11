@@ -13,7 +13,7 @@ PO накидывает наблюдения с сайта → Cursor: анал�
 |---|------|--------|--------|
 | WH-CHIPS | warehouse TOC | spent | COMPLETE `5c59dde6` |
 | WH-PUT | put material typeahead | spent | COMPLETE `62ee6360` |
-| 1 | DROP-REFERENCE-NAV | spent | **COMPLETE** `b822c2cf` / `<TZ-02 SHA>` |
+| 1 | DROP-REFERENCE-NAV | spent | **COMPLETE** `b822c2cf` / `1ae9260b` |
 | 2 | REGISTRY-CATEGORIES | `tasks/PROMPT-CLAUDE-REGISTRY-CATEGORIES.md` | queued — next single prompt |
 | 3 | DOCSTUDIO-TABLE-PROPS | `tasks/PROMPT-CLAUDE-DOCSTUDIO-TABLE-PROPS.md` | queued |
 | … | (новые от PO) | по мере TZ | backlog |
