@@ -62,6 +62,10 @@ export default [
       '**/*.mjs',
     ],
     // Override or add rules here
-    rules: {},
+    rules: {
+      // TZ-NX-NO-NATIVE-CONFIRM: native browser dialogs are banned — use
+      // Pi AlertDialogComponent (see studio-editor.page.ts onFinalize).
+      'no-alert': 'error',
+    },
   },
 ];

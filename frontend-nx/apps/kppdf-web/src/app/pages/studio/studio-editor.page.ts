@@ -1964,7 +1964,23 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   onFinalize(): void {
     const doc = this.document();
     if (!doc || this.finalizing() || doc.status !== 'draft') return;
-    if (!window.confirm('Отправить документ в архив? Редактирование будет закрыто.')) return;
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Отправить документ в архив?',
+        description: 'Редактирование будет закрыто.',
+        confirmLabel: 'В архив',
+        cancelLabel: 'Отмена',
+        variant: 'destructive',
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed) => {
+      if (!confirmed) return;
+      this.runFinalize(doc);
+    });
+  }
+
+  private runFinalize(doc: StudioDocument): void {
     this.finalizing.set(true);
     void this.flushLayouts()
       .then(() => firstValueFrom(this.documents.finalize(doc._id)))
