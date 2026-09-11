@@ -1,6 +1,8 @@
 import type { TableTemplate } from '@kppdf/data-access';
 import {
   buildTableSettingsFromTemplate,
+  createStandardStudioTableColumn,
+  missingStandardColumnFields,
   remapRowsForColumnChange,
   filterHiddenColumnKeysForColumns,
   studioTableHiddenColumnKeys,
@@ -95,5 +97,55 @@ describe('studio-table-defaults', () => {
     expect(
       studioTableRowSource({ settings: { dataSource: { type: 'catalog-products' } } }),
     ).toBe('catalog-products');
+  });
+
+  describe('missingStandardColumnFields (TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE)', () => {
+    it('offers all 6 standard fields for a table with only name/price', () => {
+      const block = {
+        settings: {
+          tableTemplateColumns: [
+            { key: 'name', label: 'Наименование', type: 'text' as const, width: 60, align: 'left' as const },
+            { key: 'price', label: 'Цена', type: 'currency' as const, width: 20, align: 'right' as const },
+          ],
+        },
+      };
+      const missing = missingStandardColumnFields(block).map((f) => f.key);
+      expect(missing).toEqual(['qty', 'sku', 'photo', 'unit', 'description']);
+    });
+
+    it('recognizes an existing column under any alias, not just the canonical key', () => {
+      const block = {
+        settings: {
+          tableTemplateColumns: [
+            { key: 'quantity', label: 'Кол-во', type: 'number' as const, width: 20, align: 'right' as const },
+            { key: 'article', label: 'Артикул', type: 'text' as const, width: 20, align: 'left' as const },
+          ],
+        },
+      };
+      const missing = missingStandardColumnFields(block).map((f) => f.key);
+      expect(missing).not.toContain('qty');
+      expect(missing).not.toContain('sku');
+      expect(missing).toContain('photo');
+    });
+
+    it('returns nothing missing once all 6 are present', () => {
+      const block = {
+        settings: {
+          tableTemplateColumns: ['qty', 'sku', 'photo', 'unit', 'description', 'price'].map((key) => ({
+            key,
+            label: key,
+            type: 'text' as const,
+            width: 20,
+            align: 'left' as const,
+          })),
+        },
+      };
+      expect(missingStandardColumnFields(block)).toEqual([]);
+    });
+  });
+
+  it('createStandardStudioTableColumn builds a column at the canonical key with a default width', () => {
+    const col = createStandardStudioTableColumn({ key: 'qty', label: 'Количество', type: 'number', align: 'right' });
+    expect(col).toEqual({ key: 'qty', label: 'Количество', type: 'number', width: 20, align: 'right' });
   });
 });

@@ -1,11 +1,11 @@
 ﻿# NOW
 
-updated_at: 2026-09-11T19:05:00Z
+updated_at: 2026-09-11T19:35:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IN PROGRESS — WAVE-NX-DOCSTUDIO-TABLE-PROPS 01/05 DONE, continuing 02 `TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE`.
+- **Claude:** IN PROGRESS — WAVE-NX-DOCSTUDIO-TABLE-PROPS 02/05 DONE, continuing 03 `TZ-NX-DOCSTUDIO-TABLE-LINE-QTY`.
 - **Deploy stamp:** READY
 
 ## NEXT
@@ -14,6 +14,7 @@ updated_at: 2026-09-11T19:05:00Z
 
 ## DONE
 
+- TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE — columnsEditable() unlocked (было 2 условия, стало 1); quick-add палитра стандартных полей
 - TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH — свойства таблицы 340→820px (scoped `panelTable`, не global)
 - WAVE-NX-REGISTRY-CATEGORIES — `1a345822` `70a3e777` `a5b4c429` `b0b5ddd1` `09f41ed1`
 - WAVE-NX-DROP-REFERENCE-NAV — `b822c2cf` `1ae9260b`

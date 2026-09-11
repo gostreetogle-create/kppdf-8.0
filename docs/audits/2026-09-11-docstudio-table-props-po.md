@@ -29,3 +29,27 @@
 ## WAVE
 
 `docs/agent-checklists/WAVE-NX-DOCSTUDIO-TABLE-PROPS.md`
+
+## Closeout 01/5 (2026-09-11) — `TZ-NX-DOCSTUDIO-PROPS-PANEL-WIDTH` DONE
+
+Панель уже была overlay (`position: absolute` в `.kp-ws-body`) — закон 1
+`kp-workspace-geometry.md` (не reflow A4) архитектурно уже соблюдался, ничего
+чинить не пришлось. Новый scoped `panelTable`/`kp-ws-panel--table` (820px,
+только для properties секции с выбранным table-блоком) рядом с уже
+существующим `panelWide`/`kp-ws-panel--wide` (58rem, только `data`) — text/
+image properties остались на 340px. SHA `0df45baf`.
+
+## Closeout 02/5 (2026-09-11) — `TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE` DONE
+
+`columnsEditable()` блокировал reorder/add-column ОБОИМИ условиями:
+`rowSource==='manual'` И `!templateId` — при выбранном виде (любом, включая
+catalog-источники типа «Продукты») структура была read-only целиком. Свёл к
+одному условию (`customColumns !== false`) — структура (`tableTemplateColumns`)
+и так физически хранится на блоке (snapshot при выборе шаблона), никакого
+PATCH реестра не требовалось никогда, просто UI не давал трогать. Добавлена
+quick-add палитра стандартных полей (qty/sku/photo/unit/description/price,
+ключи = canonical BE `COLUMN_ALIASES`) — чтобы добавленная «Количество»
+реально гидрировалась из catalog/quotation/order rows, а не висела пустой
+колонкой из-за несовпадения ключа. Rehydrate `liveRows` при смене структуры
+для live-источников — уже существовавшая инфраструктура (TZ-NX-DOCSTUDIO-S47),
+сработала без единой правки. SHA (см. checklist после push).

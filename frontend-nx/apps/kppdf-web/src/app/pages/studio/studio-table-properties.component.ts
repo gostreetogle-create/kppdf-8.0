@@ -39,6 +39,9 @@ import {
   remapRowsForColumnChange,
   filterHiddenColumnKeysForColumns,
   createStudioTableColumn,
+  createStandardStudioTableColumn,
+  missingStandardColumnFields,
+  type StudioStandardColumnField,
   type StudioTableColumn,
 } from './studio-table-defaults';
 
@@ -126,6 +129,21 @@ import {
             + Колонка
           </app-pi-button>
         </div>
+        @if (missingStandardFields(block).length > 0) {
+          <div class="table-props__quick-add" data-test="studio-table-quick-add">
+            @for (field of missingStandardFields(block); track field.key) {
+              <button
+                type="button"
+                class="table-props__chip-btn pi-focus-ring"
+                [disabled]="disabled"
+                [attr.data-test]="'studio-table-quick-add-' + field.key"
+                (click)="addStandardColumn(field)"
+              >
+                + {{ field.label }}
+              </button>
+            }
+          </div>
+        }
         @for (col of columns(block); track col.key; let i = $index) {
           <div class="table-props__column-row" [attr.data-test]="'studio-table-column-row-' + i">
             <input
@@ -214,7 +232,7 @@ import {
       } @else {
         <div class="table-props__locked-summary" data-test="studio-table-columns-locked">
           <span class="table-props__label">Структура колонок</span>
-          <p>Колонки заданы видом или источником строк и доступны только для чтения.</p>
+          <p>Структура колонок этой таблицы закрыта для правки («customColumns: false»).</p>
         </div>
       }
 
@@ -442,6 +460,16 @@ import {
     .table-props__column-editor-head {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
     }
+    .table-props__quick-add { display: flex; flex-wrap: wrap; gap: 4px; }
+    .table-props__chip-btn {
+      padding: 3px 8px; border: 1px dashed var(--color-rule-strong); border-radius: var(--radius-sm);
+      background: var(--color-paper-2); color: var(--color-muted-foreground); font-size: 11px;
+      cursor: pointer; white-space: nowrap;
+    }
+    .table-props__chip-btn:hover:not(:disabled) {
+      border-style: solid; border-color: var(--color-gold-deep); color: var(--color-ink);
+    }
+    .table-props__chip-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .table-props__column-row {
       display: grid;
       grid-template-columns: minmax(3rem, 0.9fr) minmax(4rem, 1.2fr) 4.2rem 2.6rem 4.2rem auto;
@@ -556,10 +584,16 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
 
   protected readonly columns = studioTableColumns;
 
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE — a selected «Вид» (template) used to
+   * lock structure entirely (rowSource==='manual' && !templateId). PO: reorder
+   * and adding standard fields (e.g. «Количество») must work regardless of
+   * template/rowSource — structure lives on the block (`tableTemplateColumns`
+   * override), never requires PATCHing the shared template in the registry.
+   * `customColumns: false` remains the one explicit opt-out.
+   */
   protected columnsEditable(): boolean {
-    const source = this.rowSource();
-    const templateId = studioTableTemplateId(this.block);
-    return source === 'manual' && !templateId && this.block.settings?.['customColumns'] !== false;
+    return this.block.settings?.['customColumns'] !== false;
   }
 
   protected rowSource(): string {
@@ -688,6 +722,15 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
 
   protected addColumn(): void {
     const next = [...studioTableColumns(this.block), createStudioTableColumn(studioTableColumns(this.block))];
+    this.emitColumnStructure(next);
+  }
+
+  protected missingStandardFields(block: StudioBlock): readonly StudioStandardColumnField[] {
+    return missingStandardColumnFields(block);
+  }
+
+  protected addStandardColumn(field: StudioStandardColumnField): void {
+    const next = [...studioTableColumns(this.block), createStandardStudioTableColumn(field)];
     this.emitColumnStructure(next);
   }
 

@@ -66,6 +66,51 @@ export function isStudioPhotoColumnKey(key: string): boolean {
   return PHOTO_COLUMN_KEY_ALIASES.includes(key.trim().toLowerCase());
 }
 
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE — parity with backend `COLUMN_ALIASES`
+ * (studio-data-resolver.ts), used only to detect whether a standard field is
+ * already present (under any alias) before offering to quick-add it again.
+ */
+const STUDIO_STANDARD_COLUMN_ALIASES: Record<string, readonly string[]> = {
+  qty: ['qty', 'quantity', 'count', 'кол-во', 'количество'],
+  price: ['price', 'unitprice', 'unit_price', 'цена'],
+  unit: ['unit', 'ед', 'ед.изм'],
+  sku: ['sku', 'productsku', 'артикул', 'article'],
+  photo: PHOTO_COLUMN_KEY_ALIASES,
+  description: ['description', 'desc', 'описание'],
+};
+
+export interface StudioStandardColumnField {
+  readonly key: keyof typeof STUDIO_STANDARD_COLUMN_ALIASES;
+  readonly label: string;
+  readonly type: StudioTableColumn['type'];
+  readonly align: StudioTableColumn['align'];
+}
+
+/** Minimum «Количество» plus the other typical catalog-row fields (TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE). */
+export const STUDIO_STANDARD_COLUMN_FIELDS: readonly StudioStandardColumnField[] = [
+  { key: 'qty', label: 'Количество', type: 'number', align: 'right' },
+  { key: 'sku', label: 'Артикул', type: 'text', align: 'left' },
+  { key: 'photo', label: 'Фото', type: 'text', align: 'left' },
+  { key: 'unit', label: 'Ед.', type: 'text', align: 'left' },
+  { key: 'description', label: 'Описание', type: 'text', align: 'left' },
+  { key: 'price', label: 'Цена', type: 'currency', align: 'right' },
+] as const;
+
+export function missingStandardColumnFields(block: {
+  settings?: Record<string, unknown>;
+}): readonly StudioStandardColumnField[] {
+  const existingKeys = studioTableColumns(block).map((col) => col.key.trim().toLowerCase());
+  return STUDIO_STANDARD_COLUMN_FIELDS.filter((field) => {
+    const aliases = STUDIO_STANDARD_COLUMN_ALIASES[field.key];
+    return !existingKeys.some((key) => aliases.includes(key));
+  });
+}
+
+export function createStandardStudioTableColumn(field: StudioStandardColumnField): StudioTableColumn {
+  return { key: field.key, label: field.label, type: field.type, width: 20, align: field.align };
+}
+
 export function studioTableHiddenColumnKeys(block: { settings?: Record<string, unknown> }): string[] {
   const keys = block.settings?.['tableHiddenColumnKeys'];
   return Array.isArray(keys) ? keys.filter((k): k is string => typeof k === 'string') : [];
