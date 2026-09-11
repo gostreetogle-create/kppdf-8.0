@@ -37,4 +37,4 @@ IMPLICIT CONFLICT: nx build kppdf-web
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-11T21:15:00Z — see docs/agent-checklists/TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-11T21:15:00Z — SHA `7d904839` (main, pushed)

@@ -85,4 +85,4 @@ quick-add палитра стандартных полей (qty/sku/photo/unit/d
 (`resolveCatalogPhotoUrls` теперь проверяет файл на диске) — canvas, preview
 HTML и PDF потребляют один и тот же `photoUrl`, чинится сразу везде без
 правок в каждом рендер-пути отдельно. Upload pipeline не тронут (не входило
-в scope). SHA (см. checklist после push).
+в scope). SHA `7d904839`.
