@@ -14,6 +14,12 @@
 «Документы», рядом с «Тексты») — плоский `defineRegistry`, не отдельная
 master-detail страница.
 
+**2026-09-11, `TZ-NX-NAV-DROP-REFERENCE`:** top-nav «Справ.» удалён из
+`NAV_CATEGORIES` целиком (`nav-categories.ts`) — не осталось ни одного живого
+пункта под ним после переноса выше. Категории текстов доступны только через
+Реестры. `units`/`categories` (catalog) секция «Справочники» **внутри**
+`/registries` — не top-nav, не задета.
+
 - Registry: `text-block-categories.registry.ts` + `text-block-categories-http-data-source.ts`
   (`frontend-nx/apps/kppdf-web/src/app/pages/registries/data/`). Колонка «Путь»
   несёт «Root › Sub» (или просто имя корня для root-строки) вместо двухуровневой

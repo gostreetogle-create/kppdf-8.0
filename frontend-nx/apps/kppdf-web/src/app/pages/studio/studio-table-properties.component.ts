@@ -336,7 +336,7 @@ import {
       >
         Сохранить как вид таблицы
       </app-pi-button>
-      <p class="table-props__hint">Реестр видов — «Справочники → Виды таблиц».</p>
+      <p class="table-props__hint">Реестр видов — «Реестры → Документы → Виды таблиц».</p>
     </div>
   `,
   styles: [`

@@ -11,7 +11,6 @@ describe('NAV_CATEGORIES (ported from legacy frontend/src/app/layout/app-layout.
       'production',
       'warehouse',
       'docs',
-      'reference',
       'registries',
       'admin',
     ]);

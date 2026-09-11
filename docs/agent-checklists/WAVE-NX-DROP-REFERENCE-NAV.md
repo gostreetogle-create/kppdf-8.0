@@ -7,7 +7,9 @@
 | # | SIZE | TZ | Суть | Status |
 |---|------|-----|------|--------|
 | 01 | L | `tasks/TZ-NX-REG-TEXT-BLOCK-CATEGORIES.md` | Registry «Категории текстов» в Документы; reuse dialogs; redirect `/dictionaries/...` | DONE |
-| 02 | M | `tasks/TZ-NX-NAV-DROP-REFERENCE.md` | Удалить `reference` из NAV; dead stubs; shell/specs; page.md | READY |
+| 02 | M | `tasks/TZ-NX-NAV-DROP-REFERENCE.md` | Удалить `reference` из NAV; dead stubs; shell/specs; page.md | DONE |
+
+**WAVE COMPLETE (2026-09-11).**
 
 **PROMPT:** `tasks/PROMPT-CLAUDE-DROP-REFERENCE-NAV.md`  
 **Очередь:** после PUT-typeahead; можно **перед или параллельно** WAVE-NX-REGISTRY-CATEGORIES (разные conflict keys; nav/text-cats ≠ catalog Category).

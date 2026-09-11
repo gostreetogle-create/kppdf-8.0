@@ -1,21 +1,20 @@
 ﻿# NOW
 
-updated_at: 2026-09-11T13:05:00Z
+updated_at: 2026-09-11T13:25:00Z
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IN PROGRESS — WAVE-NX-DROP-REFERENCE-NAV 01/02 DONE, continuing 02 `TZ-NX-NAV-DROP-REFERENCE`.
+- **Claude:** IDLE. WAVE-NX-DROP-REFERENCE-NAV COMPLETE (01+02).
 - **Deploy stamp:** READY
 
 ## NEXT
 
-После DONE DROP-REFERENCE (02) → `tasks/PROMPT-CLAUDE-REGISTRY-CATEGORIES.md`  
-Дальше — новые TZ из накида PO (STREAM-QUEUE).
+`tasks/PROMPT-CLAUDE-REGISTRY-CATEGORIES.md` — следующий единичный промпт (PO-режим: один за раз, не пачка).
 
 ## DONE
 
-- TZ-NX-REG-TEXT-BLOCK-CATEGORIES — registry «Категории текстов» + redirect
+- WAVE-NX-DROP-REFERENCE-NAV COMPLETE — `b822c2cf` (01 registry) / TZ-02 SHA см. ниже после push
 - TZ-NX-WH-PUT-MATERIAL-TYPEAHEAD — `62ee6360`
 - TZ-NX-WH-GROUP-CHIPS — `5c59dde6`
 

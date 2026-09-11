@@ -7,7 +7,6 @@ import {
   Factory,
   Warehouse,
   FileText,
-  BookOpen,
   ShieldCheck,
   Table2,
 } from 'lucide-angular';
@@ -159,43 +158,6 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
     items: [
       { path: '/studio', pageKey: 'doc-studio', label: 'Документы' },
       { path: '/studio/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
-    ],
-  },
-  {
-    id: 'reference',
-    label: 'Справочники',
-    shortLabel: 'Справ.',
-    icon: BookOpen,
-    entryPath: '/categories',
-    activeAliases: [
-      '/dictionaries/classification',
-      '/dictionaries/appearance',
-      '/dictionaries/documents-ref',
-    ],
-    items: [
-      { path: '/categories', pageKey: 'categories', label: 'Классификация' },
-      { path: '/dictionaries/measurements', pageKey: 'dictionaries', label: 'Измерения' },
-      { path: '/dictionaries/color-references', pageKey: 'color-references', label: 'Цвета' },
-      {
-        path: '/doc-template-categories',
-        pageKey: 'doc-template-categories',
-        label: 'Категории шаблонов',
-      },
-      {
-        path: '/dictionaries/text-block-categories',
-        pageKey: 'text-block-categories',
-        label: 'Категории текстов',
-      },
-      {
-        path: '/dictionaries/form-profiles',
-        pageKey: 'dictionaries',
-        label: 'Профили быстрых форм',
-      },
-      {
-        path: '/dictionaries/kind-labels',
-        pageKey: 'dictionaries',
-        label: 'Виды изделий и материалов',
-      },
     ],
   },
   {
