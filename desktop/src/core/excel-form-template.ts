@@ -27,7 +27,7 @@ export const FORM_SHEET_NAME = '_kppdf';
 /** Лист данных формы (строка 1 — заголовки, строка 2 — пустой скелет). */
 export const FORM_DATA_SHEET = 'Данные';
 
-export type FormCategoryKey = 'catalog' | 'counterparties' | 'references' | 'supply';
+export type FormCategoryKey = 'catalog' | 'counterparties' | 'references' | 'supply' | 'inventory';
 
 export interface FormCategory {
   key: FormCategoryKey;
@@ -55,6 +55,11 @@ export const FORM_CATEGORIES: readonly FormCategory[] = [
     key: 'supply',
     labelRu: 'Снабжение',
     descriptionRu: 'Быстрый заказ и задачи реестра снабжения — пачкой из Excel.',
+  },
+  {
+    key: 'inventory',
+    labelRu: 'Склад',
+    descriptionRu: 'Занос физической инвентаризации остатков — только количество, без веса.',
   },
 ];
 
@@ -168,6 +173,15 @@ const FORM_TEMPLATES: readonly FormTemplate[] = [
       'Задачи реестра снабжения: нужен ID заказа и кол-во; наименование или ID материала/модуля. Пишутся сразу после подтверждения.',
     requiredFields: IMPORT_TARGETS.supplyTask.requiredFields,
     columns: IMPORT_TARGETS.supplyTask.columns,
+  },
+  {
+    targetKey: 'inventory',
+    categoryKey: 'inventory',
+    labelRu: IMPORT_TARGETS.inventory.label,
+    descriptionRu:
+      'Физический счёт остатков: артикул или SKU, количество, склад (по имени). Только количество — без веса. Пишется сразу через приход на склад (StockMovement IN) после подтверждения.',
+    requiredFields: IMPORT_TARGETS.inventory.requiredFields,
+    columns: IMPORT_TARGETS.inventory.columns,
   },
 ];
 

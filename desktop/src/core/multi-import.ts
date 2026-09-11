@@ -187,6 +187,35 @@ function validateWorkerRows(
   });
 }
 
+/**
+ * TZ-NX-WH-INV-DESKTOP-EXCEL — «Инвентаризация»: qty only, no weight, no
+ * catalog dedupe (a repeat count of the same article across rows or across
+ * separate imports is a legitimate additional IN movement, not a
+ * duplicate — the ledger, not this validator, is the source of truth for
+ * "how much is there now"). article/sku resolution to a concrete
+ * Material/Product happens server-side (`StockMovementService.batchInventoryIn`);
+ * this validator only checks the row is well-formed enough to send.
+ */
+function validateInventoryRows(rows: RawRow[]): ValidatedImportRow[] {
+  return rows.map((values, rowIndex) => {
+    const article = textValue(values, 'article');
+    const sku = textValue(values, 'sku');
+    if (!article && !sku) {
+      return { rowIndex, values, status: 'invalid', message: 'Укажите артикул или SKU' };
+    }
+    const rawQty = values.qty;
+    const hasQty = rawQty !== undefined && rawQty !== null && String(rawQty).trim() !== '';
+    if (!hasQty) {
+      return { rowIndex, values, status: 'invalid', message: 'Укажите количество' };
+    }
+    const qty = numberValue(values, 'qty');
+    if (qty === undefined || qty <= 0) {
+      return { rowIndex, values, status: 'invalid', message: 'Количество должно быть числом больше нуля' };
+    }
+    return { rowIndex, values, status: 'ok_new', message: 'Строка готова к заносу' };
+  });
+}
+
 export interface SendReadinessInput {
   validated: ValidatedImportRow[];
 }
@@ -394,6 +423,9 @@ export function validateTableRows(
   }
   if (targetKey === 'supplyRequest' || targetKey === 'supplyTask') {
     return validateSupplyRows(rows, targetKey, supplyLookups);
+  }
+  if (targetKey === 'inventory') {
+    return validateInventoryRows(rows);
   }
   const target = importTarget(targetKey);
   const dedupeKey = DEDUPE_KEYS[targetKey] ?? '';

@@ -118,3 +118,22 @@ WAVE C/D без `inputKg` / `packSize` / конвертеров. Масса в �
 (ссылка + напоминание про batch = не второй write-path). `Material.stockQty` /
 `Product.stockQty` явно deprecated/не-SoT везде, где встречается остаток.
 WAVE row 01 → DONE, продолжение — 02 BE batch.
+
+## 9. Closeout 02–03/3 (2026-09-11) — WAVE COMPLETE
+
+- **02** `TZ-NX-WH-INV-BE-BATCH`: `POST /api/stock-movements/batch-in` — резолвит
+  article/sku → Material|Product, warehouseId/Name/default; пишет через
+  существующий `create({type:'in'})` (Z-001, одна транзакция на строку);
+  partial success + `errors[]` по индексу строки (задокументировано).
+- **03** `TZ-NX-WH-INV-DESKTOP-EXCEL`: новый import target `inventory` в
+  `desktop/src/core/import-targets.ts` (артикул/SKU/кол-во/склад/документ, без
+  веса); валидация в `multi-import.ts` (только qty>0 + артикул-или-SKU, без
+  дедупа — повтор count = ещё один приход); Form Studio allowlist (категория
+  «Склад») для скачивания шаблона; `App.svelte` `sendBlocks()` — один batch
+  POST на блок (не построчно) в отличие от остальных target'ов.
+
+Итог: PO-модель «занос инвентаризации = только qty, через Excel или вручную,
+всегда через ledger IN» — реализована end-to-end (docs canon + BE batch +
+Desktop Excel target + Form Studio template). Вес→шт осознанно не делали (PO
+решение). Supply Excel (path A/B) не тронут — round-trip тесты и вся
+`supply-excel-pack`/`excel-form-template` тестовая база остались зелёными.

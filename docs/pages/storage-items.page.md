@@ -114,6 +114,17 @@ write path). Bulk Excel import of a physical count (`WAVE-NX-WAREHOUSE-INVENTORY
 batches the same atomic `in` write per row server-side — it is not a second
 write-path, just many calls to the one that already exists.
 
+**Desktop Excel (2026-09-11, `TZ-NX-WH-INV-DESKTOP-EXCEL`):** operator flow —
+Desktop app → Формы → «Склад» → «Инвентаризация (остатки)» → скачать шаблон
+(артикул/SKU, кол-во, склад, документ) → заполнить → загрузить обратно →
+подтвердить. Отправка — **один batch-запрос** на весь блок
+(`POST /api/stock-movements/batch-in`, `TZ-NX-WH-INV-BE-BATCH`), не построчно;
+известные строки уходят в приход, неизвестные — в отчёт отклонений с текстом
+ошибки от сервера. `desktop/src/core/import-targets.ts` (`inventory` target),
+`multi-import.ts` (`validateInventoryRows` — qty only, no weight, no catalog
+dedupe: repeat counts are legitimate additional IN movements), `excel-form-template.ts`
+(Form Studio allowlist entry, category «Склад»).
+
 ## Legacy reference
 
 The legacy page still documents the older `PiGroupWorkspace`/`pi-table` implementation and remains the cutover reference. NX W2 deliberately does not add an inventory dashboard, reservation writes, transfer creation, warehouse types, or zone management. Quantity is never read from `Material.stockQty` as a source of truth.

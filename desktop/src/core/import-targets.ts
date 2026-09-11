@@ -36,7 +36,8 @@ export type ImportTargetKey =
   | 'category'
   | 'supplyRequest'
   | 'supplyTask'
-  | 'worker';
+  | 'worker'
+  | 'inventory';
 
 /** TZD-51 — справочники (пишутся сразу после confirm, без журнала предложений). */
 export const REFERENCE_TARGET_KEYS: readonly ImportTargetKey[] = [
@@ -234,6 +235,28 @@ export const IMPORT_TARGETS = {
       { key: 'orderLineId', label: 'ID линии заказа', aliases: ['orderlineid', 'линия заказа', 'order line'] },
     ],
   },
+  /**
+   * TZ-NX-WH-INV-DESKTOP-EXCEL — bulk physical-count IN. PO: qty only, no
+   * weight anywhere on this path. `article`/`sku` are resolved server-side
+   * (`StockMovementService.batchInventoryIn`, TZ-NX-WH-INV-BE-BATCH) —
+   * article against Material, sku against Material then Product; a row
+   * needs at least one of the two (checked in `validateInventoryRows`,
+   * `requiredFields` alone can't express "either/or"). No raw ObjectId
+   * columns — a paper-count operator has an article/SKU on the shelf
+   * label, not a Mongo id.
+   */
+  inventory: {
+    key: 'inventory',
+    label: 'Инвентаризация (остатки)',
+    requiredFields: ['qty'],
+    columns: [
+      { key: 'article', label: 'Артикул (материал)', aliases: ['article', 'артикул', 'обозначение', 'код'] },
+      { key: 'sku', label: 'SKU (материал/изделие)', aliases: ['sku', 'скю', 'код товара', 'штрихкод'] },
+      { key: 'qty', label: 'Кол-во', aliases: ['qty', 'quantity', 'количество', 'кол-во', 'кол', 'к-во'] },
+      { key: 'warehouseName', label: 'Склад', aliases: ['warehouse', 'warehousename', 'склад', 'название склада', 'наименование склада'] },
+      { key: 'documentRef', label: 'Документ', aliases: ['documentref', 'документ', 'основание', 'примечание'] },
+    ],
+  },
 } as const satisfies Record<ImportTargetKey, ImportTarget>;
 
 export type ImportTargetTable = (typeof IMPORT_TARGETS)[ImportTargetKey];
@@ -251,6 +274,7 @@ export const IMPORT_TARGET_ORDER: ImportTargetKey[] = [
   'supplyRequest',
   'supplyTask',
   'worker',
+  'inventory',
 ];
 
 export function importTarget(key: ImportTargetKey): ImportTargetTable {

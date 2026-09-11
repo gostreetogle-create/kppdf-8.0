@@ -1791,6 +1791,39 @@
     return { created, errors };
   }
 
+  /**
+   * TZ-NX-WH-INV-DESKTOP-EXCEL — «Инвентаризация»: one batch POST for every
+   * validated row in the block (not per-row, unlike `createEntities`).
+   * article/sku/warehouseName are sent raw and resolved server-side
+   * (`StockMovementService.batchInventoryIn`, TZ-NX-WH-INV-BE-BATCH); qty
+   * only, no weight anywhere on this path.
+   */
+  async function sendInventoryBatch(
+    cfg: ApiClientOptions,
+    rows: RawRow[],
+  ): Promise<{ created: number; errors: Array<{ rowName: string; error: string }> }> {
+    const documentRef = `inventory-${new Date().toISOString().slice(0, 10)}`;
+    const payloadRows = rows.map((row) => ({
+      article: row.article ? String(row.article).trim() : undefined,
+      sku: row.sku ? String(row.sku).trim() : undefined,
+      warehouseName: row.warehouseName ? String(row.warehouseName).trim() : undefined,
+      qty: numberOr(row.qty) ?? 0,
+      documentRef: row.documentRef ? String(row.documentRef).trim() : undefined,
+    }));
+    const result = await apiPost<{ created: number; errors: Array<{ index: number; message: string }> }>(
+      cfg,
+      '/api/stock-movements/batch-in',
+      { rows: payloadRows, documentRef },
+    );
+    return {
+      created: result.created,
+      errors: result.errors.map((e) => ({
+        rowName: String(rows[e.index]?.article ?? rows[e.index]?.sku ?? `строка ${e.index + 1}`),
+        error: e.message,
+      })),
+    };
+  }
+
   /** Отправить блоки: материалы → предложения журнала; остальные → прямое создание. */
   async function sendBlocks() {
     const cfg = await loadConfig();
@@ -1830,6 +1863,14 @@
           proposed += result.proposed;
           errors.push(...result.failed.map((f) => `${f.rowName}: ${f.error}`));
           next.push({ ...block, proposalIds: result.proposalIds });
+        } else if (block.targetKey === 'inventory') {
+          // One batch POST for the whole block, not a per-row loop — the
+          // backend (StockMovementService.batchInventoryIn) resolves
+          // article/sku/warehouseName itself and reports errors by row index.
+          const result = await sendInventoryBatch(apiFrom(cfg), allowed.map((row) => row.values));
+          created += result.created;
+          errors.push(...result.errors.map((f) => `${f.rowName}: ${f.error}`));
+          next.push(block);
         } else {
           const result = await createEntities(block.targetKey, allowed.map((row) => row.values));
           created += result.created;

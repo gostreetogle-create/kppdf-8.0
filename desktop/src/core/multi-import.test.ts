@@ -403,6 +403,50 @@ test('TZ-QA-445G supplyTask: orderId+qty+title → ok_new; missing identity → 
   assert.equal(badOrder[0].status, 'invalid');
 });
 
+// TZ-NX-WH-INV-DESKTOP-EXCEL — «Инвентаризация»: qty only, no weight, no
+// catalog dedupe (repeat counts are legitimate additional IN movements).
+test('TZ-NX-WH-INV-DESKTOP-EXCEL inventory: article + qty -> ok_new', () => {
+  const ok = validateTableRows([{ article: 'BOLT-M6', qty: 100, warehouseName: 'Металл' }], 'inventory');
+  assert.equal(ok[0].status, 'ok_new');
+});
+
+test('TZ-NX-WH-INV-DESKTOP-EXCEL inventory: sku alone (no article) also -> ok_new', () => {
+  const ok = validateTableRows([{ sku: 'SKU-GP-1', qty: 3 }], 'inventory');
+  assert.equal(ok[0].status, 'ok_new');
+});
+
+test('TZ-NX-WH-INV-DESKTOP-EXCEL inventory: neither article nor sku -> invalid', () => {
+  const invalid = validateTableRows([{ qty: 5, warehouseName: 'Металл' }], 'inventory');
+  assert.equal(invalid[0].status, 'invalid');
+  assert.match(invalid[0].message, /артикул|SKU/);
+});
+
+test('TZ-NX-WH-INV-DESKTOP-EXCEL inventory: missing qty -> invalid', () => {
+  const invalid = validateTableRows([{ article: 'BOLT-M6' }], 'inventory');
+  assert.equal(invalid[0].status, 'invalid');
+  assert.match(invalid[0].message, /количество/i);
+});
+
+test('TZ-NX-WH-INV-DESKTOP-EXCEL inventory: zero or negative qty -> invalid', () => {
+  const zero = validateTableRows([{ article: 'BOLT-M6', qty: 0 }], 'inventory');
+  assert.equal(zero[0].status, 'invalid');
+  const negative = validateTableRows([{ article: 'BOLT-M6', qty: -1 }], 'inventory');
+  assert.equal(negative[0].status, 'invalid');
+});
+
+test('TZ-NX-WH-INV-DESKTOP-EXCEL inventory: no weight column exists on the target', () => {
+  const target = IMPORT_TARGETS.inventory;
+  assert.ok(!target.columns.some((c) => /weight|вес|масса|кг/i.test(c.key) || /weight|вес|масса|кг/i.test(c.label)));
+});
+
+test('TZ-NX-WH-INV-DESKTOP-EXCEL inventory: the SAME article repeated across rows is never flagged duplicate', () => {
+  const rows = validateTableRows(
+    [{ article: 'BOLT-M6', qty: 10 }, { article: 'BOLT-M6', qty: 15 }],
+    'inventory',
+  );
+  assert.deepEqual(rows.map((r) => r.status), ['ok_new', 'ok_new']);
+});
+
 // TZD-70: «зелёный UX» commit-readiness — invalid/needs_review anywhere blocks commit.
 test('evaluateSendReadiness: invalid>0 blocks commit even when sendable>0', () => {
   const readiness = evaluateSendReadiness(

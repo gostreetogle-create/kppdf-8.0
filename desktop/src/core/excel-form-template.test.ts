@@ -37,17 +37,25 @@ test('V2+supply allowlist: catalog/counterparties/references/supply (TZ-QA-445G)
     formTemplatesByCategory('supply').map((t) => t.targetKey),
     ['supplyRequest', 'supplyTask'],
   );
-  assert.equal(formTemplates().length, 11);
+  // TZ-NX-WH-INV-DESKTOP-EXCEL: +1 template, +1 category (11 -> 12).
+  assert.deepEqual(
+    formTemplatesByCategory('inventory').map((t) => t.targetKey),
+    ['inventory'],
+  );
+  assert.equal(formTemplates().length, 12);
   assert.ok(formTemplateFor('warehouse'));
   assert.ok(formTemplateFor('category'));
   assert.ok(formTemplateFor('supplyRequest'));
   assert.ok(formTemplateFor('supplyTask'));
   assert.ok(formTemplateFor('worker'));
+  assert.ok(formTemplateFor('inventory'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'catalog'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'counterparties'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'references'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'supply'));
+  assert.ok(FORM_CATEGORIES.some((c) => c.key === 'inventory'));
   assert.equal(FORM_CATEGORIES.find((c) => c.key === 'supply')?.labelRu, 'Снабжение');
+  assert.equal(FORM_CATEGORIES.find((c) => c.key === 'inventory')?.labelRu, 'Склад');
 });
 
 test('form file name uses latin target key (stable for V1)', () => {
