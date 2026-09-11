@@ -2,7 +2,7 @@
 
 > Status: **DONE**
 > Archive: `tasks/_archive/2026-09/TZD-AI-IMPORT-GENERAL-BASELINE.done.md`
-> Commit/push: по `docs/GIT-POLICY.md`
+> Commit/push: `0a4bbe76` (pushed to origin/main)
 
 ## Claim slot
 

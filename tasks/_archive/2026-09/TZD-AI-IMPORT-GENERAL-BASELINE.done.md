@@ -46,4 +46,4 @@
 
 ---
 
-**ARCHIVE_MARKER:** DONE 2026-09-11T23:10:00Z — see docs/agent-checklists/TZD-AI-IMPORT-GENERAL-BASELINE.md for SHA
+**ARCHIVE_MARKER:** DONE 2026-09-11T23:10:00Z — SHA `0a4bbe76` (main, pushed)
