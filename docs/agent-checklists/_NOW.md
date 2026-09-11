@@ -14,7 +14,7 @@ updated_at: 2026-09-11T12:05:00Z
 
 ## DONE
 
-- TZ-NX-WH-GROUP-CHIPS COMPLETE — Остатки|Склады|Движения chips + entry → `/storage-items`
+- TZ-NX-WH-GROUP-CHIPS COMPLETE — `5c59dde6`, Остатки|Склады|Движения chips + entry → `/storage-items`
 - Hidden schtask — `e128556f`
 - WH-INV / text-library earlier
 
