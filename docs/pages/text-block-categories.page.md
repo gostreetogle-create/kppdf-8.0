@@ -43,10 +43,36 @@
 400-й; при создании TextBlock без `categoryId` — 400 «Укажите подкатегорию» (больше
 не молчаливый fallback на «Общее»). Существующие TextBlock, у которых `categoryId`
 всё ещё указывает на корень — читаются как есть (без миграции); следующее
-редактирование обязано перенести их на лист. NX CRUD для дерева — `TZ-NX-TEXT-CAT-NX-CRUD`
-(следующий TZ волны); эта страница пока описывает **legacy** реализацию
-(`TextBlockCategoriesService`/`TextBlockCategoryFormDialogComponent` ниже), NX route
-`/dictionaries/text-block-categories` появится в следующем TZ.
+редактирование обязано перенести их на лист.
+
+## NX (2026-09-11, `TZ-NX-TEXT-CAT-NX-CRUD`) — `/dictionaries/text-block-categories`
+
+Fixes the dead nav link (`nav-categories.ts` already pointed here; no NX route
+existed until this TZ). **Not** a `defineRegistry`/`/registries/*` page — a
+bespoke master-detail component, `TextBlockCategoriesPage`
+(`frontend-nx/apps/kppdf-web/src/app/pages/dictionaries/text-block-categories.page.ts`):
+
+- Roots list on top (`app-pi-page-chrome` + a hairline row list, not `app-pi-table`
+  — the roots/subcategories master-detail shape doesn't fit a flat registry
+  table). Click a root row to select it.
+- Subcategories of the **selected** root below. «Создать подкатегорию» only
+  ever renders when a root is selected, and never on a subcategory row itself
+  — depth > 1 is structurally impossible from this UI, not just BE-guarded
+  (`TZ-NX-TEXT-CAT-PARENT` `assertValidParent` is the server-side backstop).
+- Create/edit dialog: `TextBlockCategoryFormDialogComponent` (same file
+  folder) — name/description/isActive, plus `isDefault` **only** when
+  creating/editing a root (mirrors BE `assertDefaultNotOnSubcategory`).
+  `parentId` is fixed by which "+" button opened the dialog — this form does
+  not offer re-parenting an existing category.
+- Delete: `AlertDialogComponent`, destructive confirm; BE 409 messages
+  (system / in-use / has-subcategories) surface via `extractErrorMessage`.
+- Service: `PiTextBlockCategoriesService` (`frontend-nx/libs/data-access`)
+  gained `create()`/`update()`/`remove()` and `list({ rootsOnly, parentId,
+  activeOnly, search })` (was list-only before this TZ).
+
+The sections below (Dialogs/Services/State/Computed/TZ reference/Особенности)
+describe the **legacy** (`frontend/`) implementation — kept as UX reference,
+not SoT once NX is the target.
 
 ## Dialogs
 

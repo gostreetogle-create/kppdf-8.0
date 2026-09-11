@@ -58,6 +58,21 @@ export const appRoutes: Route[] = [
         ],
       },
       {
+        // TZ-NX-TEXT-CAT-NX-CRUD — static `children` (not `loadChildren`), same
+        // reasoning as `registries`/`studio` above: the nav dead-link filter
+        // only walks `route.children`. nav-categories.ts already pointed the
+        // "Категории текстов" item here; only this one child route is wired —
+        // the sibling dead `/dictionaries/*` nav entries stay out of scope.
+        path: 'dictionaries',
+        children: [
+          {
+            path: 'text-block-categories',
+            data: { pageKey: 'text-block-categories' },
+            loadComponent: () => import('./pages/dictionaries/text-block-categories.page').then((m) => m.TextBlockCategoriesPage),
+          },
+        ],
+      },
+      {
         // TZ-NX-SUPPLY-S1 — live SupplyTask registry only (no quick-order mock port).
         path: 'supply',
         canMatch: [capabilityRouteGuard],

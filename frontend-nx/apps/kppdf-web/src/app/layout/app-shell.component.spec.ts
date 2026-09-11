@@ -77,6 +77,8 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-docs"]');
   const clientsQuickNav = (): HTMLAnchorElement | null =>
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-clients"]');
+  const referenceQuickNav = (): HTMLAnchorElement | null =>
+    fixture.nativeElement.querySelector('[data-test="shell-quicknav-reference"]');
 
   it('idle route (no setTools) renders no rails — full-width main workspace (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
     await setup('/admin/devices');
@@ -101,11 +103,15 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
   it('shows only existing-route header chips (admin, registries, docs, deals, production, clients, supply, warehouse) — no dead links', async () => {
     await setup('/admin/devices');
     // TZD-72 cleanup: W1 (warehouse) + S1 (supply) added chips without updating this pin (6 -> 8).
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(8);
+    // TZ-NX-TEXT-CAT-NX-CRUD: `reference` (Справочники) gained its first live
+    // route (/dictionaries/text-block-categories) — the dead-link filter no
+    // longer hides the whole group's own header chip (8 -> 9).
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(9);
     expect(adminQuickNav()).toBeTruthy();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
     expect(clientsQuickNav()).toBeTruthy();
+    expect(referenceQuickNav()).toBeTruthy();
     const productionQuickNav = fixture.nativeElement.querySelector('[data-test="shell-quicknav-production"]') as HTMLAnchorElement;
     expect(productionQuickNav).toBeTruthy();
     const categories = (
@@ -222,13 +228,15 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     await setup('/admin/devices');
     userSig.set({ role: 'user' });
     fixture.detectChanges();
-    // `registries`, `docs` and `clients` deliberately carry no `systemRoles`/`capabilities`.
+    // `registries`, `docs`, `clients` and `reference` deliberately carry no `systemRoles`/`capabilities`.
     // TZD-72 cleanup: warehouse + supply chips remain for user (6 + 2 wave chips -> 7).
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(7);
+    // TZ-NX-TEXT-CAT-NX-CRUD: `reference` group's chip now shows too (7 -> 8) — see the previous test.
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(8);
     expect(adminQuickNav()).toBeNull();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
     expect(clientsQuickNav()).toBeTruthy();
+    expect(referenceQuickNav()).toBeTruthy();
   });
 
   it('shows Реестры chip for restrictive pages[] ACL (TZ-NX-REGISTRIES-NAV-VISIBILITY-FIX)', async () => {
