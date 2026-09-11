@@ -44,6 +44,35 @@ export function studioLiveTableRows(block: { settings?: Record<string, unknown> 
   return rows.map((row) => (Array.isArray(row) ? row.map((c) => String(c ?? '')) : []));
 }
 
+/**
+ * TZ-NX-DOCSTUDIO-STALE-LIVEROWS-HEAL — a table block's `settings.liveRows`
+ * is a client-cached snapshot from a past live fetch; if the column
+ * structure changed since (add/remove/reorder — including while the block
+ * had NO `dataSource` at all, e.g. switched back to manual), some cached
+ * rows no longer have one cell per current column. Canvas
+ * (`studio-blocks-canvas.component.ts`'s `tableRows()`) reads `liveRows`
+ * unconditionally whenever it's a non-empty array — regardless of
+ * `dataSource` — so a stale snapshot renders misaligned either way. Detects
+ * that mismatch so callers can heal it once on document load, not only
+ * when the operator happens to re-edit the column structure (S47's
+ * `rehydrateLiveRowsAfterColumnChange` only fires on that edit event).
+ *
+ * Compares against the RAW `settings.tableTemplateColumns` array, not
+ * `studioTableColumns()`'s `STUDIO_DEFAULT_TABLE_COLUMNS` fallback: every
+ * real app-created table block sets this explicitly (`createTableBlock()`,
+ * `buildTableSettingsFromTemplate()`), so an absent key means "nothing to
+ * safely compare against" rather than "assume the 3-column default" —
+ * avoids a false-positive mismatch against a default column count no real
+ * persisted block actually has.
+ */
+export function studioLiveRowsMismatchColumns(block: { settings?: Record<string, unknown> }): boolean {
+  const liveRows = studioLiveTableRows(block);
+  if (liveRows.length === 0) return false;
+  const rawColumns = block.settings?.['tableTemplateColumns'];
+  if (!Array.isArray(rawColumns)) return false;
+  return liveRows.some((row) => row.length !== rawColumns.length);
+}
+
 /** Per-row qty overrides for a live-sourced table, keyed by row index (TZ-NX-DOCSTUDIO-TABLE-LINE-QTY). */
 export function studioTableQtyOverrides(block: { settings?: Record<string, unknown> }): Record<number, number> {
   const raw = block.settings?.['tableQtyOverrides'];

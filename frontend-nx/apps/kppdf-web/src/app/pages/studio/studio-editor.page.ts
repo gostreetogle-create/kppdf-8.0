@@ -111,6 +111,7 @@ import { rememberStudioDocument } from './studio-session';
 import {
   STUDIO_DEFAULT_TABLE_COLUMNS,
   STUDIO_DEFAULT_TABLE_ROWS,
+  studioLiveRowsMismatchColumns,
   studioTableQtyOverrides,
   withStudioTableQtyOverride,
   buildTableTemplatePayloadFromBlock,
@@ -704,6 +705,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
               this.activeSection.set('data');
               this.panelCollapsed.set(false);
               this.refreshLiveDataSetsOnLoad(normalized);
+              this.healStaleLiveRowsOnLoad(normalized);
             }
           });
           const routeQuotationId = this.route.snapshot.queryParamMap.get('quotationId');
@@ -1533,6 +1535,34 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         this.document.set(result.data);
         this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
       });
+    }
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-STALE-LIVEROWS-HEAL — pre-UAT smoke (af78049d) found a
+   * real document whose table's `liveRows` (3 cells) no longer matched its
+   * current columns (6) — canvas rendered misaligned cells. The block had
+   * **no** `dataSource` at all (switched back to manual at some point, or
+   * never re-synced), so `refreshLiveDataSetsOnLoad` above never touches it
+   * (it only visits live-hydratable tables) — the operator had to manually
+   * re-touch the table to force S47's `rehydrateLiveRowsAfterColumnChange`.
+   * Runs once per load, for every table, regardless of current dataSource:
+   *  - still live-sourced → same nuclear "drop to empty, re-fetch clean"
+   *    path S47 already uses (safe for reorder too, unlike a cell-by-cell
+   *    merge; the backend re-applies `tableQtyOverrides` on that fetch same
+   *    as any other rehydrate, nothing PO edited is lost).
+   *  - manual / no dataSource → nothing to re-fetch; just drop the orphaned
+   *    `liveRows` snapshot so canvas falls back to `tableTemplateSampleRows`.
+   */
+  private healStaleLiveRowsOnLoad(blocks: readonly StudioBlock[]): void {
+    for (const block of blocks) {
+      if (block.type !== 'table' || !studioLiveRowsMismatchColumns(block)) continue;
+      const sourceType = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+      if (sourceType && STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)) {
+        this.rehydrateLiveRowsAfterColumnChange(block);
+      } else {
+        this.patchTableSettingsForBlock(block._id, { liveRows: null });
+      }
     }
   }
 
