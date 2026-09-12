@@ -18,7 +18,7 @@ prepared_by: claude-executor
 evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-07-NX.md
 prep_prompt: tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md
 debt: []
-desktop_zip: fresh (v0.5.10, republished by local build_frontend() run; accept-stale remains canon if it drifts before actual deploy)
+desktop_zip: accept-stale (v0.5.10, re-verified 2026-09-12 desktop-full-verify — file present in both downloads dirs, matches current desktop/package.json version; no desktop code changed this session so no rebuild triggered; see docs/audits/2026-09-12-desktop-full-verify.md)
 mixed_commit: no
 ```
 

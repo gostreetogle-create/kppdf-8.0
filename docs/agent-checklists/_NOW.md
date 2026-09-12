@@ -1,21 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-12T15:15:00+03:00
+updated_at: 2026-09-12T15:45:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE → NEXT desktop verify
-- **Deploy stamp:** ждёт prep после desktop verify
+- **Claude:** IDLE — desktop verify DONE
+- **Deploy stamp:** READY; `desktop_zip: accept-stale` (см. DEPLOY-READY.md)
 
 ## NEXT
 
-1. **Claude** → `tasks/PROMPT-CLAUDE-DESKTOP-FULL-VERIFY.md`
-2. Потом (после verify) → `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md` (ещё НЕ deploy)
-3. Deploy только по фразе PO: «сделай деплой по документации»
+1. **Claude** → `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md` (prep only, ещё НЕ deploy)
+2. Deploy только по фразе PO: «сделай деплой по документации»
 
 ## DONE
 
+- TZ-DESKTOP-FULL-VERIFY-2026-09-12 — все 5 gates PASS (174+124 tests), audit `docs/audits/2026-09-12-desktop-full-verify.md`
 - WAVE-NX-PO-SWEEP-2026-09-12 COMPLETE
 - WAVE-NX-UX-PAGE-SWEEP / STALE-LIVEROWS / PRE-UAT-SMOKE / AI-IMPORT-BASELINE
 
