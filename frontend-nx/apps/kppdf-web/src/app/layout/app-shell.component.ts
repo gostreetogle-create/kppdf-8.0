@@ -233,7 +233,7 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
                   [attr.aria-expanded]="tool.items?.length ? (openMenuFor() === tool.id ? 'true' : 'false') : null"
                   [disabled]="tool.disabled === true"
                   [attr.aria-disabled]="tool.disabled === true ? 'true' : null"
-                  (click)="onShellToolClick(tool)"
+                  (click)="onShellToolClick(tool, $event)"
                 >
                   <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
                   @if (tool.badge && tool.badge > 0) {
@@ -242,8 +242,10 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
                 </button>
                 @if (tool.items?.length && openMenuFor() === tool.id) {
                   <div
-                    class="shell-rail-menu shell-rail-menu--right"
+                    class="shell-rail-menu"
                     role="menu"
+                    [style.top.px]="menuAnchor()?.top ?? 0"
+                    [style.right.px]="menuAnchor()?.right ?? 0"
                     [attr.aria-label]="tool.title"
                     [attr.data-test]="'shell-tool-menu-' + tool.id"
                   >
@@ -342,9 +344,12 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
     }
 
     .shell-rail-menu {
-      position: absolute;
-      top: 0;
-      z-index: 40;
+      /* position: fixed (not absolute) — .shell-rail has overflow-x:
+         hidden, which would silently clip an absolutely-positioned popover
+         the moment it extends past the ~32px rail width. top/right come
+         from [style.*] bindings computed off the trigger's own rect. */
+      position: fixed;
+      z-index: 1000;
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -354,14 +359,6 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
       border: 1px solid var(--color-rule-strong);
       border-radius: var(--radius-sm);
       box-shadow: 0 6px 18px color-mix(in oklch, var(--color-ink) 15%, transparent);
-    }
-
-    .shell-rail-menu--right {
-      right: calc(100% + 6px);
-    }
-
-    .shell-rail-menu--left {
-      left: calc(100% + 6px);
     }
 
     .shell-rail-menu-item {
@@ -437,6 +434,16 @@ export class AppShellComponent {
 
   /** TZ-NX-PO-SWEEP-07 — id of the rail category whose popover menu is open (null = none). */
   protected readonly openMenuFor = signal<string | null>(null);
+  /**
+   * Fixed-position anchor for the open popover, computed from the trigger
+   * button's own `getBoundingClientRect()` at open time. `.shell-rail` has
+   * `overflow-x: hidden` (keeps long badges from causing a horizontal
+   * scrollbar on the narrow rail) — a `position: absolute` popover nested
+   * inside it gets silently clipped the moment it extends past the rail's
+   * own ~32px width, so the popover uses `position: fixed` + these
+   * viewport-relative coordinates instead, escaping that ancestor entirely.
+   */
+  protected readonly menuAnchor = signal<{ top: number; right: number } | null>(null);
 
   /**
    * TZ-NX-SHELL-01-IDLE-RAILS — a side only takes a grid column when it has
@@ -505,10 +512,20 @@ export class AppShellComponent {
     }
   }
 
-  protected onShellToolClick(tool: ShellToolRailItem): void {
+  /** `event` is only needed to anchor a category's popover — left-rail action buttons never pass one. */
+  protected onShellToolClick(tool: ShellToolRailItem, event?: MouseEvent): void {
     if (tool.disabled) return;
     if (tool.items && tool.items.length > 0) {
-      this.openMenuFor.update((current) => (current === tool.id ? null : tool.id));
+      if (this.openMenuFor() === tool.id) {
+        this.closeMenu();
+        return;
+      }
+      if (!event) return;
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      // Flyout toward main content: right rail trigger -> popover's right
+      // edge sits just left of the trigger's left edge, top-aligned with it.
+      this.menuAnchor.set({ top: rect.top, right: window.innerWidth - rect.left + 6 });
+      this.openMenuFor.set(tool.id);
       return;
     }
     this.shellTools.invoke(tool);
@@ -517,7 +534,12 @@ export class AppShellComponent {
   protected onMenuItemClick(item: ShellToolRailMenuItem): void {
     if (item.disabled) return;
     item.onClick();
+    this.closeMenu();
+  }
+
+  private closeMenu(): void {
     this.openMenuFor.set(null);
+    this.menuAnchor.set(null);
   }
 
   /** TZ-NX-PO-SWEEP-07 — dismiss the open rail category menu on any outside click. */
@@ -525,13 +547,13 @@ export class AppShellComponent {
   protected onDocumentClickOutside(event: MouseEvent): void {
     if (!this.openMenuFor()) return;
     const target = event.target as HTMLElement | null;
-    if (target?.closest('.shell-rail-item')) return;
-    this.openMenuFor.set(null);
+    if (target?.closest('.shell-rail-item') || target?.closest('.shell-rail-menu')) return;
+    this.closeMenu();
   }
 
   @HostListener('document:keydown.escape')
   protected onEscapeKey(): void {
-    this.openMenuFor.set(null);
+    this.closeMenu();
   }
 
   protected async onLogout(): Promise<void> {

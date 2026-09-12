@@ -47,6 +47,26 @@ same per-item `active`/`disabled`/`onClick` logic, just nested one level.
 |------|--------|
 | `nx test kppdf-web` (full) | PASS 836/843 (7 skipped) |
 | `nx build kppdf-web` | PASS (bundle budget +0.16kB, negligible) |
+| Live Chrome CDP smoke (wave-wide, post-#07) | PASS 13/13 after one follow-up fix — see below |
+
+## Post-merge fix (found by live browser smoke, same stage)
+
+Unit/DOM tests pass regardless of CSS visual clipping — `document.querySelector`
+finds an element whether or not it's actually visible. A wave-wide live
+Chrome CDP smoke (`scripts/po-sweep-2026-09-12-smoke.mjs`, run after #07 was
+already pushed) caught a real visual bug the specs couldn't: the popover
+used `position: absolute` nested inside `.shell-rail`, which has
+`overflow-x: hidden` (keeps long badges from forcing a horizontal scrollbar
+on the ~32px-wide rail) — the popover was silently clipped to invisible the
+moment it extended past the rail's own width. Screenshot evidence confirmed
+the menu was genuinely never visible on screen, only present in the DOM.
+
+Fix: `position: fixed` + coordinates computed from the trigger button's own
+`getBoundingClientRect()` at open time (`onShellToolClick` now takes the
+click `MouseEvent`, optional so the untouched left rail's call site — which
+never opens a menu — doesn't need updating). Re-ran the same live smoke
+after the fix: popover renders correctly positioned just left of the
+«Документ» button, 5 items visible, screenshot-confirmed.
 
 ## Files changed
 
