@@ -14,7 +14,7 @@ copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
 | Поле | Значение |
 |------|----------|
 | VM name | `ubuntu24kppdf_8` |
-| LAN IP | **`192.168.1.103`** |
+| LAN IP | **`192.168.1.52`** |
 | Docker bridge | `172.17.0.1` (не для SSH) |
 | WAN IP | `193.222.62.240` (SSH auth fail с dev-машины) |
 | Пользователь | `tiit` |
@@ -27,7 +27,7 @@ copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
 
 | Переменная | Описание |
 |------------|----------|
-| `DEPLOY_HOST` | **`192.168.1.103`** (LAN) — основной; WAN `193.222.62.240` не работает |
+| `DEPLOY_HOST` | **`192.168.1.52`** (LAN) — основной; WAN `193.222.62.240` не работает |
 | `DEPLOY_USER` | `tiit` |
 | `DEPLOY_PASSWORD` | SSH-пароль (или `DEPLOY_SSH_KEY`) |
 | `DEPLOY_SSH_KEY` | путь к приватному ключу `kppdf80-vm` |
@@ -45,7 +45,7 @@ copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
 | Поле | Значение |
 |------|----------|
 | URL prod | https://kppdf-crm.ru |
-| URL LAN | http://192.168.1.103:3000 |
+| URL LAN | http://192.168.1.52:3000 |
 | Admin login | `admin` |
 | Admin password | из `config.env` `ADMIN_PASSWORD` (не demo-default) |
 

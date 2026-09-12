@@ -10,7 +10,7 @@
 | Сервер | Роль |
 |--------|------|
 | **VPS** (193.222.62.240) | nginx (SSL/HTTP/2) + SSH tunnel endpoint |
-| **VM** (192.168.1.103, Synology VMM) | Docker: backend + MongoDB |
+| **VM** (192.168.1.52, Synology VMM) | Docker: backend + MongoDB |
 | **Synology** (10.0.0.47) | Хост для VM |
 
 ---
@@ -20,7 +20,7 @@
 ### 2.1 Docker
 
 ```bash
-ssh tiit@192.168.1.103
+ssh tiit@192.168.1.52
 # скопировать и запустить server-setup-ubuntu.sh из репо
 sudo bash server-setup-ubuntu.sh
 ```
@@ -69,6 +69,6 @@ copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
 ## 5. Бэкап
 
 ```bash
-ssh tiit@192.168.1.103
+ssh tiit@192.168.1.52
 cd /opt/kppdf-8.0 && sudo bash backup.sh
 ```

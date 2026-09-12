@@ -9,7 +9,7 @@
 
 ```yaml
 status: INVALID
-why_invalid: deployed ac68d96f 2026-09-13 on FRESH VM 192.168.1.52 (old .103 lost; deploy.py warm + seed to empty Mongo; Deploy complete + Auth OK + Frontend 200; tunnel kppdf-tunnel restored, kppdf-crm.ru health/ready ok)
+why_invalid: deployed 9e1802fe 2026-09-13 on VM 192.168.1.52 (warm redeploy; enroll-fix commit — withComponentInputBinding; Deploy complete + Auth OK + Frontend 200; prod verified: POST /api/device/enroll 200 + redirect /admin/devices via Playwright; owner invite re-issued)
 frontend_target: nx
 wipe_default: false
 wipe_reason: "same Nest API; additive schemas since 4d55d0ea — keep Mongo/uploads (warm)"

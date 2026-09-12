@@ -80,7 +80,7 @@ def resolve_settings(args, cfg):
         fail("Unknown platform: " + platform + ". Use ubuntu or synology.")
 
     defaults = PLATFORMS[platform]
-    host = args.host or cfg.get("DEPLOY_HOST") or "192.168.1.103"
+    host = args.host or cfg.get("DEPLOY_HOST") or "192.168.1.52"
     user = args.user or cfg.get("DEPLOY_USER") or "tiit"
     password = args.password or cfg.get("DEPLOY_PASSWORD") or None
     ssh_key = cfg.get("DEPLOY_SSH_KEY") or None

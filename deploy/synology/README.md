@@ -36,7 +36,7 @@ $env:PYTHONIOENCODING='utf-8'
 7. Smoke (логин/пароль из `CREDENTIALS.md`, в чат не писать) + NX UI checks из `docs/ops/DEPLOY-NX-PROD.md` §4:
 
 ```powershell
-curl.exe -sf http://192.168.1.103:3000/api/health/ready
+curl.exe -sf http://192.168.1.52:3000/api/health/ready
 curl.exe -sf -u "LOGIN:PASS" https://kppdf-crm.ru/api/health/ready
 curl.exe -sf -u "LOGIN:PASS" -o NUL -w "%{http_code}" https://kppdf-crm.ru/
 ```
@@ -155,7 +155,7 @@ https://kppdf-crm.ru/api/health/ready
 
 ## Уроки деплоев (сжато)
 
-1. VPN off перед SSH `192.168.1.103`. Домен: `kppdf-crm.ru`.
+1. VPN off перед SSH `192.168.1.52`. Домен: `kppdf-crm.ru`.
 2. `main == origin/main`, дерево чистое.
 3. Windows: `$env:PYTHONUTF8='1'` перед `deploy.ps1`.
 4. Один деплой за раз; кэшированный docker build по умолчанию.
@@ -165,7 +165,7 @@ https://kppdf-crm.ru/api/health/ready
 ### Smoke
 
 ```powershell
-curl.exe -sf http://192.168.1.103:3000/api/health/ready
+curl.exe -sf http://192.168.1.52:3000/api/health/ready
 # UI: https://kppdf-crm.ru/ — Ctrl+F5, login из CREDENTIALS.md
 ```
 

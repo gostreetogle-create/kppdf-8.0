@@ -40,7 +40,7 @@
 │  VMM: Ubuntu VM "ubuntu24kppdf_8"                            │
 │                                                              │
 │  ┌─────────────────────────────────────────┐                 │
-│  │  VM — 192.168.1.103                     │                 │
+│  │  VM — 192.168.1.52                     │                 │
 │  │                                         │                 │
 │  │  ┌────────────────┐  ┌───────────────┐  │                 │
 │  │  │ kppdf-backend  │  │ kppdf-mongo   │  │                 │
@@ -64,7 +64,7 @@
 
 ### Почему туннель
 
-VPS (193.222.62.240) и VM (192.168.1.103) в разных сетях. Synology NAS (10.0.0.47) — хост VM, но не маршрутизируется до VPS. Единственный способ связать их — SSH reverse tunnel, который VM сама устанавливает к VPS.
+VPS (193.222.62.240) и VM (192.168.1.52) в разных сетях. Synology NAS (10.0.0.47) — хост VM, но не маршрутизируется до VPS. Единственный способ связать их — SSH reverse tunnel, который VM сама устанавливает к VPS.
 
 ---
 
@@ -87,7 +87,7 @@ VPS (193.222.62.240) и VM (192.168.1.103) в разных сетях. Synology 
 | Сервер | IP | Роль |
 |--------|-----|------|
 | **VPS** | `193.222.62.240` | nginx (SSL termination) + SSH tunnel endpoint |
-| **VM** | `192.168.1.103` (LAN) | Docker: backend + MongoDB |
+| **VM** | `192.168.1.52` (LAN) | Docker: backend + MongoDB |
 | **Synology** | `10.0.0.47` (LAN) | VMM: Ubuntu VM |
 
 ---
@@ -97,7 +97,7 @@ VPS (193.222.62.240) и VM (192.168.1.103) в разных сетях. Synology 
 | Сервер | Команда | Секреты |
 |--------|---------|---------|
 | VPS | `ssh root@193.222.62.240` | см. `CREDENTIALS.md` |
-| VM | `ssh -i %USERPROFILE%\.ssh\kppdf80-vm tiit@192.168.1.103` | ключ / пароль в `CREDENTIALS.md` |
+| VM | `ssh -i %USERPROFILE%\.ssh\kppdf80-vm tiit@192.168.1.52` | ключ / пароль в `CREDENTIALS.md` |
 
 **Не хранить пароли в этом файле.** VM доступна по LAN; при включённом VPN часто недоступна.
 
@@ -327,8 +327,8 @@ certbot renew --dry-run
 
 | # | Проблема | Причина | Решение |
 |---|----------|---------|---------|
-| 1 | **502 Bad Gateway** | Туннель упал | `ssh tiit@192.168.1.103 "sudo systemctl restart kppdf-tunnel"` |
-| 2 | **502 Bad Gateway** | Backend упал | `ssh tiit@192.168.1.103 "sudo docker restart kppdf-backend"` |
+| 1 | **502 Bad Gateway** | Туннель упал | `ssh tiit@192.168.1.52 "sudo systemctl restart kppdf-tunnel"` |
+| 2 | **502 Bad Gateway** | Backend упал | `ssh tiit@192.168.1.52 "sudo docker restart kppdf-backend"` |
 | 3 | **ERR_CONNECTION_REFUSED** (порт 443) | SSL не настроен | `certbot --nginx -d kppdf-crm.ru --redirect` |
 | 4 | **CORS error** | URL нет в CORS_ORIGIN | Добавить в `.env` на VM + `--force-recreate backend` |
 | 5 | MongoDB AVX error | CPU Synology без AVX | `mongo:4.4` (уже используется) |

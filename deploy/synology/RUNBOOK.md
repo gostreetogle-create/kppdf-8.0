@@ -14,7 +14,7 @@ https://kppdf-crm.ru → VPS nginx (443) → localhost:4200
                                               ↑
                     autossh reverse tunnel (VM→VPS)
                                               │
-                    VM 192.168.1.103 (Synology Ubuntu)
+                    VM 192.168.1.52 (Synology Ubuntu)
                       └─ Docker: kppdf-backend:3000
                       └─ Docker: kppdf-mongo (4.4, rs0)
 ```
@@ -49,7 +49,7 @@ openssl rand -hex 32   # JWT_REFRESH_SECRET
 1. **TZ-OPS-310 DONE** — есть `tasks/_archive/2026-08/TZ-OPS-310.done.md` и заполненный `docs/ops/server-harden-evidence.md`.  
    Иначе: VPN OFF → промпт `tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md` → закрыть harden → потом деплой.  
    Spec: `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`.
-2. **VPN OFF** — иначе LAN `192.168.1.103` часто недоступен.
+2. **VPN OFF** — иначе LAN `192.168.1.52` часто недоступен.
 3. `config.env` + `CREDENTIALS.md` скопированы из `*.example` и заполнены.
 4. `JWT_SECRET` ≠ `JWT_REFRESH_SECRET`, оба ≥32; `ADMIN_PASSWORD` ≥12, не demo-default.
 5. `CORS_ORIGIN=https://kppdf-crm.ru` (канон).
@@ -93,8 +93,8 @@ https://kppdf-crm.ru/api/health/ready
 ```
 
 ```powershell
-ssh -i $env:USERPROFILE\.ssh\kppdf80-vm tiit@192.168.1.103 "sudo docker ps"
-curl http://192.168.1.103:3000/api/health/ready
+ssh -i $env:USERPROFILE\.ssh\kppdf80-vm tiit@192.168.1.52 "sudo docker ps"
+curl http://192.168.1.52:3000/api/health/ready
 ```
 
 Логин: `admin` + пароль из **CREDENTIALS.md** (не admin123).
@@ -139,7 +139,7 @@ LM Studio local helper: [`docs/agents/LM-STUDIO-AGENT.md`](../../docs/agents/LM-
 ## Бэкап MongoDB
 
 ```bash
-ssh tiit@192.168.1.103
+ssh tiit@192.168.1.52
 cd /opt/kppdf-8.0 && sudo bash backup.sh
 # → /var/lib/kppdf80/backups/...
 ```
