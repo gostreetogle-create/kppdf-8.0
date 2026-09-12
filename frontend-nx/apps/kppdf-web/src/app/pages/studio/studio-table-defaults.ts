@@ -112,6 +112,26 @@ export function studioTableRowSource(block: { settings?: Record<string, unknown>
   return typeof source === 'string' && source !== 'manual' ? (source as StudioTableRowSource) : 'manual';
 }
 
+export const STUDIO_TABLE_EMPTY_NO_SOURCE_LABEL =
+  'Нет источника строк — в Свойствах выберите витрину или нажмите «Вставить таблицу» в Выбрано';
+export const STUDIO_TABLE_EMPTY_LIVE_SOURCE_LABEL = 'Нет строк из источника — проверьте Выбрано / КП / заказ';
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-UNWIRED-EMPTY-STATE — the canvas used to show one
+ * text for every empty table, including a wired catalog/quotation/order
+ * table whose live rows came back empty (a failed/parallel hydrate, or
+ * simply a source with no rows to resolve) — "добавьте в Свойствах" is
+ * wrong there, since Properties has no manual-add affordance for a live
+ * source's rows. Distinguishes by `studioTableRowSource`: a table with no
+ * dataSource (or explicitly `manual`) still points at Properties / Insert;
+ * a wired live source points at the buffer/КП/order instead.
+ */
+export function studioTableEmptyStateLabel(block: { settings?: Record<string, unknown> }): string {
+  return studioTableRowSource(block) === 'manual'
+    ? STUDIO_TABLE_EMPTY_NO_SOURCE_LABEL
+    : STUDIO_TABLE_EMPTY_LIVE_SOURCE_LABEL;
+}
+
 /** Default false — opaque table background on canvas/PDF. */
 export function studioTableTransparentBackground(block: {
   settings?: Record<string, unknown>;

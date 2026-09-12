@@ -13,6 +13,7 @@ import {
 import {
   isStudioPhotoColumnKey,
   studioTableDisabledRowIndices,
+  studioTableEmptyStateLabel,
   studioTablePhotoDisplay,
   studioTableTransparentBackground,
   studioVisibleColumnIndices,
@@ -157,9 +158,12 @@ import {
                           }
                         </tr>
                       } @empty {
-                        <!-- TZ-NX-DOCSTUDIO-S45: empty manual table = placeholder row, not a bare thead. -->
+                        <!-- TZ-NX-DOCSTUDIO-S45: empty table = placeholder row, not a bare thead.
+                             TZ-NX-DOCSTUDIO-TABLE-UNWIRED-EMPTY-STATE: text differs for a table with
+                             no live source (points at Properties/Insert) vs. a wired one with no rows
+                             yet (points at Selected/КП/order — Properties can't manually add live rows). -->
                         <tr class="table-preview__empty">
-                          <td [attr.colspan]="tableColumns(block).length || 1">Нет строк — добавьте в Свойствах</td>
+                          <td [attr.colspan]="tableColumns(block).length || 1">{{ tableEmptyStateLabel(block) }}</td>
                         </tr>
                       }
                     </tbody>
@@ -392,6 +396,10 @@ export class StudioBlocksCanvasComponent {
       return rows.map((row) => visibleColIdx.map((colIdx) => row[colIdx] ?? ''));
     }
     return studioVisibleTableRows(block);
+  }
+
+  tableEmptyStateLabel(block: StudioBlock): string {
+    return studioTableEmptyStateLabel(block);
   }
 
   isTableRowEnabled(block: StudioBlock, rowIdx: number): boolean {

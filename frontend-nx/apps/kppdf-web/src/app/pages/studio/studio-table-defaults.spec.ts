@@ -7,6 +7,7 @@ import {
   remapRowsForColumnChange,
   filterHiddenColumnKeysForColumns,
   studioLiveTableRows,
+  studioTableEmptyStateLabel,
   studioTableHiddenColumnKeys,
   studioTableQtyOverrides,
   studioTablePhotoDisplay,
@@ -116,6 +117,23 @@ describe('studio-table-defaults', () => {
     expect(
       studioTableRowSource({ settings: { dataSource: { type: 'catalog-products' } } }),
     ).toBe('catalog-products');
+  });
+
+  describe('studioTableEmptyStateLabel (TZ-NX-DOCSTUDIO-TABLE-UNWIRED-EMPTY-STATE)', () => {
+    it('no dataSource (manual/unwired): points at Properties / Insert', () => {
+      expect(studioTableEmptyStateLabel({})).toContain('Нет источника строк');
+      expect(studioTableEmptyStateLabel({ settings: { dataSource: { type: 'manual' } } })).toContain(
+        'Нет источника строк',
+      );
+    });
+
+    it('wired live source (catalog/quotation/order): points at Выбрано/КП/заказ, not Свойства', () => {
+      for (const source of ['catalog-products', 'catalog-modules', 'catalog-parts', 'catalog-materials', 'quotation-items', 'order-items']) {
+        const label = studioTableEmptyStateLabel({ settings: { dataSource: { type: source } } });
+        expect(label).toContain('Нет строк из источника');
+        expect(label).not.toContain('Свойствах');
+      }
+    });
   });
 
   describe('missingStandardColumnFields (TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE)', () => {

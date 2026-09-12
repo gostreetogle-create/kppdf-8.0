@@ -95,7 +95,24 @@ describe('StudioBlocksCanvasComponent — S45 print-like tables', () => {
     const host: HTMLElement = fixture.nativeElement;
     const emptyRow = host.querySelector('.table-preview__empty');
     expect(emptyRow).not.toBeNull();
-    expect(emptyRow!.textContent).toContain('Нет строк');
+    // TZ-NX-DOCSTUDIO-TABLE-UNWIRED-EMPTY-STATE — no dataSource at all: points at
+    // Properties / Insert, not the wired-source "check Selected/КП/order" text.
+    expect(emptyRow!.textContent).toContain('Нет источника строк');
+  });
+
+  it('TZ-NX-DOCSTUDIO-TABLE-UNWIRED-EMPTY-STATE: wired catalog table with empty liveRows shows the "check source" text, not "Свойства"', () => {
+    createCanvas([
+      {
+        ...TABLE,
+        settings: { ...TABLE.settings, dataSource: { type: 'catalog-products' }, liveRows: [] },
+      },
+    ]);
+
+    const host: HTMLElement = fixture.nativeElement;
+    const emptyRow = host.querySelector('.table-preview__empty');
+    expect(emptyRow).not.toBeNull();
+    expect(emptyRow!.textContent).toContain('Нет строк из источника');
+    expect(emptyRow!.textContent).not.toContain('Свойствах');
   });
 
   it('table click is a single selection gesture — no row inputs to fight drag', () => {
