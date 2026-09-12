@@ -1,22 +1,23 @@
 ﻿# NOW
 
-updated_at: 2026-09-12T02:00:00Z
+updated_at: 2026-09-12T09:25:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — промптов нет
-- **Deploy stamp:** READY
+- **Claude:** NEXT — PO-SWEEP continuous #00–#07
+- **Deploy stamp:** READY (не в этой волне)
 
 ## NEXT
 
-Нет активных задач.
+**Claude** → `tasks/PROMPT-CLAUDE-PO-SWEEP-CONTINUOUS.md`  
+Чеклист: `docs/agent-checklists/PO-SWEEP-CONTINUOUS-CHECKLIST.md`
 
 ## DONE
 
-- PRE-UAT-SMOKE — `af78049d`
-- STALE-LIVEROWS-HEAL — `a00a4f82`
+- WAVE-NX-UX-PAGE-SWEEP continuous COMPLETE
+- STALE-LIVEROWS-HEAL / PRE-UAT-SMOKE
 
 ## PARK
 
-- Deploy · Soup · TZD-76 · orphan photo disk cleanup
+- Deploy · Soup · orphan photo disk wipe · `/production`

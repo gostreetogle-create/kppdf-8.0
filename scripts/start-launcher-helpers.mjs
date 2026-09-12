@@ -23,8 +23,10 @@ export function buildFrontendChildEnv(nxMode) {
     NX_INTERACTIVE: 'false',
     NX_SKIP_VSCODE_EXTENSION_INSTALL: 'true',
   };
-  // Nx params.isTTY() checks CI === 'true' (not '1'); isCI() accepts any truthy CI.
-  if (nxMode) return { ...base, CI: 'true' };
+  // No CI here on purpose: Angular's normalize-cache treats CI=true as isCI()
+  // and disables persistent cache/prebundle (slow cold start every time).
+  // Non-interactive Nx Console prompt is already guarded by
+  // NX_SKIP_VSCODE_EXTENSION_INSTALL + ensureNxIdeNonInteractive() + stream fail-fast.
   return base;
 }
 
@@ -99,7 +101,7 @@ export function formatNxPromptFailure({ cmd, cwd, lastLines = [] }) {
     '  причина: nx@21.4 может спросить Install Nx Console при piped stdio',
     `  command: ${cmd}`,
     `  cwd: ${cwd}`,
-    '  env: CI=true, NX_INTERACTIVE=false, NX_SKIP_VSCODE_EXTENSION_INSTALL=true',
+    '  env: NX_INTERACTIVE=false, NX_SKIP_VSCODE_EXTENSION_INSTALL=true',
     '  fix: ~/.nx/ide.json → {"auto_install_console": false}',
   ];
   if (tail.length) {

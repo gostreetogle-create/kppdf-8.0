@@ -19,9 +19,9 @@ import {
 } from './start-launcher-helpers.mjs';
 
 describe('buildFrontendChildEnv', () => {
-  it('sets non-interactive nx env', () => {
+  it('sets non-interactive nx env without CI (keeps Angular cache/prebundle on)', () => {
     const env = buildFrontendChildEnv(true);
-    assert.equal(env.CI, 'true');
+    assert.equal(env.CI, undefined);
     assert.equal(env.NX_INTERACTIVE, 'false');
     assert.equal(env.NX_SKIP_VSCODE_EXTENSION_INSTALL, 'true');
     assert.equal(env.NX_DAEMON, 'false');
