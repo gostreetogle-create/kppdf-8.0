@@ -14,7 +14,7 @@ import type { SilentResult } from '@kppdf/util-http';
 import { StudioListPage } from './studio-list.page';
 import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeResult } from './studio-create-doctype-dialog.component';
 
-describe('StudioListPage — create КП (TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH)', () => {
+describe('StudioListPage — create document CTAs', () => {
   let fixture: ComponentFixture<StudioListPage>;
   let service: { list: jest.Mock; create: jest.Mock };
   let documentTemplates: { list: jest.Mock };
@@ -101,21 +101,13 @@ describe('StudioListPage — create КП (TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH)', 
     expect(row?.textContent).not.toContain('frozen');
   });
 
-  it('creates a document with the КП doc type pre-selected and opens it', async () => {
+  it('TZ-NX-DOCSTUDIO-LIST-DROP-NEW-KP: no «Новое КП» button — only Шаблоны / Из шаблона / Создать документ remain', async () => {
     await setup();
-    service.create.mockReturnValue(
-      of({ ok: true, data: { _id: 'doc-1', name: 'КП', status: 'draft', docTypeId: 'dt-kp' } }),
-    );
 
-    (fixture.nativeElement.querySelector('[data-test="studio-create-kp"]') as HTMLButtonElement).click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(docTypesApi.list).toHaveBeenCalled();
-    expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ docTypeId: 'dt-kp' }));
-    expect(router.navigate).toHaveBeenCalledWith(['/studio', 'doc-1']);
+    expect(fixture.nativeElement.querySelector('[data-test="studio-create-kp"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="studio-templates-link"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="studio-create-from-template"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="studio-create"]')).toBeTruthy();
   });
 
   it('requires an explicit doc type from the create-doctype dialog for «Создать документ»', async () => {
@@ -164,18 +156,6 @@ describe('StudioListPage — create КП (TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH)', 
     fixture.detectChanges();
 
     expect(dialog.open).not.toHaveBeenCalled();
-    expect(service.create).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalled();
-  });
-
-  it('toasts an error and does not create when the КП doc type is missing', async () => {
-    await setup();
-    docTypesApi.list.mockReturnValue(of({ ok: true, data: [] }));
-
-    (fixture.nativeElement.querySelector('[data-test="studio-create-kp"]') as HTMLButtonElement).click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
     expect(service.create).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalled();
   });

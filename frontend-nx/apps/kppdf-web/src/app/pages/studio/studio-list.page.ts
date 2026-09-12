@@ -8,7 +8,6 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
-import { findKpDocType } from './studio-kp-doc-type';
 import { rememberStudioDocument } from './studio-session';
 import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogData } from './studio-template-picker-dialog.component';
 import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData, type StudioCreateDoctypeResult } from './studio-create-doctype-dialog.component';
@@ -34,7 +33,6 @@ const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {
              Classes mirror <app-pi-button variant="ghost"> exactly (button.component.ts). -->
         <a class="inline-flex items-center justify-center gap-2 font-medium font-mono uppercase tracking-wider rounded-sm transition-all pi-focus-ring bg-transparent text-ink hover:bg-paper-2 h-10 px-4 text-sm" routerLink="/studio/templates" data-test="studio-templates-link">Шаблоны</a>
         <app-pi-button variant="secondary" type="button" data-test="studio-create-from-template" (click)="createFromTemplate()">Из шаблона</app-pi-button>
-        <app-pi-button variant="secondary" type="button" data-test="studio-create-kp" (click)="createKp()">Новое КП</app-pi-button>
         <app-pi-button variant="default" type="button" data-test="studio-create" (click)="create()">Создать документ</app-pi-button>
       </div>
       @if (status() === 'loading') { <div class="text-sm text-muted-foreground">Загрузка…</div> }
@@ -183,18 +181,6 @@ export class StudioListPage implements OnInit {
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (!result) return;
       this.createDocument(result.name, result.docTypeId);
-    });
-  }
-
-  /** «Новое КП» — pre-selects the КП doc type so Шаблон/Данные and the quotation link are ready without an extra step. */
-  createKp(): void {
-    void firstValueFrom(this.docTypesApi.list()).then((result) => {
-      const kpDocType = result.ok ? findKpDocType(result.data) : undefined;
-      if (!kpDocType) {
-        this.toast.error('Тип документа «КП» не найден');
-        return;
-      }
-      this.createDocument(this.buildDefaultName('КП'), kpDocType._id);
     });
   }
 

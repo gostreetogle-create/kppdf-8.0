@@ -1,8 +1,19 @@
 # TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH checklist
 
-> Status: **DONE**
+> Status: **DONE** — **superseded on `/studio` by `TZ-NX-DOCSTUDIO-LIST-DROP-NEW-KP` (2026-09-12)**
 > Marker: `tasks/_active/TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH.md` (removed after archive)
 > Commit/push: per `docs/GIT-POLICY.md`
+
+## Supersede note (2026-09-12)
+
+PO audit `docs/audits/2026-09-12-docstudio-list-kp-and-blank-templates-audit.md`
+found the «Новое КП» button on `/studio`'s list this TZ added was a dead-end
+UX (duplicate of `/proposals`'s «Создать в студии», not "по логике
+универсальных документов"). `TZ-NX-DOCSTUDIO-LIST-DROP-NEW-KP` removed the
+button + `createKp()` from `studio-list.page.ts` — `/proposals`'s
+`createInStudio()` (still using the `findKpDocType`/`isKpDocType` helper this
+TZ introduced in `studio-kp-doc-type.ts`) is untouched and remains the one КП
+creation entry point outside «Из шаблона».
 
 ## Claim slot
 

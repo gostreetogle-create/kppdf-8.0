@@ -14,6 +14,8 @@
 
 Аудит шапки: [`../audits/2026-09-06-docstudio-chrome-ia-audit.md`](../audits/2026-09-06-docstudio-chrome-ia-audit.md) · WAVE `WAVE-DOCSTUDIO-CHROME-IA.md`.
 
+**CTA на `/studio` (`TZ-NX-DOCSTUDIO-LIST-DROP-NEW-KP`, 2026-09-12):** **Шаблоны** | **Из шаблона** | **Создать документ** — без отдельной «Новое КП» (была не по логике универсальных документов). КП создаётся из **Сделки → КП** («Создать в студии», `/proposals`, тот же `findKpDocType` helper) или позже из явно сохранённого шаблона «КП» через «Из шаблона».
+
 **NX UX sweep (2026-09-09, `TZ-NX-UX-15-studio-list-FIX`) — `/studio` и `/studio/templates` списки
 (A4-редактор `/studio/:id` НЕ затронут):** строка документа в `/studio` теперь показывает RU-метку
 статуса («Черновик»/«Заморожен»/«В архиве») вместо сырого английского значения (`document.status`
