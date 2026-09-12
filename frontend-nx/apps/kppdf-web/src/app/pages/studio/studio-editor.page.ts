@@ -132,6 +132,14 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
   'catalog-materials',
 ]);
 
+/** RU labels for Insert/toast messages, keyed by vitrina kind (mirrors StudioDataVitrinaComponent tabs). */
+const STUDIO_CATALOG_KIND_LABELS: Record<StudioShowcaseKind, string> = {
+  products: 'Изделия',
+  modules: 'Модули',
+  parts: 'Детали',
+  materials: 'Материалы',
+};
+
 @Component({
   selector: 'pi-studio-editor-page',
   standalone: true,
@@ -1069,7 +1077,14 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       (item) => item.type === 'table' && (item.settings?.['dataSource'] as { type?: string } | undefined)?.type === source,
     );
     if (existing) {
+      // TZ-NX-DOCSTUDIO-CATALOG-INSERT-HONEST — a silent focus-only left the
+      // operator staring at a table that could still be empty from an earlier
+      // failed/parallel hydrate. Toast makes "already on sheet" explicit and
+      // the heal re-puts this table's dataSet with a fresh revision so its
+      // rows are current, not just its focus.
       this.activateLayer(existing._id);
+      this.toast.success(`Таблица «${STUDIO_CATALOG_KIND_LABELS[kind]}» уже на листе`);
+      void this.refreshCatalogTablesOfKind(kind);
       return;
     }
     void this.createTableBlock().then((block) => {
@@ -1138,6 +1153,71 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       this.toast.success('На листе появятся строки из выбранных товаров');
       this.refreshPreviewIfActive();
     });
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-CATALOG-INSERT-HONEST / HYDRATE-ALL — re-puts every table
+   * wired to `catalog-{kind}` (normally at most one, per the PO one-kind-one-
+   * table lock; if a duplicate ever exists, heal all of them rather than
+   * guess which is current). Chained onto `catalogWriteChain` — the same
+   * queue `onCatalogSelectionChange` uses — so this never races a concurrent
+   * vitrina add/remove against the same document `expectedRevision`. Used to
+   * heal a table an Insert-click found already on the sheet but empty (this
+   * TZ) and, from VITRINA-EDIT, to pull a just-saved product's fresh name/
+   * photo onto the sheet without F5.
+   */
+  refreshCatalogTablesOfKind(kind: StudioShowcaseKind): Promise<void> {
+    const source = `catalog-${kind}` as const;
+    const run = () =>
+      this.hydrateTablesSerially(
+        this.blocks().filter(
+          (item) => item.type === 'table' && (item.settings?.['dataSource'] as { type?: string } | undefined)?.type === source,
+        ),
+      );
+    const chained = this.catalogWriteChain.then(run);
+    this.catalogWriteChain = chained;
+    return chained;
+  }
+
+  /**
+   * Sequential putDataSet queue: each iteration reads `this.document()` fresh
+   * right before it fires, so it always carries the revision the *previous*
+   * iteration's write actually returned — never one snapshotted before the
+   * loop started. Firing these in parallel instead (as `refreshLiveDataSetsOnLoad`
+   * used to) races every table against the same stale revision and 409s all
+   * but the first, leaving the rest silently empty (TZ-NX-DOCSTUDIO-CATALOG-HYDRATE-ALL).
+   * One failing table toasts once and does not abort the rest.
+   */
+  private async hydrateTablesSerially(tables: readonly StudioBlock[]): Promise<void> {
+    let notifiedError = false;
+    for (const block of tables) {
+      const doc = this.document();
+      if (!doc) return;
+      const sourceType = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+      if (!sourceType || !STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)) continue;
+      const key = `table-${block._id}`;
+      const existing = doc.dataSets?.find((entry) => entry['key'] === key);
+      const catalogKey = sourceType.startsWith('catalog-') ? sourceType.slice('catalog-'.length) : '';
+      const catalogSelectionCount = catalogKey
+        ? this.catalogSelections()[catalogKey as 'products' | 'modules' | 'parts' | 'materials'].length
+        : ((existing?.['catalogSelectionCount'] as number | undefined) ?? 0);
+      const dataSet = { source: { type: sourceType }, rows: existing?.rows ?? [], catalogSelectionCount };
+      const result = await firstValueFrom(
+        this.documents.putDataSet(doc._id, key, {
+          expectedRevision: doc.revision ?? 1,
+          dataSet,
+        }),
+      );
+      if (!result.ok) {
+        if (!notifiedError) {
+          this.toast.error('Не удалось обновить строки одной из таблиц — остальные обновлены');
+          notifiedError = true;
+        }
+        continue;
+      }
+      this.document.set(result.data);
+      this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
+    }
   }
 
   private createTextLayer(): void {
