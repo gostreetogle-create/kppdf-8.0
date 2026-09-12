@@ -25,7 +25,7 @@ wave: `docs/agent-checklists/WAVE-NX-PO-SWEEP-2026-09-12.md`
 |---|-------|-----|--------|-----|------------|
 | 00 | ops nx start cache (CI→Angular cache) | `tasks/_archive/2026-09/TZ-OPS-NX-START-CACHE.done.md` | DONE | `32a8d149` | 2026-09-12T09:35:00+03:00 |
 | 01 | product Save silent invalid | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-01-product-save-silent.done.md` | DONE | `95a844df` | 2026-09-12T09:45:00+03:00 |
-| 02 | studio table click=select/resize | `tasks/_ready/nx-po-sweep/02-studio-table-click-resize/TZ-NX-PO-SWEEP-02-studio-table-click-resize.md` | PENDING | — | — |
+| 02 | studio table click=select/resize | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-02-studio-table-click-resize.done.md` | DONE | `8b5cf552` | 2026-09-12T09:55:00+03:00 |
 | 03 | studio props outside close | `tasks/_ready/nx-po-sweep/03-studio-props-outside-close/TZ-NX-PO-SWEEP-03-studio-props-outside-close.md` | PENDING | — | — |
 | 04 | studio data vitrina thumbs+height | `tasks/_ready/nx-po-sweep/04-studio-data-vitrina-thumbs/TZ-NX-PO-SWEEP-04-studio-data-vitrina-thumbs.md` | PENDING | — | — |
 | 05 | studio table photo frame+controls | `tasks/_ready/nx-po-sweep/05-studio-table-photo-frame/TZ-NX-PO-SWEEP-05-studio-table-photo-frame.md` | PENDING | — | — |
