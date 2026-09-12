@@ -12,10 +12,10 @@ status: READY
 frontend_target: nx
 wipe_default: false
 wipe_reason: "same Nest API; additive schemas since 4d55d0ea — keep Mongo/uploads (warm)"
-deploy_sha_target: d76e4fa7
-prepared_at: 2026-09-08T04:00:00+03:00
+deploy_sha_target: 73e335c3
+prepared_at: 2026-09-12T18:00:00+03:00
 prepared_by: claude-executor
-evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-07-NX.md
+evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-12-NX.md
 prep_prompt: tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md
 debt: []
 desktop_zip: accept-stale (v0.5.10, re-verified 2026-09-12 desktop-full-verify — file present in both downloads dirs, matches current desktop/package.json version; no desktop code changed this session so no rebuild triggered; see docs/audits/2026-09-12-desktop-full-verify.md)
