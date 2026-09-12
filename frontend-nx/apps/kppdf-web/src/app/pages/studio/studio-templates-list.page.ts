@@ -13,6 +13,7 @@ import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { rememberStudioDocument } from './studio-session';
+import { STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from './studio-list.page';
 
 /**
  * TZ-NX-DOCSTUDIO-C2-THREE-SECTIONS — «Шаблоны» journal at `/studio/templates`.
@@ -31,7 +32,7 @@ import { rememberStudioDocument } from './studio-session';
       @if (status() === 'loading') { <div class="text-sm text-muted-foreground">Загрузка…</div> }
       @if (status() === 'error') { <app-pi-status-banner tone="destructive" [message]="error()" actionLabel="Повторить" (action)="load()" /> }
       @if (status() === 'success' && templates().length === 0) {
-        <div class="pi-dashed-panel p-8 text-center">Шаблонов не найдено.</div>
+        <div class="pi-dashed-panel p-8 text-center">{{ noSavedTemplatesMessage }}</div>
       }
       @if (status() === 'success' && templates().length > 0) {
         <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
@@ -62,6 +63,7 @@ export class StudioTemplatesListPage implements OnInit {
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
 
+  protected readonly noSavedTemplatesMessage = STUDIO_NO_SAVED_TEMPLATES_MESSAGE;
   readonly templates = signal<readonly DocumentTemplate[]>([]);
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal('Не удалось загрузить шаблоны.');

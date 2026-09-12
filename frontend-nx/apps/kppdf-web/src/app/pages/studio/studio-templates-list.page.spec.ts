@@ -92,10 +92,11 @@ describe('StudioTemplatesListPage — /studio/templates (TZ-NX-DOCSTUDIO-C2-THRE
     expect(fixture.nativeElement.querySelector('[data-test="studio-template-row"]')).toBeTruthy();
   });
 
-  it('shows the empty state when no templates exist', async () => {
+  it('TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM: shows an honest empty state, not "not found"', async () => {
     await setup([]);
 
-    expect(fixture.nativeElement.textContent).toContain('Шаблонов не найдено.');
+    expect(fixture.nativeElement.textContent).toContain('Нет сохранённых шаблонов');
+    expect(fixture.nativeElement.textContent).toContain('Сохранить как шаблон');
     expect(fixture.nativeElement.querySelector('[data-test="studio-template-row"]')).toBeNull();
   });
 

@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { DocumentTemplateService } from './document-template.service';
 import { DocumentRenderService } from '../document-render/document-render.service';
+import { BLANK_A4_SENTINEL_TAG } from './blank-a4-template.constants';
 
 const ORG_A = new Types.ObjectId().toString();
 const CAT_ID = new Types.ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa');
@@ -301,7 +302,11 @@ describe('DocumentTemplateService category contract (TZ-DOC-307)', () => {
       });
 
       await service.findAll(ORG_A, undefined, undefined, CAT_ID.toString());
+      // TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM: findAll always excludes
+      // soft-deleted rows and the internal blank-A4 sentinel, alongside org/category scope.
       expect(model.find).toHaveBeenCalledWith({
+        deletedAt: null,
+        tags: { $ne: BLANK_A4_SENTINEL_TAG },
         organizationId: new Types.ObjectId(ORG_A),
         categoryId: new Types.ObjectId(CAT_ID),
       });

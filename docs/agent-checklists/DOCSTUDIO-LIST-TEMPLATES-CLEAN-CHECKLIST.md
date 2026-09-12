@@ -5,8 +5,10 @@
 
 | # | TZ | Status | SHA |
 |---|-----|--------|-----|
-| 1 | TZ-NX-DOCSTUDIO-LIST-DROP-NEW-KP | DONE | pending-commit |
-| 2 | TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM | IN_WORK | |
+| 1 | TZ-NX-DOCSTUDIO-LIST-DROP-NEW-KP | DONE | `c9f687e4` |
+| 2 | TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM | DONE | pending-commit |
+
+## WAVE COMPLETE
 
 ## Notes
 

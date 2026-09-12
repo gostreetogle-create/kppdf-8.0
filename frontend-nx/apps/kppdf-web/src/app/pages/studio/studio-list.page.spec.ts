@@ -110,6 +110,20 @@ describe('StudioListPage — create document CTAs', () => {
     expect(fixture.nativeElement.querySelector('[data-test="studio-create"]')).toBeTruthy();
   });
 
+  it('TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM: «Из шаблона» with no saved templates toasts an honest empty message, no dialog', async () => {
+    await setup();
+    documentTemplates.list.mockReturnValue(of({ ok: true, data: [] }));
+
+    (fixture.nativeElement.querySelector('[data-test="studio-create-from-template"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringContaining('Нет сохранённых шаблонов'),
+    );
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
   it('requires an explicit doc type from the create-doctype dialog for «Создать документ»', async () => {
     await setup();
     service.create.mockReturnValue(

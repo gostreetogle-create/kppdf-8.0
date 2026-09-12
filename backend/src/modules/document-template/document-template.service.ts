@@ -243,19 +243,23 @@ export class DocumentTemplateService {
   /**
    * TZ-DOC-STUDIO-2004 — idempotent per-org sentinel for blank studio finalize.
    * Satisfies GeneratedDocument.templateId required without making it optional globally.
+   *
+   * TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM — hardened against the two
+   * ways duplicates crept in live: (a) a boot-seed / finalize race both
+   * finding none and both creating one, (b) a stale duplicate already sitting
+   * in the DB from before this TZ. `findAndDedupeBlankA4Sentinel` always
+   * re-checks and folds any extras down to one before deciding whether to
+   * create; the `create` itself is wrapped for the race case where another
+   * caller wins between that check and this write (unique index, where
+   * enforced, turns that into an 11000 duplicate-key error — re-find instead
+   * of throwing, since the other writer's row is exactly what we wanted).
    */
   async ensureBlankA4Sentinel(organizationId: string): Promise<DocumentTemplateDocument> {
     if (!Types.ObjectId.isValid(organizationId)) {
       throw new BadRequestException('organizationId must be a valid ObjectId');
     }
     const orgObjectId = new Types.ObjectId(organizationId);
-    const existing = await this.model
-      .findOne({
-        organizationId: orgObjectId,
-        tags: BLANK_A4_SENTINEL_TAG,
-        deletedAt: null,
-      })
-      .exec();
+    const existing = await this.findAndDedupeBlankA4Sentinel(orgObjectId);
     if (existing) {
       return existing;
     }
@@ -271,33 +275,83 @@ export class DocumentTemplateService {
     }
 
     const categoryId = await this.resolveCategoryId({ organizationId });
-    return this.model.create({
-      name: BLANK_A4_TEMPLATE_NAME,
-      tags: [BLANK_A4_SENTINEL_TAG],
-      organizationId: orgObjectId,
-      docTypeId: docType._id,
-      categoryId,
-      isDefault: false,
-      isActive: true,
-      pageSize: 'A4',
-      orientation: 'portrait',
-      backgroundImage: [],
-      defaultBackgroundIndex: -1,
-      backgroundOpacity: 0.3,
-      pageNumbering: false,
-      defaultSheetLayout: { rowsFirstPage: 0, rowsNextPage: 0 },
-      version: 1,
-      notes: 'System sentinel for blank studio documents (TZ-DOC-STUDIO-2004).',
-    });
+    try {
+      return await this.model.create({
+        name: BLANK_A4_TEMPLATE_NAME,
+        tags: [BLANK_A4_SENTINEL_TAG],
+        organizationId: orgObjectId,
+        docTypeId: docType._id,
+        categoryId,
+        isDefault: false,
+        isActive: true,
+        pageSize: 'A4',
+        orientation: 'portrait',
+        backgroundImage: [],
+        defaultBackgroundIndex: -1,
+        backgroundOpacity: 0.3,
+        pageNumbering: false,
+        defaultSheetLayout: { rowsFirstPage: 0, rowsNextPage: 0 },
+        version: 1,
+        notes: 'System sentinel for blank studio documents (TZ-DOC-STUDIO-2004).',
+      });
+    } catch (err) {
+      if (!this.isDuplicateKeyError(err)) throw err;
+      const winner = await this.findAndDedupeBlankA4Sentinel(orgObjectId);
+      if (winner) return winner;
+      throw err;
+    }
   }
 
+  /**
+   * Finds every non-deleted sentinel for this org; if more than one exists
+   * (pre-TZ duplicates, or a lost create race), keeps the oldest and
+   * soft-deletes the rest — never a hard wipe. Returns `null` only when no
+   * sentinel exists yet at all.
+   */
+  private async findAndDedupeBlankA4Sentinel(
+    orgObjectId: Types.ObjectId,
+  ): Promise<DocumentTemplateDocument | null> {
+    const candidates = await this.model
+      .find({ organizationId: orgObjectId, tags: BLANK_A4_SENTINEL_TAG, deletedAt: null })
+      .sort({ createdAt: 1 })
+      .exec();
+    if (candidates.length === 0) return null;
+    const [keep, ...duplicates] = candidates;
+    if (duplicates.length > 0) {
+      await this.model
+        .updateMany(
+          { _id: { $in: duplicates.map((doc) => doc._id) } },
+          { $set: { deletedAt: new Date() } },
+        )
+        .exec();
+    }
+    return keep;
+  }
+
+  private isDuplicateKeyError(err: unknown): boolean {
+    return typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000;
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM — this is the UI-facing list
+   * (picker / journal on `/studio`, `/studio/templates`): always excludes
+   * soft-deleted rows and the internal blank-A4 sentinel, regardless of org
+   * scope. An admin with no org in the JWT used to see every organization's
+   * sentinel copy here; a scoped org user saw their own org's sentinel
+   * alongside real templates. The sentinel itself is untouched — finalize
+   * (`ensureBlankA4Sentinel`) queries the same tag directly, not through
+   * this method.
+   */
   async findAll(
     organizationId?: string,
     docTypeId?: string,
     isDefault?: boolean,
     categoryId?: string,
   ): Promise<DocumentTemplateDocument[]> {
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = {
+      deletedAt: null,
+      tags: { $ne: BLANK_A4_SENTINEL_TAG },
+    };
     if (organizationId) {
       if (!Types.ObjectId.isValid(organizationId)) return [];
       filter.organizationId = new Types.ObjectId(organizationId);

@@ -19,6 +19,16 @@ const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {
   final: 'В архиве',
 };
 
+/**
+ * TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM — the backend `findAll` already
+ * hides the internal blank-A4 sentinel, so an empty template list here is
+ * genuinely "nothing saved yet", not "picker is broken". Shared with
+ * `studio-templates-list.page.ts` so the copy stays identical everywhere
+ * this empty state can show.
+ */
+export const STUDIO_NO_SAVED_TEMPLATES_MESSAGE =
+  'Нет сохранённых шаблонов — сохраните из студии (Шаблон → Сохранить как шаблон)';
+
 @Component({
   selector: 'pi-studio-list-page',
   standalone: true,
@@ -104,13 +114,19 @@ export class StudioListPage implements OnInit {
     void this.loadActiveTemplates().then((templates) => {
       if (templates === null) return;
       if (templates.length === 0) {
-        this.toast.error('Нет активных шаблонов документов');
+        this.toast.error(STUDIO_NO_SAVED_TEMPLATES_MESSAGE);
         return;
       }
       this.openTemplatePicker(templates);
     });
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM — `findAll` on the backend
+   * already excludes the internal blank-A4 sentinel and soft-deleted rows,
+   * so an empty/all-inactive response here genuinely means the operator has
+   * not saved a template yet, not "9 copies of a system placeholder".
+   */
   private loadActiveTemplates(): Promise<readonly DocumentTemplate[] | null> {
     return firstValueFrom(this.documentTemplates.list()).then((result) => {
       if (!result.ok) {
@@ -118,7 +134,7 @@ export class StudioListPage implements OnInit {
         return null;
       }
       if (result.data.length === 0) {
-        this.toast.error('Нет доступных шаблонов документов');
+        this.toast.error(STUDIO_NO_SAVED_TEMPLATES_MESSAGE);
         return null;
       }
       return result.data.filter((item) => item.isActive !== false);

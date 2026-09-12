@@ -266,6 +266,7 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 
 - **Тип документа** (`docTypeId`) — обязателен для «Сохранить как шаблон» и ribbon «Шаблон».
 - Save-as-template: имя + `keepDataBindings` → `POST …/save-as-template`.
+- **Sentinel «Пустой A4» — internal, не в списке (`TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM`, 2026-09-12):** системный `DocumentTemplate` с тегом `system-sentinel-blank-a4` (`ensureBlankA4Sentinel`) существует только для finalize пустого studio-документа (нужен `templateId`) — не пользовательский шаблон. `GET /document-templates` (журнал «Шаблоны», «Из шаблона») всегда исключает `deletedAt` и этот тег; пустой список честно говорит «Нет сохранённых шаблонов — сохраните из студии (Шаблон → Сохранить как шаблон)», не показывает sentinel как выбор. `ensureBlankA4Sentinel` дедуплицирует сам: держит один (oldest) sentinel на org, лишние soft-delete; unique partial index на схеме — дополнительная защита в dev (autoIndex выключен в prod).
 
 ### 3.5 Свойства (текст)
 

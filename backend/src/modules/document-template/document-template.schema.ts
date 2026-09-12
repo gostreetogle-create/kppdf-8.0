@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { BLANK_A4_SENTINEL_TAG } from './blank-a4-template.constants';
 
 export type DocumentTemplateDocument = HydratedDocument<DocumentTemplate>;
 
@@ -124,3 +125,23 @@ export class DocumentTemplate {
 
 export const DocumentTemplateSchema = SchemaFactory.createForClass(DocumentTemplate);
 DocumentTemplateSchema.index({ organizationId: 1, docTypeId: 1, isDefault: 1 });
+
+/**
+ * TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM — at most one live (non-deleted)
+ * `system-sentinel-blank-a4` template per org going forward. Only enforced
+ * where Mongoose `autoIndex` runs (dev; disabled in prod per
+ * `database.module.ts`) — the real defense against duplicates is
+ * `DocumentTemplateService.ensureBlankA4Sentinel`'s own find-and-dedupe
+ * logic, which self-heals regardless of index enforcement. If a live DB
+ * already has duplicate sentinels from before this TZ, run the migration
+ * `database/migrations/2026-09-12-*-dedup-sentinels.ts` first so this index
+ * builds cleanly.
+ */
+DocumentTemplateSchema.index(
+  { organizationId: 1, tags: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { tags: BLANK_A4_SENTINEL_TAG, deletedAt: null },
+    name: 'blank_a4_sentinel_unique',
+  },
+);
