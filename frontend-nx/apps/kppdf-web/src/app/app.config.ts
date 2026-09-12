@@ -5,7 +5,7 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { LucideAngularModule, Check, Minus, ArrowUpRight } from 'lucide-angular';
 import { API_BASE_URL } from '@kppdf/util-http';
 import {
@@ -20,7 +20,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(appRoutes),
+    provideRouter(appRoutes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor])),
     provideAppInitializer(() => inject(AuthService).bootstrap()),
     importProvidersFrom(LucideAngularModule.pick({ Check, Minus, ArrowUpRight })),
