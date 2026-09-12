@@ -30,7 +30,7 @@ wave: `docs/agent-checklists/WAVE-NX-PO-SWEEP-2026-09-12.md`
 | 04 | studio data vitrina thumbs+height | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-04-studio-data-vitrina-thumbs.done.md` | DONE | `5517da3e` | 2026-09-12T10:20:00+03:00 |
 | 05 | studio table photo frame+controls | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-05-studio-table-photo-frame.done.md` | DONE | `1c32f6a8` | 2026-09-12T10:40:00+03:00 |
 | 06 | studio WYSIWYG editor=preview=PDF | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-06-studio-wysiwyg-preview.done.md` | DONE | `188bebb8` | 2026-09-12T11:05:00+03:00 |
-| 07 | studio chrome-rail Document menu | `tasks/_ready/nx-po-sweep/07-studio-chrome-rail-categories/TZ-NX-PO-SWEEP-07-studio-chrome-rail-categories.md` | PENDING | — | — |
+| 07 | studio chrome-rail Document menu | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-07-studio-chrome-rail-categories.done.md` | DONE | `6470660c` | 2026-09-12T11:25:00+03:00 |
 
 ## Deferred (находки mid-wave → вопрос Cursor)
 
