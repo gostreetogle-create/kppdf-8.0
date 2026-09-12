@@ -8,7 +8,8 @@
 > **NX cutover:** канон `docs/ops/DEPLOY-NX-PROD.md`. `TZ-OPS-DEPLOY-NX-STATIC` закрыт — деплой разрешён по документации.
 
 ```yaml
-status: READY
+status: INVALID
+why_invalid: deployed ac68d96f 2026-09-13 on FRESH VM 192.168.1.52 (old .103 lost; deploy.py warm + seed to empty Mongo; Deploy complete + Auth OK + Frontend 200; tunnel kppdf-tunnel restored, kppdf-crm.ru health/ready ok)
 frontend_target: nx
 wipe_default: false
 wipe_reason: "same Nest API; additive schemas since 4d55d0ea — keep Mongo/uploads (warm)"
