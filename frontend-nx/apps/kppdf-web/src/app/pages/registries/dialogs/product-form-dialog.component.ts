@@ -85,23 +85,23 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
       [showClose]="true"
       (userClose)="onCancel()"
     >
-      <form body [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" data-test="product-form">
+      <form body #formEl [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" data-test="product-form">
         <app-pi-form-section title="Изделие" headingId="product-main" tone="gold">
           <div class="grid md:grid-cols-12 gap-form-field">
             <app-pi-form-field label="Название" htmlFor="prod-name" class="md:col-span-8">
               <app-pi-input id="prod-name" formControlName="name" />
             </app-pi-form-field>
-            <app-pi-form-field label="Артикул" htmlFor="prod-sku" [required]="true" class="md:col-span-4">
+            <app-pi-form-field label="Артикул" htmlFor="prod-sku" [required]="true" [error]="fieldError('sku')" class="md:col-span-4">
               <app-pi-input id="prod-sku" formControlName="sku" />
             </app-pi-form-field>
-            <app-pi-form-field label="Тип" htmlFor="prod-kind" [required]="true" class="md:col-span-3">
+            <app-pi-form-field label="Тип" htmlFor="prod-kind" [required]="true" [error]="fieldError('kind')" class="md:col-span-3">
               <select id="prod-kind" formControlName="kind" class="pi-input w-full">
                 @for (k of kindOptions; track k.value) {
                   <option [value]="k.value">{{ k.label }}</option>
                 }
               </select>
             </app-pi-form-field>
-            <app-pi-form-field label="Единица" htmlFor="prod-unit" [required]="true" class="md:col-span-3">
+            <app-pi-form-field label="Единица" htmlFor="prod-unit" [required]="true" [error]="fieldError('unit')" class="md:col-span-3">
               <select id="prod-unit" formControlName="unit" class="pi-input w-full" data-test="product-unit">
                 <option value="" disabled>— выберите —</option>
                 @for (u of units(); track u.key) {
@@ -119,7 +119,7 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
             <app-pi-form-field label="Цена, ₽" htmlFor="prod-price" class="md:col-span-3">
               <app-pi-input id="prod-price" type="number" formControlName="listPrice" />
             </app-pi-form-field>
-            <app-pi-form-field label="Категория" htmlFor="prod-category" [required]="true" class="md:col-span-6">
+            <app-pi-form-field label="Категория" htmlFor="prod-category" [required]="true" [error]="fieldError('categoryId')" class="md:col-span-6">
               <select id="prod-category" formControlName="categoryId" class="pi-input w-full" data-test="prod-category">
                 <option value="">— выберите —</option>
                 @for (c of categories(); track c._id) {
@@ -195,6 +195,7 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
 })
 export class ProductFormDialogComponent implements OnInit, AfterViewInit {
   @ViewChild('compositionBlock') private compositionBlock?: ElementRef<HTMLElement>;
+  @ViewChild('formEl') private formEl?: ElementRef<HTMLFormElement>;
   protected readonly kindOptions = KIND_OPTIONS;
   protected readonly statusOptions = STATUS_OPTIONS;
 
@@ -271,6 +272,8 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
   protected async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.errorMessage.set(this.buildInvalidMessage());
+      this.focusFirstInvalidField();
       return;
     }
     const payload = this.buildPayload();
@@ -293,6 +296,50 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
     if (this.data.mode === 'edit') {
       this.ref.close(res.data);
     }
+  }
+
+  /** Order matches the form layout — first invalid one gets focus/scroll. */
+  private static readonly REQUIRED_FIELDS: ReadonlyArray<{
+    key: 'sku' | 'kind' | 'unit' | 'categoryId';
+    label: string;
+    htmlId: string;
+  }> = [
+    { key: 'sku', label: 'Артикул', htmlId: 'prod-sku' },
+    { key: 'kind', label: 'Тип', htmlId: 'prod-kind' },
+    { key: 'unit', label: 'Единица', htmlId: 'prod-unit' },
+    { key: 'categoryId', label: 'Категория', htmlId: 'prod-category' },
+  ];
+
+  private buildInvalidMessage(): string {
+    const missing = ProductFormDialogComponent.REQUIRED_FIELDS.filter(
+      (f) => this.form.controls[f.key].invalid,
+    ).map((f) => f.label);
+    return missing.length
+      ? `Заполните обязательные поля: ${missing.join(', ')}`
+      : 'Проверьте поля формы — есть некорректные значения.';
+  }
+
+  private focusFirstInvalidField(): void {
+    const target = ProductFormDialogComponent.REQUIRED_FIELDS.find(
+      (f) => this.form.controls[f.key].invalid,
+    );
+    if (!target) return;
+    const host = this.formEl?.nativeElement.querySelector<HTMLElement>(`#${target.htmlId}`);
+    if (!host) return;
+    // `app-pi-input` puts `id` on its host tag, not the native `<input>` it wraps — reach inside.
+    const el = host.matches('input, select, textarea')
+      ? host
+      : (host.querySelector<HTMLElement>('input, select, textarea') ?? host);
+    queueMicrotask(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus({ preventScroll: true });
+    });
+  }
+
+  /** `app-pi-form-field [error]` hint for a required control, shown once touched. */
+  protected fieldError(key: 'sku' | 'kind' | 'unit' | 'categoryId'): string | null {
+    const control = this.form.controls[key];
+    return control.invalid && control.touched ? 'Обязательное поле' : null;
   }
 
   private async loadUnits(): Promise<void> {

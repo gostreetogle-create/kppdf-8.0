@@ -32,6 +32,16 @@ checklist: `docs/agent-checklists/PO-SWEEP-CONTINUOUS-CHECKLIST.md`
 
 Orphan uploads wipe · `/production` · deploy — PARK.
 
+## Backlog (найдено при #01, не scope этой волны)
+
+Тот же silent-invalid `form.invalid { markAllAsTouched(); return; }` без toast/focus
+есть в `category-form-dialog`, `material-form-dialog`, `module-form-dialog`,
+`unit-form-dialog`, `work-type-form-dialog`, `worker-form-dialog`,
+`simple-registry-form-dialog.component.ts`. TZ-01 чинил только product-form —
+остальные оставлены по прямой инструкции TZ («не scope creep»). Backlog для
+следующей волны: применить тот же паттерн (`errorMessage` + `fieldError` +
+focus/scroll первого invalid), если PO подтвердит приоритет.
+
 ## Запреты
 
 wipe; deploy без PO; Гант; параллель двух FIX на kppdf-web.

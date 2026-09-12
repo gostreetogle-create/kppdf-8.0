@@ -201,6 +201,30 @@ describe('ProductFormDialogComponent — категория (TZ-NX-REG-CATEGORY-
     expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ categoryId: 'cat-1' }));
   });
 
+  it('TZ-NX-PO-SWEEP-01: invalid Save is not silent — shows alert, focuses first invalid field, does not call create', async () => {
+    await setup({ mode: 'create' });
+    const service = TestBed.inject(PiProductsService);
+    const focusSpy = jest.fn();
+    const scrollSpy = jest.fn();
+    // sku is first in REQUIRED_FIELDS order and empty by default (kind defaults to 'good' — valid).
+    // `app-pi-input` puts the id on its host tag; the focus target is the native <input> inside.
+    const skuInput = fixture.nativeElement.querySelector('#prod-sku input') as HTMLElement;
+    skuInput.focus = focusSpy;
+    skuInput.scrollIntoView = scrollSpy;
+
+    await fixture.componentInstance['onSubmit']();
+    fixture.detectChanges();
+
+    expect(service.create).not.toHaveBeenCalled();
+    const el = fixture.nativeElement as HTMLElement;
+    const alert = el.querySelector('[data-test="product-form-error"]');
+    expect(alert?.textContent).toMatch(/Артикул|Тип|Единица|Категория/);
+
+    await Promise.resolve();
+    expect(scrollSpy).toHaveBeenCalled();
+    expect(focusSpy).toHaveBeenCalled();
+  });
+
   it('extracts the id from a populated categoryId ref when patching edit data (GET /products populates it)', async () => {
     await setup({ mode: 'edit', product: { ...SAMPLE, categoryId: { _id: 'cat-2', name: 'Вывески' } } });
 
