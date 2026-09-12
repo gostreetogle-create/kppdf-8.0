@@ -1,7 +1,7 @@
 # WAVE-NX-PO-SWEEP-2026-09-12 — находки PO → цепочка FIX
 
-updated_at: 2026-09-12T09:25:00+03:00  
-status: **RUNNING_READY** — continuous выдан  
+updated_at: 2026-09-12T12:50:00+03:00  
+status: **COMPLETE**  
 agent: claude  
 prompt: `tasks/PROMPT-CLAUDE-PO-SWEEP-CONTINUOUS.md`  
 checklist: `docs/agent-checklists/PO-SWEEP-CONTINUOUS-CHECKLIST.md`
@@ -11,13 +11,18 @@ checklist: `docs/agent-checklists/PO-SWEEP-CONTINUOUS-CHECKLIST.md`
 | # | ID | Severity | Status | TZ |
 |---|----|----------|--------|-----|
 | 00 | ops-nx-start-cache | S ops | DONE `32a8d149` | `tasks/_archive/2026-09/TZ-OPS-NX-START-CACHE.done.md` |
-| 01 | product-save-silent | P0 | TZ_READY | `tasks/_ready/nx-po-sweep/01-product-save-silent/…` |
-| 02 | studio-table-click-resize | P0 | TZ_READY | `…/02-studio-table-click-resize/…` |
-| 03 | studio-props-outside-close | P1 | TZ_READY | `…/03-studio-props-outside-close/…` |
-| 04 | studio-data-vitrina-thumbs | P1 | TZ_READY | `…/04-studio-data-vitrina-thumbs/…` |
-| 05 | studio-table-photo-frame | P1 | TZ_READY | `…/05-studio-table-photo-frame/…` |
-| 06 | studio-wysiwyg-preview | P0 | TZ_READY | `…/06-studio-wysiwyg-preview/…` |
-| 07 | studio-chrome-rail-categories | P1 | TZ_READY | `…/07-studio-chrome-rail-categories/…` |
+| 01 | product-save-silent | P0 | DONE `95a844df` | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-01-product-save-silent.done.md` |
+| 02 | studio-table-click-resize | P0 | DONE `8b5cf552` | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-02-studio-table-click-resize.done.md` |
+| 03 | studio-props-outside-close | P1 | DONE `db3e4b4c` | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-03-studio-props-outside-close.done.md` |
+| 04 | studio-data-vitrina-thumbs | P1 | DONE `5517da3e` | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-04-studio-data-vitrina-thumbs.done.md` |
+| 05 | studio-table-photo-frame | P1 | DONE `1c32f6a8` | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-05-studio-table-photo-frame.done.md` |
+| 06 | studio-wysiwyg-preview | P0 | DONE `188bebb8` | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-06-studio-wysiwyg-preview.done.md` |
+| 07 | studio-chrome-rail-categories | P1 | DONE `6470660c` (+follow-up `a91342ff`) | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-07-studio-chrome-rail-categories.done.md` |
+
+Post-wave live smoke (`scripts/po-sweep-2026-09-12-smoke.mjs`, Chrome CDP over
+#02-#07 on a running `node start.mjs --nx`): 13/13 PASS. Found + fixed one
+visual bug DOM tests couldn't catch (popover clipped by `.shell-rail`'s
+`overflow-x:hidden`) — see `a91342ff` and checklist §Post-wave live smoke.
 
 ## Почему такой порядок
 
