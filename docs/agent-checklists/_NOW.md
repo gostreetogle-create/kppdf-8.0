@@ -1,25 +1,24 @@
 ﻿# NOW
 
-updated_at: 2026-09-12T12:50:00+03:00
+updated_at: 2026-09-12T15:15:00+03:00
 
 ## ACTIVE / LIVE
 
 - **Freebuff:** PARK
-- **Claude:** IDLE — промптов нет
-- **Deploy stamp:** READY (не задеплоено, ждёт слова PO)
+- **Claude:** IDLE → NEXT desktop verify
+- **Deploy stamp:** ждёт prep после desktop verify
 
 ## NEXT
 
-Нет активных задач. Backlog не в этой волне (см. `WAVE-NX-PO-SWEEP-2026-09-12.md` §Backlog):
-тот же silent-invalid паттерн в category/material/module/unit/work-type/worker/simple-registry
-form dialogs — только `product-form-dialog` чинился в #01.
+1. **Claude** → `tasks/PROMPT-CLAUDE-DESKTOP-FULL-VERIFY.md`
+2. Потом (после verify) → `tasks/PROMPT-CLAUDE-DEPLOY-PREP-NX.md` (ещё НЕ deploy)
+3. Deploy только по фразе PO: «сделай деплой по документации»
 
 ## DONE
 
-- WAVE-NX-PO-SWEEP-2026-09-12 continuous COMPLETE (#00–#07, live smoke 13/13 PASS)
-- WAVE-NX-UX-PAGE-SWEEP continuous COMPLETE
-- STALE-LIVEROWS-HEAL / PRE-UAT-SMOKE
+- WAVE-NX-PO-SWEEP-2026-09-12 COMPLETE
+- WAVE-NX-UX-PAGE-SWEEP / STALE-LIVEROWS / PRE-UAT-SMOKE / AI-IMPORT-BASELINE
 
 ## PARK
 
-- Deploy · Soup · orphan photo disk wipe · `/production`
+- Deploy GO · Soup · orphan photo wipe · `/production`
