@@ -232,7 +232,16 @@ describe('StudioDataPanelComponent', () => {
     );
     expect(css).toMatch(/\.vitrina-grid\s*\{[^}]*min-width:\s*0/s);
     expect(css).toMatch(/\.vitrina-grid\s*\{[^}]*overflow-x:\s*hidden/s);
-    expect(css).toMatch(/\.vitrina-grid\s*\{[^}]*overflow-y:\s*auto/s);
     expect(css).toMatch(/\.vitrina-grid app-pi-showcase-card\s*\{[^}]*min-width:\s*0/s);
+  });
+
+  it('TZ-NX-PO-SWEEP-04: no artificial 480px ceiling on the vitrina grid — the panel body carries the scroll', () => {
+    const css = readFileSync(
+      join(__dirname, 'studio-data-vitrina.component.ts'),
+      'utf8',
+    );
+    const gridBlock = /\.vitrina-grid\s*\{([^}]*)\}/s.exec(css)?.[1] ?? '';
+    expect(gridBlock).not.toMatch(/max-height\s*:/);
+    expect(gridBlock).not.toMatch(/overflow-y\s*:/);
   });
 });

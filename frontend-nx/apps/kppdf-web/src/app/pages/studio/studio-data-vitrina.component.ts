@@ -135,15 +135,18 @@ const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], p
         min-width: 0;
         max-width: 100%;
         overflow-x: hidden;
-        /* TZ-NX-DOCSTUDIO-S41 — size="sm" cards are compact rows (40px media
+        /* TZ-NX-DOCSTUDIO-S41 — size="sm" cards are compact rows (48px media
            + one-line title/desc), not tiles; the panel content column is
            272px (docs/architecture/nx-doc-studio.md § 5 geometry), so a
            single column keeps titles readable. Two/three columns per the
            spec would truncate every title in this width. */
         grid-template-columns: 1fr;
         gap: 6px;
-        max-height: 480px;
-        overflow-y: auto;
+        /* TZ-NX-PO-SWEEP-04 — no artificial cap: the flyout panel body
+           (.kp-ws-panel__body) is already the scroll container, so a fixed
+           max-height here just cut the list off mid-panel and left a dead
+           gap below it. Let the grid grow with its content and the panel's
+           own scrollbar carry it. */
       }
       .vitrina-grid app-pi-showcase-card {
         min-width: 0;
@@ -258,7 +261,7 @@ export class StudioDataVitrinaComponent implements OnInit {
           id: item._id,
           title: item.name,
           subtitle: item.sku || '—',
-          mediaUrl: this.photoUrl(item.photoIds),
+          mediaUrl: this.photoUrl(item.photoIds, item.mainPhotoId),
           selected: selectedIds.includes(item._id),
         }));
     }
@@ -269,7 +272,7 @@ export class StudioDataVitrinaComponent implements OnInit {
           id: item._id,
           title: item.name,
           subtitle: item.article || '—',
-          mediaUrl: this.photoUrl(item.photoIds),
+          mediaUrl: this.photoUrl(item.photoIds, item.mainPhotoId),
           selected: selectedIds.includes(item._id),
         }));
     }
@@ -280,7 +283,7 @@ export class StudioDataVitrinaComponent implements OnInit {
         id: item._id,
         title: item.name,
         subtitle: item.article || item.sku || '—',
-        mediaUrl: this.photoUrl(item.photoIds ?? (item.mainPhotoId ? [item.mainPhotoId] : undefined)),
+        mediaUrl: this.photoUrl(item.photoIds, item.mainPhotoId),
         selected: selectedIds.includes(item._id),
       }));
   };
@@ -309,11 +312,39 @@ export class StudioDataVitrinaComponent implements OnInit {
     this.catalogChange.emit({ kind, ids: ids.filter((item) => item !== id) });
   }
 
-  private photoUrl(photoIds: readonly (string | Record<string, unknown>)[] | undefined): string {
-    const first = photoIds?.[0];
-    if (!first) return '';
-    if (typeof first === 'string') return first;
-    const value = first['storageUrl'] ?? first['url'] ?? first['thumbnailUrl'];
-    return typeof value === 'string' && value.trim() ? value : '';
+  /**
+   * TZ-NX-PO-SWEEP-04: list endpoints don't always populate `photoIds`/
+   * `mainPhotoId` (bare ObjectId strings) — treating a bare id as a URL
+   * always 404s. Only resolve from populated refs (mirrors the same
+   * WAVE-NX-CATALOG-PHOTOS resolution `production-read.facade.ts` uses for
+   * list/tree surfaces); unresolved → '' → the showcase card shows its
+   * placeholder instead of a broken `<img>`.
+   */
+  private photoUrl(
+    photoIds: readonly (string | Record<string, unknown>)[] | undefined,
+    mainPhotoId: string | Record<string, unknown> | null | undefined,
+  ): string {
+    type PhotoRefLike = {
+      _id?: string;
+      storageUrl?: string;
+      variant?: string;
+      parentPhotoId?: string;
+      linkedPhotoId?: string;
+    };
+    const asPhotoRef = (value: unknown): PhotoRefLike | null => {
+      if (!value || typeof value !== 'object') return null;
+      const candidate = value as PhotoRefLike;
+      return typeof candidate.storageUrl === 'string' && candidate.storageUrl.trim() ? candidate : null;
+    };
+    const photos = (photoIds ?? []).map(asPhotoRef).filter((p): p is PhotoRefLike => p != null);
+    const main = asPhotoRef(mainPhotoId);
+    const mainId = typeof mainPhotoId === 'string' ? mainPhotoId : main?._id;
+    const selected = main ?? (mainId ? photos.find((p) => p._id === mainId) : undefined) ?? photos[0];
+    if (!selected) return '';
+    if (selected.variant === 'thumb') return selected.storageUrl!;
+    const linkedThumb = photos.find(
+      (p) => p.variant === 'thumb' && (p.parentPhotoId === selected._id || p.linkedPhotoId === selected._id),
+    );
+    return linkedThumb?.storageUrl ?? selected.storageUrl!;
   }
 }

@@ -238,6 +238,46 @@ describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
     expect(host.mediaActivated).toHaveBeenCalledTimes(2);
   });
 
+  it('TZ-NX-PO-SWEEP-04: size="sm" always reserves a media slot (placeholder when no photo)', () => {
+    host.size.set('sm');
+    host.title.set('No photo');
+    host.mediaUrl.set('');
+    fixture.detectChanges();
+
+    const media = fixture.nativeElement.querySelector('[data-test="showcase-media"]');
+    expect(media).toBeTruthy();
+    expect(media.classList.contains('sc-media--empty')).toBe(true);
+    expect(media.querySelector('img')).toBeNull();
+  });
+
+  it('TZ-NX-PO-SWEEP-04: size="sm" shows the photo when mediaUrl resolves', () => {
+    host.size.set('sm');
+    host.title.set('Has photo');
+    host.mediaUrl.set('/thumb.jpg');
+    fixture.detectChanges();
+
+    const media = fixture.nativeElement.querySelector('[data-test="showcase-media"]');
+    expect(media.classList.contains('sc-media--empty')).toBe(false);
+    const img = media.querySelector('img') as HTMLImageElement;
+    expect(img.src).toContain('/thumb.jpg');
+  });
+
+  it('TZ-NX-PO-SWEEP-04: a broken image (error event) falls back to the placeholder', () => {
+    host.size.set('sm');
+    host.title.set('Broken photo');
+    host.mediaUrl.set('/missing.jpg');
+    fixture.detectChanges();
+
+    const media = fixture.nativeElement.querySelector('[data-test="showcase-media"]');
+    const img = media.querySelector('img') as HTMLImageElement;
+    img.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    const mediaAfter = fixture.nativeElement.querySelector('[data-test="showcase-media"]');
+    expect(mediaAfter.classList.contains('sc-media--empty')).toBe(true);
+    expect(mediaAfter.querySelector('img')).toBeNull();
+  });
+
   it('body content projects through default slot (sc-body-lg contains body span)', () => {
     host.size.set('lg');
     fixture.detectChanges();

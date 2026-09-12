@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 
 /**
@@ -33,21 +33,23 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       @case ('sm') {
         <article [class]="hostClass()" data-test="showcase-card" data-size="sm">
           <div class="sc-row">
-            @if (mediaUrl()) {
-              <div
-                class="sc-media sc-media--sm"
-                [class.sc-media--interactive]="mediaInteractive() && !!mediaUrl()"
-                [attr.role]="mediaInteractive() && mediaUrl() ? 'button' : null"
-                [attr.tabindex]="mediaInteractive() && mediaUrl() ? 0 : null"
-                [attr.aria-label]="
-                  mediaInteractive() && mediaUrl() ? 'Открыть фото: ' + title() : null
-                "
-                (click)="onMediaActivate($event)"
-                (keydown)="onMediaKeydown($event)"
-              >
-                <img [src]="mediaUrl()" [alt]="title() || ''" loading="lazy" />
-              </div>
-            }
+            <div
+              class="sc-media sc-media--sm"
+              [class.sc-media--empty]="!mediaUrl() || mediaBroken()"
+              [class.sc-media--interactive]="mediaInteractive() && !!mediaUrl() && !mediaBroken()"
+              [attr.role]="mediaInteractive() && mediaUrl() && !mediaBroken() ? 'button' : null"
+              [attr.tabindex]="mediaInteractive() && mediaUrl() && !mediaBroken() ? 0 : null"
+              [attr.aria-label]="
+                mediaInteractive() && mediaUrl() && !mediaBroken() ? 'Открыть фото: ' + title() : null
+              "
+              data-test="showcase-media"
+              (click)="onMediaActivate($event)"
+              (keydown)="onMediaKeydown($event)"
+            >
+              @if (mediaUrl() && !mediaBroken()) {
+                <img [src]="mediaUrl()" [alt]="title() || ''" loading="lazy" (error)="onMediaError()" />
+              }
+            </div>
             <div class="sc-body-sm">
               @if (eyebrow()) {
                 <span class="sc-eyebrow" data-test="eyebrow">{{ eyebrow() }}</span>
@@ -240,16 +242,23 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         align-items: center;
         gap: 12px;
         padding: 10px 12px;
-        min-height: 56px;
+        min-height: 60px;
         min-width: 0;
       }
       .sc-media--sm {
-        width: 40px;
-        height: 40px;
+        width: 48px;
+        height: 48px;
         border-radius: 4px;
         overflow: hidden;
         flex-shrink: 0;
         background: var(--color-paper-2, #f3efe6);
+      }
+      .sc-media--sm.sc-media--empty {
+        background: linear-gradient(
+          135deg,
+          color-mix(in oklab, var(--color-paper-2, #f3efe6) 80%, var(--color-rule, #e7e3da)),
+          var(--color-paper, #fafafa)
+        );
       }
       .sc-body-sm {
         flex: 1;
@@ -472,11 +481,28 @@ export class PiShowcaseCardComponent {
   readonly hasActionsMd = computed(() => true);
   readonly hasActionsLg = computed(() => true);
 
+  /** TZ-NX-PO-SWEEP-04: a broken `mediaUrl` (404, unresolved photo ref) falls
+   * back to the empty-media placeholder instead of a broken `<img>`. Resets
+   * whenever `mediaUrl` changes so a reused card instance (list `@for`) does
+   * not keep showing the placeholder for a new, valid url. */
+  protected readonly mediaBroken = signal(false);
+
+  constructor() {
+    effect(() => {
+      this.mediaUrl();
+      this.mediaBroken.set(false);
+    });
+  }
+
   protected onMediaActivate(event: Event): void {
-    if (!this.mediaInteractive() || !this.mediaUrl()) return;
+    if (!this.mediaInteractive() || !this.mediaUrl() || this.mediaBroken()) return;
     event.preventDefault();
     event.stopPropagation();
     this.mediaActivate.emit();
+  }
+
+  protected onMediaError(): void {
+    this.mediaBroken.set(true);
   }
 
   protected onMediaKeydown(event: KeyboardEvent): void {
