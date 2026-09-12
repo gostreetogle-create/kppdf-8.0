@@ -29,7 +29,7 @@ wave: `docs/agent-checklists/WAVE-NX-PO-SWEEP-2026-09-12.md`
 | 03 | studio props outside close | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-03-studio-props-outside-close.done.md` | DONE | `db3e4b4c` | 2026-09-12T10:05:00+03:00 |
 | 04 | studio data vitrina thumbs+height | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-04-studio-data-vitrina-thumbs.done.md` | DONE | `5517da3e` | 2026-09-12T10:20:00+03:00 |
 | 05 | studio table photo frame+controls | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-05-studio-table-photo-frame.done.md` | DONE | `1c32f6a8` | 2026-09-12T10:40:00+03:00 |
-| 06 | studio WYSIWYG editor=preview=PDF | `tasks/_ready/nx-po-sweep/06-studio-wysiwyg-preview/TZ-NX-PO-SWEEP-06-studio-wysiwyg-preview.md` | PENDING | — | — |
+| 06 | studio WYSIWYG editor=preview=PDF | `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-06-studio-wysiwyg-preview.done.md` | DONE | `188bebb8` | 2026-09-12T11:05:00+03:00 |
 | 07 | studio chrome-rail Document menu | `tasks/_ready/nx-po-sweep/07-studio-chrome-rail-categories/TZ-NX-PO-SWEEP-07-studio-chrome-rail-categories.md` | PENDING | — | — |
 
 ## Deferred (находки mid-wave → вопрос Cursor)
