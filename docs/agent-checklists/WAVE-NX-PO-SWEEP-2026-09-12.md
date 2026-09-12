@@ -10,7 +10,7 @@ checklist: `docs/agent-checklists/PO-SWEEP-CONTINUOUS-CHECKLIST.md`
 
 | # | ID | Severity | Status | TZ |
 |---|----|----------|--------|-----|
-| 00 | ops-nx-start-cache | S ops | TZ_READY | `tasks/TZ-OPS-NX-START-CACHE.md` |
+| 00 | ops-nx-start-cache | S ops | DONE `32a8d149` | `tasks/_archive/2026-09/TZ-OPS-NX-START-CACHE.done.md` |
 | 01 | product-save-silent | P0 | TZ_READY | `tasks/_ready/nx-po-sweep/01-product-save-silent/…` |
 | 02 | studio-table-click-resize | P0 | TZ_READY | `…/02-studio-table-click-resize/…` |
 | 03 | studio-props-outside-close | P1 | TZ_READY | `…/03-studio-props-outside-close/…` |
