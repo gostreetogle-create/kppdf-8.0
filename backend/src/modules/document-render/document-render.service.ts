@@ -302,7 +302,23 @@ export class DocumentRenderService {
         .block--positioned img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .block--positioned.block--text { overflow: hidden; }
         .doc-bg--block { opacity: 1; }
-        .doc-bg--block img { width: 100%; height: 100%; object-fit: contain; display: block; background-color: white; }`
+        .doc-bg--block img { width: 100%; height: 100%; object-fit: contain; display: block; background-color: white; }
+        /* TZ-NX-PO-SWEEP-06 — WYSIWYG table contract: preview/PDF must match
+           the studio canvas (studio-blocks-canvas.component.ts .table-preview),
+           not the browser's ambient default font/wrap. Canvas is the SoT per
+           PO ("как в редакторе, что он настроил"). Bare selectors on purpose
+           (not scoped under .doc-body--studio): this whole block is already
+           only emitted when studioCanvas is true, and renderHtmlPages's own
+           <body> (multi-page/table-overflow path) never gets that class —
+           source order (last declaration wins) is what actually scopes this
+           to studio, in both the single-page and multi-page render paths. */
+        table { font-size: 9px; }
+        th, td {
+          padding: 2px 4px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }`
       : '';
     return `
         h1, h2, h3 { margin: 8px 0; }

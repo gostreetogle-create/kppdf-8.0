@@ -25,6 +25,9 @@ export type DataSetSourceType =
   | 'catalog-parts'
   | 'catalog-materials';
 
+/** TZ-NX-PO-SWEEP-06 — mirrors FE `STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX` (studio-table-defaults.ts): one contract, canvas is the SoT. */
+export const STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX = 28;
+
 export type StudioTableColumn = {
   key: string;
   label?: string;
@@ -113,7 +116,7 @@ function renderPhotoCellHtml(
   value: string,
   frame?: Partial<PhotoFrame>,
   blockFit?: PhotoFrame['fit'] | null,
-  maxHeightPx = 48,
+  maxHeightPx = STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX,
 ): string {
   const url = value.trim();
   if (!url) return '<span class="pi-photo-empty">Нет фото</span>';
@@ -324,7 +327,7 @@ function tablePhotoDisplayFromBlock(block: TemplateBlockDocument): { fit: PhotoF
   const maxHeightPx =
     typeof raw?.maxHeightPx === 'number' && Number.isFinite(raw.maxHeightPx) && raw.maxHeightPx >= 16 && raw.maxHeightPx <= 96
       ? raw.maxHeightPx
-      : 48;
+      : STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX;
   return { fit, maxHeightPx };
 }
 

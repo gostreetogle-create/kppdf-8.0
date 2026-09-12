@@ -84,10 +84,10 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     );
     expect(html).toContain('<img src="/uploads/mangal.webp" alt=""');
     expect(html).not.toContain('>/uploads/mangal.webp<');
-    // Default (no frame, no block override): same contain/center/48px as before.
+    // Default (no frame, no block override): contain/center, canvas's 28px default (TZ-NX-PO-SWEEP-06 contract).
     expect(html).toContain('object-fit:contain');
     expect(html).toContain('object-position:50% 50%');
-    expect(html).toContain('max-height:48px');
+    expect(html).toContain('max-height:28px');
   });
 
   it('TZ-NX-PO-SWEEP-05: applies the photo\'s own frame (cover + pan) to the cell', () => {

@@ -332,6 +332,9 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
                 data-test="studio-preview-frame"
                 sandbox="allow-same-origin"
                 [srcdoc]="html"
+                [style.width.px]="previewNativeSheetSize().width"
+                [style.height.px]="previewNativeSheetSize().height"
+                [style.transform]="'scale(' + previewZoomScale() + ')'"
               ></iframe>
             }
           } @else {
@@ -458,10 +461,16 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
     .page-geometry-control select { max-width:90px; }
     .studio-canvas-host {
       position: relative; width: 100%; height: 100%; min-height: 0;
+      overflow: hidden;
       background: #fff;
     }
     .studio-preview-frame {
-      width: 100%; height: 100%; border: none; background: #fff;
+      /* TZ-NX-PO-SWEEP-06 — width/height/transform:scale set inline
+         ([style.*] bindings) to the real A4 px size + zoomMode-matching
+         scale factor; this is layout-only (position/origin). */
+      display: block; border: none; background: #fff;
+      position: absolute; top: 0; left: 0;
+      transform-origin: top left;
     }
     .preview-state {
       margin: 0; padding: 24px; font-size: 13px; color: var(--color-muted-foreground);
@@ -552,6 +561,29 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly previewSafeHtml = computed<SafeHtml | null>(() => {
     const html = this.previewHtml();
     return html ? this.sanitizer.bypassSecurityTrustHtml(html) : null;
+  });
+
+  /**
+   * TZ-NX-PO-SWEEP-06 — the preview iframe's own document is a fixed-size A4
+   * page (`html{width:210mm;height:297mm}` in document-render.service.ts,
+   * i.e. 794×1123px at 96dpi — same numbers `syncSheetSize()`'s '100' branch
+   * already uses for the editor canvas). Left at 100%/100%, the iframe's own
+   * viewport becomes whatever `.kp-ws-sheet` currently measures (a `fit`
+   * scale), while its *content* still renders at native mm size — wider than
+   * that viewport, so it clips instead of shrinking. Sizing the iframe to its
+   * true native px and scaling the element down via `transform` matches the
+   * same `sheetSize()` (fit/100) the canvas already renders at.
+   */
+  readonly previewNativeSheetSize = computed<{ width: number; height: number }>(() => {
+    const landscape = this.document()?.orientation === 'landscape';
+    return landscape ? { width: 1123, height: 794 } : { width: 794, height: 1123 };
+  });
+
+  readonly previewZoomScale = computed(() => {
+    const native = this.previewNativeSheetSize();
+    const target = this.sheetSize();
+    if (!native.width || !target.width) return 1;
+    return target.width / native.width;
   });
 
   readonly catalogChipLabels = computed(() => {

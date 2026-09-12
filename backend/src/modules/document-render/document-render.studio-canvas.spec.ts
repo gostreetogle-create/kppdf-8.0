@@ -92,4 +92,29 @@ describe('DocumentRenderService studioCanvas (NX preview/PDF parity)', () => {
     expect(html).toContain('left:15%');
     expect(html).toContain('top:20%');
   });
+
+  describe('TZ-NX-PO-SWEEP-06 — WYSIWYG table CSS contract (canvas is the SoT)', () => {
+    it('single-page preview/PDF table CSS matches the studio canvas (9px, 2px 4px, nowrap+ellipsis)', () => {
+      const html = renderService.renderHtml(template(), [], {}, { studioCanvas: true });
+
+      expect(html).toMatch(/table\s*\{[^}]*font-size:\s*9px/);
+      expect(html).toMatch(/th,\s*td\s*\{[^}]*padding:\s*2px 4px/);
+      expect(html).toMatch(/th,\s*td\s*\{[^}]*white-space:\s*nowrap/);
+      expect(html).toMatch(/th,\s*td\s*\{[^}]*text-overflow:\s*ellipsis/);
+    });
+
+    it('multi-page (table-overflow) preview/PDF gets the same table CSS contract', () => {
+      const html = renderService.renderHtmlPages(template(), [[]], {}, { studioCanvas: true });
+
+      expect(html).toMatch(/table\s*\{[^}]*font-size:\s*9px/);
+      expect(html).toMatch(/th,\s*td\s*\{[^}]*white-space:\s*nowrap/);
+    });
+
+    it('does not leak the studio 9px table contract into non-studio (legacy/Create-КП) rendering', () => {
+      const html = renderService.renderHtml(template(), [], {}, { studioCanvas: false });
+
+      expect(html).not.toMatch(/font-size:\s*9px/);
+      expect(html).not.toMatch(/white-space:\s*nowrap/);
+    });
+  });
 });

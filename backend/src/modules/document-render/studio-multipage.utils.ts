@@ -3,6 +3,7 @@ import type { PhotoFrame } from '../photos/photo.schema';
 import {
   renderStudioTableHtml,
   storedRows,
+  STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX,
   tableColumnsFromBlock,
   tableDataSetKey,
 } from '../studio-document/studio-data-resolver';
@@ -81,7 +82,7 @@ function tablePhotoDisplayFromBlock(block: TemplateBlockDocument): { fit: PhotoF
   const maxHeightPx =
     typeof raw?.maxHeightPx === 'number' && Number.isFinite(raw.maxHeightPx) && raw.maxHeightPx >= 16 && raw.maxHeightPx <= 96
       ? raw.maxHeightPx
-      : 48;
+      : STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX;
   return { fit, maxHeightPx };
 }
 
