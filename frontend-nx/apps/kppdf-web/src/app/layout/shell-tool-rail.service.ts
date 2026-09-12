@@ -1,6 +1,21 @@
 import { Injectable, computed, signal } from '@angular/core';
 import type { LucideIcon } from './nav-categories';
 
+/**
+ * TZ-NX-PO-SWEEP-07 — one action inside a rail category's popover menu
+ * (`ShellToolRailItem.items`). Rail slots are categories, not one
+ * icon = one action; a category with `items` opens a menu instead of
+ * calling a single `onClick` directly.
+ */
+export interface ShellToolRailMenuItem {
+  readonly id: string;
+  readonly label: string;
+  readonly icon?: LucideIcon;
+  readonly active?: boolean;
+  readonly disabled?: boolean;
+  readonly onClick: () => void;
+}
+
 export interface ShellToolRailItem {
   readonly id: string;
   readonly side: 'left' | 'right';
@@ -10,7 +25,10 @@ export interface ShellToolRailItem {
   readonly active?: boolean;
   readonly disabled?: boolean;
   readonly badge?: number;
-  readonly onClick: () => void;
+  /** Non-empty → this rail slot is a category: clicking opens a popover of `items` instead of calling `onClick`. */
+  readonly items?: readonly ShellToolRailMenuItem[];
+  /** Required for a plain action slot (no `items`); ignored/omittable when `items` is set. */
+  readonly onClick?: () => void;
 }
 
 interface ShellToolRailState {
@@ -50,6 +68,6 @@ export class ShellToolRailService {
 
   invoke(tool: ShellToolRailItem): void {
     if (tool.disabled) return;
-    tool.onClick();
+    tool.onClick?.();
   }
 }

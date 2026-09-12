@@ -23,6 +23,7 @@ import {
   ClipboardList,
   Database,
   Eye,
+  File as DocumentIcon,
   FileDown,
   FileStack,
   FileText,
@@ -811,31 +812,36 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           },
         ],
         right: [
-          // TZ-NX-DOCSTUDIO-C3 — lifecycle actions live on the right chrome-rail
-          // (crumbs-only ribbon). Panel tools follow below, unchanged.
+          // TZ-NX-PO-SWEEP-07 — one «Документ» category instead of 5 flat
+          // lifecycle icons (mode-editor/mode-preview/save/pdf/archive):
+          // rail slots are categories that open a menu, not one-icon=one-action.
           {
-            id: 'mode-editor', side: 'right', ariaLabel: 'Режим редактора', title: 'Режим редактора', icon: PenLine,
-            active: viewMode === 'editor', onClick: () => this.setViewMode('editor'),
-          },
-          {
-            id: 'mode-preview', side: 'right', ariaLabel: 'Просмотр', title: 'Просмотр', icon: Eye,
-            active: viewMode === 'preview', onClick: () => this.setViewMode('preview'),
-          },
-          {
-            id: 'save', side: 'right', ariaLabel: 'Сохранить', title: 'Сохранить', icon: Save,
-            disabled: this.saving(), onClick: () => void this.saveDocument(),
-          },
-          {
-            id: 'pdf', side: 'right', ariaLabel: 'Скачать PDF', title: 'Скачать PDF', icon: FileDown,
-            disabled: this.pdfLoading(), onClick: () => this.onDownloadPdf(),
-          },
-          {
-            id: 'archive', side: 'right',
-            ariaLabel: doc?.status === 'draft' ? 'В архив' : 'Уже в архиве',
-            title: doc?.status === 'draft' ? 'В архив' : 'Уже в архиве',
-            icon: Archive,
-            disabled: this.finalizing() || doc?.status !== 'draft',
-            onClick: () => this.onFinalize(),
+            id: 'document', side: 'right', ariaLabel: 'Документ', title: 'Документ', icon: DocumentIcon,
+            items: [
+              {
+                id: 'mode-editor', label: 'Редактор', icon: PenLine,
+                active: viewMode === 'editor', onClick: () => this.setViewMode('editor'),
+              },
+              {
+                id: 'mode-preview', label: 'Просмотр', icon: Eye,
+                active: viewMode === 'preview', onClick: () => this.setViewMode('preview'),
+              },
+              {
+                id: 'save', label: 'Сохранить', icon: Save,
+                disabled: this.saving(), onClick: () => void this.saveDocument(),
+              },
+              {
+                id: 'pdf', label: 'Скачать PDF', icon: FileDown,
+                disabled: this.pdfLoading(), onClick: () => this.onDownloadPdf(),
+              },
+              {
+                id: 'archive',
+                label: doc?.status === 'draft' ? 'В архив' : 'Уже в архиве',
+                icon: Archive,
+                disabled: this.finalizing() || doc?.status !== 'draft',
+                onClick: () => this.onFinalize(),
+              },
+            ],
           },
           { id: 'elements', side: 'right', ariaLabel: 'Элементы', title: 'Элементы', icon: FileText, active: !collapsed && section === 'elements', onClick: () => this.onSection('elements') },
           { id: 'layers', side: 'right', ariaLabel: 'Слои', title: 'Слои', icon: Layers, active: !collapsed && section === 'layers', onClick: () => this.onSection('layers') },

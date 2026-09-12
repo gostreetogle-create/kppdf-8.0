@@ -105,29 +105,44 @@ describe('StudioEditorPage — ribbon→rails chrome IA (TZ-NX-DOCSTUDIO-C3)', (
     return component;
   }
 
-  function rightTool(id: string): { id: string; title: string; disabled?: boolean; onClick: () => void } {
+  function rightTool(id: string): {
+    id: string;
+    title: string;
+    disabled?: boolean;
+    onClick?: () => void;
+    items?: readonly { id: string; label: string; disabled?: boolean; active?: boolean; onClick: () => void }[];
+  } {
     const rails = TestBed.inject(ShellToolRailService);
     const tool = rails.rightTools().find((t) => t.id === id);
     expect(tool).toBeTruthy(); // right rail tool
     return tool!;
   }
 
-  it('registers lifecycle actions on the right rail with RU titles and correct active state', () => {
+  /** TZ-NX-PO-SWEEP-07 — lifecycle actions live inside the «Документ» category menu, not as flat rail ids. */
+  function documentMenuItem(id: string): { id: string; label: string; disabled?: boolean; active?: boolean; onClick: () => void } {
+    const item = rightTool('document').items?.find((i) => i.id === id);
+    expect(item).toBeTruthy();
+    return item!;
+  }
+
+  it('TZ-NX-PO-SWEEP-07: right rail has one «Документ» category (not 5 flat lifecycle icons) + panel categories, RU titles', () => {
     const component = createEditor();
     component.viewMode.set('editor');
 
     const rails = TestBed.inject(ShellToolRailService);
     const right = rails.rightTools();
     expect(right.map((t) => t.id)).toEqual([
-      'mode-editor', 'mode-preview', 'save', 'pdf', 'archive',
-      'elements', 'layers', 'pages', 'properties', 'template',
+      'document', 'elements', 'layers', 'pages', 'properties', 'template',
     ]);
-    expect(right.find((t) => t.id === 'mode-editor')!.active).toBe(true);
-    expect(right.find((t) => t.id === 'mode-preview')!.active).toBe(false);
     for (const t of right) {
       expect(t.ariaLabel).toBeTruthy();
       expect(t.title).toBeTruthy();
     }
+
+    const docTool = rightTool('document');
+    expect(docTool.items?.map((i) => i.id)).toEqual(['mode-editor', 'mode-preview', 'save', 'pdf', 'archive']);
+    expect(documentMenuItem('mode-editor').active).toBe(true);
+    expect(documentMenuItem('mode-preview').active).toBe(false);
   });
 
   it('TZ-NX-PO-SWEEP-02: hints the Свойства rail button when a table is selected but the panel is not open', () => {
@@ -143,29 +158,29 @@ describe('StudioEditorPage — ribbon→rails chrome IA (TZ-NX-DOCSTUDIO-C3)', (
     expect(rails.rightTools().find((t) => t.id === 'properties')!.active).toBe(true);
   });
 
-  it('disables archive and save per busy/status state, and clicking rails the real handlers', async () => {
+  it('disables archive and save per busy/status state, and clicking «Документ» menu items calls the real handlers', async () => {
     const component = createEditor();
-    // Switch to preview and re-flush effects so rail active state mirrors the mode.
+    // Switch to preview and re-flush effects so the menu item active state mirrors the mode.
     component.viewMode.set('preview');
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const modePreview = rightTool('mode-preview');
+    const modePreview = documentMenuItem('mode-preview');
     expect(modePreview.active).toBe(true);
 
-    const save = rightTool('save');
+    const save = documentMenuItem('save');
     expect(save.disabled).toBe(false); // idle → enabled
     const saveSpy = jest.spyOn(component, 'saveDocument').mockResolvedValue(true);
     save.onClick();
     expect(saveSpy).toHaveBeenCalled();
 
-    const pdf = rightTool('pdf');
+    const pdf = documentMenuItem('pdf');
     const pdfSpy = jest.spyOn(component, 'onDownloadPdf').mockImplementation(() => undefined);
     pdf.onClick();
     expect(pdfSpy).toHaveBeenCalled();
 
-    const archive = rightTool('archive');
+    const archive = documentMenuItem('archive');
     const finalizeSpy = jest.spyOn(component, 'onFinalize').mockImplementation(() => undefined);
     archive.onClick();
     expect(finalizeSpy).toHaveBeenCalled();

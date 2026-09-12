@@ -2,10 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  HostListener,
   PLATFORM_ID,
   computed,
   inject,
   isDevMode,
+  signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
@@ -37,7 +39,7 @@ import {
 import { NavHistoryService } from './nav-history.service';
 import { NAV_CATEGORIES, filterNavCategories, matchActiveCategoryId } from './nav-categories';
 import { collectPageRoutePaths } from './route-paths';
-import { ShellToolRailService, type ShellToolRailItem } from './shell-tool-rail.service';
+import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuItem } from './shell-tool-rail.service';
 
 /**
  * TZ-NX-SHELL-rail-layout-fix — operational shell matching legacy chrome:
@@ -219,22 +221,51 @@ import { ShellToolRailService, type ShellToolRailItem } from './shell-tool-rail.
             aria-orientation="vertical"
           >
             @for (tool of rightTools(); track tool.id) {
-              <button
-                type="button"
-                class="shell-rail-button shell-rail-tool pi-focus-ring"
-                [class.is-active]="activeToolId() === tool.id"
-                [attr.data-test]="'shell-tool-right-' + tool.id"
-                [attr.aria-label]="tool.ariaLabel"
-                [attr.title]="tool.title"
-                [disabled]="tool.disabled === true"
-                [attr.aria-disabled]="tool.disabled === true ? 'true' : null"
-                (click)="onShellToolClick(tool)"
-              >
-                <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
-                @if (tool.badge && tool.badge > 0) {
-                  <span class="shell-tool-badge" data-test="shell-tool-badge" aria-hidden="true">{{ tool.badge }}</span>
+              <div class="shell-rail-item">
+                <button
+                  type="button"
+                  class="shell-rail-button shell-rail-tool pi-focus-ring"
+                  [class.is-active]="activeToolId() === tool.id || openMenuFor() === tool.id"
+                  [attr.data-test]="'shell-tool-right-' + tool.id"
+                  [attr.aria-label]="tool.ariaLabel"
+                  [attr.title]="tool.title"
+                  [attr.aria-haspopup]="tool.items?.length ? 'menu' : null"
+                  [attr.aria-expanded]="tool.items?.length ? (openMenuFor() === tool.id ? 'true' : 'false') : null"
+                  [disabled]="tool.disabled === true"
+                  [attr.aria-disabled]="tool.disabled === true ? 'true' : null"
+                  (click)="onShellToolClick(tool)"
+                >
+                  <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
+                  @if (tool.badge && tool.badge > 0) {
+                    <span class="shell-tool-badge" data-test="shell-tool-badge" aria-hidden="true">{{ tool.badge }}</span>
+                  }
+                </button>
+                @if (tool.items?.length && openMenuFor() === tool.id) {
+                  <div
+                    class="shell-rail-menu shell-rail-menu--right"
+                    role="menu"
+                    [attr.aria-label]="tool.title"
+                    [attr.data-test]="'shell-tool-menu-' + tool.id"
+                  >
+                    @for (item of tool.items; track item.id) {
+                      <button
+                        type="button"
+                        role="menuitem"
+                        class="shell-rail-menu-item pi-focus-ring"
+                        [class.is-active]="item.active === true"
+                        [disabled]="item.disabled === true"
+                        [attr.data-test]="'shell-tool-menu-item-' + item.id"
+                        (click)="onMenuItemClick(item)"
+                      >
+                        @if (item.icon) {
+                          <lucide-angular [img]="item.icon" [size]="13" aria-hidden="true" />
+                        }
+                        <span>{{ item.label }}</span>
+                      </button>
+                    }
+                  </div>
                 }
-              </button>
+              </div>
             }
           </aside>
         }
@@ -305,6 +336,64 @@ import { ShellToolRailService, type ShellToolRailItem } from './shell-tool-rail.
       border-color: var(--color-gold-deep);
     }
 
+    /* TZ-NX-PO-SWEEP-07 — a rail category's popover menu (button + items) */
+    .shell-rail-item {
+      position: relative;
+    }
+
+    .shell-rail-menu {
+      position: absolute;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 168px;
+      padding: 4px;
+      background: var(--color-paper-raised);
+      border: 1px solid var(--color-rule-strong);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 6px 18px color-mix(in oklch, var(--color-ink) 15%, transparent);
+    }
+
+    .shell-rail-menu--right {
+      right: calc(100% + 6px);
+    }
+
+    .shell-rail-menu--left {
+      left: calc(100% + 6px);
+    }
+
+    .shell-rail-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      text-align: left;
+      white-space: nowrap;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      color: var(--color-ink);
+      cursor: pointer;
+    }
+
+    .shell-rail-menu-item:hover:not(:disabled) {
+      background: var(--color-paper-2);
+    }
+
+    .shell-rail-menu-item.is-active {
+      color: var(--color-on-gold);
+      background: var(--color-gold);
+      border-color: var(--color-gold-deep);
+    }
+
+    .shell-rail-menu-item:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
     .shell-tool-badge {
       position: absolute;
       top: -4px;
@@ -345,6 +434,9 @@ export class AppShellComponent {
   protected readonly leftTools = this.shellTools.leftTools;
   protected readonly rightTools = this.shellTools.rightTools;
   protected readonly activeToolId = this.shellTools.activeToolId;
+
+  /** TZ-NX-PO-SWEEP-07 — id of the rail category whose popover menu is open (null = none). */
+  protected readonly openMenuFor = signal<string | null>(null);
 
   /**
    * TZ-NX-SHELL-01-IDLE-RAILS — a side only takes a grid column when it has
@@ -414,7 +506,32 @@ export class AppShellComponent {
   }
 
   protected onShellToolClick(tool: ShellToolRailItem): void {
+    if (tool.disabled) return;
+    if (tool.items && tool.items.length > 0) {
+      this.openMenuFor.update((current) => (current === tool.id ? null : tool.id));
+      return;
+    }
     this.shellTools.invoke(tool);
+  }
+
+  protected onMenuItemClick(item: ShellToolRailMenuItem): void {
+    if (item.disabled) return;
+    item.onClick();
+    this.openMenuFor.set(null);
+  }
+
+  /** TZ-NX-PO-SWEEP-07 — dismiss the open rail category menu on any outside click. */
+  @HostListener('document:click', ['$event'])
+  protected onDocumentClickOutside(event: MouseEvent): void {
+    if (!this.openMenuFor()) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.shell-rail-item')) return;
+    this.openMenuFor.set(null);
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscapeKey(): void {
+    this.openMenuFor.set(null);
   }
 
   protected async onLogout(): Promise<void> {

@@ -37,3 +37,19 @@ API `ShellToolRailItem` **не умеет** children/menu — только immed
 | Элементы…Шаблон | да | flyout панели |
 
 Лишних «пустых» lifecycle нет; проблема — **раскладка**, не набор.
+
+## Closeout (2026-09-12)
+
+`TZ-NX-PO-SWEEP-07` DONE. `ShellToolRailItem` расширен generic-опциональным
+`items?: ShellToolRailMenuItem[]` (+ `onClick` стал опциональным — только для
+плоского action-слота); `AppShellComponent` рендерит popover-меню рядом с
+rail (outside-click/Escape/выбор пункта закрывают), только правый rail
+шаблон тронут — левый (Данные/Выбрано) без изменений. Студия: 5 плоских
+lifecycle-id (`mode-editor`/`mode-preview`/`save`/`pdf`/`archive`) собраны в
+одну категорию `document` («Документ», иконка `File`) с теми же 5 пунктами
+внутри `items` — тот же `active`/`disabled`/`onClick` на уровне пункта, без
+изменения бизнес-логики save/pdf/archive. Панельные категории (Элементы…
+Шаблон) не тронуты — по-прежнему плоские action-слоты, открывающие flyout
+напрямую. `production-cockpit.page.ts` (другой потребитель того же API)
+не потребовал изменений — `items` опционален. `docs/pages/document-studio.page.md`
+§1.3 обновлён.

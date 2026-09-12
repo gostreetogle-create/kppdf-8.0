@@ -92,9 +92,9 @@ Ribbon держит **только хлебные крошки** `Докумен
 
 ### 1.3 Icon-rail (app-chrome-rail, слева и справа)
 
-S16 целевая IA, дополненная C3: слева остаются только «Данные» + «Выбрано»; справа — сверху вниз lifecycle-действия **Режим редактора · Просмотр · Сохранить · Скачать PDF · В архив**, затем панели «Элементы», «Слои», «Страницы», «Свойства», «Шаблон». Lifecycle-иконки disabled в busy-состояниях (saving / pdfLoading / finalizing), «В архив» — только для draft. Все layout-панели открываются справа, Data остаётся wide-панелью слева.
+S16 целевая IA, дополненная C3 и пересобранная PO-sweep-07: слева остаются только «Данные» + «Выбрано»; справа — **одна** категория «Документ» (popover-меню: Редактор · Просмотр · Сохранить · Скачать PDF · В архив), затем панели «Элементы», «Слои», «Страницы», «Свойства», «Шаблон». PO-sweep-07: rail-слот = категория, не одна иконка = одно действие — пять lifecycle-иконок подряд собраны в одно меню, чтобы не раздувать узкую 64px-колонку. Пункты меню disabled в busy-состояниях (saving / pdfLoading / finalizing), «В архив» — только для draft; клик по пункту закрывает меню. Открытое меню/или активный режим подсвечивает категорию. Все layout-панели открываются справа, Data остаётся wide-панелью слева.
 
-Студия регистрирует инструменты через `ShellToolRailService` (owner `studio-editor`); id lifecycle-инструментов: `mode-editor`, `mode-preview`, `save`, `pdf`, `archive`.
+Студия регистрирует инструменты через `ShellToolRailService` (owner `studio-editor`); правый rail id: `document` (`items`: `mode-editor`, `mode-preview`, `save`, `pdf`, `archive`), `elements`, `layers`, `pages`, `properties`, `template`. `ShellToolRailItem.items` (`ShellToolRailMenuItem[]`) — generic API: любая страница может дать категории вместо плоских action-кнопок (`shell-tool-rail.service.ts`); закрытие меню — outside click / Escape / выбор пункта (`app-shell.component.ts`).
 
 **Слева:**
 

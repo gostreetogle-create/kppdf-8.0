@@ -170,6 +170,132 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     expect(grid.style.gridTemplateColumns).toBe('minmax(0,1fr)');
   });
 
+  describe('TZ-NX-PO-SWEEP-07 — rail category popover menu', () => {
+    function setupDocumentMenu(overrides: { disabled?: boolean } = {}): {
+      modeEditor: jest.Mock;
+      save: jest.Mock;
+      rail: ShellToolRailService;
+    } {
+      const rail = TestBed.inject(ShellToolRailService);
+      const modeEditor = jest.fn();
+      const save = jest.fn();
+      rail.setTools('studio-editor', {
+        left: [],
+        right: [
+          {
+            id: 'document', side: 'right', ariaLabel: 'Документ', title: 'Документ', icon: {} as never,
+            items: [
+              { id: 'mode-editor', label: 'Редактор', active: true, onClick: modeEditor },
+              { id: 'save', label: 'Сохранить', disabled: overrides.disabled === true, onClick: save },
+            ],
+          },
+          { id: 'elements', side: 'right', ariaLabel: 'Элементы', title: 'Элементы', icon: {} as never, onClick: jest.fn() },
+        ],
+      });
+      fixture.detectChanges();
+      return { modeEditor, save, rail };
+    }
+
+    const documentTrigger = (): HTMLButtonElement =>
+      fixture.nativeElement.querySelector('[data-test="shell-tool-right-document"]');
+    const documentMenu = (): HTMLElement | null =>
+      fixture.nativeElement.querySelector('[data-test="shell-tool-menu-document"]');
+
+    it('a category with items opens a popover menu on click instead of calling onClick directly', async () => {
+      await setup('/studio/doc-1');
+      setupDocumentMenu();
+
+      expect(documentMenu()).toBeNull();
+      documentTrigger().click();
+      fixture.detectChanges();
+
+      const menu = documentMenu();
+      expect(menu).toBeTruthy();
+      const items = Array.from(menu!.querySelectorAll('[data-test^="shell-tool-menu-item-"]'));
+      expect(items.map((el) => el.getAttribute('data-test'))).toEqual([
+        'shell-tool-menu-item-mode-editor',
+        'shell-tool-menu-item-save',
+      ]);
+    });
+
+    it('a plain action tool (no items) still calls onClick directly — no menu opens', async () => {
+      await setup('/studio/doc-1');
+      setupDocumentMenu();
+      const elementsBtn = fixture.nativeElement.querySelector('[data-test="shell-tool-right-elements"]') as HTMLButtonElement;
+
+      elementsBtn.click();
+      fixture.detectChanges();
+
+      expect(documentMenu()).toBeNull();
+    });
+
+    it('clicking a menu item invokes its onClick and closes the menu', async () => {
+      await setup('/studio/doc-1');
+      const { save } = setupDocumentMenu();
+      documentTrigger().click();
+      fixture.detectChanges();
+
+      (documentMenu()!.querySelector('[data-test="shell-tool-menu-item-save"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(documentMenu()).toBeNull();
+    });
+
+    it('a disabled menu item does not invoke onClick and keeps the menu open', async () => {
+      await setup('/studio/doc-1');
+      const { save } = setupDocumentMenu({ disabled: true });
+      documentTrigger().click();
+      fixture.detectChanges();
+
+      const saveBtn = documentMenu()!.querySelector('[data-test="shell-tool-menu-item-save"]') as HTMLButtonElement;
+      expect(saveBtn.disabled).toBe(true);
+      saveBtn.click();
+      fixture.detectChanges();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('a click outside the rail item closes the open menu', async () => {
+      await setup('/studio/doc-1');
+      setupDocumentMenu();
+      documentTrigger().click();
+      fixture.detectChanges();
+      expect(documentMenu()).toBeTruthy();
+
+      document.body.click();
+      fixture.detectChanges();
+
+      expect(documentMenu()).toBeNull();
+    });
+
+    it('Escape closes the open menu', async () => {
+      await setup('/studio/doc-1');
+      setupDocumentMenu();
+      documentTrigger().click();
+      fixture.detectChanges();
+      expect(documentMenu()).toBeTruthy();
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(documentMenu()).toBeNull();
+    });
+
+    it('clicking the trigger again toggles the menu closed', async () => {
+      await setup('/studio/doc-1');
+      setupDocumentMenu();
+      documentTrigger().click();
+      fixture.detectChanges();
+      expect(documentMenu()).toBeTruthy();
+
+      documentTrigger().click();
+      fixture.detectChanges();
+
+      expect(documentMenu()).toBeNull();
+    });
+  });
+
   it('delegates back/forward clicks to NavHistoryService', async () => {
     await setup('/admin/devices');
     backBtn()!.click();
