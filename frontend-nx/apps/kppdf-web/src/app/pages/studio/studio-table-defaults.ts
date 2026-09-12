@@ -119,6 +119,41 @@ export function studioTableTransparentBackground(block: {
   return block.settings?.['tableTransparentBackground'] === true;
 }
 
+export type StudioTablePhotoFit = 'contain' | 'cover';
+
+export interface StudioTablePhotoDisplay {
+  /** null = defer to the photo's own РАМКА (`Photo.frame.fit`, default contain). */
+  fit: StudioTablePhotoFit | null;
+  maxHeightPx: number;
+}
+
+export const STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX = 28;
+export const STUDIO_TABLE_PHOTO_MAX_HEIGHT_MIN_PX = 16;
+export const STUDIO_TABLE_PHOTO_MAX_HEIGHT_MAX_PX = 96;
+
+/**
+ * TZ-NX-PO-SWEEP-05 — block-level "Фото в ячейке" override. Cadre/pan stay
+ * catalog-owned (РАМКА in the product/module/material card); this only
+ * controls how the cell fits that already-framed photo, and how tall the
+ * thumbnail is allowed to get.
+ */
+export function studioTablePhotoDisplay(block: {
+  settings?: Record<string, unknown>;
+}): StudioTablePhotoDisplay {
+  const raw = block.settings?.['tablePhotoDisplay'] as
+    | { fit?: unknown; maxHeightPx?: unknown }
+    | undefined;
+  const fit = raw?.fit === 'contain' || raw?.fit === 'cover' ? raw.fit : null;
+  const maxHeightPx =
+    typeof raw?.maxHeightPx === 'number' &&
+    Number.isFinite(raw.maxHeightPx) &&
+    raw.maxHeightPx >= STUDIO_TABLE_PHOTO_MAX_HEIGHT_MIN_PX &&
+    raw.maxHeightPx <= STUDIO_TABLE_PHOTO_MAX_HEIGHT_MAX_PX
+      ? raw.maxHeightPx
+      : STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX;
+  return { fit, maxHeightPx };
+}
+
 export function studioTableTemplateId(block: { settings?: Record<string, unknown> }): string | null {
   const id = block.settings?.['tableTemplateId'];
   return typeof id === 'string' && id.trim() ? id.trim() : null;

@@ -1,4 +1,5 @@
 import type { TemplateBlockDocument } from '../template-block/template-block.schema';
+import type { PhotoFrame } from '../photos/photo.schema';
 import {
   renderStudioTableHtml,
   storedRows,
@@ -54,14 +55,34 @@ function tableColumns(block: TemplateBlockDocument): StudioTableColumn[] {
   return tableColumnsFromBlock(block) as StudioTableColumn[];
 }
 
+type DataSetEntryLike = { rows?: unknown; photoFrames?: Record<string, PhotoFrame> };
+
+function readDataSetEntry(
+  dataSets: Record<string, unknown>[],
+  key: string,
+): DataSetEntryLike | undefined {
+  return dataSets.find(
+    (item) => String((item as { key?: unknown }).key ?? '') === key,
+  ) as DataSetEntryLike | undefined;
+}
+
 function readDataSetRows(
   dataSets: Record<string, unknown>[],
   key: string,
 ): string[][] {
-  const entry = dataSets.find(
-    (item) => String((item as { key?: unknown }).key ?? '') === key,
-  ) as { rows?: unknown } | undefined;
-  return storedRows(entry ?? {});
+  return storedRows(readDataSetEntry(dataSets, key) ?? {});
+}
+
+/** TZ-NX-PO-SWEEP-05 — mirrors FE `studioTablePhotoDisplay` / the resolver's own `tablePhotoDisplayFromBlock`. */
+function tablePhotoDisplayFromBlock(block: TemplateBlockDocument): { fit: PhotoFrame['fit'] | null; maxHeightPx: number } {
+  const raw = (block.settings as { tablePhotoDisplay?: { fit?: unknown; maxHeightPx?: unknown } } | undefined)
+    ?.tablePhotoDisplay;
+  const fit = raw?.fit === 'contain' || raw?.fit === 'cover' ? raw.fit : null;
+  const maxHeightPx =
+    typeof raw?.maxHeightPx === 'number' && Number.isFinite(raw.maxHeightPx) && raw.maxHeightPx >= 16 && raw.maxHeightPx <= 96
+      ? raw.maxHeightPx
+      : 48;
+  return { fit, maxHeightPx };
 }
 
 function estimateRowCapacity(
@@ -151,7 +172,13 @@ export function planStudioMultipage(
         ? Math.min(200, Math.max(1, Math.floor(configured)))
         : estimateRowCapacity(block.layout?.height, isFirstSegment);
       const slice = rows.slice(rowOffset, rowOffset + capacity);
-      const html = renderStudioTableHtml(columns, slice);
+      const entry = readDataSetEntry(input.dataSets, tableDataSetKeyForBlock(block));
+      const photoDisplay = tablePhotoDisplayFromBlock(block);
+      const html = renderStudioTableHtml(columns, slice, [], 20, {
+        frames: entry?.photoFrames,
+        fit: photoDisplay.fit,
+        maxHeightPx: photoDisplay.maxHeightPx,
+      });
 
       let layout = block.layout;
       if (!isFirstSegment && layout) {

@@ -33,6 +33,7 @@ import {
   studioLiveTableRows,
   studioTableColumns,
   studioTableHiddenColumnKeys,
+  studioTablePhotoDisplay,
   studioTableTemplateId,
   studioTableTransparentBackground,
   studioTableRows,
@@ -392,6 +393,41 @@ import {
         <span>Прозрачный фон (не закрывает слои ниже)</span>
       </label>
 
+      @if (hasPhotoColumn()) {
+        <div class="table-props__photo-display" data-test="studio-table-photo-display">
+          <span class="table-props__label">Фото в ячейке</span>
+          <label class="table-props__field">
+            <span class="table-props__label">Вписывание</span>
+            <select
+              class="table-props__select"
+              [ngModel]="photoDisplay().fit ?? ''"
+              (ngModelChange)="onPhotoFitChange($event)"
+              [disabled]="disabled"
+              data-test="studio-table-photo-fit"
+            >
+              <option value="">Как в РАМКЕ фото</option>
+              <option value="contain">Вписать (contain)</option>
+              <option value="cover">Заполнить (cover)</option>
+            </select>
+          </label>
+          <label class="table-props__field">
+            <span class="table-props__label">Макс. высота, px</span>
+            <input
+              type="number"
+              class="table-props__select"
+              [ngModel]="photoDisplay().maxHeightPx"
+              (ngModelChange)="onPhotoMaxHeightChange($event)"
+              [disabled]="disabled"
+              min="16"
+              max="96"
+              step="4"
+              data-test="studio-table-photo-max-height"
+            />
+          </label>
+          <p class="table-props__hint">Кадр и панорама — в карточке изделия (кнопка «Рамка»).</p>
+        </div>
+      }
+
       <app-pi-button
         variant="secondary"
         size="sm"
@@ -503,6 +539,14 @@ import {
     }
     .table-props__toggle span {
       overflow-wrap: anywhere;
+    }
+    .table-props__photo-display {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper-2);
     }
     .table-props__toggle input {
       flex-shrink: 0;
@@ -808,6 +852,31 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   protected toggleTransparentBackground(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.settingsChange.emit({ tableTransparentBackground: checked });
+  }
+
+  /** TZ-NX-PO-SWEEP-05 — only offer the «Фото в ячейке» section when a photo column exists. */
+  protected hasPhotoColumn(): boolean {
+    return studioTableColumns(this.block).some((col) => isStudioPhotoColumnKey(col.key));
+  }
+
+  protected photoDisplay(): { fit: 'contain' | 'cover' | null; maxHeightPx: number } {
+    return studioTablePhotoDisplay(this.block);
+  }
+
+  protected onPhotoFitChange(value: string): void {
+    const fit = value === 'contain' || value === 'cover' ? value : null;
+    this.settingsChange.emit({
+      tablePhotoDisplay: { ...this.photoDisplay(), fit },
+    });
+  }
+
+  /** `type="number"`'s NumberValueAccessor emits a `number` (or `null` when cleared) — see the row-qty note below for the same reason. */
+  protected onPhotoMaxHeightChange(value: number | null): void {
+    if (value == null || !Number.isFinite(value)) return;
+    const maxHeightPx = Math.min(96, Math.max(16, Math.round(value)));
+    this.settingsChange.emit({
+      tablePhotoDisplay: { ...this.photoDisplay(), maxHeightPx },
+    });
   }
 
   protected onTemplateSelect(templateId: string): void {

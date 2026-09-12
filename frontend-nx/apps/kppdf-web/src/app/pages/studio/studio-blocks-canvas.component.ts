@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { NgStyle } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import type { StudioBlock, StudioBlockLayout } from '@kppdf/data-access';
+import { normalizePhotoFrame, photoFrameStyle, type PiPhotoFrame } from '@kppdf/ui/photo';
 import {
   studioBlockIsEditable,
   studioCanvasBackgroundBlocks,
@@ -11,6 +13,7 @@ import {
 import {
   isStudioPhotoColumnKey,
   studioTableDisabledRowIndices,
+  studioTablePhotoDisplay,
   studioTableTransparentBackground,
   studioVisibleColumnIndices,
   studioVisibleTableColumns,
@@ -27,7 +30,7 @@ import {
 @Component({
   selector: 'pi-studio-blocks-canvas',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, NgStyle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'studio-blocks-canvas',
@@ -143,7 +146,7 @@ import {
                             @if (isPhotoColumnAt(block, ci)) {
                               <td class="table-preview__photo-cell">
                                 @if (cell) {
-                                  <img [src]="cell" alt="" class="table-preview__photo" />
+                                  <img [src]="cell" alt="" class="table-preview__photo" [ngStyle]="photoCellStyle(block, cell)" />
                                 } @else {
                                   <span class="table-preview__photo-empty">Нет фото</span>
                                 }
@@ -268,11 +271,12 @@ import {
       white-space: normal;
     }
     .table-preview__photo {
+      /* TZ-NX-PO-SWEEP-05 — object-fit/object-position/max-height come from
+         [ngStyle]="photoCellStyle(...)" (per-photo РАМКА + block override),
+         not a hardcoded contain/28px. */
       display: block;
       max-width: 100%;
-      max-height: 28px;
       margin: 0 auto;
-      object-fit: contain;
     }
     .table-preview__photo-empty {
       display: block;
@@ -357,6 +361,26 @@ export class StudioBlocksCanvasComponent {
   isPhotoColumnAt(block: StudioBlock, columnIndex: number): boolean {
     const column = this.tableColumns(block)[columnIndex];
     return column ? isStudioPhotoColumnKey(column.key) : false;
+  }
+
+  /**
+   * TZ-NX-PO-SWEEP-05 — cell photo style: fit/position come from the
+   * catalog photo's own РАМКА (`Photo.frame`, resolved server-side into
+   * `block.settings.livePhotoFrames` keyed by URL), the block's «Фото в
+   * ячейке» setting can override `fit` only (pan/crop stay catalog-owned),
+   * and `maxHeightPx` bounds the thumbnail regardless of frame.
+   */
+  photoCellStyle(block: StudioBlock, url: string): Record<string, string> {
+    const display = studioTablePhotoDisplay(block);
+    const frames = (block.settings?.['livePhotoFrames'] as
+      | Record<string, Partial<PiPhotoFrame>>
+      | undefined) ?? {};
+    const frame = normalizePhotoFrame(frames[url]);
+    const fit = display.fit ?? frame.fit;
+    return {
+      ...photoFrameStyle({ ...frame, fit }),
+      'max-height': `${display.maxHeightPx}px`,
+    };
   }
 
   tableRows(block: StudioBlock): string[][] {

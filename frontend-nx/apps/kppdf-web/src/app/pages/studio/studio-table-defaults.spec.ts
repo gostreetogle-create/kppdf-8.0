@@ -9,6 +9,7 @@ import {
   studioLiveTableRows,
   studioTableHiddenColumnKeys,
   studioTableQtyOverrides,
+  studioTablePhotoDisplay,
   studioTableRowSource,
   studioTableTemplateId,
   studioTableTransparentBackground,
@@ -89,6 +90,20 @@ describe('studio-table-defaults', () => {
     expect(
       studioTableTransparentBackground({ settings: { tableTransparentBackground: true } }),
     ).toBe(true);
+  });
+
+  it('TZ-NX-PO-SWEEP-05: studioTablePhotoDisplay defaults to 28px + defer-to-frame fit', () => {
+    expect(studioTablePhotoDisplay({})).toEqual({ fit: null, maxHeightPx: 28 });
+    expect(studioTablePhotoDisplay({ settings: {} })).toEqual({ fit: null, maxHeightPx: 28 });
+  });
+
+  it('TZ-NX-PO-SWEEP-05: studioTablePhotoDisplay reads a valid override and rejects out-of-range/garbage values', () => {
+    expect(
+      studioTablePhotoDisplay({ settings: { tablePhotoDisplay: { fit: 'cover', maxHeightPx: 48 } } }),
+    ).toEqual({ fit: 'cover', maxHeightPx: 48 });
+    expect(
+      studioTablePhotoDisplay({ settings: { tablePhotoDisplay: { fit: 'nope', maxHeightPx: 500 } } }),
+    ).toEqual({ fit: null, maxHeightPx: 28 });
   });
 
   it('studioTableRowSource defaults to manual and reads dataSource/tableDataSource', () => {

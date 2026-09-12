@@ -84,6 +84,35 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     );
     expect(html).toContain('<img src="/uploads/mangal.webp" alt=""');
     expect(html).not.toContain('>/uploads/mangal.webp<');
+    // Default (no frame, no block override): same contain/center/48px as before.
+    expect(html).toContain('object-fit:contain');
+    expect(html).toContain('object-position:50% 50%');
+    expect(html).toContain('max-height:48px');
+  });
+
+  it('TZ-NX-PO-SWEEP-05: applies the photo\'s own frame (cover + pan) to the cell', () => {
+    const html = renderStudioTableHtml(
+      [{ key: 'photo', label: 'Фото' }],
+      [['/uploads/mangal.webp']],
+      [],
+      20,
+      { frames: { '/uploads/mangal.webp': { fit: 'cover', posX: 30, posY: 70 } } },
+    );
+    expect(html).toContain('object-fit:cover');
+    expect(html).toContain('object-position:30% 70%');
+  });
+
+  it('TZ-NX-PO-SWEEP-05: block «Фото в ячейке» fit override wins over the photo\'s own frame.fit, but pan stays from the frame', () => {
+    const html = renderStudioTableHtml(
+      [{ key: 'photo', label: 'Фото' }],
+      [['/uploads/mangal.webp']],
+      [],
+      20,
+      { frames: { '/uploads/mangal.webp': { fit: 'cover', posX: 30, posY: 70 } }, fit: 'contain', maxHeightPx: 64 },
+    );
+    expect(html).toContain('object-fit:contain');
+    expect(html).toContain('object-position:30% 70%');
+    expect(html).toContain('max-height:64px');
   });
 
   it('renders «Нет фото» for an empty photo cell instead of a blank/qty-looking cell', () => {
@@ -155,6 +184,34 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
 
     expect(rendered.content).toContain('Диван');
     expect(rendered.content).toContain('5000');
+  });
+
+  it('TZ-NX-PO-SWEEP-05: injectTableContent applies photoFrames + block tablePhotoDisplay to a photo cell', () => {
+    const blockId = new Types.ObjectId();
+    const block = {
+      _id: blockId,
+      type: 'table',
+      order: 0,
+      isActive: true,
+      showLine: false,
+      settings: {
+        tableTemplateColumns: [{ key: 'photo', label: 'Фото' }],
+        tablePhotoDisplay: { fit: null, maxHeightPx: 40 },
+      },
+    } as unknown as TemplateBlockDocument;
+
+    const [rendered] = injectTableContent([block], [
+      {
+        key: `table-${blockId.toString()}`,
+        source: { type: 'catalog-products' },
+        rows: [['/uploads/mangal.webp']],
+        photoFrames: { '/uploads/mangal.webp': { fit: 'cover', posX: 10, posY: 90 } },
+      },
+    ]);
+
+    expect(rendered.content).toContain('object-fit:cover');
+    expect(rendered.content).toContain('object-position:10% 90%');
+    expect(rendered.content).toContain('max-height:40px');
   });
 
   it('reads manual sample rows from block settings', () => {
@@ -325,6 +382,70 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
     expect(resolved[0]).toMatchObject({
       rows: [['P-1', EXISTING_PHOTO_URL, 'Стол', 'Дубовый стол', 'шт', '1200']],
     });
+  });
+
+  it('TZ-NX-PO-SWEEP-05: resolved entry carries the photo\'s РАМКА (frame), keyed by its resolved URL', async () => {
+    const product = new Types.ObjectId();
+    const photo = new Types.ObjectId();
+    const productModel = {
+      find: jest.fn().mockReturnValue({
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([
+          { _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200, mainPhotoId: photo },
+        ]),
+      }),
+    };
+    const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+    const photoModel = {
+      find: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([
+          { _id: photo, storageUrl: EXISTING_PHOTO_URL, frame: { fit: 'cover', posX: 20, posY: 80 } },
+        ]),
+      }),
+    };
+    const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+
+    const resolved = await resolver.resolveDataSets(
+      { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+      [tableBlock],
+      true,
+    );
+
+    expect(resolved[0]).toMatchObject({
+      photoFrames: { [EXISTING_PHOTO_URL]: { fit: 'cover', posX: 20, posY: 80 } },
+    });
+  });
+
+  it('TZ-NX-PO-SWEEP-05: no frame on the photo → no photoFrames entry for it (renderer falls back to contain/center)', async () => {
+    const product = new Types.ObjectId();
+    const photo = new Types.ObjectId();
+    const productModel = {
+      find: jest.fn().mockReturnValue({
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([
+          { _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200, mainPhotoId: photo },
+        ]),
+      }),
+    };
+    const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+    const photoModel = {
+      find: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([{ _id: photo, storageUrl: EXISTING_PHOTO_URL }]),
+      }),
+    };
+    const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+
+    const resolved = await resolver.resolveDataSets(
+      { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+      [tableBlock],
+      true,
+    );
+
+    expect((resolved[0] as { photoFrames?: Record<string, unknown> }).photoFrames?.[EXISTING_PHOTO_URL]).toBeUndefined();
   });
 
   describe('orphaned photo references (TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE)', () => {

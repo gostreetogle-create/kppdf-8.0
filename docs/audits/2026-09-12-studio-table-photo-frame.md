@@ -26,3 +26,19 @@
 
 - **#05** FIX: прокинуть `Photo.frame` в canvas + BE preview/PDF photo cell; в Свойствах таблицы — блок «Фото в ячейке» (fit contain|cover + опционально max size); hint «кадр — в карточке каталога (РАМКА)».  
 - Не второй полный frame-editor внутри таблицы (reuse P3).
+
+## Closeout (2026-09-12)
+
+`TZ-NX-PO-SWEEP-05` DONE. Пайплайн подтверждён рабочим (S48/TABLE-PHOTO-SMOKE
+тесты не трогал, всё ещё зелёные) — «Нет фото» по-прежнему бывает честным
+(orphan/отсутствующий файл), не рендер-багом. Дыра `Photo.frame` закрыта:
+`resolveCatalogPhotoUrls` резолвит `frame` вместе с `storageUrl`;
+`resolveDataSets`/`fetchLiveRows` прокидывают `photoFrames` (keyed by URL)
+параллельно `rows` (cell остаётся plain string URL — TZ Pref, без реструктуры
+`liveRows`); canvas (`photoCellStyle`) и BE render (`renderPhotoCellHtml` +
+`injectTableContent` + `studio-multipage.utils.ts` PDF-пагинация) применяют
+тот же frame через `object-fit`/`object-position` — full canvas/PDF parity.
+Свойства таблицы получили секцию «Фото в ячейке» (`tablePhotoDisplay.fit`
+override + `maxHeightPx`, persisted как обычный block.settings patch);
+пан/крап остаются catalog-owned (РАМКА в карточке), второй pan-редактор не
+строил. Архив: `tasks/_archive/2026-09/TZ-NX-PO-SWEEP-05-studio-table-photo-frame.done.md`.

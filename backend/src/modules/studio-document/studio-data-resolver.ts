@@ -7,7 +7,7 @@ import { Product, ProductDocument } from '../product/product.schema';
 import { ProductModule, ProductModuleDocument } from '../product-module/product-module.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
 import { Organization, OrganizationDocument } from '../organization/organization.schema';
-import { Photo, PhotoDocument } from '../photos/photo.schema';
+import { Photo, PhotoDocument, type PhotoFrame } from '../photos/photo.schema';
 import type { QuotationItem } from '../quotation/quotation.schema';
 import { QuotationService } from '../quotation/quotation.service';
 import type { OrderItem } from '../order/order.schema';
@@ -48,6 +48,10 @@ type DataSetEntry = {
   source?: { type?: string };
   rows?: unknown;
   disabledRowIndices?: unknown;
+  /** TZ-NX-PO-SWEEP-05 — catalog photo's РАМКА (`Photo.frame`), keyed by the
+   * resolved `storageUrl` (the same string a photo cell holds), so canvas
+   * and PDF/preview render the same fit/pan without restructuring `rows`. */
+  photoFrames?: Record<string, PhotoFrame>;
 };
 
 /** TZ-NX-DOCSTUDIO-S47 — parity with Create КП aliases (`proposal-table-layout.util.ts`). */
@@ -91,11 +95,32 @@ function escapeAttrValue(value: string): string {
   return escapeHtmlValue(value).replace(/"/g, '&quot;');
 }
 
-/** TZ-NX-DOCSTUDIO-S48 — thumbnail or honest empty state, mirroring legacy `table-template.service.ts` `formatCell`'s photo branch (no Create-КП rewrite). */
-function renderPhotoCellHtml(value: string): string {
+/** TZ-NX-PO-SWEEP-05 — same `fit`/`posX`/`posY` normalization as the FE's `normalizePhotoFrame` (`@kppdf/ui/photo`); default = contain/center, same as a missing frame. */
+function normalizePhotoFrameServer(frame: Partial<PhotoFrame> | undefined): PhotoFrame {
+  const posX = typeof frame?.posX === 'number' && Number.isFinite(frame.posX) ? frame.posX : 50;
+  const posY = typeof frame?.posY === 'number' && Number.isFinite(frame.posY) ? frame.posY : 50;
+  return { fit: frame?.fit === 'cover' ? 'cover' : 'contain', posX, posY };
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-S48 / TZ-NX-PO-SWEEP-05 — thumbnail or honest empty state
+ * (mirrors legacy `table-template.service.ts` `formatCell`'s photo branch,
+ * no Create-КП rewrite). `frame` = the catalog photo's own РАМКА
+ * (`Photo.frame`); `blockFit` = the table block's «Фото в ячейке» override,
+ * which only ever overrides `fit` — pan/crop stay catalog-owned.
+ */
+function renderPhotoCellHtml(
+  value: string,
+  frame?: Partial<PhotoFrame>,
+  blockFit?: PhotoFrame['fit'] | null,
+  maxHeightPx = 48,
+): string {
   const url = value.trim();
   if (!url) return '<span class="pi-photo-empty">Нет фото</span>';
-  return `<img src="${escapeAttrValue(url)}" alt="" style="max-width:72px;max-height:48px;object-fit:contain" />`;
+  const normalized = normalizePhotoFrameServer(frame);
+  const fit = blockFit ?? normalized.fit;
+  const style = `max-width:100%;max-height:${maxHeightPx}px;object-fit:${fit};object-position:${normalized.posX}% ${normalized.posY}%`;
+  return `<img src="${escapeAttrValue(url)}" alt="" style="${style}" />`;
 }
 
 function lineValue(columnKey: string, line: LineItem): string {
@@ -143,11 +168,20 @@ export function storedRows(entry: DataSetEntry): string[][] {
   );
 }
 
+export interface StudioTablePhotoRenderOptions {
+  /** Keyed by resolved photo URL (same string a photo cell holds). */
+  frames?: Record<string, PhotoFrame>;
+  /** Block's «Фото в ячейке» override; null/undefined defers to each photo's own frame.fit. */
+  fit?: PhotoFrame['fit'] | null;
+  maxHeightPx?: number;
+}
+
 export function renderStudioTableHtml(
   columns: StudioTableColumn[],
   rows: string[][],
   disabledRowIndices: number[] = [],
   vatPercent = 20,
+  photoOptions?: StudioTablePhotoRenderOptions,
 ): string {
   if (columns.length === 0) {
     return '<p class="pi-empty-state">Нет описанных колонок.</p>';
@@ -169,7 +203,12 @@ export function renderStudioTableHtml(
               .map((column, idx) => {
                 const value = row[idx] ?? '';
                 const cellContent = isPhotoColumnKey(column.key)
-                  ? renderPhotoCellHtml(value)
+                  ? renderPhotoCellHtml(
+                      value,
+                      photoOptions?.frames?.[value],
+                      photoOptions?.fit,
+                      photoOptions?.maxHeightPx,
+                    )
                   : escapeHtmlValue(value);
                 return `<td style="text-align:${column.align ?? 'left'}">${cellContent}</td>`;
               })
@@ -277,6 +316,18 @@ export function ensureTableDataSetsFromBlocks(
   return merged;
 }
 
+/** TZ-NX-PO-SWEEP-05 — mirrors FE `studioTablePhotoDisplay` (studio-table-defaults.ts): block-level «Фото в ячейке» override. */
+function tablePhotoDisplayFromBlock(block: TemplateBlockDocument): { fit: PhotoFrame['fit'] | null; maxHeightPx: number } {
+  const raw = (block.settings as { tablePhotoDisplay?: { fit?: unknown; maxHeightPx?: unknown } } | undefined)
+    ?.tablePhotoDisplay;
+  const fit = raw?.fit === 'contain' || raw?.fit === 'cover' ? raw.fit : null;
+  const maxHeightPx =
+    typeof raw?.maxHeightPx === 'number' && Number.isFinite(raw.maxHeightPx) && raw.maxHeightPx >= 16 && raw.maxHeightPx <= 96
+      ? raw.maxHeightPx
+      : 48;
+  return { fit, maxHeightPx };
+}
+
 export function injectTableContent(
   blocks: TemplateBlockDocument[],
   dataSets: DataSetEntry[],
@@ -295,7 +346,12 @@ export function injectTableContent(
     const columns = tableColumnsFromBlock(block);
     const rows = entry ? storedRows(entry) : [];
     const disabled = entry && Array.isArray(entry.disabledRowIndices) ? entry.disabledRowIndices.filter((value): value is number => typeof value === 'number') : [];
-    const html = renderStudioTableHtml(columns, rows, disabled, vatPercent);
+    const photoDisplay = tablePhotoDisplayFromBlock(block);
+    const html = renderStudioTableHtml(columns, rows, disabled, vatPercent, {
+      frames: entry?.photoFrames,
+      fit: photoDisplay.fit,
+      maxHeightPx: photoDisplay.maxHeightPx,
+    });
     const plain =
       typeof (block as { toObject?: () => Record<string, unknown> }).toObject ===
       'function'
@@ -358,22 +414,26 @@ export class StudioDataResolverService {
         const key = String(entry.key ?? '');
         const columns = columnsByKey.get(key) ?? this.defaultColumns();
         const qtyOverrides = qtyOverridesByKey.get(key) ?? {};
-        const liveRows = await this.fetchLiveRows(
+        const live = await this.fetchLiveRows(
           type,
           context,
           orgId,
           columns,
           qtyOverrides,
         );
-        if (liveRows == null) {
+        if (live == null) {
           return { ...entry };
         }
         const manual = storedRows(entry);
         const rows =
           manual.length > 0
-            ? this.mergeRowOverrides(liveRows, manual)
-            : liveRows;
-        return { ...entry, rows };
+            ? this.mergeRowOverrides(live.rows, manual)
+            : live.rows;
+        return {
+          ...entry,
+          rows,
+          ...(live.photoFrames ? { photoFrames: live.photoFrames } : {}),
+        };
       }),
     );
 
@@ -422,7 +482,7 @@ export class StudioDataResolverService {
     organizationId: string,
     columns: StudioTableColumn[],
     qtyOverrides: Record<number, number> = {},
-  ): Promise<string[][] | null> {
+  ): Promise<{ rows: string[][]; photoFrames?: Record<string, PhotoFrame> } | null> {
     if (type === 'quotation-items') {
       const quotationId = context['quotationId'];
       if (typeof quotationId !== 'string' || !quotationId.trim()) return null;
@@ -432,10 +492,12 @@ export class StudioDataResolverService {
           'Quotation belongs to another organization scope',
         );
       }
-      return mapLineItemsToRows(
-        (quotation.items ?? []) as QuotationItem[],
-        columns,
-      );
+      return {
+        rows: mapLineItemsToRows(
+          (quotation.items ?? []) as QuotationItem[],
+          columns,
+        ),
+      };
     }
 
     if (type === 'order-items') {
@@ -450,16 +512,16 @@ export class StudioDataResolverService {
           'Order belongs to another organization scope',
         );
       }
-      return mapLineItemsToRows((order.items ?? []) as OrderItem[], columns);
+      return { rows: mapLineItemsToRows((order.items ?? []) as OrderItem[], columns) };
     }
 
     if (type.startsWith('catalog-')) {
       const kind = type.slice('catalog-'.length);
       const selections = (context['catalogSelections'] as Record<string, unknown> | undefined) ?? {};
       const rawIds = selections[kind];
-      if (!Array.isArray(rawIds)) return [];
+      if (!Array.isArray(rawIds)) return { rows: [] };
       const ids = rawIds.filter((id): id is string => typeof id === 'string' && Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
-      if (ids.length === 0) return [];
+      if (ids.length === 0) return { rows: [] };
       const filter: Record<string, unknown> = { _id: { $in: ids }, deletedAt: null };
       if (kind === 'parts') filter.materialKind = 'part';
       if (kind === 'materials') filter.materialKind = { $ne: 'part' };
@@ -470,15 +532,21 @@ export class StudioDataResolverService {
           ? await this.moduleModel.find(scopeFilter).lean().exec() as unknown as Array<Record<string, unknown>>
           : await this.materialModel.find(scopeFilter).lean().exec() as unknown as Array<Record<string, unknown>>;
       const byId = new Map(docs.map((doc) => [String(doc._id), doc]));
-      const photoUrlById = await this.resolveCatalogPhotoUrls(docs);
-      return ids.filter((id) => byId.has(String(id))).map((id, index) => {
+      const photoById = await this.resolveCatalogPhotoUrls(docs);
+      const photoFrames: Record<string, PhotoFrame> = {};
+      const rows = ids.filter((id) => byId.has(String(id))).map((id, index) => {
         const item = byId.get(String(id)) as Record<string, unknown>;
         const name = String(item['name'] ?? item['sku'] ?? item['article'] ?? '');
         const sku = String(item['sku'] ?? item['article'] ?? '');
         const unit = String(item['unit'] ?? 'шт');
         const price = Number(item['listPrice'] ?? item['basePrice'] ?? item['pricePerUnit'] ?? 0);
         const description = String(item['description'] ?? '');
-        const photoUrl = photoUrlById.get(this.catalogPhotoId(item)) ?? '';
+        const photo = photoById.get(this.catalogPhotoId(item));
+        const photoUrl = photo?.url ?? '';
+        // TZ-NX-PO-SWEEP-05: keyed by the resolved URL — the same string the
+        // rendered cell holds, so canvas/PDF can look the frame up without
+        // threading a parallel photoId through `rows`.
+        if (photoUrl && photo?.frame) photoFrames[photoUrl] = photo.frame;
         // TZ-NX-DOCSTUDIO-TABLE-LINE-QTY — catalog pick defaults to 1 but an
         // operator's edit (tableQtyOverrides, keyed by row index) sticks across
         // refetch; total recomputes with it (was always `price`, i.e. only
@@ -487,6 +555,7 @@ export class StudioDataResolverService {
         const total = price * quantity;
         return mapLineItemsToRows([{ productName: name, productSku: sku, unit, quantity, unitPrice: price, total, description, photoUrl }], columns)[0] ?? [];
       });
+      return { rows, photoFrames };
     }
 
     return null;
@@ -522,22 +591,27 @@ export class StudioDataResolverService {
     }
   }
 
-  /** Batch-resolve catalog docs' photo refs to `Photo.storageUrl` (S48 renders the thumbnail). */
+  /**
+   * Batch-resolve catalog docs' photo refs to `Photo.storageUrl` + `frame`
+   * (S48 renders the thumbnail; TZ-NX-PO-SWEEP-05 applies the frame's
+   * fit/pan instead of a hardcoded contain).
+   */
   private async resolveCatalogPhotoUrls(
     docs: Array<Record<string, unknown>>,
-  ): Promise<Map<string, string>> {
+  ): Promise<Map<string, { url: string; frame?: PhotoFrame }>> {
     const ids = [...new Set(docs.map((doc) => this.catalogPhotoId(doc)).filter((id) => id && Types.ObjectId.isValid(id)))];
     if (ids.length === 0) return new Map();
     const photos = await this.photoModel
       .find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) } })
-      .select('storageUrl')
+      .select('storageUrl frame')
       .lean()
       .exec();
     const entries = await Promise.all(
       photos.map(async (photo) => {
         const url = String((photo as { storageUrl?: string }).storageUrl ?? '');
         const verified = url && (await this.localUploadFileExists(url)) ? url : '';
-        return [String((photo as { _id: unknown })._id), verified] as const;
+        const frame = (photo as { frame?: PhotoFrame }).frame;
+        return [String((photo as { _id: unknown })._id), { url: verified, frame }] as const;
       }),
     );
     return new Map(entries);

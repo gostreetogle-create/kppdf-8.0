@@ -1528,10 +1528,17 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
-  private applyLiveRowsFromDataSet(doc: StudioDocument, blockId: string, dataSet: { rows?: readonly unknown[] }): void {
+  private applyLiveRowsFromDataSet(
+    doc: StudioDocument,
+    blockId: string,
+    dataSet: { rows?: readonly unknown[]; photoFrames?: Record<string, unknown> },
+  ): void {
     const rows = Array.isArray(dataSet.rows) ? dataSet.rows : [];
+    // TZ-NX-PO-SWEEP-05 — keyed by photo URL (same string a photo cell
+    // holds); canvas reads it to apply the catalog photo's own РАМКА.
+    const livePhotoFrames = dataSet.photoFrames ?? {};
     this.blocks.update((blocks) => blocks.map((item) => item._id === blockId
-      ? { ...item, settings: { ...(item.settings ?? {}), liveRows: rows } }
+      ? { ...item, settings: { ...(item.settings ?? {}), liveRows: rows, livePhotoFrames } }
       : item));
   }
 
