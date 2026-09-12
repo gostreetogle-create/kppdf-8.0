@@ -1,7 +1,27 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, OnInit, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { PiMaterialsService, PiModulesService, PiProductsService, type Material, type Product, type ProductModule } from '@kppdf/data-access';
+import {
+  PiMaterialsService,
+  PiModulesService,
+  PiProductsService,
+  type Material,
+  type Product,
+  type ProductDetail,
+  type ProductModule,
+} from '@kppdf/data-access';
 import { PiShowcaseCardComponent } from '@kppdf/ui/card';
+import { PiDialogService } from '@kppdf/ui/dialog';
+import { PiToastService } from '@kppdf/ui/toast';
+import {
+  createCatalogRegistryDialogHost,
+  type CatalogRegistryDialogHost,
+} from '../registries/data/catalog-registry-dialog-host';
+import {
+  createMaterialRegistryDialogHost,
+  type MaterialRegistryDialogHost,
+} from '../registries/data/material-registry-dialog-host';
+import type { MaterialRegistryDialogConfig } from '../registries/data/material-registry-actions';
+import type { RegistryActionContext } from '../registries/model/registry.types';
 
 export type StudioShowcaseKind = 'products' | 'modules' | 'parts' | 'materials';
 
@@ -13,6 +33,21 @@ export interface StudioCatalogSelections {
 }
 
 const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], parts: [], materials: [] };
+
+/** Mirrors registries/data/details.registry.ts DETAILS_DIALOG_CONFIG — same material dialog, kind locked to 'part' by the vitrina's own parts filter, not by this config. */
+const PARTS_DIALOG_CONFIG: MaterialRegistryDialogConfig = {
+  allowKindSelect: true,
+  createLabel: 'Создать деталь',
+  entityLabel: 'деталь',
+};
+
+/** Mirrors registries/data/materials.registry.ts MATERIALS_DIALOG_CONFIG. */
+const MATERIALS_DIALOG_CONFIG: MaterialRegistryDialogConfig = {
+  lockMaterialKind: 'raw',
+  allowKindSelect: false,
+  createLabel: 'Создать материал',
+  entityLabel: 'материал',
+};
 
 /** S27 — витрина каталога, объединённая с панелью «Данные» (заменяет orphan `pi-studio-showcase-panel`). */
 @Component({
@@ -51,8 +86,16 @@ const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], p
           [class.is-selected]="item.selected"
           [attr.data-test]="'studio-data-vitrina-card'"
         >
-          @if (item.selected) {
-            <div sc-actions-sm class="vitrina-actions">
+          <div sc-actions-sm class="vitrina-actions">
+            <button
+              type="button"
+              class="vitrina-btn vitrina-btn--edit"
+              data-test="studio-data-vitrina-edit"
+              (click)="edit(item.id)"
+            >
+              Изменить
+            </button>
+            @if (item.selected) {
               <span class="vitrina-badge" data-test="studio-data-vitrina-badge">Выбрано</span>
               <button
                 type="button"
@@ -63,9 +106,7 @@ const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], p
               >
                 Убрать
               </button>
-            </div>
-          } @else {
-            <div sc-actions-sm class="vitrina-actions">
+            } @else {
               <button
                 type="button"
                 class="vitrina-btn vitrina-btn--add"
@@ -75,8 +116,8 @@ const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], p
               >
                 Добавить
               </button>
-            </div>
-          }
+            }
+          </div>
         </app-pi-showcase-card>
       }
       @if (loading()) {
@@ -207,11 +248,32 @@ export class StudioDataVitrinaComponent implements OnInit {
   private readonly productsApi = inject(PiProductsService);
   private readonly modulesApi = inject(PiModulesService);
   private readonly materialsApi = inject(PiMaterialsService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+
+  /** TZ-NX-DOCSTUDIO-VITRINA-EDIT — same dialogs/hosts as /registries, no second form. */
+  private readonly catalogDialogHost: CatalogRegistryDialogHost = createCatalogRegistryDialogHost({
+    dialog: this.dialog,
+    destroyRef: this.destroyRef,
+    injector: this.injector,
+    modulesService: this.modulesApi,
+    productsService: this.productsApi,
+  });
+  private readonly materialDialogHost: MaterialRegistryDialogHost = createMaterialRegistryDialogHost({
+    dialog: this.dialog,
+    destroyRef: this.destroyRef,
+    injector: this.injector,
+    materialsService: this.materialsApi,
+  });
 
   readonly selected = input<StudioCatalogSelections>(EMPTY_SELECTIONS);
   /** TZ-NX-DOCSTUDIO-S41 — true while the parent's write queue has a request in flight. */
   readonly busy = input(false);
   readonly catalogChange = output<{ kind: StudioShowcaseKind; ids: readonly string[] }>();
+  /** TZ-NX-DOCSTUDIO-VITRINA-EDIT — fires after a successful edit Save so the parent can heal the A4 sheet's table for this kind (`refreshCatalogTablesOfKind`), not just this card. */
+  readonly catalogEntitySaved = output<StudioShowcaseKind>();
 
   readonly activeKind = signal<StudioShowcaseKind>('products');
   readonly search = signal('');
@@ -229,22 +291,81 @@ export class StudioDataVitrinaComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading.set(true);
-    Promise.all([
-      firstValueFrom(this.productsApi.list({ limit: 100 })),
-      firstValueFrom(this.modulesApi.list()),
-      firstValueFrom(this.materialsApi.list({ limit: 100, materialKind: 'part' })),
-      firstValueFrom(this.materialsApi.list({ limit: 100 })).then((result) =>
-        result.ok
-          ? { ...result, data: { ...result.data, items: result.data.items.filter((item) => item.materialKind !== 'part') } }
-          : result,
-      ),
-    ]).then(([products, modules, parts, materials]) => {
-      if (products.ok) this.products.set(products.data.items);
-      if (modules.ok) this.modules.set(modules.data);
-      if (parts.ok) this.parts.set(parts.data.items);
-      if (materials.ok) this.materials.set(materials.data.items);
+    void Promise.all([
+      this.reloadProducts(),
+      this.reloadModules(),
+      this.reloadParts(),
+      this.reloadMaterials(),
+    ]).then(() => {
       this.loading.set(false);
     });
+  }
+
+  private async reloadProducts(): Promise<void> {
+    const res = await firstValueFrom(this.productsApi.list({ limit: 100 }));
+    if (res.ok) this.products.set(res.data.items);
+  }
+
+  private async reloadModules(): Promise<void> {
+    const res = await firstValueFrom(this.modulesApi.list());
+    if (res.ok) this.modules.set(res.data);
+  }
+
+  private async reloadParts(): Promise<void> {
+    const res = await firstValueFrom(this.materialsApi.list({ limit: 100, materialKind: 'part' }));
+    if (res.ok) this.parts.set(res.data.items);
+  }
+
+  private async reloadMaterials(): Promise<void> {
+    const res = await firstValueFrom(this.materialsApi.list({ limit: 100 }));
+    if (res.ok) {
+      this.materials.set(res.data.items.filter((item) => item.materialKind !== 'part'));
+    }
+  }
+
+  private reloadKind(kind: StudioShowcaseKind): Promise<void> {
+    if (kind === 'products') return this.reloadProducts();
+    if (kind === 'modules') return this.reloadModules();
+    if (kind === 'parts') return this.reloadParts();
+    return this.reloadMaterials();
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-VITRINA-EDIT — opens the same Product/Module/Material
+   * form dialog `/registries` uses (reuse via `createCatalogRegistryDialogHost`
+   * / `createMaterialRegistryDialogHost`, not a new form). On a successful
+   * Save the dialog host calls `ctx.reload()`, which re-fetches this kind's
+   * list (refreshes name/SKU/photo on the card) and then emits
+   * `catalogEntitySaved` so the parent can heal the A4 sheet's table too.
+   */
+  edit(id: string): void {
+    const kind = this.activeKind();
+    const ctx: RegistryActionContext = {
+      notify: (message, tone) => {
+        if (tone === 'error') this.toast.error(message);
+        else this.toast.success(message);
+      },
+      reload: () => {
+        void this.reloadKind(kind).then(() => this.catalogEntitySaved.emit(kind));
+      },
+    };
+    if (kind === 'products') {
+      const item = this.products().find((p) => p._id === id);
+      if (item) this.catalogDialogHost.openProductEdit(item as unknown as ProductDetail, ctx, false);
+      return;
+    }
+    if (kind === 'modules') {
+      const item = this.modules().find((m) => m._id === id);
+      if (item) this.catalogDialogHost.openModuleEdit(item, ctx, false);
+      return;
+    }
+    if (kind === 'parts') {
+      const item = this.parts().find((m) => m._id === id);
+      if (item) this.materialDialogHost.openEdit(item, ctx, PARTS_DIALOG_CONFIG);
+      return;
+    }
+    const item = this.materials().find((m) => m._id === id);
+    if (item) this.materialDialogHost.openEdit(item, ctx, MATERIALS_DIALOG_CONFIG);
   }
 
   readonly visibleItems = () => {

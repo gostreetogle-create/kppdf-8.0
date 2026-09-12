@@ -49,7 +49,12 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
       @switch (mode() === 'selected' ? 'selected' : activeCategory()) {
         @case ('products') {
           <div data-test="studio-data-section-products">
-            <pi-studio-data-vitrina [selected]="catalogSelections()" [busy]="catalogWriteBusy()" (catalogChange)="catalogChange.emit($event)" />
+            <pi-studio-data-vitrina
+              [selected]="catalogSelections()"
+              [busy]="catalogWriteBusy()"
+              (catalogChange)="catalogChange.emit($event)"
+              (catalogEntitySaved)="catalogEntitySaved.emit($event)"
+            />
           </div>
         }
         @case ('selected') {
@@ -387,6 +392,8 @@ export class StudioDataPanelComponent {
   readonly catalogChange = output<{ kind: StudioShowcaseKind; ids: readonly string[] }>();
   /** TZ-NX-DOCSTUDIO-D52 — «Вставить на лист»: parent creates/focuses the matching table + wires putDataSet. */
   readonly insertTable = output<StudioShowcaseKind>();
+  /** TZ-NX-DOCSTUDIO-VITRINA-EDIT — vitrina «Изменить» Save landed; parent re-hydrates this kind's A4 table(s). */
+  readonly catalogEntitySaved = output<StudioShowcaseKind>();
 
   protected readonly categories = DATA_CATEGORIES;
   readonly activeCategory = signal<StudioDataCategory>('products');

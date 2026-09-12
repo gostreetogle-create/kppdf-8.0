@@ -265,6 +265,7 @@ const STUDIO_CATALOG_KIND_LABELS: Record<StudioShowcaseKind, string> = {
                 (supplierChange)="onAnchorChange('supplier', $event)"
                 (catalogRemove)="removeCatalogChip($event)"
                 (catalogChange)="onCatalogSelectionChange($event)"
+                (catalogEntitySaved)="onCatalogEntitySaved($event)"
                 (insertTable)="insertCatalogTable($event)"
                 (quotationChange)="onQuotationChange($event)"
                 (quotationStatusChange)="onQuotationStatusChange($event)"
@@ -1092,6 +1093,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       this.activateLayer(block._id);
       this.setBlockCatalogSource(block._id, source);
     });
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-VITRINA-EDIT — the vitrina's «Изменить» dialog just saved
+   * a product/module/material (name/SKU/photo). The vitrina card already
+   * refreshed itself; this heals the A4 sheet's wired table(s) for the same
+   * kind so a just-added photo shows up there too, without F5.
+   */
+  onCatalogEntitySaved(kind: StudioShowcaseKind): void {
+    void this.refreshCatalogTablesOfKind(kind);
   }
 
   private createTableBlock(): Promise<StudioBlock | null> {

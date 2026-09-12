@@ -35,6 +35,7 @@ describe('StudioEditorPage — insertCatalogTable (TZ-NX-DOCSTUDIO-CATALOG-INSER
     catalogSelections: { set: (sel: Record<string, readonly string[]>) => void };
     activeLayerId: () => string | null;
     insertCatalogTable: (kind: 'products' | 'modules' | 'parts' | 'materials') => void;
+    onCatalogEntitySaved: (kind: 'products' | 'modules' | 'parts' | 'materials') => void;
   }
 
   const BASE_DOC: StudioDocument = {
@@ -152,5 +153,23 @@ describe('StudioEditorPage — insertCatalogTable (TZ-NX-DOCSTUDIO-CATALOG-INSER
       expect.objectContaining({ dataSet: expect.objectContaining({ source: { type: 'catalog-modules' } }) }),
     );
     expect(toast.success).not.toHaveBeenCalledWith(expect.stringContaining('уже на листе'));
+  });
+
+  it('onCatalogEntitySaved (TZ-NX-DOCSTUDIO-VITRINA-EDIT): re-puts the wired table for that kind', async () => {
+    const component = createEditor();
+    component.document.set(BASE_DOC);
+    component.blocks.set([EXISTING_TABLE]);
+    component.catalogSelections.set({ products: ['p1'], modules: [], parts: [], materials: [] });
+
+    component.onCatalogEntitySaved('products');
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(documentsService.putDataSet).toHaveBeenCalledWith(
+      'doc-1',
+      'table-blk-table-1',
+      expect.objectContaining({ expectedRevision: 1 }),
+    );
   });
 });
