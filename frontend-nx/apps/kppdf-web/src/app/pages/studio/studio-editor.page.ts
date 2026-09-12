@@ -4,6 +4,7 @@
   Component,
   DestroyRef,
   ElementRef,
+  HostListener,
   Injector,
   OnDestroy,
   computed,
@@ -961,6 +962,26 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.selectedId.set(null);
     /* Сворачиваем только по клику на лист — не трогаем opacity/transform панели */
     this.panelCollapsed.set(true);
+  }
+
+  /**
+   * TZ-NX-PO-SWEEP-03: dismiss the open tools panel on a click anywhere
+   * outside it — not just the A4 sheet (`onSheetClick`). Clicks inside the
+   * panel body and on a selected canvas block already `stopPropagation()`
+   * (workspace-shell panel, `selectBlock`/`startDrag`) so they never reach
+   * `document`; this only has to exclude the chrome rail (avoid a double
+   * toggle — it manages the panel itself) and any CDK overlay (dialogs).
+   */
+  @HostListener('document:click', ['$event'])
+  onDocumentClickOutside(event: MouseEvent): void {
+    if (this.panelCollapsed()) return;
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.closest('.cdk-overlay-container')) return;
+    if (target.closest('[data-test="studio-tools-panel"]')) return;
+    if (target.closest('.shell-rail')) return;
+    if (target.closest('[data-test="studio-icon-rail-horizontal"]')) return;
+    this.onSheetClick();
   }
 
   onSelect(id: string): void {
