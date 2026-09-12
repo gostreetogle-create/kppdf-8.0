@@ -746,7 +746,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
               );
               this.activeSection.set('data');
               this.panelCollapsed.set(false);
-              this.refreshLiveDataSetsOnLoad(normalized);
+              void this.refreshLiveDataSetsOnLoad(normalized);
               this.healStaleLiveRowsOnLoad(normalized);
             }
           });
@@ -1662,32 +1662,24 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   /**
    * On document open, GET does not hydrate live rows (only putDataSet does per
-   * hydrateLiveDataSetRows on the backend) — re-put each ERP/catalog-source table's
-   * existing dataSet entry to pull fresh rows into the response and apply them.
+   * hydrateLiveDataSetRows on the backend) — re-put each ERP/catalog-source
+   * table's existing dataSet entry to pull fresh rows into the response and
+   * apply them.
+   *
+   * TZ-NX-DOCSTUDIO-CATALOG-HYDRATE-ALL — this used to fire one
+   * `firstValueFrom(...).then(...)` per table **without awaiting**, so with
+   * 2+ hydratable tables (the typical case: изделия+модули+... on one
+   * document) every request read `this.document()?.revision` before any
+   * prior one resolved and raced the same stale revision → the server 409'd
+   * all but one and the silent `if (!result.ok) return` dropped the rest, so
+   * only the first table ever showed rows after reopen. `hydrateTablesSerially`
+   * (built for Insert-heal, TZ-CATALOG-INSERT-HONEST) awaits each putDataSet
+   * before starting the next, so every request carries the revision the
+   * previous one actually returned.
    */
-  private refreshLiveDataSetsOnLoad(blocks: readonly StudioBlock[]): void {
-    const doc = this.document();
-    if (!doc) return;
+  private async refreshLiveDataSetsOnLoad(blocks: readonly StudioBlock[]): Promise<void> {
     const tables = blocks.filter((item) => item.type === 'table');
-    for (const block of tables) {
-      const sourceType = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
-      if (!sourceType || !STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)) continue;
-      const key = `table-${block._id}`;
-      const existing = doc.dataSets?.find((entry) => entry['key'] === key);
-      const catalogKey = sourceType.startsWith('catalog-') ? sourceType.slice('catalog-'.length) : '';
-      const catalogSelectionCount = catalogKey
-        ? this.catalogSelections()[catalogKey as 'products' | 'modules' | 'parts' | 'materials'].length
-        : (existing?.['catalogSelectionCount'] as number | undefined) ?? 0;
-      const dataSet = { source: { type: sourceType }, rows: existing?.rows ?? [], catalogSelectionCount };
-      void firstValueFrom(this.documents.putDataSet(doc._id, key, {
-        expectedRevision: this.document()?.revision ?? doc.revision ?? 1,
-        dataSet,
-      })).then((result) => {
-        if (!result.ok) return;
-        this.document.set(result.data);
-        this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
-      });
-    }
+    await this.hydrateTablesSerially(tables);
   }
 
   /**
@@ -2539,7 +2531,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       if (!sourceType || !STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)) return false;
       return Boolean(doc.dataSets?.some((entry) => entry['key'] === `table-${block._id}`));
     });
-    if (needsHydrate) this.refreshLiveDataSetsOnLoad(blocks);
+    if (needsHydrate) void this.refreshLiveDataSetsOnLoad(blocks);
   }
 
   private conflict(): void {
