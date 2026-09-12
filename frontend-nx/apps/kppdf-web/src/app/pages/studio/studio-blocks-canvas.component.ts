@@ -124,6 +124,7 @@ import {
               [style.height.%]="(layout.height ?? 0.25) * 100"
               [style.z-index]="layout.zIndex"
               (click)="selectBlock($event, block)"
+              (dblclick)="openTableBlock($event, block)"
               (pointerdown)="startDrag($event, block)"
             >
               <div class="table-preview">
@@ -324,7 +325,11 @@ export class StudioBlocksCanvasComponent {
   @Output() layoutCommit = new EventEmitter<void>();
   @Output() contentChanged = new EventEmitter<{ id: string; content: string }>();
   @Output() textDoubleClick = new EventEmitter<string>();
-  /** TZ-NX-DOCSTUDIO-S45: canvas never edits rows; emit so the host can open Свойства. */
+  /**
+   * Canvas never edits rows; emit so the host can open Свойства.
+   * TZ-NX-PO-SWEEP-02: fired on dblclick / rail action only — single click
+   * just selects (S45's auto-open on click was reverted per PO-CANON).
+   */
   @Output() tableEditRequest = new EventEmitter<string>();
 
   snappingId: string | null = null;
@@ -398,9 +403,16 @@ export class StudioBlocksCanvasComponent {
       this.suppressNextClick = false;
       return;
     }
+    // PO-CANON / TZ-NX-PO-SWEEP-02: single click = select + resize only, never
+    // auto-opens Свойства (was S45 behaviour — panel used to cover the SE handle).
     this.selected.emit(block._id);
-    // TZ-NX-DOCSTUDIO-S45: a table click opens Свойства (row editing moved off the canvas).
-    if (block.type === 'table') this.tableEditRequest.emit(block._id);
+  }
+
+  openTableBlock(event: MouseEvent, block: StudioBlock): void {
+    if (this.readOnly || block.type !== 'table' || block.locked) return;
+    event.stopPropagation();
+    this.selected.emit(block._id);
+    this.tableEditRequest.emit(block._id);
   }
 
   startDrag(event: PointerEvent, block: StudioBlock): void {

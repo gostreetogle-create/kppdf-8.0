@@ -44,6 +44,9 @@ describe('StudioEditorPage — ribbon→rails chrome IA (TZ-NX-DOCSTUDIO-C3)', (
     saveDocument: () => Promise<boolean>;
     onDownloadPdf: () => void;
     onFinalize: () => void;
+    blocks: { set: (blocks: unknown[]) => void };
+    selectedId: { set: (id: string | null) => void };
+    activeSection: { (): string | null };
   }
 
   const BASE_DOC: StudioDocument = {
@@ -125,6 +128,19 @@ describe('StudioEditorPage — ribbon→rails chrome IA (TZ-NX-DOCSTUDIO-C3)', (
       expect(t.ariaLabel).toBeTruthy();
       expect(t.title).toBeTruthy();
     }
+  });
+
+  it('TZ-NX-PO-SWEEP-02: hints the Свойства rail button when a table is selected but the panel is not open', () => {
+    const component = createEditor();
+    component.blocks.set([
+      { _id: 'tbl-1', type: 'table', order: 0, title: 'Витрина', content: '', layout: { page: 1, x: 0, y: 0, width: 0.5, height: 0.3, zIndex: 1, rotation: 0 } },
+    ]);
+    component.selectedId.set('tbl-1');
+    fixture.detectChanges();
+
+    expect(component.activeSection()).not.toBe('properties');
+    const rails = TestBed.inject(ShellToolRailService);
+    expect(rails.rightTools().find((t) => t.id === 'properties')!.active).toBe(true);
   });
 
   it('disables archive and save per busy/status state, and clicking rails the real handlers', async () => {

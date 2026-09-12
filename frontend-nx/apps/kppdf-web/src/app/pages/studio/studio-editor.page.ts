@@ -759,6 +759,12 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       const collapsed = this.panelCollapsed();
       const viewMode = this.viewMode();
       const doc = this.document();
+      const selectedId = this.selectedId();
+      const selectedBlock = selectedId ? this.blocks().find((b) => b._id === selectedId) : null;
+      // TZ-NX-PO-SWEEP-02: table selected but Свойства not open yet — hint the
+      // rail button (same active/жёлтый style) instead of auto-opening the panel.
+      const propertiesHint =
+        section !== 'properties' && selectedBlock?.type === 'table' && !selectedBlock.locked;
       this.shellTools.setTools(STUDIO_TOOL_OWNER, {
         left: [
           {
@@ -801,7 +807,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           { id: 'elements', side: 'right', ariaLabel: 'Элементы', title: 'Элементы', icon: FileText, active: !collapsed && section === 'elements', onClick: () => this.onSection('elements') },
           { id: 'layers', side: 'right', ariaLabel: 'Слои', title: 'Слои', icon: Layers, active: !collapsed && section === 'layers', onClick: () => this.onSection('layers') },
           { id: 'pages', side: 'right', ariaLabel: 'Страницы', title: 'Страницы', icon: FileStack, active: !collapsed && section === 'pages', onClick: () => this.onSection('pages') },
-          { id: 'properties', side: 'right', ariaLabel: 'Свойства', title: 'Свойства', icon: Settings2, active: !collapsed && section === 'properties', onClick: () => this.onSection('properties') },
+          { id: 'properties', side: 'right', ariaLabel: 'Свойства', title: 'Свойства', icon: Settings2, active: !collapsed && (section === 'properties' || propertiesHint), onClick: () => this.onSection('properties') },
           { id: 'template', side: 'right', ariaLabel: 'Шаблон', title: 'Шаблон', icon: LayoutTemplate, active: !collapsed && section === 'template', onClick: () => this.onSection('template') },
         ],
       });
