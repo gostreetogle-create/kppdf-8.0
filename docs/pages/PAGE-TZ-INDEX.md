@@ -231,3 +231,5 @@ Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`
 | TZ-NX-DOCSTUDIO-S44 READY (после D56) | Canvas: table-edit только для manual; ERP-токен `--color-info` на холсте; драг data-table с 1 клика | TZ: `tasks/TZ-NX-DOCSTUDIO-S44-TABLE-CANVAS-SELECT-FIX.md` · PROMPT: `tasks/PROMPT-CLAUDE-DOCSTUDIO-S44.md` |
 
 | TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET READY | `/orders` expand: Paper & Ink inset + плитки (не слипшийся текст); убрать `-mx-2` | TZ: `tasks/_ready/TZ-NX-DEALS-ORDERS-HUB-TRAY-INSET.md` · PROMPT: `tasks/PROMPT-FREEBUFF-ORDERS-HUB-TRAY-INSET.md` |
+
+| WAVE-NX-DOCSTUDIO-CATALOG-TABLE-IA DONE (2026-09-12) | Корень «данные только в одной таблице»: `refreshLiveDataSetsOnLoad` слал `putDataSet` параллельно → 409-каскад, теперь serial (`hydrateTablesSerially`); повторный Insert kind = focus + toast + heal, не дубль (`refreshCatalogTablesOfKind`); честный empty-state (без source vs live-source пусто); витрина «Изменить» → те же registries dialogs + heal A4 после Save | WAVE: `WAVE-NX-DOCSTUDIO-CATALOG-TABLE-IA.md` · Чеклист: `DOCSTUDIO-CATALOG-TABLE-IA-CHECKLIST.md` · SHA: `3fd93047`→`bd7ed96f`→`b0258eee`→`d235f4f1` |
