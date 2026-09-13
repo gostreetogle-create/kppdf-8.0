@@ -1,9 +1,9 @@
 # WAVE — Successors backlog 2026-09-13 (после studio-ops)
 
-updated_at: 2026-09-13T19:00:00Z  
+updated_at: 2026-09-13T23:15:00Z  
 agent_slot: Claude  
-current_wave: **2**  
-status: **WAVE2_DONE**
+current_wave: **3**  
+status: **IN_WORK_WAVE3**
 
 > Out-of-band (не в волнах): `TZ-VERIFY-VM52-SSH-REMAINDER-2026-09-13` — только LAN.
 
@@ -39,11 +39,11 @@ status: **WAVE2_DONE**
 
 | # | TZ | Status |
 |---|-----|--------|
-| 3.1 | `tasks/_ready/TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM.md` | PENDING |
+| 3.1 | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM.done.md` | DONE (`7321b4d6`) |
 | 3.2 | `tasks/_ready/TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP.md` | PENDING |
 
 Аудит: `docs/audits/2026-09-13-docstudio-table-price-sum.md` · `docs/audits/2026-09-13-docstudio-token-editor-chip.md`  
-Промпт: выдать после отчёта WAVE2 (два TZ подряд).
+Промпт: `tasks/_ready/PROMPT-CLAUDE-SUCCESSORS-WAVE3.md` — **GO** после WAVE2_DONE.
 
 ### Checkpoint
 
@@ -64,4 +64,8 @@ status: **WAVE2_DONE**
 2026-09-13T21:15:00Z | 2.5 DOCSTUDIO-ISSUER-SELECT | CLAIMED
 2026-09-13T23:00:00Z | 2.5 DOCSTUDIO-ISSUER-SELECT | DONE | commit=e6908e11 | BE: UpdateStudioDocumentDto.organizationId + update() reuses OrganizationService.findById's existing IDOR visibility policy (raw unresolved org id, not the resolveOrganizationId fallback); FE: readonly "Наша фирма" text -> app-pi-select filtered to isOurCompany orgs (live evidence: 10/13 orgs on stand are supplier seed data, not issuer candidates), disabled when <=1 candidate; nav fix corrected mid-flight from a no-op edit (nav-categories.ts items[] is never rendered anywhere in app-shell — reverted) to the real visible surface (admin-group-chips.ts's ADMIN_TOC_CHIPS, the actual "Устройства|Роли" tab strip) -> new "Наши организации" chip, live-verified clickable to /registries/organizations; live-reproduced known_limitation is WORSE than TZ text describes (full GET/PATCH/DELETE 403 lockout for the switching admin, not just list-disappearance, with an unexplained infinite-spinner UX) -> filed as WARN per TZ's own instruction, documented in page.md + evidence, not blocking; fixed all 13 studio-editor-*.spec.ts PiOrganizationsService mocks (missing .list broke the full suite); all gates PASS (BE 136/1361, FE 125/903+7skip, architecture:check, nx build); both throwaway test docs deleted (one via API, one via direct Mongo after self-lockout)
 2026-09-13T23:00:00Z | WAVE2 | DONE | 5/5 TZ DONE (2.1-2.5) — see final report to PO; new wave NOT proposed per prompt instruction
+2026-09-13T23:15:00Z | WAVE3 | started | HEAD=3c122f96
+2026-09-13T23:15:00Z | 3.1 TABLE-PRICE-SUM | CLAIMED
+2026-09-14T00:15:00Z | 3.1 TABLE-PRICE-SUM | DONE | commit=7321b4d6 | BE+FE price alias parity (listPrice/basePrice/pricePerUnit + _ variants — the exact catalog field names the resolver itself reads, previously unbound); FE gained sum alias group + quick-add "+ Сумма" chip; new healStudioTableColumns wired into the existing emitColumnStructure choke point fixes the exact PO repro (dup "Цена" labels -> price stays, sum becomes "Сумма") without touching a deliberate custom label; type-select now disabled for every standard key (lineValue never reads column.type) with a title hint, live for custom keys only; modules-without-price BE test added (price/sum=0, not a crash); live curl against a real product confirmed listPrice-key binding + sum=price*qty at qty=1 and qty=5 end-to-end through the real preview render; live Playwright confirmed the quick-add chip and type-lock in an actual browser, including on a column added mid-session; all gates PASS (BE 136/1364, FE 125/916+7skip, architecture:check, nx build); both throwaway docs deleted via direct Mongo (block deletion has no studio-documents API path)
+2026-09-14T00:15:00Z | 3.2 TOKEN-EDITOR-CHIP | CLAIMED
 ```
