@@ -3,7 +3,7 @@
 updated_at: 2026-09-13T23:15:00Z  
 agent_slot: Claude  
 current_wave: **3**  
-status: **IN_WORK_WAVE3**
+status: **WAVE3_DONE**
 
 > Out-of-band (не в волнах): `TZ-VERIFY-VM52-SSH-REMAINDER-2026-09-13` — только LAN.
 
@@ -40,7 +40,7 @@ status: **IN_WORK_WAVE3**
 | # | TZ | Status |
 |---|-----|--------|
 | 3.1 | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM.done.md` | DONE (`7321b4d6`) |
-| 3.2 | `tasks/_ready/TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP.md` | PENDING |
+| 3.2 | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP.done.md` | DONE (`cc8e029b`) |
 
 Аудит: `docs/audits/2026-09-13-docstudio-table-price-sum.md` · `docs/audits/2026-09-13-docstudio-token-editor-chip.md`  
 Промпт: `tasks/_ready/PROMPT-CLAUDE-SUCCESSORS-WAVE3.md` — **GO** после WAVE2_DONE.
@@ -68,4 +68,6 @@ status: **IN_WORK_WAVE3**
 2026-09-13T23:15:00Z | 3.1 TABLE-PRICE-SUM | CLAIMED
 2026-09-14T00:15:00Z | 3.1 TABLE-PRICE-SUM | DONE | commit=7321b4d6 | BE+FE price alias parity (listPrice/basePrice/pricePerUnit + _ variants — the exact catalog field names the resolver itself reads, previously unbound); FE gained sum alias group + quick-add "+ Сумма" chip; new healStudioTableColumns wired into the existing emitColumnStructure choke point fixes the exact PO repro (dup "Цена" labels -> price stays, sum becomes "Сумма") without touching a deliberate custom label; type-select now disabled for every standard key (lineValue never reads column.type) with a title hint, live for custom keys only; modules-without-price BE test added (price/sum=0, not a crash); live curl against a real product confirmed listPrice-key binding + sum=price*qty at qty=1 and qty=5 end-to-end through the real preview render; live Playwright confirmed the quick-add chip and type-lock in an actual browser, including on a column added mid-session; all gates PASS (BE 136/1364, FE 125/916+7skip, architecture:check, nx build); both throwaway docs deleted via direct Mongo (block deletion has no studio-documents API path)
 2026-09-14T00:15:00Z | 3.2 TOKEN-EDITOR-CHIP | CLAIMED
+2026-09-14T01:15:00Z | 3.2 TOKEN-EDITOR-CHIP | DONE | commit=cc8e029b | root cause matched the audit exactly: S44's .substitution-token CSS had nothing to attach to since studio-blocks-canvas.component.ts's textHtml() never called migratePlainTokensToNodes (only the RTE dialog did) -> canvas showed raw {{...}} black text; fixed by reusing that same function (widened its export via the rich-text barrel, was lib-internal) + copying the RTE's own chip CSS onto the canvas; new session-level (not persisted, not per-block) Токены|Значения segment in Свойства текста, default Токены; Значения substitutes from a client-side bag built entirely from context this editor session already loads (organization/counterparty/anchor/quotation/order) -- no new backend resolve API needed, the TZ's own preferred option covered every required token namespace; unresolved tokens in Значения mode keep the chip (documented choice per TZ's "выбрать одно" instruction); dblclick-to-edit needed zero code change to stay token-only (RTE is a structurally separate component); live Playwright confirmed the full loop end-to-end on a real counterparty value + confirmed dblclick independence; caught and fixed a known backtick-in-styles-template-literal pitfall proactively (from memory) before it became a debugging session; all gates PASS (FE 126/937+7skip, paper-and-ink 35/363, architecture:check, nx build); both throwaway docs deleted via direct Mongo (one abandoned after re-hitting the ISSUER-SELECT 403 lockout, one used for the successful run)
+2026-09-14T01:15:00Z | WAVE3 | DONE | 2/2 TZ DONE (3.1-3.2) — see final report to PO; new wave NOT proposed per prompt instruction
 ```
