@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, provideRouter, convertToParamMap } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
@@ -8,7 +9,23 @@ import {
   type SupplyTask,
 } from '@kppdf/data-access';
 import { PiToastService } from '@kppdf/ui/toast';
+import { PiDialogService } from '@kppdf/ui/dialog';
+import type { DialogRef } from '@kppdf/ui/dialog';
 import { SupplyPage } from './supply.page';
+
+/** Same reactive DialogRef mock as `on-dialog-close-once.spec.ts` — `onDialogCloseOnce` reads `ref.closed()` inside an `effect()`. */
+function createMockDialogRef<T>(): DialogRef<T> & { close: jest.Mock } {
+  const closedSig = signal<T | undefined>(undefined);
+  const isClosed = signal(false);
+  return {
+    closed: computed(() => (isClosed() ? closedSig() : undefined)) as DialogRef<T>['closed'],
+    close: jest.fn((v?: T) => {
+      if (isClosed()) return;
+      closedSig.set(v);
+      isClosed.set(true);
+    }),
+  };
+}
 
 describe('SupplyPage (NX S1)', () => {
   let fixture: ComponentFixture<SupplyPage>;
@@ -17,10 +34,12 @@ describe('SupplyPage (NX S1)', () => {
     create: jest.Mock;
     explode: jest.Mock;
     confirm: jest.Mock;
+    unconfirm: jest.Mock;
     markOrdered: jest.Mock;
     markReceived: jest.Mock;
   };
   let ordersApi: { list: jest.Mock };
+  let dialogOpenMock: jest.Mock;
   let navigateSpy: jest.SpyInstance;
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
@@ -48,10 +67,12 @@ describe('SupplyPage (NX S1)', () => {
       create: jest.fn().mockReturnValue(of({ ok: true, data: task() })),
       explode: jest.fn().mockReturnValue(of({ ok: true, data: { created: [], skipped: 0 } })),
       confirm: jest.fn().mockReturnValue(of({ ok: true, data: task({ status: 'confirmed' }) })),
+      unconfirm: jest.fn().mockReturnValue(of({ ok: true, data: task({ status: 'draft' }) })),
       markOrdered: jest.fn().mockReturnValue(of({ ok: true, data: task({ status: 'ordered' }) })),
       markReceived: jest.fn().mockReturnValue(of({ ok: true, data: task({ status: 'received' }) })),
     };
     ordersApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: orders })) };
+    dialogOpenMock = jest.fn().mockImplementation(() => createMockDialogRef<boolean>());
 
     await TestBed.configureTestingModule({
       imports: [SupplyPage],
@@ -61,6 +82,7 @@ describe('SupplyPage (NX S1)', () => {
         { provide: PiSupplyTasksService, useValue: supplyApi },
         { provide: PiOrdersService, useValue: ordersApi },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+        { provide: PiDialogService, useValue: { open: dialogOpenMock } },
       ],
     }).compileComponents();
 
@@ -115,17 +137,61 @@ describe('SupplyPage (NX S1)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="supply-received-t1"]')).toBeNull();
   });
 
-  it('confirms a task and reloads the registry', async () => {
+  it('confirms a task through the AlertDialog and reloads the registry (TZ-NX-SUPPLY-TASK-UNCONFIRM)', async () => {
     await setup({}, [task({ status: 'draft' })]);
     supplyApi.list.mockClear();
 
     (
       fixture.nativeElement.querySelector('[data-test="supply-confirm-t1"]') as HTMLButtonElement
     ).click();
+    expect(supplyApi.confirm).not.toHaveBeenCalled();
+    expect(dialogOpenMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ data: expect.objectContaining({ title: 'Подтвердить задачу снабжения?' }) }),
+    );
+
+    const ref = dialogOpenMock.mock.results[0].value as ReturnType<typeof createMockDialogRef<boolean>>;
+    ref.close(true);
+    fixture.detectChanges();
     await fixture.whenStable();
 
     expect(supplyApi.confirm).toHaveBeenCalledWith('t1');
     expect(supplyApi.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not confirm when the AlertDialog is cancelled', async () => {
+    await setup({}, [task({ status: 'draft' })]);
+
+    (
+      fixture.nativeElement.querySelector('[data-test="supply-confirm-t1"]') as HTMLButtonElement
+    ).click();
+    const ref = dialogOpenMock.mock.results[0].value as ReturnType<typeof createMockDialogRef<boolean>>;
+    ref.close(false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(supplyApi.confirm).not.toHaveBeenCalled();
+  });
+
+  it('shows "В черновик" only for confirmed rows, and reverts to draft on click (TZ-NX-SUPPLY-TASK-UNCONFIRM)', async () => {
+    await setup({}, [task({ status: 'confirmed' })]);
+    supplyApi.list.mockClear();
+
+    const unconfirmBtn = fixture.nativeElement.querySelector(
+      '[data-test="supply-unconfirm-t1"]',
+    ) as HTMLButtonElement;
+    expect(unconfirmBtn).toBeTruthy();
+
+    unconfirmBtn.click();
+    await fixture.whenStable();
+
+    expect(supplyApi.unconfirm).toHaveBeenCalledWith('t1');
+    expect(supplyApi.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show "В черновик" for draft/ordered/received rows', async () => {
+    await setup({}, [task({ status: 'draft' })]);
+    expect(fixture.nativeElement.querySelector('[data-test="supply-unconfirm-t1"]')).toBeNull();
   });
 
   it('marks ordered then received through the per-status action', async () => {

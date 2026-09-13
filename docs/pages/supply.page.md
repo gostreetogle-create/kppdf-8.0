@@ -28,6 +28,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 | POST | `/api/supply-tasks` | Создать (draft); нужен title или materialId/moduleId |
 | PATCH | `/api/supply-tasks/:id` | qty / notes / title |
 | POST | `/api/supply-tasks/:id/confirm` | D18: status→confirmed + confirmedBy/At из JWT |
+| POST | `/api/supply-tasks/:id/unconfirm` | confirmed → draft (откат случайного confirm); unset confirmedBy/At; 400 из любого другого статуса |
 | POST | `/api/supply-tasks/:id/ordered` | confirmed → ordered |
 | POST | `/api/supply-tasks/:id/received` | ordered → received |
 | DELETE | `/api/supply-tasks/:id` | soft delete |
@@ -102,6 +103,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 | `explode({orderId, moduleId?})` | `POST /supply-tasks/explode` |
 | `update(id, payload)` | `PATCH /supply-tasks/:id` |
 | `confirm(id)` | `POST /supply-tasks/:id/confirm` |
+| `unconfirm(id)` | `POST /supply-tasks/:id/unconfirm` |
 | `markOrdered(id)` | `POST /supply-tasks/:id/ordered` |
 | `markReceived(id)` | `POST /supply-tasks/:id/received` |
 | `remove(id)` | `DELETE /supply-tasks/:id` |
@@ -118,6 +120,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 - **TZ-NX-UX-06-supply-FIX:** клик по строке — expand-in-row (registry pattern) с полной линией заказа / датой подтверждения / примечанием read-only. `confirmedBy` (raw `ObjectId`, backend не резолвит в имя) **сознательно не показан** — не заводим сырой ObjectId в UI без lookup; `confirmedAt` покрывает практическую часть значения («когда подтверждено»). Filter-chip «Сбросить» переведён на `.pi-outline-btn`.
 - **TZ-NX-HUB-03 (2026-09-10):** ▸/▾ chevron + денсер ряды (`py-2`) + expanded-row accent (`bg-paper-2` + `border-l-gold-deep`), как `/orders` (HUB-02). Основная колонка «Позиция» больше не показывает сырой `orderLineId` подписью (перенесено в expand). Row actions — один компактный `.pi-outline-btn` на статус (был широкий `app-pi-button`). Expand обогащён: **Материал**/**Модуль** — честные плейсхолдеры «Материал задан»/«Модуль задан» (BE не отдаёт имя на list/find, поэтому не рисуем название) вместо `—`, если id есть; **Линия заказа** — полный текст только если это НЕ похоже на raw ObjectId (regex `^[a-f0-9]{24}$`), иначе `—` (H5, `orderLineLabel()`); **Обновлено** (`updatedAt`); chip-ссылка на заказ (`.pi-outline-btn`) прямо в expand, в дополнение к текстовой ссылке в строке. `confirmedBy` по-прежнему нигде не отображается.
 - **TZ-NX-HUB-06 (2026-09-10):** expand перестроен под gold card-язык `counterparty-hub-tray` — PO FAIL «просто тексты» на скрине. Обёртка `bg-paper-2 border-t hairline` → `grid md:grid-cols-2 gap-4 p-4` → 4 карточки `section.hairline.rounded-sm.bg-paper.p-4` + `h3`: **Позиция** (название/кол-во/статус) · **Связь с заказом** (линия заказа + order chip) · **Состав** (материал/модуль) · **Сроки и заметки** (создано/подтверждено/обновлено + примечание). Данные/логика не менялись, только группировка в карточки вместо плоского `grid-cols-2` списка `pi-label`. Audit: `docs/audits/2026-09-10-nx-hub-expand-cards.md`.
+- **TZ-NX-SUPPLY-TASK-UNCONFIRM (2026-09-13):** PO поймал случайный клик «Подтвердить» без пути назад. `confirmed → draft` теперь разрешённый обратный переход (`STATUS_FLOW`, BE), доступный только из `confirmed` (400 из `draft`/`ordered`/`received`) — `POST /supply-tasks/:id/unconfirm`, unset'ит `confirmedBy`/`confirmedAt`. На `confirmed`-строке рядом с «Заказано» появилась кнопка **«В черновик»** (`data-test="supply-unconfirm-…"`). Само «Подтвердить» больше не silent one-click — открывает `AlertDialogComponent` (canon-паттерн `confirmDirtyClose`/`onDialogCloseOnce`, не native `confirm()`), «Отмена» ничего не меняет. Откат `ordered→confirmed`/`received→…` **не** реализован (нет жалобы PO; `received` может позже завязаться на склад отдельным контуром) — если понадобится, отдельный successor.
 
 ### Known limitation (унаследовано от backend, не изобретено во фронтенде)
 
@@ -125,8 +128,8 @@ Query `orderId` **сохраняется** при переключении Бы�
 
 ### Tests
 
-- `pi-supply-tasks.service.spec.ts` — 8 tests (все методы, HTTP mock)
-- `supply.page.spec.ts` — фильтры, transitions, explode, create, no-mock-UI assertion, router-based filter clear, expand-in-row shows/hides detail, row action click does not toggle expand; **TZ-NX-HUB-03**: chevron toggle, «Создано» column, honest материал/модуль placeholders (no raw ObjectId), `confirmedBy` never rendered, orderLineId ObjectId-mask vs free-text pass-through, expand order chip link
+- `pi-supply-tasks.service.spec.ts` — 9 tests (все методы incl. `unconfirm`, HTTP mock)
+- `supply.page.spec.ts` — фильтры, transitions, explode, create, no-mock-UI assertion, router-based filter clear, expand-in-row shows/hides detail, row action click does not toggle expand; **TZ-NX-HUB-03**: chevron toggle, «Создано» column, honest материал/модуль placeholders (no raw ObjectId), `confirmedBy` never rendered, orderLineId ObjectId-mask vs free-text pass-through, expand order chip link; **TZ-NX-SUPPLY-TASK-UNCONFIRM**: confirm goes through AlertDialog (confirmed/cancelled), «В черновик» shown only on `confirmed` rows and calls `unconfirm`
 
 ## NX — TZ-NX-SUPPLY-S2-HUB-CONFIRM (order hub «Подтвердить материалы»)
 
@@ -254,3 +257,4 @@ typeahead:
 | **TZ-DESKTOP-SUPPLY-EXCEL-B** | Desktop multi-sheet шаблон (`Заявки`+`Материалы`+`Поставщики`+`Заказы`), нативные Excel dropdown на «Артикул»/«Поставщик»/«№ заказа» → те же match-правила пути A на импорте — см. `desktop/README.md` §Снабжение путь B; **WAVE-NX-SUPPLY-OPS Excel B DONE** |
 | **TZ-NX-HUB-03** | `/supply` только (`supply.page.ts`, не `/supply-requests`): ▸/▾ chevron + denser rows + expanded-row accent (parity с `/orders`); one-CTA-per-status compact `.pi-outline-btn` actions; richer expand (honest material/module placeholders, ObjectId-masked line key, updatedAt, order chip link). `WAVE-NX-HUB-TABLE-PARITY` #03 — DONE |
 | **TZ-NX-HUB-06** | Expand → 4 категорийные карточки (gold `counterparty-hub-tray` markup), заменили плоский `pi-label` grid. `WAVE-NX-SHELL-HUB-POLISH` #02 — DONE |
+| **TZ-NX-SUPPLY-TASK-UNCONFIRM** | `confirmed → draft` откат (`POST /supply-tasks/:id/unconfirm`), кнопка «В черновик», «Подтвердить» через `AlertDialogComponent` вместо silent one-click |

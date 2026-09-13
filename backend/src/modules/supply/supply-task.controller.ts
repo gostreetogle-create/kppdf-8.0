@@ -87,6 +87,16 @@ export class SupplyTaskController {
     return this.service.confirm(id, user.id, user.organizationId);
   }
 
+  @Post(':id/unconfirm')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'unconfirm', entityType: 'SupplyTask', idParam: 'id' })
+  unconfirm(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.unconfirm(id, user.organizationId);
+  }
+
   @Post(':id/ordered')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'ordered', entityType: 'SupplyTask', idParam: 'id' })

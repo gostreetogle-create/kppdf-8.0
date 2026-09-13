@@ -69,6 +69,13 @@ describe('PiSupplyTasksService (NX S1)', () => {
     request.flush({ _id: 't1', status: 'confirmed' });
   });
 
+  it('unconfirms a task (TZ-NX-SUPPLY-TASK-UNCONFIRM)', () => {
+    service.unconfirm('t1').subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/supply-tasks/t1/unconfirm`);
+    expect(request.request.method).toBe('POST');
+    request.flush({ _id: 't1', status: 'draft' });
+  });
+
   it('marks a task ordered', () => {
     service.markOrdered('t1').subscribe();
     const request = httpMock.expectOne(`${baseUrl}/supply-tasks/t1/ordered`);

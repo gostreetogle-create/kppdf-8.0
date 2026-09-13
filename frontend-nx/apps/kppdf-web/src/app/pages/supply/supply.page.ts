@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
   inject,
   signal,
 } from '@angular/core';
@@ -20,6 +21,8 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
+import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
 
 const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
   draft: 'Черновик',
@@ -262,7 +265,7 @@ function looksLikeObjectId(value: string): boolean {
                 <div class="text-sm text-muted-foreground tabular-nums" role="cell">
                   {{ row.createdAt ? fmtDate(row.createdAt) : '—' }}
                 </div>
-                <div class="flex items-center justify-end" role="cell" (click)="$event.stopPropagation()">
+                <div class="flex items-center justify-end gap-2" role="cell" (click)="$event.stopPropagation()">
                   @if (row.status === 'draft') {
                     <button
                       type="button"
@@ -275,6 +278,17 @@ function looksLikeObjectId(value: string): boolean {
                     </button>
                   }
                   @if (row.status === 'confirmed') {
+                    <button
+                      type="button"
+                      class="pi-outline-btn"
+                      (click)="onUnconfirm(row)"
+                      [disabled]="busyId() === row._id"
+                      [attr.data-test]="'supply-unconfirm-' + row._id"
+                      aria-label="Отменить подтверждение, вернуть в черновик"
+                      title="Отменить подтверждение, вернуть в черновик"
+                    >
+                      {{ busyId() === row._id ? '…' : 'В черновик' }}
+                    </button>
                     <button
                       type="button"
                       class="pi-outline-btn"
@@ -372,6 +386,8 @@ export class SupplyPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
 
   protected readonly statusFilter = signal<SupplyTaskStatus | ''>('');
   protected readonly orderFilterId = signal<string | null>(null);
@@ -523,18 +539,48 @@ export class SupplyPage {
       });
   }
 
+  /** TZ-NX-SUPPLY-TASK-UNCONFIRM ШАГ 3 — cheap accidental-click guard, same AlertDialog pattern as `confirmDirtyClose`. */
   protected onConfirm(row: SupplyTask): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Подтвердить задачу снабжения?',
+        description: 'После подтверждения задачу можно будет отметить «Заказано».',
+        confirmLabel: 'Подтвердить',
+        cancelLabel: 'Отмена',
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed) => {
+      if (!confirmed) return;
+      this.busyId.set(row._id);
+      this.supplyApi
+        .confirm(row._id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          this.busyId.set(null);
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error) || 'Не подтверждено');
+            return;
+          }
+          this.toast.success('Можно заказывать');
+          this.load();
+        });
+    });
+  }
+
+  /** TZ-NX-SUPPLY-TASK-UNCONFIRM — revert an accidental confirm back to draft. */
+  protected onUnconfirm(row: SupplyTask): void {
     this.busyId.set(row._id);
     this.supplyApi
-      .confirm(row._id)
+      .unconfirm(row._id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         this.busyId.set(null);
         if (!res.ok) {
-          this.toast.error(extractErrorMessage(res.error) || 'Не подтверждено');
+          this.toast.error(extractErrorMessage(res.error) || 'Не удалось вернуть в черновик');
           return;
         }
-        this.toast.success('Можно заказывать');
+        this.toast.success('Возвращено в черновик');
         this.load();
       });
   }

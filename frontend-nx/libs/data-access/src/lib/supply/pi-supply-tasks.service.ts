@@ -57,6 +57,11 @@ export class PiSupplyTasksService {
     return silentPost<SupplyTask>(this.http, `${this.baseUrl}/supply-tasks/${id}/confirm`, {});
   }
 
+  /** TZ-NX-SUPPLY-TASK-UNCONFIRM — revert an accidental confirm back to draft. */
+  unconfirm(id: string): Observable<SilentResult<SupplyTask>> {
+    return silentPost<SupplyTask>(this.http, `${this.baseUrl}/supply-tasks/${id}/unconfirm`, {});
+  }
+
   markOrdered(id: string): Observable<SilentResult<SupplyTask>> {
     return silentPost<SupplyTask>(this.http, `${this.baseUrl}/supply-tasks/${id}/ordered`, {});
   }

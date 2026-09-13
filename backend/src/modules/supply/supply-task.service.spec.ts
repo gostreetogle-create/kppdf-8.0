@@ -151,6 +151,44 @@ describe('SupplyTaskService (TZ-SUPPLY-301)', () => {
     expect(model.create).toHaveBeenCalledTimes(2);
   });
 
+  describe('unconfirm (TZ-NX-SUPPLY-TASK-UNCONFIRM)', () => {
+    it('reverts confirmed -> draft and clears confirmedBy/confirmedAt', async () => {
+      const { service, model } = createService();
+      const id = new Types.ObjectId().toString();
+      const doc = {
+        _id: id,
+        status: 'confirmed' as const,
+        confirmedBy: new Types.ObjectId(USER),
+        confirmedAt: new Date(),
+        save: jest.fn().mockImplementation(function (this: {
+          status: string;
+          confirmedBy?: Types.ObjectId;
+          confirmedAt?: Date;
+        }) {
+          return Promise.resolve(this);
+        }),
+      };
+      model.findOne.mockReturnValue(mockQuery(doc));
+
+      const res = await service.unconfirm(id);
+
+      expect(res.status).toBe('draft');
+      expect(res.confirmedBy).toBeUndefined();
+      expect(res.confirmedAt).toBeUndefined();
+    });
+
+    it.each(['draft', 'ordered', 'received'] as const)(
+      'rejects unconfirm from %s',
+      async (status) => {
+        const { service, model } = createService();
+        const id = new Types.ObjectId().toString();
+        model.findOne.mockReturnValue(mockQuery({ _id: id, status, save: jest.fn() }));
+
+        await expect(service.unconfirm(id)).rejects.toBeInstanceOf(BadRequestException);
+      },
+    );
+  });
+
   it('findById 404', async () => {
     const { service, model } = createService();
     model.findOne.mockReturnValue(mockQuery(null));

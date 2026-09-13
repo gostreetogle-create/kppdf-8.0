@@ -30,8 +30,8 @@ status: **IN_WORK_WAVE2**
 | 2.1 | `tasks/_archive/2026-09/TZ-NX-MODULE-LIST-POPULATE-PHOTOS.done.md` | DONE (`31edb081`) |
 | 2.2 | `tasks/_archive/2026-09/TZ-NX-CATEGORY-DUPLICATE-SLUG-409.done.md` | DONE (`e2c40bb8`) |
 | 2.3 | `tasks/_archive/2026-09/TZ-NX-SORTORDER-EMPTY-MIN.done.md` | DONE (`15a1febb`) |
-| 2.4 | `tasks/_ready/TZ-NX-SUPPLY-TASK-UNCONFIRM.md` | CLAIMED |
-| 2.5 | `tasks/_ready/TZ-NX-DOCSTUDIO-ISSUER-SELECT.md` | PENDING |
+| 2.4 | `tasks/_archive/2026-09/TZ-NX-SUPPLY-TASK-UNCONFIRM.done.md` | DONE (SHA backfill pending) |
+| 2.5 | `tasks/_ready/TZ-NX-DOCSTUDIO-ISSUER-SELECT.md` | CLAIMED |
 
 Промпт: `tasks/_ready/PROMPT-CLAUDE-SUCCESSORS-WAVE2.md` — **не стартовать** до WAVE1_DONE.
 
@@ -60,4 +60,6 @@ status: **IN_WORK_WAVE2**
 2026-09-13T20:00:00Z | 2.3 SORTORDER-EMPTY-MIN | CLAIMED
 2026-09-13T20:35:00Z | 2.3 SORTORDER-EMPTY-MIN | DONE | commit=15a1febb | live evidence: POST /table-templates sortOrder:"" -> 400 exact PO message; fixed shared doc-studio-payloads.ts (omits empty/non-finite sortOrder, closes table-template+text-block at once) + BE Transform belt on CreateTableTemplateDto; live re-verify 400->201, sortOrder omitted, -1 still rejected; other DTOs from preflight list not audited, left as backlog per known_limitation
 2026-09-13T20:35:00Z | 2.4 SUPPLY-TASK-UNCONFIRM | CLAIMED
+2026-09-13T21:15:00Z | 2.4 SUPPLY-TASK-UNCONFIRM | DONE | commit=(backfill pending) | STATUS_FLOW confirmed->draft edge + unconfirm() (clears confirmedBy/At) + POST .../unconfirm; FE "В черновик" button + Подтвердить now gated behind AlertDialogComponent (reused confirmDirtyClose pattern, no native confirm); live UI round-trip + curl 400-from-draft both confirmed
+2026-09-13T21:15:00Z | 2.5 DOCSTUDIO-ISSUER-SELECT | CLAIMED
 ```

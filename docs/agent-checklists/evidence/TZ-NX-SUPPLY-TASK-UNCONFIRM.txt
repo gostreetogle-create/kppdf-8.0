@@ -1,0 +1,109 @@
+=== ШАГ 1: BE reverse ===
+
+`STATUS_FLOW['confirmed']` extended from `['ordered']` to `['ordered', 'draft']`
+— `assertTransition()` (already used by `confirm`/`markOrdered`/`markReceived`)
+now also permits `confirmed -> draft`, reusing the exact same guard mechanism
+and error message format instead of a bespoke check.
+
+New `SupplyTaskService.unconfirm(id, organizationId?)`:
+  - `assertTransition(doc.status, 'draft')` — only succeeds from `confirmed`.
+  - `doc.status = 'draft'`, `doc.confirmedBy = undefined`,
+    `doc.confirmedAt = undefined`, `doc.save()` (same unset-via-undefined
+    pattern already used elsewhere in the codebase, e.g.
+    `product-module.service.ts`'s `mainPhotoId`).
+
+New `POST /api/supply-tasks/:id/unconfirm` controller endpoint, same
+`@Roles('admin','manager')` + `@AuditAction` shape as `confirm`/`ordered`/`received`.
+
+=== ШАГ 2: FE ===
+
+`PiSupplyTasksService.unconfirm(id)` — `POST /supply-tasks/:id/unconfirm`,
+mirrors `confirm()`.
+
+`supply.page.ts`: on a `confirmed` row, a new outline button **"В черновик"**
+(`data-test="supply-unconfirm-<id>"`, `aria-label`/`title` "Отменить
+подтверждение, вернуть в черновик") sits next to "Заказано" — `onUnconfirm()`
+calls the new service method and reloads on success.
+
+=== ШАГ 3: UX accidental-confirm guard ===
+
+`onConfirm()` no longer calls the API directly on click. It opens
+`AlertDialogComponent` (same `dialog.open()` + `onDialogCloseOnce()` pattern
+as `confirmDirtyClose` in `dirty-dialog.guard.ts` — the project's existing
+no-native-`confirm()` canon) with title "Подтвердить задачу снабжения?" /
+confirmLabel "Подтвердить" / cancelLabel "Отмена", and only calls
+`supplyApi.confirm()` if the dialog resolves `true`.
+
+=== ШАГ 4: Docs ===
+
+`docs/pages/supply.page.md`:
+  - API table: new `POST /api/supply-tasks/:id/unconfirm` row.
+  - NX data-access table: new `unconfirm(id)` row.
+  - New TZ-NX-SUPPLY-TASK-UNCONFIRM bullet under "UI (`supply.page.ts`)"
+    explaining the reverse transition, the new button, and the AlertDialog
+    guard — including the explicit known_limitation that `ordered`/`received`
+    have no reverse edge in this TZ.
+  - Tests bullet + TZ reference table updated.
+
+=== Specs ===
+
+BE `supply-task.service.spec.ts` (+4 tests): happy path (confirmed -> draft,
+confirmedBy/At cleared); `it.each` rejecting from draft/ordered/received.
+
+FE `pi-supply-tasks.service.spec.ts` (+1 test): `unconfirm('t1')` posts to
+the right URL.
+
+FE `supply.page.spec.ts`: rewrote the existing "confirms a task" test to go
+through a mocked `AlertDialogComponent` (added `PiDialogService` mock,
+reactive `DialogRef` mock matching the pattern already proven in
+`module-form-dialog.component.spec.ts`); added a cancel-path test (dialog
+resolves `false` -> `confirm()` never called); added two tests for the new
+"В черновик" button (shown only on `confirmed` rows, calls `unconfirm()` and
+reloads).
+
+=== Live verification (local dev, admin/admin123) ===
+
+Full UI flow on `/supply?view=registry`:
+  1. Created a draft task ("Evidence unconfirm test").
+  2. Clicked "Подтвердить" -> AlertDialog appeared with the expected title
+     (confirmed NOT a silent one-click anymore).
+  3. Confirmed the dialog -> status became "Подтверждено"; "В черновик"
+     button appeared next to "Заказано".
+  4. Clicked "В черновик" -> status went back to "Черновик"; "Подтвердить"
+     reappeared (re-confirmable).
+  No page errors throughout. Task deleted immediately after
+  (`DELETE /api/supply-tasks/:id` -> 204).
+
+Direct curl reproduction of ACCEPT #3 (reject from non-confirmed):
+  Created a fresh draft task -> `POST /supply-tasks/:id/unconfirm` ->
+  400 `{"message":"Нельзя перевести задачу снабжения из «draft» в «draft»"}`
+  (same message format as every other `assertTransition` rejection in this
+  service). Task deleted immediately after.
+
+=== known_limitation (per TZ, not expanded) ===
+
+`ordered -> confirmed` and `received -> …` reverse transitions were NOT
+added — no PO complaint about those stages, and `received` may later need
+to coordinate with a warehouse-movement undo on a separate contour per the
+TZ's own note. Left exactly as scoped.
+
+=== Gates (verbatim summary) ===
+
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest supply-task.service -> 11/11 PASS (was 7, +4 new)
+BE jest (full) -> 136 suites / 1357 tests PASS (was 1353, +4 new)
+BE eslint (scoped: supply-task.service.ts/.spec.ts, supply-task.controller.ts)
+  -> 0 problems
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest supply.page.spec.ts -> 21/21 PASS (was 17)
+FE jest pi-supply-tasks.service.spec.ts (data-access project) -> 9/9 PASS (was 8)
+FE jest kppdf-web (full) -> 125 suites / 900 passed + 7 skipped (907 total)
+  PASS (was 904)
+FE jest data-access (full) -> 25 suites / 134 tests PASS (was 133)
+FE eslint (scoped: supply.page.ts/.spec.ts, pi-supply-tasks.service.ts/.spec.ts)
+  -> 0 problems
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2)
+FE nx build kppdf-web (last) -> exit 0, same pre-existing unrelated warnings
+Live Playwright/curl verification -> PASS (full confirm-dialog + unconfirm
+  round-trip; 400 rejection from draft confirmed via curl)

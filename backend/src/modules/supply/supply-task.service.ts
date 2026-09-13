@@ -18,7 +18,10 @@ import {
 
 const STATUS_FLOW: Record<SupplyTaskStatus, SupplyTaskStatus[]> = {
   draft: ['confirmed'],
-  confirmed: ['ordered'],
+  /** TZ-NX-SUPPLY-TASK-UNCONFIRM — `draft` is the one reverse edge: an accidental
+   * confirm is cheap to undo before the task reaches `ordered` (no warehouse
+   * movement to unwind at this stage). `ordered`/`received` stay one-way. */
+  confirmed: ['ordered', 'draft'],
   ordered: ['received'],
   received: [],
 };
@@ -299,6 +302,24 @@ export class SupplyTaskService {
     doc.status = 'confirmed';
     doc.confirmedBy = new Types.ObjectId(userId);
     doc.confirmedAt = new Date();
+    return doc.save();
+  }
+
+  /**
+   * TZ-NX-SUPPLY-TASK-UNCONFIRM — revert an accidental «Подтвердить» back to
+   * `draft`, clearing the confirm audit fields. Only from `confirmed`
+   * (`assertTransition` reuses the same `STATUS_FLOW` table as the forward
+   * transitions) — `ordered`/`received` have no reverse edge here by design.
+   */
+  async unconfirm(
+    id: string,
+    organizationId?: string | null,
+  ): Promise<SupplyTaskDocument> {
+    const doc = await this.findById(id, organizationId);
+    this.assertTransition(doc.status, 'draft');
+    doc.status = 'draft';
+    doc.confirmedBy = undefined;
+    doc.confirmedAt = undefined;
     return doc.save();
   }
 
