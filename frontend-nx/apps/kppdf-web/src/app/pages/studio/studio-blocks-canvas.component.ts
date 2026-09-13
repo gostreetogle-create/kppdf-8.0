@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -146,8 +146,8 @@ import {
                           @for (cell of row; track $index; let ci = $index) {
                             @if (isPhotoColumnAt(block, ci)) {
                               <td class="table-preview__photo-cell">
-                                @if (cell) {
-                                  <img [src]="cell" alt="" class="table-preview__photo" [ngStyle]="photoCellStyle(block, cell)" />
+                                @if (cell && !isPhotoLoadFailed(cell)) {
+                                  <img [src]="cell" alt="" class="table-preview__photo" [ngStyle]="photoCellStyle(block, cell)" (error)="onPhotoLoadError(cell)" />
                                 } @else {
                                   <span class="table-preview__photo-empty">Нет фото</span>
                                 }
@@ -365,6 +365,25 @@ export class StudioBlocksCanvasComponent {
   isPhotoColumnAt(block: StudioBlock, columnIndex: number): boolean {
     const column = this.tableColumns(block)[columnIndex];
     return column ? isStudioPhotoColumnKey(column.key) : false;
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG — last-resort client fallback:
+   * the backend already drops a verified-missing file to `''` (S48/S-SMOKE),
+   * but a URL that was valid when resolved can still fail to load (upload
+   * mid-flight, dev-server restart) with no further re-render to catch it.
+   * Once a URL 404s here it stays "Нет фото" for this component instance —
+   * matches the empty-cell state exactly, never a raw broken-image icon.
+   */
+  private readonly failedPhotoUrls = signal<ReadonlySet<string>>(new Set());
+
+  isPhotoLoadFailed(url: string): boolean {
+    return this.failedPhotoUrls().has(url);
+  }
+
+  onPhotoLoadError(url: string): void {
+    if (this.failedPhotoUrls().has(url)) return;
+    this.failedPhotoUrls.update((prev) => new Set(prev).add(url));
   }
 
   /**

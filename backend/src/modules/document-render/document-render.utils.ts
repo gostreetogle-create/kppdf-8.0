@@ -31,6 +31,20 @@ export function documentPublicOrigin(): string {
   }
 }
 
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG — single source of truth for the
+ * uploads root, mirroring `photos/image-upload.options.ts`'s
+ * `UPLOAD_DIR = process.env.UPLOAD_DIR ?? './uploads'` (multer's write
+ * path). Every reader of `/uploads/*` files (this PDF inliner, the studio
+ * table's file-existence check) must resolve the same directory multer
+ * wrote to — a previous hardcoded `join(process.cwd(), 'uploads')` here and
+ * in `studio-data-resolver.ts` only coincided with the write path when
+ * `UPLOAD_DIR` was unset.
+ */
+export function resolveUploadsRoot(): string {
+  return resolve(process.env.UPLOAD_DIR ?? join(process.cwd(), 'uploads'));
+}
+
 const SAFE_UPLOAD_URL_RE = /^\/uploads\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
 
 const UPLOAD_EXT_MIME: Record<string, string> = {
@@ -64,7 +78,7 @@ export async function inlineLocalUploadsForPdf(html: string): Promise<string> {
   const urls = collectLocalUploadUrls(html);
   if (urls.length === 0) return html;
 
-  const uploadsRoot = resolve(join(process.cwd(), 'uploads'));
+  const uploadsRoot = resolveUploadsRoot();
   const replacements = new Map<string, string>();
 
   await Promise.all(

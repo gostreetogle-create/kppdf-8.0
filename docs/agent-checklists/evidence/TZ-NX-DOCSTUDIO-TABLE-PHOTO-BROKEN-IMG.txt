@@ -1,0 +1,97 @@
+=== ШАГ 0: Live evidence (local stand, Mongo localhost:27017/kppdf) ===
+
+--- Mongo: product SKU 356 / name 021 ---
+products: {"_id":"6a94388aeefec33de256ac35","name":"021","sku":"356",
+  "mainPhotoId":"6aa5ac581b6e6163bba2f802","photoIds":["6aa5ac581b6e6163bba2f802"]}
+
+--- Mongo: Photo doc for mainPhotoId ---
+{"_id":"6aa5ac581b6e6163bba2f802","storageUrl":"/uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png",
+  "originalFilename":"Снимок экрана 2026-08-02 210415.png","variant":"original","mimeType":"image/png",
+  "sizeBytes":66004,"deletedAt":null,"frame":{"fit":"contain","posX":50,"posY":50},
+  "createdAt":"2026-09-12T19:47:36.541Z"}
+
+--- Disk: backend/uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png ---
+-rw-r--r-- 1 User 197121 66004 Sep 12 22:47 uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png
+FILE EXISTS on disk, matches Photo.storageUrl exactly.
+
+--- Direct HTTP fetch, backend :3000 (started locally, cwd=backend/) ---
+GET http://localhost:3000/uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png
+status=200 content-type=image/png size=66004
+
+CONCLUSION for the exact SKU 356/021 row: file genuinely exists, backend serves it
+correctly (200), and `localUploadFileExists`'s existence check (cwd=backend/, no
+UPLOAD_DIR override in this run) would find it too — this exact row is NOT
+currently reproducing a broken icon in the studio table CANVAS. The PO's original
+screenshot is most likely explained by the finding below (vitrina), not a live
+defect in the canvas/resolver path this TZ's conflict keys cover.
+
+=== Code-path audit: UPLOAD_DIR consistency (TZ Step 1, ACCEPT #4) ===
+
+Write path (multer): backend/src/modules/photos/image-upload.options.ts:6
+  `export const UPLOAD_DIR = process.env.UPLOAD_DIR ?? './uploads';`
+
+Read/check paths BEFORE this fix (two separate hardcoded copies, ignoring
+UPLOAD_DIR entirely):
+  - studio-data-resolver.ts `localUploadFileExists`: `resolve(join(process.cwd(), 'uploads'))`
+  - document-render.utils.ts `inlineLocalUploadsForPdf`: `resolve(join(process.cwd(), 'uploads'))`
+  - main.ts static serve: `join(process.cwd(), 'uploads')` (left as-is — same computation
+    as the new shared helper when UPLOAD_DIR is unset; not touched, no bug there)
+
+In THIS project's actual deploy (docker-compose.prod.yml), UPLOAD_DIR is never set as
+an env var, so `./uploads` (write) and `process.cwd()/uploads` (checks) always
+coincided in practice — this was a LATENT correctness bug (two independent
+hardcoded copies of the same assumption), not the active trigger for the PO's
+screenshot, but a real inconsistency per the TZ's own ACCEPT #4 and worth fixing
+for the next environment that does set UPLOAD_DIR (already exercised by
+photos.service.spec.ts / contract.service.spec.ts for other modules).
+
+Fix: single `resolveUploadsRoot()` helper in document-render.utils.ts
+(`resolve(process.env.UPLOAD_DIR ?? join(process.cwd(), 'uploads'))`), used by both
+the PDF inliner and the resolver's existence check. New BE spec proves a file placed
+only under a custom UPLOAD_DIR (not cwd/uploads) is now found.
+
+=== Live browser check (Playwright, local dev, admin/admin123 — documented local
+    dev seed login, not a protected secret) ===
+
+Studio document 6aa5b1221b6e6163bba2fc12 (dataSet table-6aa6639afe0e7e5bfab17b1c,
+catalog-products, catalogSelectionCount:2, includes SKU 356/021).
+
+Network events (uploads + api only):
+  200 /api/studio-documents/6aa5b1221b6e6163bba2fc12
+  200 /api/studio-documents/6aa5b1221b6e6163bba2fc12/blocks
+  200 /api/studio-documents/6aa5b1221b6e6163bba2fc12/data-sets/table-6aa6639afe0e7e5bfab17b1c
+  200 /uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png   <- SKU 356/021, inside
+                                                              <pi-studio-blocks-canvas> (THIS TZ's scope)
+  404 x22 other /uploads/*.png|webp                        <- ALL inside
+                                                              <pi-studio-data-vitrina>/<app-pi-showcase-card>
+                                                              (catalog PICKER, NOT canvas — different
+                                                              component, NOT in this TZ's conflict keys)
+
+img element audit (23 total): the ONE img inside `pi-studio-blocks-canvas` loaded
+correctly (naturalWidth 1374, complete:true) — the SAME SKU 356/021 photo. The 22
+images inside `pi-studio-data-vitrina` (catalog browsing/selection UI) all show
+naturalWidth:0, complete:false (broken icon) with matching 404 responses.
+
+Root cause of the vitrina 404s (traced, NOT fixed here — out of this TZ's conflict
+keys): `studio-data-vitrina.component.ts`'s own client-side `photoUrl()` method
+(~L444) builds the thumbnail URL directly from `item.photoIds`/`item.mainPhotoId`
+as returned by the product/module/material list endpoint(s), with NO
+file-existence check at all — the same class of bug TABLE-PHOTO-SMOKE fixed for
+the table canvas/resolver path (78% of local Photo docs are orphaned per that
+TZ's own audit), but in a completely different component/endpoint this TZ was
+never scoped to touch. WARN + successor filed:
+tasks/_ready/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.md
+
+=== Gates (verbatim summary; full logs not retained beyond this run) ===
+
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest studio-data-resolver document-render.utils -> 2 suites / 31 tests PASS
+BE jest (full) -> 135 suites / 1330 tests PASS
+BE eslint (scoped: studio-data-resolver.ts/.spec.ts, document-render.utils.ts) -> 0 problems
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest studio-blocks-canvas.component.spec.ts -> 12/12 PASS (incl. new onerror-fallback test)
+FE jest (full) -> 123 suites / 852 passed + 7 skipped (859 total) PASS
+FE eslint (scoped: studio-blocks-canvas.component.ts/.spec.ts) -> 0 errors, 19 warnings
+  (pre-existing no-non-null-assertion convention, same pattern as existing spec file)
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17, resolved since baseline: 2)
+nx build kppdf-web (last) -> exit 0, same 2 pre-existing unrelated budget warnings

@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { access } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { Product, ProductDocument } from '../product/product.schema';
 import { ProductModule, ProductModuleDocument } from '../product-module/product-module.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
@@ -14,7 +14,7 @@ import type { OrderItem } from '../order/order.schema';
 import { OrderService } from '../order/order.service';
 import type { TemplateBlockDocument } from '../template-block/template-block.schema';
 import type { StudioDocumentDocument } from './studio-document.schema';
-import { escapeHtmlValue } from '../document-render/document-render.utils';
+import { escapeHtmlValue, resolveUploadsRoot } from '../document-render/document-render.utils';
 
 export type DataSetSourceType =
   | 'manual'
@@ -583,7 +583,7 @@ export class StudioDataResolverService {
    */
   private async localUploadFileExists(url: string): Promise<boolean> {
     if (!url.startsWith('/uploads/') || url.includes('..')) return false;
-    const uploadsRoot = resolve(join(process.cwd(), 'uploads'));
+    const uploadsRoot = resolveUploadsRoot();
     const filePath = resolve(uploadsRoot, url.slice('/uploads/'.length));
     if (relative(uploadsRoot, filePath).startsWith('..')) return false;
     try {

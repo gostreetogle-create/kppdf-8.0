@@ -228,6 +228,27 @@ describe('StudioBlocksCanvasComponent — photo column renders image or empty st
     expect(firstRowPhotoCell.textContent?.trim()).toBe('');
   });
 
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG — a URL that resolved as valid
+   * server-side can still fail to load client-side (upload mid-flight, dev
+   * server restart); the browser's default broken-image icon must never be
+   * the end state on canvas, only the same «Нет фото» as a genuinely empty
+   * cell.
+   */
+  it('falls back to «Нет фото» when the <img> fails to load, instead of a broken-image icon', () => {
+    createCanvas([TABLE_WITH_PHOTO]);
+    const host: HTMLElement = fixture.nativeElement;
+    const firstRowPhotoCell = host.querySelectorAll('tbody tr')[0]!.querySelectorAll('td')[1]!;
+    const img = firstRowPhotoCell.querySelector('img.table-preview__photo');
+    expect(img).not.toBeNull();
+
+    img!.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(firstRowPhotoCell.querySelector('img')).toBeNull();
+    expect(firstRowPhotoCell.querySelector('.table-preview__photo-empty')?.textContent).toBe('Нет фото');
+  });
+
   it('renders «Нет фото» for an empty photo cell, not a blank cell or a stray digit', () => {
     createCanvas([TABLE_WITH_PHOTO]);
     const host: HTMLElement = fixture.nativeElement;

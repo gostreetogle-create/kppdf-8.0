@@ -514,6 +514,50 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
 
       expect(resolved[0]).toMatchObject({ rows: [['Стол', '']] });
     });
+
+    it('finds a real file under a custom UPLOAD_DIR instead of only checking cwd/uploads (TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG)', async () => {
+      const previousUploadDir = process.env.UPLOAD_DIR;
+      const customDir = join(process.cwd(), 'uploads-custom-test-dir');
+      await mkdir(customDir, { recursive: true });
+      await writeFile(join(customDir, 'kreslo.webp'), Buffer.from([0x52, 0x49, 0x46, 0x46]));
+      process.env.UPLOAD_DIR = customDir;
+      try {
+        const product = new Types.ObjectId();
+        const photo = new Types.ObjectId();
+        const productModel = {
+          find: jest.fn().mockReturnValue({
+            lean: jest.fn().mockReturnThis(),
+            exec: jest.fn().mockResolvedValue([
+              { _id: product, name: 'Кресло', sku: 'P-2', unit: 'шт', listPrice: 900, mainPhotoId: photo },
+            ]),
+          }),
+        };
+        const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+        const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: photo, storageUrl: '/uploads/kreslo.webp' }]) }) };
+        const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+        const blockWithPhoto = {
+          ...tableBlock,
+          settings: {
+            tableTemplateColumns: [
+              { key: 'name', label: 'Наименование' },
+              { key: 'photo', label: 'Фото' },
+            ],
+          },
+        } as unknown as TemplateBlockDocument;
+
+        const resolved = await resolver.resolveDataSets(
+          { organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never,
+          [blockWithPhoto],
+          true,
+        );
+
+        expect(resolved[0]).toMatchObject({ rows: [['Кресло', '/uploads/kreslo.webp']] });
+      } finally {
+        if (previousUploadDir === undefined) delete process.env.UPLOAD_DIR;
+        else process.env.UPLOAD_DIR = previousUploadDir;
+        await rm(customDir, { recursive: true, force: true });
+      }
+    });
   });
 
   describe('tableQtyOverrides (TZ-NX-DOCSTUDIO-TABLE-LINE-QTY)', () => {
