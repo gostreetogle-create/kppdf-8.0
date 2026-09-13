@@ -2,6 +2,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Types } from 'mongoose';
 import {
+  columnWidthPercents,
   ensureTableDataSetsFromBlocks,
   injectTableContent,
   mapLineItemsToRows,
@@ -130,6 +131,52 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     );
     expect(html).not.toContain('<script>');
     expect(html).toContain('&quot;');
+  });
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY — `col.width` was saved by the
+   * Свойства column editor but never read by the renderer (always equal
+   * split) — a dead control the operator could turn with zero visible
+   * effect. `columnWidthPercents` + its use in `renderStudioTableHtml`'s
+   * th/td close that gap.
+   */
+  describe('columnWidthPercents (TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY)', () => {
+    it('no widths set on any column: falls back to the previous equal split', () => {
+      expect(columnWidthPercents([{ key: 'a' }, { key: 'b' }, { key: 'c' }])).toEqual([33, 33, 34]);
+    });
+
+    it('explicit widths: scales proportionally to sum to exactly 100', () => {
+      expect(columnWidthPercents([{ key: 'a', width: 60 }, { key: 'b', width: 40 }])).toEqual([60, 40]);
+    });
+
+    it('explicit widths that do not already sum to 100 are scaled proportionally, not used raw', () => {
+      // 20 + 20 -> 50/50, not left at 20/20 (which would leave 60% unaccounted for).
+      expect(columnWidthPercents([{ key: 'a', width: 20 }, { key: 'b', width: 20 }])).toEqual([50, 50]);
+    });
+
+    it('clamps an out-of-range width into [1,100] before scaling', () => {
+      const percents = columnWidthPercents([{ key: 'a', width: 500 }, { key: 'b', width: 0 }]);
+      expect(percents[0]).toBeGreaterThan(percents[1]!);
+      expect(percents[0]! + percents[1]!).toBe(100);
+    });
+
+    it('empty columns array returns an empty array', () => {
+      expect(columnWidthPercents([])).toEqual([]);
+    });
+  });
+
+  it('renderStudioTableHtml applies explicit column widths to both th and td, not an equal split', () => {
+    const html = renderStudioTableHtml(
+      [
+        { key: 'name', label: 'Наименование', width: 70 },
+        { key: 'qty', label: 'Кол-во', width: 30 },
+      ],
+      [['Стол', '2']],
+    );
+    expect(html).toContain('<th scope="col" style="text-align:left;width:70%">');
+    expect(html).toContain('<th scope="col" style="text-align:left;width:30%">');
+    expect(html).toContain('<td style="text-align:left;width:70%">Стол</td>');
+    expect(html).toContain('<td style="text-align:left;width:30%">2</td>');
   });
 
   it('renders subtotal and VAT footer for sum columns', () => {

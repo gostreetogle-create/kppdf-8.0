@@ -332,6 +332,21 @@ describe('StudioTablePropertiesComponent — column structure unlock', () => {
     const added = patch.tableTemplateColumns.at(-1)!;
     expect(added).toEqual({ key: 'qty', label: 'Количество', type: 'number', width: 20, align: 'right' });
   });
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY — the width field had no label at
+   * all before (only key/type/align had a placeholder/select to hint at
+   * their purpose); a bare number input reads as decoration once it turns
+   * out to have zero visible effect, which this TZ also fixes at the
+   * render layer (canvas/PDF).
+   */
+  it('the width input has an accessible label + a column-editor hint that it is a % share', () => {
+    create(TABLE_WITH_TEMPLATE);
+    const host: HTMLElement = fixture.nativeElement;
+    const widthInput = host.querySelector<HTMLInputElement>('[data-test="studio-table-col-width-0"]')!;
+    expect(widthInput.getAttribute('aria-label')).toBe('Ширина, %');
+    expect(host.querySelector('[data-test="studio-table-width-hint"]')?.textContent).toContain('сумма ≈ 100%');
+  });
 });
 
 /**

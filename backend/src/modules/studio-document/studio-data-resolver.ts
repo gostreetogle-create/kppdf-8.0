@@ -33,7 +33,38 @@ export type StudioTableColumn = {
   label?: string;
   type?: string;
   align?: string;
+  width?: number;
 };
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY — `col.width` (1-100, meant as a %
+ * share of the table) used to be saved by the Свойства column editor but
+ * never read by the renderer (`renderStudioTableHtml` always split columns
+ * equally) — a dead control the operator could turn without any visible
+ * effect. Clamps each raw width to [1,100]; if none are set at all (sum 0,
+ * the common case for existing tables), falls back to the previous
+ * equal-split behavior instead of dividing by a zero sum. Otherwise scales
+ * proportionally to 100, the last column absorbing the rounding remainder
+ * so the percentages always sum to exactly 100.
+ */
+export function columnWidthPercents(columns: readonly StudioTableColumn[]): number[] {
+  const n = columns.length;
+  if (n === 0) return [];
+  const raw = columns.map((col) =>
+    typeof col.width === 'number' && Number.isFinite(col.width) ? Math.min(100, Math.max(1, col.width)) : 0,
+  );
+  const sum = raw.reduce((a, b) => a + b, 0);
+  if (sum <= 0) {
+    const equal = Math.round(100 / n);
+    const percents = new Array(n).fill(equal);
+    percents[n - 1] = 100 - equal * (n - 1);
+    return percents;
+  }
+  const scaled = raw.map((w) => Math.round((w / sum) * 100));
+  const total = scaled.reduce((a, b) => a + b, 0);
+  scaled[n - 1] = Math.max(1, (scaled[n - 1] ?? 0) + (100 - total));
+  return scaled;
+}
 
 type LineItem = {
   productName?: string;
@@ -189,11 +220,11 @@ export function renderStudioTableHtml(
   if (columns.length === 0) {
     return '<p class="pi-empty-state">Нет описанных колонок.</p>';
   }
-  const width = Math.round(100 / columns.length);
+  const widths = columnWidthPercents(columns);
   const head = columns
     .map(
-      (col) =>
-        `<th scope="col" style="text-align:${col.align ?? 'left'};width:${width}%">${escapeHtmlValue(col.label ?? col.key)}</th>`,
+      (col, idx) =>
+        `<th scope="col" style="text-align:${col.align ?? 'left'};width:${widths[idx]}%">${escapeHtmlValue(col.label ?? col.key)}</th>`,
     )
     .join('');
   const body =
@@ -213,7 +244,7 @@ export function renderStudioTableHtml(
                       photoOptions?.maxHeightPx,
                     )
                   : escapeHtmlValue(value);
-                return `<td style="text-align:${column.align ?? 'left'}">${cellContent}</td>`;
+                return `<td style="text-align:${column.align ?? 'left'};width:${widths[idx]}%">${cellContent}</td>`;
               })
               .join('');
             return `<tr>${cells}</tr>`;

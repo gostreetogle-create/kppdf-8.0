@@ -114,3 +114,95 @@ real Mongo, document 6aa5b1221b6e6163bba2fc12):
 Not touched: BE `studio-document.service.ts`/`.controller.ts` (no BE bug found
 in either B round-trip or template-lookup — TableTemplate list() already
 supports client-side filtering, no new endpoint needed).
+
+=== ЭТАП C — dead controls / col-width apply (absorbs TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY, 2026-09-13) ===
+
+`col.width` (1-100) was saved by the Свойства column editor since it existed but
+never read anywhere: BE `renderStudioTableHtml` always did `Math.round(100 /
+columns.length)` (pure equal split); canvas `<th>`/`<td>` had no width styling
+at all. A genuinely dead control per the necessity matrix ("либо apply, либо
+убрать поле").
+
+Fix (apply, not remove — TZ's own preferred branch when apply is feasible):
+- `columnWidthPercents(columns)` — new helper, mirrored identically on BE
+  (`studio-data-resolver.ts`) and FE (`studio-table-defaults.ts`): clamps each
+  `col.width` to [1,100], falls back to the previous equal-split when no column
+  has a width set at all (sum 0 — the common case for existing tables, so no
+  silent behavior change for anyone who never touched this field), otherwise
+  scales proportionally to sum to exactly 100 (last column absorbs the
+  rounding remainder).
+- BE `renderStudioTableHtml`: `th`/`td` `style="...;width:${pct}%"` from the
+  helper (PDF/preview HTML).
+- FE canvas (`studio-blocks-canvas.component.ts`): `[style.width.%]` on
+  `th`/`td` via a new `colWidthPct(block, index)` method; added `table-layout:
+  fixed` to `.table-preview table` (previously auto layout, which would have
+  let long cell content silently override the percentages — matches BE's own
+  inline `table-layout:fixed`, canvas and PDF/preview now agree).
+- Properties UI: width input gets `aria-label`/`title="Ширина, %"` +
+  `placeholder="%"`, plus one hint line under "Структура колонок": "Ширина
+  колонок, % — сумма ≈ 100%". No new layout — reused the existing `.table-props__hint`
+  style.
+
+≤1 active template assert (necessity matrix: "Несколько одинаковых «Продукты»
+active → DELETE data; при checkout — assert ≤1 active per canon name/dataSource"):
+live Mongo check (local dev, same DB as this whole wave's evidence) —
+4 total `table_templates` documents (2 inactive, presumably the old duplicates
+from the prior KINDS-DISCOVER migration), exactly 2 ACTIVE, grouped by
+`dataSource||name`: 0 duplicate groups. Invariant currently holds; no code
+change needed (this is a data-hygiene assertion the earlier migration already
+enforced, not a live bug) — recorded here as the requested checkout evidence,
+not re-litigated as a new runtime feature.
+
+Gates:
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest --silent studio-data-resolver -> 34/34 PASS (28 existing + 6 new:
+  columnWidthPercents equal-split/proportional/clamp/empty-array, renderStudioTableHtml
+  applies widths to both th and td)
+BE jest --silent (full) -> 135 suites / 1336 tests PASS
+BE eslint (scoped: studio-data-resolver.ts/.spec.ts) -> 0 problems
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest studio-blocks-canvas.component.spec.ts -> 14/14 PASS (12 existing + 2
+  new: explicit 70/30 widths applied to th+td, no-width falls back to 50/50
+  not left unstyled)
+FE jest studio-table-properties.component.spec.ts -> 21/21 PASS (20 existing +
+  1 new: aria-label + hint present)
+FE jest (full) -> 125 suites / 885 passed + 7 skipped (892 total) PASS
+FE eslint (scoped: studio-table-defaults.ts, canvas + its spec, properties +
+  its spec) -> 0 errors, 45 pre-existing-pattern warnings
+pnpm architecture:check (repo root) -> PASS
+nx build kppdf-web (last) -> exit 0, same 2 pre-existing unrelated budget warnings
+
+Live browser evidence (Playwright, local dev, admin/admin123, real backend):
+changed the first column's width from 10% to 85% on the live wired table via
+the Свойства input -> the actual rendered `<th>` on canvas measured 20.08px
+wide before, 116.5px after (~5.8x) -> restored to 10 afterward. Confirms
+ACCEPT #1 ("колонка заметно шире") against the real DOM, not just a jsdom
+style-property assertion.
+
+Not touched: photo pipeline, category forms, drag-resize columns on A4 (out of
+scope per COL-WIDTH-APPLY's own "НЕ ИЗМЕНЯТЬ" — only the Свойства % field),
+wipe/deploy.
+
+=== Master TZ — Executor report ===
+
+All 3 stages (A/B/C) DONE. Absorbed TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY
+entirely into этап C — that standalone TZ file in tasks/_ready/2026-09-13-studio-ops/
+should NOT be claimed/executed separately going forward (superseded, per this
+TZ's own header: "Поглощает / заменяет ... TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY").
+
+ACCEPT (модуль «готово» по таблицам) — final check against the TZ's own criteria:
+1. Happy path без обучения: Insert -> колонки канона из реестра -> строки из
+   Выбрано. PASS (этап B; live-verified the real registry template now matches).
+2. В Свойствах нет контрола, который повторяет Insert без статуса. PASS (этап A).
+3. manual<->catalog round-trip восстанавливает строки при непустом Выбрано.
+   PASS (этап B fixes B1-B3, live-verified persistence).
+4. Нет видимого width без эффекта (apply or removed). PASS (этап C — applied,
+   live-verified visually).
+5. page.md + specs + nx build; checklist WAVE с этапами A/B/C DONE. PASS (this
+   file + WAVE-2026-09-13-STUDIO-OPS.md).
+
+Regression check (wave-1 features, per this wave's own "не ломать" instruction):
+addPage write-queue, Selected «Изменить» jump, canvas photo onerror — all
+still covered by their own existing specs, all green across every FE full-suite
+run this wave (125 suites passed each time, same suite count as before this
+TZ started plus this TZ's own new specs).

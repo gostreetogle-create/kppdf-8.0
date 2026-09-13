@@ -141,6 +141,7 @@ import {
             + Колонка
           </app-pi-button>
         </div>
+        <p class="table-props__hint" data-test="studio-table-width-hint">Ширина колонок, % — сумма ≈ 100%</p>
         @if (missingStandardFields(block).length > 0) {
           <div class="table-props__quick-add" data-test="studio-table-quick-add">
             @for (field of missingStandardFields(block); track field.key) {
@@ -192,6 +193,9 @@ import {
               type="number"
               min="1"
               max="100"
+              placeholder="%"
+              aria-label="Ширина, %"
+              title="Ширина, %"
               [ngModel]="col.width"
               (ngModelChange)="updateColumnField(i, 'width', $event)"
               [disabled]="disabled || !columnsEditable()"

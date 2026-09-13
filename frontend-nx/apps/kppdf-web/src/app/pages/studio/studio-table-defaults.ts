@@ -17,6 +17,32 @@ export const STUDIO_DEFAULT_TABLE_COLUMNS: readonly StudioTableColumn[] = [
 
 export const STUDIO_DEFAULT_TABLE_ROWS: readonly (readonly string[])[] = [['', '', '']] as const;
 
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY — mirrors backend
+ * `columnWidthPercents` (studio-data-resolver.ts) exactly, so the canvas
+ * preview and the server-rendered PDF/preview HTML always agree on column
+ * widths. `col.width` was previously saved by the Свойства column editor
+ * but never applied anywhere — a dead control.
+ */
+export function columnWidthPercents(columns: readonly { width?: number }[]): number[] {
+  const n = columns.length;
+  if (n === 0) return [];
+  const raw = columns.map((col) =>
+    typeof col.width === 'number' && Number.isFinite(col.width) ? Math.min(100, Math.max(1, col.width)) : 0,
+  );
+  const sum = raw.reduce((a, b) => a + b, 0);
+  if (sum <= 0) {
+    const equal = Math.round(100 / n);
+    const percents = new Array(n).fill(equal);
+    percents[n - 1] = 100 - equal * (n - 1);
+    return percents;
+  }
+  const scaled = raw.map((w) => Math.round((w / sum) * 100));
+  const total = scaled.reduce((a, b) => a + b, 0);
+  scaled[n - 1] = Math.max(1, (scaled[n - 1] ?? 0) + (100 - total));
+  return scaled;
+}
+
 export function studioTableColumns(block: { settings?: Record<string, unknown> }): StudioTableColumn[] {
   const cols = block.settings?.['tableTemplateColumns'];
   return Array.isArray(cols) ? (cols as StudioTableColumn[]) : [...STUDIO_DEFAULT_TABLE_COLUMNS];

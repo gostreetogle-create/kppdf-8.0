@@ -298,3 +298,73 @@ describe('StudioBlocksCanvasComponent — photo column renders image or empty st
     expect(img!.getAttribute('src')).toBe('/uploads/vorota.png');
   });
 });
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY — `col.width` used to be a dead
+ * control: saved by Свойства, never applied by the canvas (which had no
+ * width styling on th/td at all — the browser's default equal auto-layout
+ * won regardless of the saved number).
+ */
+describe('StudioBlocksCanvasComponent — column width applies to th/td (TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY)', () => {
+  const TABLE_WITH_WIDTHS: StudioBlock = {
+    _id: 'tbl-widths',
+    type: 'table',
+    order: 0,
+    title: 'КП',
+    content: '',
+    layout: { page: 1, x: 0.1, y: 0.1, width: 0.5, height: 0.4, zIndex: 1, rotation: 0 },
+    settings: {
+      tableTemplateColumns: [
+        { key: 'name', label: 'Наименование', type: 'text', width: 70, align: 'left' },
+        { key: 'qty', label: 'Кол-во', type: 'number', width: 30, align: 'right' },
+      ],
+      tableTemplateSampleRows: [['Стол', '2']],
+    },
+  };
+
+  let fixture: ComponentFixture<StudioBlocksCanvasComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [StudioBlocksCanvasComponent] }).compileComponents();
+  });
+
+  function createCanvas(blocks: readonly StudioBlock[]): void {
+    fixture = TestBed.createComponent(StudioBlocksCanvasComponent);
+    fixture.componentRef.setInput('blocks', [...blocks]);
+    fixture.componentRef.setInput('selectedId', null);
+    fixture.componentRef.setInput('activeLayerId', null);
+    fixture.componentRef.setInput('currentPage', 1);
+    fixture.detectChanges();
+  }
+
+  it('applies explicit widths (70/30) to both th and td, changing them visibly changes the DOM width', () => {
+    createCanvas([TABLE_WITH_WIDTHS]);
+    const host: HTMLElement = fixture.nativeElement;
+    const headers = host.querySelectorAll('thead th');
+    const cells = host.querySelectorAll('tbody td');
+
+    expect((headers[0] as HTMLElement).style.width).toBe('70%');
+    expect((headers[1] as HTMLElement).style.width).toBe('30%');
+    expect((cells[0] as HTMLElement).style.width).toBe('70%');
+    expect((cells[1] as HTMLElement).style.width).toBe('30%');
+  });
+
+  it('no widths set: falls back to an equal split, not left unstyled', () => {
+    const table: StudioBlock = {
+      ...TABLE_WITH_WIDTHS,
+      _id: 'tbl-no-width',
+      settings: {
+        tableTemplateColumns: [
+          { key: 'a', label: 'A', type: 'text', align: 'left' } as never,
+          { key: 'b', label: 'B', type: 'text', align: 'left' } as never,
+        ],
+        tableTemplateSampleRows: [['1', '2']],
+      },
+    };
+    createCanvas([table]);
+    const host: HTMLElement = fixture.nativeElement;
+    const headers = host.querySelectorAll('thead th');
+    expect((headers[0] as HTMLElement).style.width).toBe('50%');
+    expect((headers[1] as HTMLElement).style.width).toBe('50%');
+  });
+});

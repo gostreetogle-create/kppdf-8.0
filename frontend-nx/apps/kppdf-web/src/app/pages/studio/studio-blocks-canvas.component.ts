@@ -11,6 +11,7 @@ import {
   studioImageUrl,
 } from './studio-block-helpers';
 import {
+  columnWidthPercents,
   isStudioPhotoColumnKey,
   studioTableDisabledRowIndices,
   studioTableEmptyStateLabel,
@@ -135,8 +136,8 @@ import {
                   <table>
                     <thead>
                       <tr>
-                        @for (col of tableColumns(block); track col.key) {
-                          <th [style.text-align]="col.align">{{ col.label }}</th>
+                        @for (col of tableColumns(block); track col.key; let ci = $index) {
+                          <th [style.text-align]="col.align" [style.width.%]="colWidthPct(block, ci)">{{ col.label }}</th>
                         }
                       </tr>
                     </thead>
@@ -145,7 +146,7 @@ import {
                         <tr>
                           @for (cell of row; track $index; let ci = $index) {
                             @if (isPhotoColumnAt(block, ci)) {
-                              <td class="table-preview__photo-cell">
+                              <td class="table-preview__photo-cell" [style.width.%]="colWidthPct(block, ci)">
                                 @if (cell && !isPhotoLoadFailed(cell)) {
                                   <img [src]="cell" alt="" class="table-preview__photo" [ngStyle]="photoCellStyle(block, cell)" (error)="onPhotoLoadError(cell)" />
                                 } @else {
@@ -153,7 +154,7 @@ import {
                                 }
                               </td>
                             } @else {
-                              <td>{{ cell || ' ' }}</td>
+                              <td [style.width.%]="colWidthPct(block, ci)">{{ cell || ' ' }}</td>
                             }
                           }
                         </tr>
@@ -253,7 +254,10 @@ import {
     }
     .studio-block--table { container-type: inline-size; }
     .table-preview table {
-      width: 100%; border-collapse: collapse; font-size: 9px;
+      /* TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY — fixed layout so th/td [style.width.%]
+         actually determines column share instead of being overridden by content
+         auto-sizing; matches renderStudioTableHtml's own inline table-layout:fixed. */
+      width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px;
     }
     .table-preview th, .table-preview td {
       border: 1px solid var(--color-rule);
@@ -365,6 +369,16 @@ export class StudioBlocksCanvasComponent {
   isPhotoColumnAt(block: StudioBlock, columnIndex: number): boolean {
     const column = this.tableColumns(block)[columnIndex];
     return column ? isStudioPhotoColumnKey(column.key) : false;
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY — `col.width` share, as a % of the
+   * table, for the visible column at this index. Mirrors backend
+   * `columnWidthPercents` (studio-data-resolver.ts) so canvas and PDF/preview
+   * agree on layout.
+   */
+  colWidthPct(block: StudioBlock, columnIndex: number): number {
+    return columnWidthPercents(this.tableColumns(block))[columnIndex] ?? 0;
   }
 
   /**

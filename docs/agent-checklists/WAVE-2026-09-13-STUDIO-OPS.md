@@ -4,11 +4,11 @@
 > Обновляет исполнитель **после каждого TZ** (не только в конце волны).  
 > Cursor/PO смотрят этот файл = «где агент сейчас».
 
-updated_at: 2026-09-13T10:30:00Z  
+updated_at: 2026-09-13T13:10:00Z  
 agent_slot: Claude  
 current_wave: **2**  
-current_tz: NECESSITY-CLEANUP (этап A)  
-status: **IN_WORK_WAVE2**
+current_tz: _(нет — волна 2 DONE)_  
+status: **WAVE2_DONE**
 
 ---
 
@@ -29,8 +29,8 @@ status: **IN_WORK_WAVE2**
 | Волна | TZ по порядку | Conflict hot | Старт |
 |-------|---------------|--------------|-------|
 | **1** | PHOTO → ADD-PAGE → SELECTED-REPLACE | — | **DONE** |
-| **2** | NECESSITY-CLEANUP A→B→C (COL-WIDTH в C) | editor+props+defaults+canvas | **GO** |
-| **3** | CATEGORY-INLINE → OPS-DOCS-HOST-52 (+ VITRINA-PHOTO) | forms / docs / vitrina | после волны 2 |
+| **2** | NECESSITY-CLEANUP A→B→C (COL-WIDTH в C) | editor+props+defaults+canvas | **DONE** |
+| **3** | CATEGORY-INLINE → OPS-DOCS-HOST-52 (+ VITRINA-PHOTO) | forms / docs / vitrina | ждёт отдельного GO |
 
 **Superseded (не брать):** TABLE-KIND-IA · TABLE-SOURCE-FIX · INSERT-APPLY-KIND.
 
@@ -62,8 +62,11 @@ status: **IN_WORK_WAVE2**
 2026-09-13T10:30:00Z | NECESSITY-CLEANUP (master TZ) | CLAIMED | этап A starting
 2026-09-13T11:15:00Z | 2.A NECESSITY IA | DONE | commit=726641e3 | Вид->Макет колонок rename + CTA; Источник строк status/Обновить/Сменить for catalog rowSource; wiring gap in studio-properties-panel.component.ts fixed (not in declared conflict keys, flagged)
 2026-09-13T11:15:00Z | 2.B NECESSITY SoT+round-trip | IN_WORK
-2026-09-13T12:40:00Z | 2.B NECESSITY SoT+round-trip | DONE | commit=(this commit) | live check caught real dataSource format mismatch ("product" vs "catalog-products") before ship — fixed with normalized comparison; B1/B2 persistence live-verified across a fresh session
+2026-09-13T12:40:00Z | 2.B NECESSITY SoT+round-trip | DONE | commit=2dfc367b | live check caught real dataSource format mismatch ("product" vs "catalog-products") before ship — fixed with normalized comparison; B1/B2 persistence live-verified across a fresh session
 2026-09-13T12:40:00Z | 2.C NECESSITY dead controls/COL-WIDTH | IN_WORK
+2026-09-13T13:10:00Z | 2.C NECESSITY dead controls/COL-WIDTH | DONE | commit=(this commit) | columnWidthPercents BE+FE mirrored; live check: th width 20px->116px on real canvas; ≤1 active template confirmed via Mongo (0 duplicates)
+2026-09-13T13:10:00Z | NECESSITY-CLEANUP (master TZ) | DONE | archive tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md | all 5 ACCEPT criteria PASS
+2026-09-13T13:10:00Z | WAVE2 | DONE | 3 stages DONE, COL-WIDTH-APPLY absorbed (not run separately) — see final report to PO
 ```
 
 _(агент дописывает строки сюда после каждого перехода статуса)_
@@ -75,11 +78,13 @@ _(агент дописывает строки сюда после каждог�
 | # | Этап | Commit SHA | Status |
 |---|------|------------|--------|
 | 2.A | NECESSITY IA | `726641e3` | DONE |
-| 2.B | NECESSITY SoT + source round-trip | (this commit) | DONE |
-| 2.C | NECESSITY dead controls / COL-WIDTH absorb | | IN_WORK |
+| 2.B | NECESSITY SoT + source round-trip | `2dfc367b` | DONE |
+| 2.C | NECESSITY dead controls / COL-WIDTH absorb | (this commit) | DONE |
 
 Master TZ: `tasks/_ready/2026-09-13-studio-ops/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.md`  
-Промпт: `…/PROMPT-CLAUDE-STUDIO-OPS-WAVE2.md`
+Промпт: `…/PROMPT-CLAUDE-STUDIO-OPS-WAVE2.md`  
+Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md`  
+**TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY.md поглощён этапом C — не запускать отдельно.**
 
 ---
 
