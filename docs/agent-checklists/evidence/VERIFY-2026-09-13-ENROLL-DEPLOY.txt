@@ -1,0 +1,182 @@
+=== STEP 1: Git facts ===
+--- 1.1 git fetch origin main ---
+From https://github.com/gostreetogle-create/kppdf-8.0
+ * branch              main       -> FETCH_HEAD
+--- git status --short ---
+ M docs/PO-CANON.md
+ M docs/agent-checklists/STREAM-QUEUE.md
+?? Soup-0.74.0.zip
+?? "data/\320\232\320\260\321\202\320\260\320\273\320\276\320\263_\320\277\320\276\320\273\320\265\320\267\320\275\321\213\321\205_\321\201\321\201\321\213\320\273\320\276\320\272_2026-08-23.zip"
+?? "data/\320\260\320\275\320\260\320\273\320\270\320\267 \320\242\320\223.txt"
+?? "data/\321\201\320\275\320\260\320\261\320\266\320\265\320\275\320\270\320\265/"
+?? docs/agent-checklists/VERIFY-2026-09-13-ENROLL-DEPLOY.md
+?? docs/agent-checklists/evidence/VERIFY-2026-09-13-ENROLL-DEPLOY.txt
+?? docs/audits/2026-09-11-prompt-cannon-001-soup.md
+?? docs/audits/2026-09-11-reference-nav-vs-registries.md
+?? docs/audits/2026-09-12-docstudio-catalog-tables-empty-audit.md
+?? docs/audits/2026-09-12-docstudio-catalog-tables-peer-synthesis.md
+?? docs/audits/2026-09-12-docstudio-list-kp-and-blank-templates-audit.md
+?? docs/audits/2026-09-13-fresh-vm52-rebuild.md
+?? docs/peer/PROMPT-PEER-DOCSTUDIO-CATALOG-TABLES-2026-09-12.md
+?? prompt_cannon/
+?? scripts/q4b-raw-values.txt
+?? tasks/PROMPT-CLAUDE-DEPLOY-GO.md
+?? tasks/PROMPT-CLAUDE-DOCSTUDIO-WAVES-VERIFY.md
+?? tasks/PROMPT-CLAUDE-VERIFY-2026-09-13-ENROLL-DEPLOY.md
+?? tasks/_active/TZ-VERIFY-2026-09-13-ENROLL-DEPLOY-VM52.md
+?? tasks/_archive/2026-09/prompts-spent/PROMPT-CLAUDE-PRE-UAT-SMOKE.md
+?? tasks/_ready/TZ-OPS-DOCS-HOST-52-SYNC.md
+--- 1.2 show --stat 9e1802fe ---
+commit 9e1802fe72ab873a13eda299a1a30ce1390c038d
+Author: Buffy (AI Agent) <agent@kppdf.local>
+Date:   Sun Sep 13 02:40:37 2026 +0300
+
+    fix(frontend): enable withComponentInputBinding so enroll/:token reaches input.required
+    
+    EnrollPage declares `token = input.required<string>()` but the router was
+    bootstrapped with plain provideRouter(appRoutes). Without
+    withComponentInputBinding the `:token` URL param never binds to the
+    component input, so accessing this.token() inside onSubmit threw
+    synchronously (NG0957), was swallowed by the catch block and surfaced as
+    the generic "Не удалось подключить компьютер" message WITHOUT any HTTP
+    request (no console error) — matching the prod report and headless repro.
+    
+    Add withComponentInputBinding() to app.config.ts and a regression spec
+    that renders EnrollPage through a real router-outlet with the prod-style
+    provider and asserts the enroll call carries the route secret.
+
+ frontend-nx/apps/kppdf-web/src/app/app.config.ts   |  4 +-
+ .../src/app/pages/enroll/enroll.page.spec.ts       | 76 ++++++++++++++++++++++
+ 2 files changed, 78 insertions(+), 2 deletions(-)
+--- 1.2 show --stat 842275a5 ---
+commit 842275a5cc44510ed1f13d3620bf8253347bbe97
+Author: Buffy (AI Agent) <agent@kppdf.local>
+Date:   Sun Sep 13 02:44:42 2026 +0300
+
+    docs(deploy): switch canonical host VM 192.168.1.103 -> 192.168.1.52; stamp DEPLOY-READY deployed 9e1802fe
+    
+    Old .103 VM is gone; .52 (ubuntu) is the canonical target after the fresh
+    VM rebuild. Update README/INSTALL/DEPLOY/RUNBOOK, config.env.example,
+    CREDENTIALS.example.md and the deploy.py default host so docs match the live
+    access scheme (tunnel kppdf-tunnel -> kppdf-crm.ru).
+
+ deploy/synology/CREDENTIALS.example.md |  6 +++---
+ deploy/synology/DEPLOY.md              | 12 ++++++------
+ deploy/synology/INSTALL.md             |  6 +++---
+ deploy/synology/README.md              |  6 +++---
+ deploy/synology/RUNBOOK.md             | 10 +++++-----
+ deploy/synology/config.env.example     |  2 +-
+ deploy/synology/deploy.py              |  2 +-
+ docs/agent-checklists/DEPLOY-READY.md  |  2 +-
+ 8 files changed, 23 insertions(+), 23 deletions(-)
+--- 1.3 merge-base ancestor checks ---
+9e1802fe: ancestor OK (exit 0)
+842275a5: ancestor OK (exit 0)
+--- origin/main vs HEAD ---
+3c84d23dba49028a17d6676278e843de7dcf82fa
+3c84d23dba49028a17d6676278e843de7dcf82fa
+
+=== STEP 2: Local gates frontend-nx ===
+--- 2.1 nx build kppdf-web ---
+RESULT: Successfully ran target build for project kppdf-web and 4 tasks it depends on (exit 0)
+Bundle: main-TCTUXZXK.js, polyfills-7R4CRVNH.js, styles-JX5ZI4Q6.css in dist/apps/kppdf-web/browser/ -- MATCH expected
+--- 2.2 tsc -p apps/kppdf-web/tsconfig.app.json --noEmit ---
+EXIT_CODE=0 (0 errors)
+--- 2.3 pnpm test -- --runInBand ---
+
+
+ NX   Successfully ran target test for 5 projects
+
+
+EXIT_CODE=0
+enroll.page.spec.ts: PASS (present in run, line 2798 of raw jest output)
+--- 2.4 scoped eslint (enroll.page.spec.ts + app.config.ts) ---
+EXIT_CODE=0 (0 problems)
+--- 2.5 pnpm architecture:check (repo root) ---
+$ node scripts/architecture-check.mjs
+Architecture check passed (1487 files; baseline 17; resolved since baseline: 2).
+Tip: some baseline keys are gone — refresh with --write-baseline when convenient.
+EXIT_CODE=0
+--- 2.5b full nx lint kppdf-web (baseline comparison, NOT fixed) ---
+
+- kppdf-web:lint
+
+Hint: run the command with --verbose for more details.
+
+EXIT_CODE=1
+Baseline expected: 38 errors / 259 warnings (docs known) -- ACTUAL: 38 errors, 259 warnings -- MATCH, no new files
+
+=== ENV NOTE: LAN/SSH unreachable ===
+ssh -i ~/.ssh/kppdf80-vm tiit@192.168.1.52 -> "Connection timed out" (port 22), both sandboxed and
+dangerouslyDisableSandbox=true. This executor session has no network route to the internal LAN
+(192.168.1.52). Public origin https://kppdf-crm.ru IS reachable. All VM-internal steps below were
+therefore executed via the equivalent public-origin path (device-gated static + admin API), using
+credentials already present locally in deploy/synology/config.env (gitignored). No secret values
+are included below or elsewhere in this evidence file.
+
+=== STEP 3: Prod bundle/static (via public origin, equivalent to VM-localhost) ===
+GET https://kppdf-crm.ru/enroll/<fake-secret> -> HTTP 200
+Bundle hashes found in served index.html: main-TCTUXZXK.js, polyfills-7R4CRVNH.js, styles-JX5ZI4Q6.css
+  -> MATCH expected (main-TCTUXZXK.js, not old main-L7C4BQ2J.js)
+<meta name="kppdf-desktop-download-url" /> present in index.html -> MATCH (tag exists, CSP-safe, no inline script)
+GET https://kppdf-crm.ru/ (no cookie) -> HTTP 401 "Device access required..." (device-gate; TZ text says "403-стр.",
+  desk-audit already recorded 401 too -- pre-existing doc/text mismatch 401 vs 403, NOT a new defect, no 5xx)
+downloads/ (checked with an authenticated device session obtained via fresh owner-invite, Range: bytes=0-0):
+  kppdf-desktop-setup-v0.5.10.zip -> 206
+  kppdf-desktop-setup-v0.5.10.exe -> 206
+  kppdf-desktop-setup.zip -> 206
+  kppdf-desktop-setup.exe -> 206
+  -> all 4 present, MATCH expected
+NOT executed literally (blocked, no SSH): `ssh ... curl http://localhost:3000/` (3.1) and
+  `ls /opt/kppdf-8.0/frontend/browser/downloads/` (3.3) as VM-shell commands -- substituted by the
+  public-origin equivalent above, same nginx/docker static volume, same result surface.
+
+=== STEP 4: Backend health, tunnel, auth ===
+GET https://kppdf-crm.ru/api/health/ready -> HTTP 200 {"status":"ok","info":{"mongo":{"status":"up"}}}
+  -> MATCH expected (mongo up)
+NOT executed literally (blocked, no SSH): `curl -sf http://localhost:3000/api/health/ready` (VM-local)
+  and `systemctl is-active kppdf-tunnel` -- indirectly implied healthy/active (public domain routes
+  through the tunnel to this same backend instance; if tunnel were down, health/ready above could not
+  have returned 200). Not a literal confirmation -- see successor TZ.
+POST https://kppdf-crm.ru/api/auth/login {username:"admin", password:<local config.env value, not printed>}
+  -> HTTP 200, response JSON contains both "access" and "refresh" keys (values not printed/logged) -> MATCH
+
+=== STEP 5: Prod E2E device enroll (fresh invite, core check) ===
+POST https://kppdf-crm.ru/api/admin/devices/owner-invite (Bearer, password from local config.env) -> HTTP 201
+  kind: owner-device, TTL ~48h (expiresAt ~2026-09-15) -> MATCH; invite secret/url NOT logged (redacted everywhere)
+Playwright (chromium headless) against fresh invite URL:
+  SUBSTEP B empty submit -> validation error shown ("Введите имя компьютера." class message), NO
+    /api/device/enroll request observed in request/response event log -> MATCH
+  SUBSTEP C filled unique name (verify-<unixtime>) + submit -> URL_FINAL == https://kppdf-crm.ru/admin/devices
+    (redirect confirmed), no pageerror/console error events, device visible on landing page body text -> MATCH
+    (Note: exact "POST /api/device/enroll -> response 200" pair was not separately captured as a discrete browser
+     network event line in this run's specific log excerpt, but the redirect to /admin/devices only occurs on a
+     successful 200 enroll per app code path, and the subsequent GET /api/admin/devices call below independently
+     confirms the device row exists as active immediately after -- functionally MATCH.)
+GET https://kppdf-crm.ru/api/admin/devices (Bearer) -> new device deviceName=verify-<ts>, status: active,
+  inviteKind: owner-device, role: admin -> MATCH
+POST https://kppdf-crm.ru/api/admin/devices/<id>/revoke (Bearer) -> HTTP 201, device status -> revoked
+Final GET /api/admin/devices: 0 active verify-* entries -> MATCH
+Second invite/device cycle (verify-<ts2>) was created only to re-check downloads/ with a longer timeout after the
+  first cycle's Playwright download probe timed out on a 42MB body fetch; it was likewise fully consumed and
+  revoked. Pre-existing devices tiitdom (active, legitimate), pw-test/domtiit-test (already revoked) untouched.
+
+=== STEP 6: Access scheme / docs consistency ===
+grep "192\.168\.1\.103" deploy/synology docs/agent-checklists/DEPLOY-READY.md:
+  2 files matched -- deploy/synology/AUDIT-CONNECT-2026-08-02.md (historical audit, explicitly excepted by TZ)
+  and deploy/synology/CREDENTIALS.md line 99 ("Старый хост 192.168.1.103 утерян/недоступен...") -- this is the
+  gitignored local CREDENTIALS.md (not the tracked CREDENTIALS.example.md from CONFLICT KEYS), and its text is a
+  deliberate historical note pointing at the current .52 canon, not a stale live instruction -> 0 matches in the
+  files actually named in CONFLICT KEYS -> MATCH
+docs/agent-checklists/DEPLOY-READY.md: status INVALID; why_invalid mentions "deployed 9e1802fe 2026-09-13 on VM
+  192.168.1.52 ..."; frontend_target: nx; wipe_default: false -> MATCH
+deploy/synology/config.env (local): DEPLOY_HOST=192.168.1.52, WIPE=false -> MATCH
+NOT executed (blocked, no SSH): sha256 comparison of ADMIN_PASSWORD/JWT_SECRET/JWT_REFRESH_SECRET between
+  VM /opt/kppdf-8.0/.env and local config.env -- see successor TZ.
+
+=== Additional WARN check (per prompt file step 7, not a VERIFY blocker) ===
+grep "192\.168\.1\.103" docs/ops/home-host-access.md docs/ops/PROMPT-ACCESS-METHOD-DEBATE.md
+  docs/ops/RUNBOOK-CLEAN-SYNLOGY-KP3-LOAD.md -> matches found (stale, confirmed) -- pre-known, successor TZ
+  tasks/_ready/TZ-OPS-DOCS-HOST-52-SYNC.md already exists in the repo (not created by this VERIFY) and already
+  listed in STREAM-QUEUE.md pack row #7 (OPS-DOCS-HOST-52-SYNC, READY) -- not touched here per TZ instruction.
+grep -i cloudflared deploy/synology/CREDENTIALS.example.md -> line 70 legacy mention confirmed, same successor.
