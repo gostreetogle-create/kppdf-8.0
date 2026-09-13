@@ -64,7 +64,7 @@ status: **WAVE2_DONE**
 2026-09-13T11:15:00Z | 2.B NECESSITY SoT+round-trip | IN_WORK
 2026-09-13T12:40:00Z | 2.B NECESSITY SoT+round-trip | DONE | commit=2dfc367b | live check caught real dataSource format mismatch ("product" vs "catalog-products") before ship — fixed with normalized comparison; B1/B2 persistence live-verified across a fresh session
 2026-09-13T12:40:00Z | 2.C NECESSITY dead controls/COL-WIDTH | IN_WORK
-2026-09-13T13:10:00Z | 2.C NECESSITY dead controls/COL-WIDTH | DONE | commit=(this commit) | columnWidthPercents BE+FE mirrored; live check: th width 20px->116px on real canvas; ≤1 active template confirmed via Mongo (0 duplicates)
+2026-09-13T13:10:00Z | 2.C NECESSITY dead controls/COL-WIDTH | DONE | commit=222f1825 | columnWidthPercents BE+FE mirrored; live check: th width 20px->116px on real canvas; ≤1 active template confirmed via Mongo (0 duplicates)
 2026-09-13T13:10:00Z | NECESSITY-CLEANUP (master TZ) | DONE | archive tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md | all 5 ACCEPT criteria PASS
 2026-09-13T13:10:00Z | WAVE2 | DONE | 3 stages DONE, COL-WIDTH-APPLY absorbed (not run separately) — see final report to PO
 ```
@@ -79,7 +79,7 @@ _(агент дописывает строки сюда после каждог�
 |---|------|------------|--------|
 | 2.A | NECESSITY IA | `726641e3` | DONE |
 | 2.B | NECESSITY SoT + source round-trip | `2dfc367b` | DONE |
-| 2.C | NECESSITY dead controls / COL-WIDTH absorb | (this commit) | DONE |
+| 2.C | NECESSITY dead controls / COL-WIDTH absorb | `222f1825` | DONE |
 
 Master TZ: `tasks/_ready/2026-09-13-studio-ops/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.md`  
 Промпт: `…/PROMPT-CLAUDE-STUDIO-OPS-WAVE2.md`  
