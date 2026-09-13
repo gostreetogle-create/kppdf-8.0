@@ -1,0 +1,74 @@
+=== ШАГ 0: Root cause confirmed by reading code (matches audit rank-1 exactly) ===
+
+`catalogWriteChain` (studio-editor.page.ts) already serialized vitrina/putDataSet
+writes (TZ-NX-DOCSTUDIO-S41) but `addPage`/`setOrientation`/`setBackgroundIndex`/
+`setBackgroundOpacity`/`togglePageNumbering` read `this.document().revision`
+directly and fired `documents.update` immediately, outside that queue — racing
+`refreshLiveDataSetsOnLoad`'s on-load hydrate (which ALSO ran outside the queue
+entirely, calling `hydrateTablesSerially` directly). Two writes reading the same
+stale revision → the server 409s the loser → `conflict()` → repeat click while
+dialog open → `if (this.conflictDialogOpen) return;` → true silent no-op, exactly
+matching the audit's "кнопка не работает" symptom.
+
+Four `document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x))`
+sites (createTableBlock, createTextLayer, image-layer create, saveLayouts) blindly
+incremented the client's local revision after block-create/layout-save endpoints
+that bump the document's revision server-side but only ever return the block(s)
+or block-layout list, never the parent document — confirmed by reading
+`studio-document.controller.ts`/`.service.ts` (`addBlock`, `updateBlockLayouts`
+return `TemplateBlockDocument`/`[]`, `bumpRevision` happens internally, never
+surfaced). Any concurrent write landing in the same window made the blind +1 wrong.
+
+=== Live browser evidence (Playwright, local dev, admin/admin123, AFTER the fix) ===
+
+Document 6aa5b1221b6e6163bba2fc12 (same wired catalog-products table used in
+TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG's evidence — has an in-flight hydrate on
+every open). Opened «Страницы» panel, spam-clicked «+ Страница» x3:
+
+  PATCH /api/studio-documents/6aa5b1221b6e6163bba2fc12 -> 200 {revision:140, manualPageCount:5}
+  PATCH /api/studio-documents/6aa5b1221b6e6163bba2fc12 -> 200 {revision:141, manualPageCount:6}
+  PATCH /api/studio-documents/6aa5b1221b6e6163bba2fc12 -> 200 {revision:142, manualPageCount:7}
+
+3 clicks -> 3 requests -> 3 distinct successes, revision strictly +1 each time,
+manualPageCount strictly +1 each time. No 409, no console errors, no silent
+no-op. (manualPageCount left at 7 on this local demo document — harmless test
+residue, not reverted, matches PO-CANON "local DB = virtual demo".)
+
+=== Unit-test evidence (deterministic reproduction of the exact race) ===
+
+New spec `studio-editor-write-serial.spec.ts`:
+- "addPage waits for an in-flight hydrate instead of racing its stale revision":
+  drives a hydrate `putDataSet` call that stays pending, calls `addPage()` while
+  it's still in flight, asserts `documents.update` is NOT called yet, then
+  releases the hydrate and asserts `documents.update` fires exactly once with
+  `expectedRevision: 7` (the revision hydrate's own response returned) — proving
+  the pre-fix code would have fired with the stale initial revision (1) instead.
+  BEFORE the `refreshLiveDataSetsOnLoad` fix (chaining it onto `catalogWriteChain`
+  synchronously), this exact test failed with `expectedRevision: 1` — captured
+  during development, not asserted after the fact.
+- "three rapid addPage clicks all succeed serially with a strictly increasing
+  expectedRevision": 3 calls -> 3 distinct revisions [1,2,3], pageCounts [2,3,4].
+- "a second conflict while the dialog is open toasts once instead of silently
+  doing nothing": 2 failing addPage calls -> 1 dialog.open, 1 toast.error.
+- "creating a text layer confirms the new revision via a follow-up GET instead
+  of a blind +1": `getById` called twice (initial load + post-create refresh),
+  `document().revision` ends at the GET's returned value (9), not a local +1.
+
+=== Gates ===
+
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest studio-editor-write-serial + all studio-editor-*.spec.ts -> all PASS
+  (studio-editor-catalog-insert.spec.ts needed a fixture fix: its `documentsService`
+  mock never declared `getById`, which `createTableBlock`'s new follow-up-GET now
+  calls — added the mock method + a few more flush ticks for the extra async hop,
+  no production-code weakening)
+FE jest (full) -> 124 suites / 856 passed + 7 skipped (863 total) PASS
+FE eslint (scoped: studio-editor.page.ts + 2 new/touched spec files) -> 0 errors,
+  7 warnings (pre-existing non-null-assertion convention + one pre-existing unused
+  `const id` in conflict() that predates this TZ, not touched)
+pnpm architecture:check (repo root) -> PASS
+nx build kppdf-web (last) -> exit 0, same 2 pre-existing unrelated budget warnings
+
+No backend files changed for this TZ (frontend-only conflict keys, no BE bug found
+in ШАГ 0 — matches TZ's "НЕ ИЗМЕНЯТЬ: BE schema manualPageCount" unless a real BE
+bug were found, which it was not).

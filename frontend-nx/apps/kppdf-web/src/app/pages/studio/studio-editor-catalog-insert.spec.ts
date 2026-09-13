@@ -56,7 +56,7 @@ describe('StudioEditorPage — insertCatalogTable (TZ-NX-DOCSTUDIO-CATALOG-INSER
     settings: { dataSource: { type: 'catalog-products' } },
   };
 
-  let documentsService: { putDataSet: jest.Mock };
+  let documentsService: { putDataSet: jest.Mock; getById: jest.Mock };
   let blocksService: { create: jest.Mock; list: jest.Mock };
   let toast: { success: jest.Mock; error: jest.Mock };
   let revisionCounter: number;
@@ -73,6 +73,9 @@ describe('StudioEditorPage — insertCatalogTable (TZ-NX-DOCSTUDIO-CATALOG-INSER
       putDataSet: jest.fn((_id: string, key: string, payload: { expectedRevision: number; dataSet: unknown }) =>
         of({ ok: true, data: nextRevisionDoc({ dataSets: [{ key, ...(payload.dataSet as object) } as never] }) }),
       ),
+      // TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL — createTableBlock now confirms
+      // the post-create revision with a follow-up GET instead of a blind +1.
+      getById: jest.fn().mockReturnValue(of({ ok: true, data: BASE_DOC })),
     };
     blocksService = {
       create: jest.fn(),
@@ -106,6 +109,10 @@ describe('StudioEditorPage — insertCatalogTable (TZ-NX-DOCSTUDIO-CATALOG-INSER
   function createEditor(): TestableEditor {
     const fixture = TestBed.createComponent(StudioEditorPage);
     return fixture.componentInstance as unknown as TestableEditor;
+  }
+
+  async function flush(): Promise<void> {
+    for (let i = 0; i < 12; i++) await Promise.resolve();
   }
 
   it('existing wired table: focuses it, toasts, heals rows via putDataSet — no duplicate create', async () => {
@@ -142,9 +149,9 @@ describe('StudioEditorPage — insertCatalogTable (TZ-NX-DOCSTUDIO-CATALOG-INSER
     component.catalogSelections.set({ products: [], modules: [], parts: [], materials: [] });
 
     component.insertCatalogTable('modules');
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    // TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL — createTableBlock now awaits a
+    // follow-up getById before resolving, one more async hop than before.
+    await flush();
 
     expect(blocksService.create).toHaveBeenCalledTimes(1);
     expect(documentsService.putDataSet).toHaveBeenCalledWith(

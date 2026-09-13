@@ -536,7 +536,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly catalogSelections = signal<{ products: readonly string[]; modules: readonly string[]; parts: readonly string[]; materials: readonly string[] }>({ products: [], modules: [], parts: [], materials: [] });
   /** TZ-NX-DOCSTUDIO-S41 — true while the catalog write queue has a PATCH context / putDataSet in flight. */
   readonly catalogWriteBusy = signal(false);
-  /** TZ-NX-DOCSTUDIO-S41 — serializes vitrina writes so putDataSet always uses the revision from the PATCH it followed, never a stale one raced against it. */
+  /**
+   * TZ-NX-DOCSTUDIO-S41 / TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL — the one
+   * document write queue. Started for vitrina writes (putDataSet always uses
+   * the revision the previous queued write returned, never one raced against
+   * it); now also carries every other document-level mutation with an
+   * `expectedRevision` gate (`addPage`, orientation/background/page-numbering
+   * toggles) so they never race hydrate-on-load or a vitrina write for the
+   * same document. Name kept (not renamed to `documentWriteChain`) to limit
+   * the diff — its scope is documented here, not in every call site.
+   */
   private catalogWriteChain: Promise<void> = Promise.resolve();
   private catalogWritePending = 0;
   readonly blocks = signal<readonly StudioBlock[]>([]);
@@ -933,40 +942,44 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   setOrientation(orientation: 'portrait' | 'landscape'): void {
-    const doc = this.document();
-    if (!doc || doc.orientation === orientation) return;
-    void firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, orientation })).then((result) => {
+    this.enqueueDocumentWrite(async () => {
+      const doc = this.document();
+      if (!doc || doc.orientation === orientation) return;
+      const result = await firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, orientation }));
       if (result.ok) this.document.set(result.data); else this.conflict();
     });
   }
 
   setBackgroundIndex(index: number): void {
-    const doc = this.document();
-    if (!doc) return;
-    const indices = [...(doc.backgroundPageIndices ?? [])];
-    while (indices.length < this.pageCount()) indices.push(doc.defaultBackgroundIndex ?? -1);
-    indices[this.currentPage() - 1] = index;
-    void firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, backgroundPageIndices: indices })).then((r) => {
+    this.enqueueDocumentWrite(async () => {
+      const doc = this.document();
+      if (!doc) return;
+      const indices = [...(doc.backgroundPageIndices ?? [])];
+      while (indices.length < this.pageCount()) indices.push(doc.defaultBackgroundIndex ?? -1);
+      indices[this.currentPage() - 1] = index;
+      const r = await firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, backgroundPageIndices: indices }));
       if (r.ok) this.document.set(r.data); else this.conflict();
     });
   }
 
   setBackgroundOpacity(opacity: number): void {
-    const doc = this.document();
-    if (!doc || !Number.isFinite(opacity)) return;
-    const value = Math.min(1, Math.max(0, opacity));
-    void firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, backgroundOpacity: value })).then((r) => {
+    this.enqueueDocumentWrite(async () => {
+      const doc = this.document();
+      if (!doc || !Number.isFinite(opacity)) return;
+      const value = Math.min(1, Math.max(0, opacity));
+      const r = await firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, backgroundOpacity: value }));
       if (r.ok) this.document.set(r.data); else this.conflict();
     });
   }
 
   togglePageNumbering(enabled: boolean): void {
-    const doc = this.document();
-    if (!doc) return;
-    void firstValueFrom(this.documents.update(doc._id, {
-      expectedRevision: doc.revision ?? 1,
-      pageNumbering: enabled,
-    })).then((result) => {
+    this.enqueueDocumentWrite(async () => {
+      const doc = this.document();
+      if (!doc) return;
+      const result = await firstValueFrom(this.documents.update(doc._id, {
+        expectedRevision: doc.revision ?? 1,
+        pageNumbering: enabled,
+      }));
       if (result.ok) this.document.set(result.data);
       else this.conflict();
     });
@@ -1123,7 +1136,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           tableTemplateSampleRows: STUDIO_DEFAULT_TABLE_ROWS,
         },
       }),
-    ).then((r) => {
+    ).then(async (r) => {
       if (!r.ok) {
         this.conflict();
         return null;
@@ -1132,7 +1145,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         ? { ...r.data, layout: coerceStudioBlockLayout(r.data.layout) }
         : r.data;
       this.blocks.update((b) => [...b, block]);
-      this.document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x));
+      await this.refreshDocumentRevisionAfterBlockWrite();
       return block;
     });
   }
@@ -1191,6 +1204,38 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   /**
+   * TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL — enqueue one document-revision
+   * write onto the shared `catalogWriteChain`. `run` must read `this.document()`
+   * itself, and only once it actually executes (after every earlier queued
+   * write has resolved and applied its server response) — never capture a
+   * revision before enqueueing, or this buys nothing over firing directly.
+   * `run` must never reject (catch/report internally, e.g. via `conflict()`)
+   * — a rejected link would skip every write queued after it.
+   */
+  private enqueueDocumentWrite(run: () => Promise<void>): void {
+    this.catalogWriteChain = this.catalogWriteChain.then(run);
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL — `blocksService.create` /
+   * `updateLayouts` bump the parent document's revision server-side
+   * (`bumpRevision`) but only ever return the block(s), never the document
+   * — there is no `document.revision` in their response to trust. A blind
+   * client-side `revision + 1` after these calls drifts from the true
+   * server value whenever another write (hydrate-on-load, a vitrina change)
+   * also lands in the same window, 409-ing the next `expectedRevision`-gated
+   * write. Awaited before the caller's own promise resolves, so any write
+   * that follows synchronously (e.g. `setBlockCatalogSource` right after
+   * `createTableBlock`) reads the confirmed server revision, not a guess.
+   */
+  private async refreshDocumentRevisionAfterBlockWrite(): Promise<void> {
+    const id = this.document()?._id;
+    if (!id) return;
+    const r = await firstValueFrom(this.documents.getById(id));
+    if (r.ok) this.document.set(r.data);
+  }
+
+  /**
    * Sequential putDataSet queue: each iteration reads `this.document()` fresh
    * right before it fires, so it always carries the revision the *previous*
    * iteration's write actually returned — never one snapshotted before the
@@ -1245,7 +1290,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         content: 'Новый текст',
         layout: studioCenteredTextLayout(0.3, 0.12, zIndex, this.currentPage()),
       }),
-    ).then((r) => {
+    ).then(async (r) => {
       if (!r.ok) {
         this.conflict();
         return;
@@ -1254,7 +1299,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         ? { ...r.data, layout: coerceStudioBlockLayout(r.data.layout) }
         : r.data;
       this.blocks.update((b) => [...b, block]);
-      this.document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x));
+      await this.refreshDocumentRevisionAfterBlockWrite();
       this.activateLayer(block._id);
     });
   }
@@ -1448,7 +1493,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           },
         };
     this.blocks.update((b) => [...b, block]);
-    this.document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x));
+    await this.refreshDocumentRevisionAfterBlockWrite();
     this.openLayerProperties(block._id);
     await this.uploadImageToBlock(block._id, file, localUrl, natural);
   }
@@ -1687,10 +1732,21 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
    * (built for Insert-heal, TZ-CATALOG-INSERT-HONEST) awaits each putDataSet
    * before starting the next, so every request carries the revision the
    * previous one actually returned.
+   *
+   * TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL — this on-load hydrate used to run
+   * outside `catalogWriteChain` entirely (only post-load actions like
+   * Insert-heal/vitrina-edit went through `refreshCatalogTablesOfKind`
+   * below), so a document-level write fired right after open (e.g. «+
+   * Страница») could still race it. Reassigning `catalogWriteChain`
+   * synchronously here — not inside an `async` body, where it would only
+   * happen after the first `await` — makes any write enqueued right after
+   * this call (even in the same tick) correctly wait behind it.
    */
-  private async refreshLiveDataSetsOnLoad(blocks: readonly StudioBlock[]): Promise<void> {
+  private refreshLiveDataSetsOnLoad(blocks: readonly StudioBlock[]): Promise<void> {
     const tables = blocks.filter((item) => item.type === 'table');
-    await this.hydrateTablesSerially(tables);
+    const chained = this.catalogWriteChain.then(() => this.hydrateTablesSerially(tables));
+    this.catalogWriteChain = chained;
+    return chained;
   }
 
   /**
@@ -2365,15 +2421,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   addPage(): void {
-    const doc = this.document();
-    if (!doc) return;
-    const nextCount = this.pageCount() + 1;
-    void firstValueFrom(
-      this.documents.update(doc._id, {
-        expectedRevision: doc.revision ?? 1,
-        manualPageCount: nextCount,
-      }),
-    ).then((r) => {
+    this.enqueueDocumentWrite(async () => {
+      const doc = this.document();
+      if (!doc) return;
+      const nextCount = this.pageCount() + 1;
+      const r = await firstValueFrom(
+        this.documents.update(doc._id, {
+          expectedRevision: doc.revision ?? 1,
+          manualPageCount: nextCount,
+        }),
+      );
       if (!r.ok) {
         this.conflict();
         return;
@@ -2503,7 +2560,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (updates.length === 0) return Promise.resolve(true);
     return firstValueFrom(
       this.blocksService.updateLayouts(d._id, { expectedRevision: d.revision ?? 1, updates }),
-    ).then((r) => {
+    ).then(async (r) => {
       if (r.ok) {
         this.layoutsDirty = false;
         // TZ-NX-DOCSTUDIO-S46 — the layout response never carries ephemeral
@@ -2517,7 +2574,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
             : merged;
         });
         this.blocks.set(normalized);
-        this.document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x));
+        await this.refreshDocumentRevisionAfterBlockWrite();
         this.ensureLiveRowsAfterLayoutSave(normalized);
         return true;
       }
@@ -2545,8 +2602,23 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (needsHydrate) void this.refreshLiveDataSetsOnLoad(blocks);
   }
 
+  private conflictToastShown = false;
+
+  /**
+   * TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL — a second conflict while the
+   * dialog is already open used to be a silent no-op ("dead button" from the
+   * operator's view). Now serialized document writes should make this rare
+   * (no more same-revision race), but a *real* external edit (another tab)
+   * can still 409 more than once in a row — surface it once, not per write.
+   */
   private conflict(): void {
-    if (this.conflictDialogOpen) return;
+    if (this.conflictDialogOpen) {
+      if (!this.conflictToastShown) {
+        this.conflictToastShown = true;
+        this.toast.error('Не записано — документ уже изменён в другом месте. Закройте диалог и перезагрузите.');
+      }
+      return;
+    }
     this.conflictDialogOpen = true;
     const id = this.document()?._id;
     const ref = this.dialog.open<boolean>(AlertDialogComponent, {
@@ -2560,6 +2632,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
     onDialogCloseOnce(ref, this.injector, (reload) => {
       this.conflictDialogOpen = false;
+      this.conflictToastShown = false;
       if (reload) this.reloadFromServer();
     });
   }

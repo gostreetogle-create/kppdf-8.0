@@ -7,7 +7,7 @@
 updated_at: 2026-09-13T12:35:00+03:00  
 agent_slot: Claude  
 current_wave: **1**  
-current_tz: 1.1  
+current_tz: 1.2  
 status: IN_WORK_WAVE1
 
 ---
@@ -40,8 +40,8 @@ status: IN_WORK_WAVE1
 
 | # | TZ path | Claim | Evidence | Gates | Archive | Commit SHA | Status |
 |---|---------|-------|----------|-------|---------|------------|--------|
-| 1.1 | `…/TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG.md` | claude 2026-09-13T09:35:00Z | IN_WORK | | | | CLAIMED |
-| 1.2 | `…/TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL.md` | | | | | | PENDING |
+| 1.1 | `…/TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG.md` | claude 2026-09-13T09:35:00Z | `evidence/TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG.txt` | BE 135/1330 + FE 123/852+7skip + arch + build PASS | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG.done.md` | `8d2d722d` | DONE |
+| 1.2 | `…/TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL.md` | claude 2026-09-13T10:20:00Z | `evidence/TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL.txt` | FE 124/856+7skip + arch + build + live Playwright PASS | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL.done.md` | (this commit) | DONE |
 | 1.3 | `…/TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP.md` | | | | | | PENDING |
 
 **Правило строки Status:** `PENDING` → `CLAIMED` → `IN_WORK` → `GATES` → `DONE` | `BLOCKED` | `FAILED`.  
@@ -52,6 +52,9 @@ status: IN_WORK_WAVE1
 ```
 2026-09-13T09:35:00Z | WAVE1 | started | HEAD=984172c1
 2026-09-13T09:35:00Z | 1.1 PHOTO-BROKEN-IMG | CLAIMED
+2026-09-13T10:20:00Z | 1.1 PHOTO-BROKEN-IMG | DONE | commit=8d2d722d | successor filed: tasks/_ready/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.md (out-of-scope vitrina bug found live, not fixed here)
+2026-09-13T10:20:00Z | 1.2 ADD-PAGE-WRITE-SERIAL | CLAIMED
+2026-09-13T11:10:00Z | 1.2 ADD-PAGE-WRITE-SERIAL | DONE | commit=(this commit, SHA backfilled at next transition) | live Playwright evidence PASS (3x add-page, 3x200, strictly increasing revision)
 ```
 
 _(агент дописывает строки сюда после каждого перехода статуса)_
