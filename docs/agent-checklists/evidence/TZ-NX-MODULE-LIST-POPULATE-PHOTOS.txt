@@ -1,0 +1,76 @@
+=== Root cause (confirmed exactly as TZ described) ===
+
+`ProductModuleService.findAll()` populated `workTypes.workTypeId`,
+`categoryId`, and `materials.materialId` — never `photoIds`/`mainPhotoId`.
+The studio vitrina's "Модули" tab therefore always showed the empty
+placeholder for every module regardless of whether it actually had a photo
+uploaded — a missing-populate bug, distinct from the orphan-reference
+broken-icon class already closed for product/material in WAVE3.1.
+
+=== Fix (product-module.service.ts) ===
+
+1. `findAll()`: added `.populate('photoIds').populate('mainPhotoId')` to
+   both query branches (with and without `productId` filter), switched to
+   `.lean()` (read-only list endpoint, matching product.service.ts /
+   material.service.ts's own pattern — no internal caller relies on
+   Document methods, confirmed via repo-wide grep), return type changed
+   from `Promise<ProductModuleDocument[]>` to `Promise<Record<string,
+   unknown>[]>` to match the now-plain lean shape.
+2. New private `blankMissingModulePhotos()` — same `blankMissingUploadUrls`
+   helper WAVE3.1 introduced in `document-render.utils.ts`, applied to the
+   newly-populated `photoIds` arrays and `mainPhotoId` singles, exactly
+   mirroring `MaterialService.findAll`'s own call site.
+3. `findById()` deliberately NOT touched — it's used internally by
+   `update()`/`addComposition()`/etc. for mutate-then-`.save()` flows, and
+   the TZ's own text scopes this fix to "findAll (и findById если
+   list-карточки его не используют)" — confirmed the vitrina's Модули tab
+   calls `PiModulesService.list()` → `GET /modules` → `findAll()`, not
+   `findById()`, so extending to `findById()` would be scope creep against
+   this TZ's own necessity framing. The edit dialog's own
+   `/api/photos/:id/raw` fallback (in `module-form-dialog.component.ts`'s
+   `hydratePhotos()`) already handles a non-populated string ref there.
+
+=== Specs (product-module.service.spec.ts, new describe block) ===
+
+- "populates photoIds/mainPhotoId and blanks storageUrl for a photo whose
+  file no longer exists on disk" — two modules, one with an orphan
+  storageUrl (blanked to '') and one with a genuinely-existing file (kept),
+  using a real temp uploads dir + real `access()` check (same pattern as
+  WAVE3.1's product/material specs).
+- "returns an empty list untouched when no modules exist" — trivial guard.
+
+23/23 tests in the file pass (was 21, +2 new).
+
+=== Live verification (local dev, admin/admin123) ===
+
+Before any live patch — studio doc `6aa5b1221b6e6163bba2fc12`, "Модули" tab:
+  card_count 21, img_count 0, broken_img_count 0, ok_img_count 0, count_404 0
+  (no module in this dataset happened to have a real photo — confirms the
+  negative/orphan-free path: no broken icons, honest empty placeholders,
+  matches ACCEPT #2 for the "no photo" case)
+
+Positive-path proof: temporarily PATCHed an existing module
+(`6a81c44a4542013e5192c993`, "Каркас перголы") to reference the
+already-on-disk photo `6aa5ac581b6e6163bba2f802`
+(`/uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png`, confirmed 200 via
+direct fetch, same file used as live evidence in WAVE1's
+TABLE-PHOTO-BROKEN-IMG TZ) — re-checked the vitrina:
+  card_count 21, img_count 1, broken_img_count 0, ok_img_count 1, count_404 0
+Confirms ACCEPT #1: a module with an existing uploads file now renders its
+thumbnail in the vitrina (previously impossible — the field was never even
+populated). Reverted the module back to `photoIds: [], mainPhotoId: null`
+immediately after — no test-data pollution left in the shared dev DB.
+
+No page-level JS errors in either check.
+
+=== Gates (verbatim summary) ===
+
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest product-module.service -> 23/23 PASS (was 21, +2 new)
+BE jest (full) -> 135 suites / 1344 tests PASS (was 1342, +2 new)
+BE eslint (scoped: product-module.service.ts/.spec.ts) -> 0 errors, 21
+  pre-existing no-explicit-any warnings, none in new code
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2)
+No FE files in conflict keys — no FE gate required for this TZ; live
+Playwright verification substitutes for the ACCEPT's own "живой smoke".

@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { ProductModuleService, UpsertProductModuleDto, MaterialInModuleDto } from './product-module.service';
@@ -304,5 +306,82 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(save).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('ProductModuleService.findAll — photos (TZ-NX-MODULE-LIST-POPULATE-PHOTOS)', () => {
+  function buildService(model: Record<string, unknown>) {
+    return new ProductModuleService(
+      model as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      undefined,
+      graphStub() as never,
+      { previewModuleCost: jest.fn() } as never,
+    );
+  }
+
+  /** Mimics find().populate()...sort().lean().exec() — every non-terminal method returns the chain. */
+  function findChain(items: unknown[]) {
+    const chain: Record<string, unknown> = {};
+    for (const method of ['populate', 'sort', 'lean']) {
+      chain[method] = jest.fn().mockReturnValue(chain);
+    }
+    chain.exec = jest.fn().mockResolvedValue(items);
+    return chain;
+  }
+
+  const uploadsDir = join(process.cwd(), 'uploads', 'module-list-photos-test');
+  const existingUrl = '/uploads/module-list-photos-test/real.png';
+  const orphanUrl = '/uploads/module-list-photos-test/orphan.png';
+
+  beforeAll(async () => {
+    await mkdir(uploadsDir, { recursive: true });
+    await writeFile(join(uploadsDir, 'real.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  });
+
+  afterAll(async () => {
+    await rm(uploadsDir, { recursive: true, force: true });
+  });
+
+  it('populates photoIds/mainPhotoId and blanks storageUrl for a photo whose file no longer exists on disk', async () => {
+    const items = [
+      {
+        _id: new Types.ObjectId(),
+        name: 'Каркас',
+        photoIds: [{ _id: new Types.ObjectId(), storageUrl: orphanUrl }],
+        mainPhotoId: { _id: new Types.ObjectId(), storageUrl: orphanUrl },
+      },
+      {
+        _id: new Types.ObjectId(),
+        name: 'Полка',
+        photoIds: [{ _id: new Types.ObjectId(), storageUrl: existingUrl }],
+        mainPhotoId: { _id: new Types.ObjectId(), storageUrl: existingUrl },
+      },
+    ];
+    const find = jest.fn().mockReturnValue(findChain(items));
+    const service = buildService({ find });
+
+    const result = await service.findAll();
+
+    expect(find).toHaveBeenCalledWith({ deletedAt: null });
+    const [orphaned, real] = result as unknown as Array<{
+      photoIds: Array<{ storageUrl: string }>;
+      mainPhotoId: { storageUrl: string };
+    }>;
+    expect(orphaned.photoIds[0].storageUrl).toBe('');
+    expect(orphaned.mainPhotoId.storageUrl).toBe('');
+    expect(real.photoIds[0].storageUrl).toBe(existingUrl);
+    expect(real.mainPhotoId.storageUrl).toBe(existingUrl);
+  });
+
+  it('returns an empty list untouched when no modules exist', async () => {
+    const find = jest.fn().mockReturnValue(findChain([]));
+    const service = buildService({ find });
+
+    const result = await service.findAll();
+
+    expect(result).toEqual([]);
   });
 });

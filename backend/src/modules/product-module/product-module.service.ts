@@ -13,6 +13,7 @@ import {
   CostCalculationService,
   ModuleCostPreview,
 } from '../cost-calculation/cost-calculation.service';
+import { blankMissingUploadUrls } from '../document-render/document-render.utils';
 
 export interface MaterialInModuleDto { materialId: string; quantity?: number; unit?: string; isPurchased?: boolean; overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string }; sortOrder?: number; }
 export interface WorkTypeInModuleDto { workTypeId: string; estimatedHours?: number; sortOrder?: number; days?: number | null; }
@@ -45,7 +46,7 @@ export class ProductModuleService {
     }
   }
 
-  async findAll(productId?: string): Promise<ProductModuleDocument[]> {
+  async findAll(productId?: string): Promise<Record<string, unknown>[]> {
     const activeFilter: Record<string, unknown> = { deletedAt: null };
     if (productId) {
       if (!Types.ObjectId.isValid(productId)) return [];
@@ -55,9 +56,13 @@ export class ProductModuleService {
         ? product.composition.filter((line) => line.lineType === 'module').map((line) => line.refId)
         : product.productModuleIds;
       if (moduleIds.length === 0) return [];
-      return this.model.find({ ...activeFilter, _id: { $in: moduleIds } }).populate('workTypes.workTypeId').populate('categoryId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
+      const items = await this.model.find({ ...activeFilter, _id: { $in: moduleIds } }).populate('workTypes.workTypeId').populate('categoryId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).populate('photoIds').populate('mainPhotoId').sort({ sortOrder: 1 }).lean().exec();
+      await this.blankMissingModulePhotos(items);
+      return items;
     }
-    return this.model.find(activeFilter).populate('workTypes.workTypeId').populate('categoryId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
+    const items = await this.model.find(activeFilter).populate('workTypes.workTypeId').populate('categoryId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).populate('photoIds').populate('mainPhotoId').sort({ sortOrder: 1 }).lean().exec();
+    await this.blankMissingModulePhotos(items);
+    return items;
   }
 
   async findByIds(ids: string[]): Promise<ProductModuleDocument[]> {
@@ -271,6 +276,18 @@ export class ProductModuleService {
   private organizationId(value: string): Types.ObjectId {
     if (!Types.ObjectId.isValid(value)) throw new BadRequestException('Invalid organization scope');
     return new Types.ObjectId(value);
+  }
+
+  /**
+   * TZ-NX-MODULE-LIST-POPULATE-PHOTOS — same orphan-reference guard as
+   * ProductService/MaterialService.findAll (WAVE3.1), applied here for the
+   * first time now that photoIds/mainPhotoId are actually populated.
+   */
+  private async blankMissingModulePhotos(items: Array<Record<string, unknown>>): Promise<void> {
+    await blankMissingUploadUrls([
+      ...items.flatMap((item) => (Array.isArray(item.photoIds) ? (item.photoIds as Array<{ storageUrl?: unknown }>) : [])),
+      ...items.map((item) => item.mainPhotoId as { storageUrl?: unknown } | undefined),
+    ]);
   }
 
   /** findById populates materials.materialId — String(populated) is `[object Object]` and breaks BSON. */

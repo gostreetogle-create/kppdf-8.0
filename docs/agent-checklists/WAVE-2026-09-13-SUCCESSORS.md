@@ -1,9 +1,9 @@
 # WAVE — Successors backlog 2026-09-13 (после studio-ops)
 
-updated_at: 2026-09-13T18:00:00Z  
+updated_at: 2026-09-13T19:00:00Z  
 agent_slot: Claude  
-current_wave: **1**  
-status: **WAVE1_DONE** (волна 2 не стартована — ждёт отдельного отчёта/GO)
+current_wave: **2**  
+status: **IN_WORK_WAVE2**
 
 > Out-of-band (не в волнах): `TZ-VERIFY-VM52-SSH-REMAINDER-2026-09-13` — только LAN.
 
@@ -12,7 +12,8 @@ status: **WAVE1_DONE** (волна 2 не стартована — ждёт от
 | Волна | TZ по порядку | Conflict |
 |-------|---------------|----------|
 | **1** | SHELL-RAILS-ALWAYS | app-shell — **один** TZ, P0 |
-| **2** | MODULE-LIST-PHOTOS → CATEGORY-SLUG-409 → SORTORDER-EMPTY-MIN → SUPPLY-TASK-UNCONFIRM | BE+FE разные модули, последовательно один агент |
+| **2** | MODULE-LIST-PHOTOS → CATEGORY-SLUG-409 → SORTORDER-EMPTY-MIN → SUPPLY-TASK-UNCONFIRM → ISSUER-SELECT | BE+FE, один агент |
+| **3** | TABLE-PRICE-SUM → TOKEN-EDITOR-CHIP | studio FE(+resolver) |
 
 ## Волна 1
 
@@ -26,13 +27,23 @@ status: **WAVE1_DONE** (волна 2 не стартована — ждёт от
 
 | # | TZ | Status |
 |---|-----|--------|
-| 2.1 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-MODULE-LIST-POPULATE-PHOTOS.md` | PENDING |
-| 2.2 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-CATEGORY-DUPLICATE-SLUG-409.md` | PENDING |
+| 2.1 | `tasks/_archive/2026-09/TZ-NX-MODULE-LIST-POPULATE-PHOTOS.done.md` | DONE (SHA backfill pending) |
+| 2.2 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-CATEGORY-DUPLICATE-SLUG-409.md` | CLAIMED |
 | 2.3 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-SORTORDER-EMPTY-MIN.md` | PENDING |
 | 2.4 | `tasks/_ready/TZ-NX-SUPPLY-TASK-UNCONFIRM.md` | PENDING |
 | 2.5 | `tasks/_ready/TZ-NX-DOCSTUDIO-ISSUER-SELECT.md` | PENDING |
 
 Промпт: `tasks/_ready/PROMPT-CLAUDE-SUCCESSORS-WAVE2.md` — **не стартовать** до WAVE1_DONE.
+
+## Волна 3 (после WAVE2_DONE)
+
+| # | TZ | Status |
+|---|-----|--------|
+| 3.1 | `tasks/_ready/TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM.md` | PENDING |
+| 3.2 | `tasks/_ready/TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP.md` | PENDING |
+
+Аудит: `docs/audits/2026-09-13-docstudio-table-price-sum.md` · `docs/audits/2026-09-13-docstudio-token-editor-chip.md`  
+Промпт: выдать после отчёта WAVE2 (два TZ подряд).
 
 ### Checkpoint
 
@@ -41,4 +52,8 @@ status: **WAVE1_DONE** (волна 2 не стартована — ждёт от
 2026-09-13T17:30:00Z | 1.1 SHELL-RAILS-ALWAYS | CLAIMED
 2026-09-13T18:00:00Z | 1.1 SHELL-RAILS-ALWAYS | DONE | commit=63abd04c | overreach from TZ-NX-SHELL-01-IDLE-RAILS reverted: both rails always in DOM, grid always 3 columns, history moved from header into rail tops (one <-> pair site-wide); live Playwright confirmed on /counterparties (idle) and /production (setTools); no demo/disabled placeholder tools restored
 2026-09-13T18:00:00Z | WAVE1 | DONE | 1/1 TZ DONE — WAVE2 (MODULE-LIST-PHOTOS -> CATEGORY-SLUG-409 -> SORTORDER-EMPTY-MIN -> SUPPLY-TASK-UNCONFIRM -> DOCSTUDIO-ISSUER-SELECT) NOT started, per prompt instruction — see final report to PO
+2026-09-13T19:00:00Z | WAVE2 | started | HEAD=43acfbf3
+2026-09-13T19:00:00Z | 2.1 MODULE-LIST-POPULATE-PHOTOS | CLAIMED
+2026-09-13T19:35:00Z | 2.1 MODULE-LIST-POPULATE-PHOTOS | DONE | commit=(backfill pending) | findAll now populates photoIds/mainPhotoId + blankMissingUploadUrls (reused WAVE3.1 helper); live: negative path 0 broken/0x404 on photo-less dataset, positive path temporary real-photo PATCH renders correctly then reverted; findById left untouched (out of scope, used for mutate-then-save)
+2026-09-13T19:35:00Z | 2.2 CATEGORY-DUPLICATE-SLUG-409 | CLAIMED
 ```
