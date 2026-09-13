@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { MaterialService } from './material.service';
@@ -230,6 +232,50 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findAll blanks orphaned photoIds/mainPhotoId.storageUrl (TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG)', () => {
+    const uploadsDir = join(process.cwd(), 'uploads', 'vitrina-material-test');
+    const existingUrl = '/uploads/vitrina-material-test/real.png';
+    const orphanUrl = '/uploads/vitrina-material-test/orphan.png';
+
+    beforeAll(async () => {
+      await mkdir(uploadsDir, { recursive: true });
+      await writeFile(join(uploadsDir, 'real.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    });
+
+    afterAll(async () => {
+      await rm(uploadsDir, { recursive: true, force: true });
+    });
+
+    it('blanks storageUrl for an orphaned mainPhotoId and a photoIds entry, keeps a real one intact', async () => {
+      const items = [
+        {
+          _id: new Types.ObjectId(),
+          name: 'Стекло',
+          photoIds: [{ _id: new Types.ObjectId(), storageUrl: orphanUrl }],
+          mainPhotoId: { _id: new Types.ObjectId(), storageUrl: orphanUrl },
+        },
+        {
+          _id: new Types.ObjectId(),
+          name: 'Профиль',
+          photoIds: [{ _id: new Types.ObjectId(), storageUrl: existingUrl }],
+          mainPhotoId: { _id: new Types.ObjectId(), storageUrl: existingUrl },
+        },
+      ];
+      const { service } = buildService({ find: jest.fn().mockReturnValue(findChain(items)) });
+
+      const result = await service.findAll({});
+
+      const [orphaned, real] = result.items as unknown as Array<{
+        photoIds: Array<{ storageUrl: string }>;
+        mainPhotoId: { storageUrl: string };
+      }>;
+      expect(orphaned.photoIds[0].storageUrl).toBe('');
+      expect(orphaned.mainPhotoId.storageUrl).toBe('');
+      expect(real.photoIds[0].storageUrl).toBe(existingUrl);
+      expect(real.mainPhotoId.storageUrl).toBe(existingUrl);
     });
   });
 

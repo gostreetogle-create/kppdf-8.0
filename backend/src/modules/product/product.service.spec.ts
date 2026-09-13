@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Types } from 'mongoose';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { ProductService } from './product.service';
@@ -53,6 +55,55 @@ describe('TZ-MIG-306 — findAll categoryId string|ObjectId match', () => {
         categoryId: { $in: [new Types.ObjectId(categoryId), categoryId] },
       }),
     );
+  });
+});
+
+describe('TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG — findAll blanks orphaned photoIds.storageUrl', () => {
+  function buildService(model: Record<string, unknown>) {
+    return new ProductService(
+      model as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+  }
+
+  function listChain(items: unknown[]) {
+    const lean = jest.fn(() => ({ exec: jest.fn().mockResolvedValue(items) }));
+    const skip = jest.fn(() => ({ limit: jest.fn(() => ({ lean })) }));
+    const sort = jest.fn(() => ({ skip }));
+    const populate3 = jest.fn(() => ({ sort }));
+    const populate2 = jest.fn(() => ({ populate: populate3 }));
+    const populate1 = jest.fn(() => ({ populate: populate2 }));
+    return { find: jest.fn(() => ({ populate: populate1 })), countDocuments: jest.fn(() => ({ exec: jest.fn().mockResolvedValue(items.length) })) };
+  }
+
+  const uploadsDir = join(process.cwd(), 'uploads', 'vitrina-product-test');
+  const existingUrl = '/uploads/vitrina-product-test/real.png';
+  const orphanUrl = '/uploads/vitrina-product-test/orphan.png';
+
+  beforeAll(async () => {
+    await mkdir(uploadsDir, { recursive: true });
+    await writeFile(join(uploadsDir, 'real.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  });
+
+  afterAll(async () => {
+    await rm(uploadsDir, { recursive: true, force: true });
+  });
+
+  it('blanks storageUrl for a photo whose file no longer exists on disk, keeps a real one intact', async () => {
+    const model = listChain([
+      { _id: new Types.ObjectId(), name: 'Стол', sku: 'T-1', photoIds: [{ _id: new Types.ObjectId(), storageUrl: orphanUrl }] },
+      { _id: new Types.ObjectId(), name: 'Стул', sku: 'C-1', photoIds: [{ _id: new Types.ObjectId(), storageUrl: existingUrl }] },
+    ]);
+    const service = buildService(model);
+    const result = await service.findAll({ page: 1, limit: 10 });
+    expect((result.items[0] as { photoIds: Array<{ storageUrl: string }> }).photoIds[0].storageUrl).toBe('');
+    expect((result.items[1] as { photoIds: Array<{ storageUrl: string }> }).photoIds[0].storageUrl).toBe(existingUrl);
   });
 });
 

@@ -1,0 +1,107 @@
+=== ШАГ 0: Live evidence (local stand, admin/admin123, doc 6aa5b1221b6e6163bba2fc12) ===
+
+Before fix (Playwright, backend :3000 / frontend :4201, "Товары" tab, no forced scroll,
+4s settle — matches original PO screenshot repro):
+  card_count 67
+  img_count 22 (21 naturalWidth:0 broken + 1 ok)
+  empty_media_class_count 45
+  count_404 (/uploads/*) 34
+  page errors: none
+
+Endpoint(s) confirmed feeding the vitrina (ШАГ 0):
+  - ProductService.findAll (backend/src/modules/product/product.service.ts) — populates
+    `photoIds` (NOT `mainPhotoId` directly; FE's photoUrl() falls back to matching
+    mainPhotoId against the populated photoIds array, so this still works end-to-end).
+  - MaterialService.findAll (backend/src/modules/material/material.service.ts) — populates
+    BOTH `photoIds` and `mainPhotoId`; backs both "Детали" (materialKind=part) and
+    "Материалы" tabs (same findAll, different filter).
+  - ProductModuleService.findAll (backend/src/modules/product-module/product-module.service.ts)
+    — does NOT populate photoIds/mainPhotoId at ALL (separate, out-of-scope bug: "Модули"
+    tab always shows placeholder regardless of whether a module has a photo — a missing
+    feature, not a broken-icon regression; not fixed under this TZ's one-root-cause scope).
+
+=== Diagnostic: why the existing pi-showcase-card `size="sm"` onerror mechanism
+    (`mediaBroken` signal + `(error)="onMediaError()"`, already in
+    pi-showcase-card.component.ts before this TZ) did not visibly prevent the
+    broken icons ===
+
+Forced every `<img>` into view via Playwright `scroll_into_view_if_needed()` (defeats
+native `loading="lazy"` deferral) BEFORE the fix:
+  img_count_after_settle: 1 (down from 22)
+  img_naturalWidth_0_count: 0 (down from 21)
+  empty_media_class_count: 66 (up from 45)
+  count_404: 55 (up from 34 — forcing intersection triggered more real fetches)
+
+Conclusion: the existing FE onerror mechanism DOES work correctly — it is gated on the
+browser actually attempting the image load, which native `loading="lazy"` defers until
+real viewport intersection. During a plain settle-and-check (no scroll), most vitrina
+cards never got that chance, so the broken `<img>` lingered. This is why the TZ's
+explicitly preferred fix (backend existence-check, "единая точка правды") is the right
+primary fix — it removes the broken URL before it ever reaches the client, independent
+of any scroll/lazy-load timing. No FE code changed (see below) — re-implementing an
+onerror handler that already exists and already works would have been pure duplication.
+
+=== ШАГ 1: Backend fix ===
+
+- `document-render.utils.ts`: extracted `localUploadFileExists()` (was a private method
+  on `StudioDataResolverService`, third copy of the same logic per the TZ's own
+  root-cause note) into a public export, reusing the existing `resolveUploadsRoot()`.
+  Added `blankMissingUploadUrls(docs)` — batch helper, dedupes unique storageUrl values
+  per call (same dedup pattern as `resolveCatalogPhotoUrls`), blanks `storageUrl` in
+  place on any doc whose file is missing.
+- `studio-data-resolver.ts`: now imports `localUploadFileExists` from
+  `document-render.utils.ts` instead of its own private copy — one implementation, not
+  two (was already the plan per this TZ's ШАГ 1 text).
+- `product.service.ts` `findAll()`: applies `blankMissingUploadUrls` to all populated
+  `photoIds` sub-documents before mapping the response.
+- `material.service.ts` `findAll()`: applies `blankMissingUploadUrls` to both populated
+  `photoIds` sub-documents AND the populated `mainPhotoId` (material list populates both,
+  unlike product).
+
+=== ШАГ 2: Client-side fallback — deliberately NOT re-implemented ===
+
+Per the diagnostic above, `pi-showcase-card.component.ts`'s `size="sm"` branch (the
+variant the vitrina uses) already has `(error)="onMediaError()"` → `mediaBroken` signal
+→ falls back to the empty-media placeholder, confirmed functionally correct via the
+scrollIntoView test. Left unchanged — the backend fix (ШАГ 1) makes `mediaUrl` empty
+from the start for the orphan case, which is the actual bug; the existing client
+fallback remains valid defense-in-depth for the residual race (file deleted between
+request and render).
+
+=== After fix: live re-verification (same doc, same login, backend restarted with fix,
+    Playwright, NO forced scroll — exact original repro conditions) ===
+
+"Товары" tab:
+  card_count 67
+  img_count 1 (the one genuinely-existing photo)
+  broken_img_count 0
+  empty_media_class_count 66
+  count_404 (/uploads/*) 0
+
+All 4 tabs (Товары/Модули/Детали/Материалы), same session:
+  Товары:    cards 67, imgs 1, broken 0
+  Материалы: cards 17, imgs 0, broken 0  (all placeholders — correct, no crash)
+  Модули:    cards 21, imgs 0, broken 0  (out-of-scope non-populate bug, see above —
+                                           correctly shows placeholder, not broken icon)
+  Детали:    cards 3,  imgs 1, broken 0  (one real photo renders correctly)
+  count_404_total across all 4 tabs: 0
+
+No page-level JS errors observed in any run.
+
+=== Gates (verbatim summary) ===
+
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest document-render.utils product.service material.service studio-data-resolver
+  -> 4 suites PASS (new: 4 utils tests, 1 product test, 1 material test)
+BE jest (full) -> 135 suites / 1342 tests PASS (was 1330 — +12 new tests)
+BE eslint (scoped: document-render.utils.ts/.spec.ts, studio-data-resolver.ts,
+  product.service.ts/.spec.ts, material.service.ts/.spec.ts) -> 0 errors
+  (3 pre-existing `no-explicit-any` warnings in material.service.spec.ts's existing
+  buildService helper, not in new code)
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17, resolved since
+  baseline: 2)
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest (full, no FE code changed) -> 125 suites / 885 passed + 7 skipped (892 total)
+  PASS, no regression
+FE nx build kppdf-web (last) -> exit 0, same pre-existing budget/NG8102 warnings as
+  prior TZs (unrelated to this change)

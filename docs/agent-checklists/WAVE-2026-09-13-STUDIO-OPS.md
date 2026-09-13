@@ -4,11 +4,11 @@
 > Обновляет исполнитель **после каждого TZ** (не только в конце волны).  
 > Cursor/PO смотрят этот файл = «где агент сейчас».
 
-updated_at: 2026-09-13T13:10:00Z  
+updated_at: 2026-09-13T15:10:00Z  
 agent_slot: Claude  
-current_wave: **2**  
-current_tz: _(нет — волна 2 DONE)_  
-status: **WAVE2_DONE**
+current_wave: **3**  
+current_tz: 3.2 CATEGORY-INLINE-CREATE  
+status: **IN_WORK_WAVE3**
 
 ---
 
@@ -67,6 +67,10 @@ status: **WAVE2_DONE**
 2026-09-13T13:10:00Z | 2.C NECESSITY dead controls/COL-WIDTH | DONE | commit=222f1825 | columnWidthPercents BE+FE mirrored; live check: th width 20px->116px on real canvas; ≤1 active template confirmed via Mongo (0 duplicates)
 2026-09-13T13:10:00Z | NECESSITY-CLEANUP (master TZ) | DONE | archive tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md | all 5 ACCEPT criteria PASS
 2026-09-13T13:10:00Z | WAVE2 | DONE | 3 stages DONE, COL-WIDTH-APPLY absorbed (not run separately) — see final report to PO
+2026-09-13T14:00:00Z | WAVE3 | started | HEAD=a832c73a
+2026-09-13T14:00:00Z | 3.1 VITRINA-PHOTO-BROKEN-IMG | CLAIMED
+2026-09-13T15:10:00Z | 3.1 VITRINA-PHOTO-BROKEN-IMG | DONE | commit=(backfill pending) | live evidence: 21/22 broken img + 34x404 -> 0/0 after backend existence-check fix (product/material findAll), all 4 vitrina tabs; existing FE onerror mechanism found already-correct (scroll/lazy-load-gated), not re-implemented
+2026-09-13T15:10:00Z | 3.2 CATEGORY-INLINE-CREATE | CLAIMED
 ```
 
 _(агент дописывает строки сюда после каждого перехода статуса)_
@@ -90,12 +94,14 @@ Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md
 
 ## Волна 3 — прогресс
 
-| # | TZ | Status |
-|---|-----|--------|
-| 3.1 | CATEGORY-INLINE-CREATE | PENDING |
-| 3.2 | OPS-DOCS-HOST-52-SYNC | PENDING |
-| 3.3 | VITRINA-PHOTO-BROKEN-IMG (`tasks/_ready/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.md`) | PENDING — successor WAVE1 |
-| — | VERIFY-VM52-SSH-REMAINDER | OUT_OF_BAND (LAN) |
+| # | TZ | Commit SHA | Status |
+|---|-----|------------|--------|
+| 3.1 | VITRINA-PHOTO-BROKEN-IMG (`tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.done.md`) | (backfill pending) | DONE |
+| 3.2 | CATEGORY-INLINE-CREATE | | CLAIMED |
+| 3.3 | OPS-DOCS-HOST-52-SYNC | | PENDING |
+| — | VERIFY-VM52-SSH-REMAINDER | | OUT_OF_BAND (LAN) |
+
+Промпт: `tasks/_ready/2026-09-13-studio-ops/PROMPT-CLAUDE-STUDIO-OPS-WAVE3.md`
 
 ---
 

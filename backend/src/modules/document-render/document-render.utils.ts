@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
 /** Strip TipTap tags inside `{{…}}` tokens (legacy templates). TZ-KP-BIND-513 */
@@ -46,6 +46,59 @@ export function resolveUploadsRoot(): string {
 }
 
 const SAFE_UPLOAD_URL_RE = /^\/uploads\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
+
+/**
+ * TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG — public single source of truth
+ * for "does this `/uploads/*` URL still exist on disk", extracted from what
+ * was a private `StudioDataResolverService.localUploadFileExists` (added by
+ * TABLE-PHOTO-SMOKE, refined by TABLE-PHOTO-BROKEN-IMG to use
+ * `resolveUploadsRoot()`) so catalog list endpoints (product/material
+ * `findAll`) can apply the same orphan-reference check instead of a third
+ * copy-pasted implementation.
+ */
+export async function localUploadFileExists(url: string): Promise<boolean> {
+  if (!url.startsWith('/uploads/') || url.includes('..')) return false;
+  const uploadsRoot = resolveUploadsRoot();
+  const filePath = resolve(uploadsRoot, url.slice('/uploads/'.length));
+  if (relative(uploadsRoot, filePath).startsWith('..')) return false;
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG — a populated `Photo` sub-document
+ * can outlive its on-disk file (doc restored/copied without `uploads/`, file
+ * manually removed). Blanks `storageUrl` in place on any doc whose file is
+ * missing, so a stale reference degrades to the same empty-media placeholder
+ * as a genuinely absent photo instead of a browser broken-image icon —
+ * mirrors `StudioDataResolverService.resolveCatalogPhotoUrls`'s per-request
+ * dedup (checking each unique URL once regardless of how many items share
+ * the same photo).
+ */
+export async function blankMissingUploadUrls(
+  docs: ReadonlyArray<{ storageUrl?: unknown } | null | undefined>,
+): Promise<void> {
+  const urls = [
+    ...new Set(
+      docs
+        .map((doc) => (doc && typeof doc.storageUrl === 'string' ? doc.storageUrl : ''))
+        .filter((url): url is string => url.length > 0),
+    ),
+  ];
+  if (urls.length === 0) return;
+  const existsByUrl = new Map<string, boolean>(
+    await Promise.all(urls.map(async (url) => [url, await localUploadFileExists(url)] as const)),
+  );
+  for (const doc of docs) {
+    if (doc && typeof doc.storageUrl === 'string' && doc.storageUrl && !existsByUrl.get(doc.storageUrl)) {
+      (doc as { storageUrl?: string }).storageUrl = '';
+    }
+  }
+}
 
 const UPLOAD_EXT_MIME: Record<string, string> = {
   png: 'image/png',

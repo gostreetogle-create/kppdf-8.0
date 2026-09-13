@@ -15,6 +15,7 @@ import { CompositionLineDocumentShape } from '../catalog/composition-line.schema
 import { CompositionLineService } from '../catalog/composition-line.service';
 import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
 import { CatalogGraphService } from '../catalog-graph/catalog-graph.service';
+import { blankMissingUploadUrls } from '../document-render/document-render.utils';
 
 @Injectable()
 export class ProductService {
@@ -87,6 +88,13 @@ export class ProductService {
     if (typeof q.isActive === 'boolean') filter.isActive = q.isActive;
     const sortField = q.sortBy ?? 'createdAt'; const sortOrder = q.sortOrder === 'asc' ? 1 : -1;
     const [rawItems, total] = await Promise.all([this.model.find(filter).populate('categoryId').populate('photoIds').populate('productModuleIds').sort({ [sortField]: sortOrder }).skip((page - 1) * limit).limit(limit).lean().exec(), this.model.countDocuments(filter).exec()]);
+    // TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG: an orphaned photoIds entry
+    // (Photo doc survives, file on disk does not) must not reach the client
+    // as a truthy-but-404 storageUrl — blank it so the vitrina/list UI shows
+    // the same empty-media placeholder as a genuinely photo-less product.
+    await blankMissingUploadUrls(
+      rawItems.flatMap((item) => (Array.isArray(item.photoIds) ? (item.photoIds as Array<{ storageUrl?: unknown }>) : [])),
+    );
     const items = rawItems.map((item) => {
       const composition = (item.composition ?? []) as unknown as CompositionLineDocumentShape[];
       const isComplex = composition.some((line) => line.lineType === 'product');

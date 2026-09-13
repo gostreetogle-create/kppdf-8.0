@@ -10,6 +10,7 @@ import { CatalogGraphService } from '../catalog-graph/catalog-graph.service';
 import { CompositionLineService } from '../catalog/composition-line.service';
 import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
 import { CompositionLineDocumentShape } from '../catalog/composition-line.schema';
+import { blankMissingUploadUrls } from '../document-render/document-render.utils';
 
 @Injectable()
 export class MaterialService {
@@ -63,6 +64,13 @@ export class MaterialService {
     const [items, total] = await Promise.all([
       this.model.find(filter).populate('categoryId').populate('photoIds').populate('mainPhotoId').populate('supplierId').sort({ name: 1 }).skip((page - 1) * limit).limit(limit).lean().exec(),
       this.model.countDocuments(filter).exec(),
+    ]);
+    // TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG: same orphan-reference guard as
+    // ProductService.findAll, applied to both photoIds and the populated
+    // mainPhotoId (material list — unlike product — populates it directly).
+    await blankMissingUploadUrls([
+      ...items.flatMap((item) => (Array.isArray(item.photoIds) ? (item.photoIds as Array<{ storageUrl?: unknown }>) : [])),
+      ...items.map((item) => item.mainPhotoId as { storageUrl?: unknown } | undefined),
     ]);
     return { items, total, page, limit };
   }
