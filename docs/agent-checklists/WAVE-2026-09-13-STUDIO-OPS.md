@@ -60,8 +60,10 @@ status: **IN_WORK_WAVE2**
 2026-09-13T12:05:00Z | WAVE1 | DONE | all 3 TZs DONE, 1 successor filed (VITRINA-PHOTO-BROKEN-IMG) — see final report to PO
 2026-09-13T10:30:00Z | WAVE2 | started | HEAD=670a9e7b
 2026-09-13T10:30:00Z | NECESSITY-CLEANUP (master TZ) | CLAIMED | этап A starting
-2026-09-13T11:15:00Z | 2.A NECESSITY IA | DONE | commit=(this commit) | Вид->Макет колонок rename + CTA; Источник строк status/Обновить/Сменить for catalog rowSource; wiring gap in studio-properties-panel.component.ts fixed (not in declared conflict keys, flagged)
+2026-09-13T11:15:00Z | 2.A NECESSITY IA | DONE | commit=726641e3 | Вид->Макет колонок rename + CTA; Источник строк status/Обновить/Сменить for catalog rowSource; wiring gap in studio-properties-panel.component.ts fixed (not in declared conflict keys, flagged)
 2026-09-13T11:15:00Z | 2.B NECESSITY SoT+round-trip | IN_WORK
+2026-09-13T12:40:00Z | 2.B NECESSITY SoT+round-trip | DONE | commit=(this commit) | live check caught real dataSource format mismatch ("product" vs "catalog-products") before ship — fixed with normalized comparison; B1/B2 persistence live-verified across a fresh session
+2026-09-13T12:40:00Z | 2.C NECESSITY dead controls/COL-WIDTH | IN_WORK
 ```
 
 _(агент дописывает строки сюда после каждого перехода статуса)_
@@ -72,9 +74,9 @@ _(агент дописывает строки сюда после каждог�
 
 | # | Этап | Commit SHA | Status |
 |---|------|------------|--------|
-| 2.A | NECESSITY IA | (this commit) | DONE |
-| 2.B | NECESSITY SoT + source round-trip | | IN_WORK |
-| 2.C | NECESSITY dead controls / COL-WIDTH absorb | | PENDING |
+| 2.A | NECESSITY IA | `726641e3` | DONE |
+| 2.B | NECESSITY SoT + source round-trip | (this commit) | DONE |
+| 2.C | NECESSITY dead controls / COL-WIDTH absorb | | IN_WORK |
 
 Master TZ: `tasks/_ready/2026-09-13-studio-ops/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.md`  
 Промпт: `…/PROMPT-CLAUDE-STUDIO-OPS-WAVE2.md`

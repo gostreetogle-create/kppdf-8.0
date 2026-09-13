@@ -9,6 +9,7 @@ import {
   PiQuotationsService,
   PiStudioBlocksService,
   PiStudioDocumentsService,
+  PiTableTemplatesService,
   type StudioDocument,
 } from '@kppdf/data-access';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
@@ -66,6 +67,11 @@ describe('StudioEditorPage.onFinalize — no native confirm', () => {
         },
         { provide: PiStudioDocumentsService, useValue: documentsApi },
         { provide: PiStudioBlocksService, useValue: { updateLayouts: jest.fn() } },
+        // TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап B) — StudioEditorPage
+        // now injects this eagerly; this spec provides every service by hand
+        // (no HttpClient), so the root-provided real service would otherwise
+        // fail to construct.
+        { provide: PiTableTemplatesService, useValue: { list: emptyList([]) } },
         { provide: PiCounterpartiesService, useValue: { list: emptyList({ items: [] }) } },
         { provide: PiQuotationsService, useValue: { list: emptyList([]) } },
         { provide: PiOrdersService, useValue: { list: emptyList([]) } },

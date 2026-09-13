@@ -42,3 +42,75 @@ nx build kppdf-web (last) -> exit 0, same 2 pre-existing unrelated budget warnin
 
 Not touched: registry CRUD, putDataSet endpoint, Insert button itself, BE files
 (этап A is FE-only IA per TZ scope).
+
+=== ЭТАП B — SoT + source round-trip (2026-09-13) ===
+
+Merged `onTableSourceChange` and `setBlockCatalogSource` (near-duplicate write
+paths per the source-select audit) into one `applyTableSource(blockId, source)`,
+queued via `enqueueDocumentWrite` (the same wave-1 `catalogWriteChain`) since it
+carries a document `expectedRevision` just like addPage/hydrate. `patchTableSettingsForBlock`
+was converted to `async`/`Promise<boolean>` so Insert can await the template-apply
+step before firing the catalog-source `putDataSet` write.
+
+Fixes (source-select audit B1-B3):
+- B1: switching to `manual` now explicitly sets `liveRows: null` (not left as a
+  stale array, even `[]`) — canvas's `Array.isArray` check was keeping an empty
+  table rendered forever instead of falling back to the manual sample rows.
+- B2: `dataSource` is now persisted to the block via `blocksService.update`
+  (`patchTableSettingsForBlock`), not only the local `blocks` signal + the
+  document's `dataSets` entry — previously the block and the dataSet could
+  disagree after F5.
+- B3: switching to a catalog kind with an empty «Выбрано» now toasts an honest
+  error ("в «Выбрано» нет товаров этого вида") instead of a success message that
+  implied rows arrived.
+
+Insert->registry-template SoT (kind-vs-source audit):
+- Insert (`insertCatalogTable`) now looks up the registry's active `TableTemplate`
+  matching this catalog kind's `dataSource` and applies its columns via
+  `patchTableSettingsForBlock`, instead of silently leaving `STUDIO_DEFAULT_TABLE_COLUMNS`
+  (3 hardcoded columns) as the outcome. No match -> `toast.error` pointing at
+  Реестры -> Виды таблиц (source is still wired; a missing template doesn't
+  block Insert entirely).
+- **Live Mongo check caught a real bug before it shipped**: the actual seeded
+  "Продукты" template is tagged `dataSource: "product"` (singular, no `catalog-`
+  prefix) — an exact `=== 'catalog-products'` match (the initial implementation)
+  would NEVER have fired against real registry data, silently defeating the
+  whole fix. Replaced with `normalizeCatalogDataSourceKey()` (strips `catalog-`
+  prefix and a trailing `s` on both sides before comparing), tolerant of
+  whatever singular/plural/prefix convention was used when a template was
+  tagged in the registry UI. New unit test locks in this exact real-world value.
+
+Gates:
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest studio-editor-catalog-insert.spec.ts -> 12/12 PASS (5 existing (2 этап A
+  additions included) + 7 new: template applied on match incl. real-world
+  "product" dataSource convention, toast+3-col-default-not-silent on no match,
+  B1 liveRows:null, B2 dataSource persisted via blocksService.update + local
+  signal, B3 empty-Выбрано honest error, non-empty still success)
+FE jest studio-editor-finalize.spec.ts -> 3/3 PASS (fixture fix: this spec wires
+  every StudioEditorPage dependency by hand with no HttpClient at all; needed a
+  PiTableTemplatesService mock now that the page injects it eagerly)
+FE jest (full) -> 125 suites / 881 passed + 7 skipped (888 total) PASS
+FE eslint (scoped: editor.page.ts + 2 touched spec files) -> 0 errors, 5
+  pre-existing-pattern warnings
+pnpm architecture:check (repo root) -> PASS
+nx build kppdf-web (last) -> exit 0, same 2 pre-existing unrelated budget warnings
+
+Live browser evidence (Playwright, local dev, admin/admin123, real backend +
+real Mongo, document 6aa5b1221b6e6163bba2fc12):
+- Status view from этап A still correct after the этап B refactor: "Из Выбрано:
+  Изделия (2)".
+- «Сменить…» -> select "Вручную" -> switch succeeded, status view correctly
+  disappeared (table left catalog mode).
+- Persistence proven across a FRESH Playwright browser context + fresh login
+  (not just same-session): re-opening the document in a new script run still
+  showed the table in manual mode — only possible if B2's block-level persist
+  actually reached Mongo, not just an in-memory signal.
+- Switched back to "Изделия" via the same select -> status view reappeared
+  ("Из Выбрано: Изделия (2)") -> document restored to its original state, no
+  residue left for other TZs' evidence.
+- No console errors during any of the above.
+
+Not touched: BE `studio-document.service.ts`/`.controller.ts` (no BE bug found
+in either B round-trip or template-lookup — TableTemplate list() already
+supports client-side filtering, no new endpoint needed).

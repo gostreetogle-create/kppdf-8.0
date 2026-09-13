@@ -39,7 +39,7 @@
 ## Stage progress
 
 - [x] Этап A — IA (status/labels, «Макет колонок» rename, page.md happy path) — DONE
-- [ ] Этап B — SoT (Insert→registry template) + source round-trip fixes
+- [x] Этап B — SoT (Insert→registry template) + source round-trip fixes — DONE
 - [ ] Этап C — dead controls (col.width apply, absorb COL-WIDTH-APPLY) + ≤1 active template assert
 
 ## Evidence

@@ -43,6 +43,7 @@ import {
   PiQuotationsService,
   PiStudioBlocksService,
   PiStudioDocumentsService,
+  PiTableTemplatesService,
   type Counterparty,
   type DocType,
   type Order,
@@ -117,6 +118,8 @@ import {
   studioTableQtyOverrides,
   withStudioTableQtyOverride,
   buildTableTemplatePayloadFromBlock,
+  buildTableSettingsFromTemplate,
+  type StudioTableRowSource,
 } from './studio-table-defaults';
 import { studioTextBlockSlug } from './studio-text-helpers';
 
@@ -139,6 +142,22 @@ const STUDIO_CATALOG_KIND_LABELS: Record<StudioShowcaseKind, string> = {
   parts: 'Детали',
   materials: 'Материалы',
 };
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап B) — `TableTemplate.dataSource`
+ * is a free-text registry field (`@IsString()`, no enum), not a hardcoded
+ * `StudioTableRowSource` value. A live check found the real seeded
+ * «Продукты» template tagged `dataSource: "product"` (singular, no
+ * `catalog-` prefix) — an exact match against `'catalog-products'` would
+ * never fire, silently leaving Insert on the 3-column default forever
+ * despite a real matching template existing. Normalizing both sides
+ * (strip `catalog-` prefix and a trailing `s`) tolerates whatever
+ * singular/plural/prefix convention someone used when tagging a template
+ * in the registry UI, rather than dictating one undocumented format.
+ */
+function normalizeCatalogDataSourceKey(value: string): string {
+  return value.trim().toLowerCase().replace(/^catalog-/, '').replace(/s$/, '');
+}
 
 /**
  * TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — «Изменить» on a «Выбрано» chip
@@ -513,6 +532,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly documents = inject(PiStudioDocumentsService);
   private readonly blocksService = inject(PiStudioBlocksService);
+  private readonly tableTemplatesService = inject(PiTableTemplatesService);
   private readonly counterpartiesApi = inject(PiCounterpartiesService);
   private readonly quotationsApi = inject(PiQuotationsService);
   private readonly ordersApi = inject(PiOrdersService);
@@ -1148,11 +1168,39 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       void this.refreshCatalogTablesOfKind(kind);
       return;
     }
-    void this.createTableBlock().then((block) => {
+    void this.createTableBlock().then(async (block) => {
       if (!block) return;
       this.activateLayer(block._id);
-      this.setBlockCatalogSource(block._id, source);
+      await this.applyMatchingTemplateOrWarn(block._id, kind, source);
+      this.applyTableSource(block._id, source);
     });
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап B) — Insert used to leave
+   * the block on `STUDIO_DEFAULT_TABLE_COLUMNS` (3 hardcoded columns) as if
+   * that were a deliberate product outcome; the registry's `TableTemplate`
+   * (SoT for column presets, `dataSource`-tagged) is the canon layout for
+   * this kind and must be applied instead. Awaited before the caller's own
+   * `applyTableSource` runs, so the catalog-source write below sees the
+   * template's columns already persisted, not a race between the two.
+   */
+  private async applyMatchingTemplateOrWarn(
+    blockId: string,
+    kind: StudioShowcaseKind,
+    source: 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials',
+  ): Promise<void> {
+    const result = await firstValueFrom(this.tableTemplatesService.list());
+    if (!result.ok) return;
+    const wantedKey = normalizeCatalogDataSourceKey(source);
+    const matching = result.data
+      .filter((t) => t.isActive !== false && typeof t.dataSource === 'string' && normalizeCatalogDataSourceKey(t.dataSource) === wantedKey)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))[0];
+    if (!matching) {
+      this.toast.error(`Нет вида таблицы для «${STUDIO_CATALOG_KIND_LABELS[kind]}» — выберите или создайте в Реестры → Виды таблиц`);
+      return;
+    }
+    await this.patchTableSettingsForBlock(blockId, buildTableSettingsFromTemplate(matching));
   }
 
   /**
@@ -1197,23 +1245,48 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
-  /** Shared by `onTableSourceChange` (existing table, Свойства panel) and `insertCatalogTable` (D52, new table). */
-  private setBlockCatalogSource(
-    blockId: string,
-    source: 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials',
-  ): void {
-    const doc = this.document();
-    if (!doc) return;
-    const catalogKey = source.slice('catalog-'.length) as 'products' | 'modules' | 'parts' | 'materials';
-    const selectedCount = this.catalogSelections()[catalogKey].length;
-    const dataSet = { source: { type: source }, rows: [], catalogSelectionCount: selectedCount };
-    this.blocks.update((blocks) => blocks.map((item) => item._id === blockId
-      ? { ...item, settings: { ...(item.settings ?? {}), dataSource: { type: source } } }
-      : item));
-    void firstValueFrom(this.documents.putDataSet(doc._id, `table-${blockId}`, {
-      expectedRevision: doc.revision ?? 1,
-      dataSet,
-    })).then((result) => {
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап B) — single write path for
+   * changing a table's row source, shared by Insert (`insertCatalogTable`)
+   * and the Свойства «Источник строк» select (`onTableSourceChange`), which
+   * used to duplicate nearly identical logic (source-select audit). Queued
+   * onto `catalogWriteChain` — this carries a document `expectedRevision`
+   * just like addPage/hydrate, so it must never race them.
+   *
+   * Fixes from the source-select audit (B1–B3):
+   *  - B1: switching to `manual` sets `liveRows: null` (not left as a stale
+   *    array, even `[]`) — canvas's `Array.isArray` check would otherwise
+   *    keep rendering an empty table forever instead of falling back to the
+   *    manual sample rows.
+   *  - B2: `dataSource` is now persisted to the block via
+   *    `patchTableSettingsForBlock` (`blocksService.update`), not only to
+   *    the local `blocks` signal + the document's `dataSets` entry — after
+   *    F5 the block and the dataSet used to be able to disagree.
+   *  - B3: an empty «Выбрано» for the picked kind gets an honest
+   *    toast.error instead of a toast.success that implied rows arrived.
+   */
+  private applyTableSource(blockId: string, source: StudioTableRowSource): void {
+    this.enqueueDocumentWrite(async () => {
+      if (source === 'manual') {
+        await this.patchTableSettingsForBlock(blockId, {
+          dataSource: { type: source },
+          liveRows: null,
+          livePhotoFrames: {},
+        });
+        this.toast.success('Источник строк: вручную');
+        this.refreshPreviewIfActive();
+        return;
+      }
+      await this.patchTableSettingsForBlock(blockId, { dataSource: { type: source } });
+      const doc = this.document();
+      if (!doc) return;
+      const catalogKey = source.startsWith('catalog-') ? (source.slice('catalog-'.length) as 'products' | 'modules' | 'parts' | 'materials') : '';
+      const selectedCount = catalogKey ? this.catalogSelections()[catalogKey].length : 0;
+      const dataSet = { source: { type: source }, rows: [], catalogSelectionCount: selectedCount };
+      const result = await firstValueFrom(this.documents.putDataSet(doc._id, `table-${blockId}`, {
+        expectedRevision: doc.revision ?? 1,
+        dataSet,
+      }));
       if (!result.ok) {
         this.conflict();
         return;
@@ -1221,8 +1294,18 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       this.document.set(result.data);
       const key = `table-${blockId}`;
       this.applyLiveRowsFromDataSet(result.data, blockId, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
-      this.toast.success('На листе появятся строки из выбранных товаров');
       this.refreshPreviewIfActive();
+      if (catalogKey) {
+        const label = STUDIO_CATALOG_KIND_LABELS[catalogKey as StudioShowcaseKind];
+        if (selectedCount === 0) {
+          this.toast.error(`Источник: ${label} — в «Выбрано» нет товаров этого вида, добавьте и нажмите «Обновить»`);
+        } else {
+          this.toast.success('На листе появятся строки из выбранных товаров');
+        }
+        return;
+      }
+      const sourceLabel = source === 'quotation-items' ? 'КП' : 'заказ';
+      this.toast.success(`Источник строк: ${sourceLabel}`);
     });
   }
 
@@ -1735,31 +1818,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     void this.refreshCatalogTablesOfKind(sourceType.slice('catalog-'.length) as StudioShowcaseKind);
   }
 
-  onTableSourceChange(source: 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'): void {
+  onTableSourceChange(source: StudioTableRowSource): void {
     const block = this.activeTableBlock();
-    const doc = this.document();
-    if (!block || !doc) return;
-    const catalogKey = source.startsWith('catalog-') ? source.slice('catalog-'.length) : '';
-    const selectedCount = catalogKey ? this.catalogSelections()[catalogKey as 'products' | 'modules' | 'parts' | 'materials'].length : 0;
-    const dataSet = { source: { type: source }, rows: [], catalogSelectionCount: selectedCount };
-    this.blocks.update((blocks) => blocks.map((item) => item._id === block._id
-      ? { ...item, settings: { ...(item.settings ?? {}), dataSource: { type: source } } }
-      : item));
-    void firstValueFrom(this.documents.putDataSet(doc._id, `table-${block._id}`, {
-      expectedRevision: doc.revision ?? 1,
-      dataSet,
-    })).then((result) => {
-      if (result.ok) {
-        this.document.set(result.data);
-        const key = `table-${block._id}`;
-        this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
-        const sourceLabel = source === 'manual' ? 'вручную' : source === 'quotation-items' ? 'КП' : source === 'order-items' ? 'заказ' : 'витрина';
-        this.toast.success(`Источник строк: ${sourceLabel}`);
-        this.refreshPreviewIfActive();
-      } else {
-        this.conflict();
-      }
-    });
+    if (!block) return;
+    this.applyTableSource(block._id, source);
   }
 
   private applyLiveRowsFromDataSet(
@@ -1873,9 +1935,18 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     return block?.type === 'table' ? block : null;
   }
 
-  private patchTableSettingsForBlock(blockId: string, patch: Record<string, unknown>): void {
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап B) — async + returns
+   * whether the server accepted the patch, so `insertCatalogTable`'s
+   * template-apply step can `await` it before firing the next document
+   * write (`putDataSet` for the catalog source) instead of racing it. Every
+   * pre-existing bare-statement caller (`patchTableRows`, `patchTableDisabledRows`,
+   * etc.) still works unchanged — a fire-and-forget call to an async
+   * function is legal and behaves exactly as before.
+   */
+  private async patchTableSettingsForBlock(blockId: string, patch: Record<string, unknown>): Promise<boolean> {
     const block = this.blocks().find((b) => b._id === blockId);
-    if (!block || block.type !== 'table') return;
+    if (!block || block.type !== 'table') return false;
     const settings = { ...(block.settings ?? {}), ...patch };
     const title =
       typeof patch['tableTemplateName'] === 'string' && patch['tableTemplateName'].trim()
@@ -1884,22 +1955,22 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.blocks.update((b) =>
       b.map((x) => (x._id === block._id ? { ...x, settings, ...(title !== block.title ? { title } : {}) } : x)),
     );
-    void firstValueFrom(
+    const r = await firstValueFrom(
       this.blocksService.update(block._id, {
         settings,
         ...(title !== block.title ? { title } : {}),
       }),
-    ).then((r) => {
-      if (r.ok) {
-        this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
-        this.refreshPreviewIfActive();
-        if ('tableTemplateColumns' in patch || 'tableQtyOverrides' in patch) {
-          this.rehydrateLiveRowsAfterColumnChange(r.data);
-        }
-      } else {
-        this.conflict();
-      }
-    });
+    );
+    if (!r.ok) {
+      this.conflict();
+      return false;
+    }
+    this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+    this.refreshPreviewIfActive();
+    if ('tableTemplateColumns' in patch || 'tableQtyOverrides' in patch) {
+      this.rehydrateLiveRowsAfterColumnChange(r.data);
+    }
+    return true;
   }
 
   /**
