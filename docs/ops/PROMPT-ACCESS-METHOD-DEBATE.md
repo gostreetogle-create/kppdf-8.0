@@ -14,7 +14,7 @@
 ════════════════════════════════════
 - Цеховой ERP ~10 пользователей (свои люди).
 - Стек: Angular + Nest + Mongo; Desktop/Tauri + MCP (Bearer JWT на /api).
-- Хостинг: Ubuntu VM на Synology (LAN 192.168.1.103:3000) ← SSH reverse tunnel ← VPS nginx
+- Хостинг: Ubuntu VM на Synology (LAN 192.168.1.52:3000) ← SSH reverse tunnel ← VPS nginx
   (kppdf-crm.ru, Let's Encrypt). Не Cloudflare Tunnel.
 - Внутри уже есть app-login + роли (admin/manager/…). Это ВТОРОЙ слой — его не убираем.
 - Сейчас снаружи: HTTP Basic Auth на UI (htpasswd). /api — Basic выключен (иначе Desktop MCP

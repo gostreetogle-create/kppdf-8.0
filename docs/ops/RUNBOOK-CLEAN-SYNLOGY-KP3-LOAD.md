@@ -6,7 +6,7 @@
 ## Порядок (строго)
 
 ```
-0. VPN OFF (иначе LAN 192.168.1.103 недоступен)
+0. VPN OFF (иначе LAN 192.168.1.52 недоступен)
 1. Бэкап Mongo на VM (backup.sh) → путь PO
 2. Явная фраза PO: «да, разрешаю wipe после бэкапа …»
 3. Wipe + Seed deploy (код main + Desktop publish)

@@ -79,7 +79,7 @@ IP allowlist — только запасной костыль, не страте
 
 ## 4. Рекомендация PO (порядок)
 
-**Факт по репо:** мост = **VPS `193.222.62.240` + nginx + SSH reverse tunnel** → VM `192.168.1.103` (не Cloudflare Tunnel). См. §5–§6.
+**Факт по репо:** мост = **VPS `193.222.62.240` + nginx + SSH reverse tunnel** → VM `192.168.1.52` (не Cloudflare Tunnel). См. §5–§6.
 
 ### Вердикт PO 2026-08-13 — один метод внешнего замка
 
@@ -225,7 +225,7 @@ Source of truth: [`deploy/synology/DEPLOY.md`](../../deploy/synology/DEPLOY.md).
   → nginx:443 (Let's Encrypt, конфиг /etc/nginx/sites-available/kppdf-proxy)
   → proxy_pass http://127.0.0.1:4200
   → SSH reverse tunnel (autossh / kppdf-tunnel с VM)
-  → Ubuntu VM на Synology 192.168.1.103:3000 (Docker kppdf-backend + mongo)
+  → Ubuntu VM на Synology 192.168.1.52:3000 (Docker kppdf-backend + mongo)
 ```
 
 Это **не** Cloudflare Tunnel. Упоминание cloudflared в `CREDENTIALS.example.md` — legacy из kppdf-3.0; для v8 канон = VPS + SSH `-R`.
@@ -275,7 +275,7 @@ SSH: `ssh root@193.222.62.240` (секреты в gitignored `deploy/synology/CR
 
 ## 7. Чеклист: цель Tailscale (когда будет вечер)
 
-1. [ ] Поставить Tailscale на VM `192.168.1.103` (или Synology + route к VM).
+1. [ ] Поставить Tailscale на VM `192.168.1.52` (или Synology + route к VM).
 2. [ ] Клиенты на телефон/ноут; ACL: только ваши устройства.
 3. [ ] Заход на `http://100.x.y.z:3000` (или MagicDNS) для проверки.
 4. [ ] Когда стабильно: решить, оставлять ли публичный `kppdf-crm.ru` только с Basic Auth как «запасной вход», или отключить proxy на приложение (радикально непублично).

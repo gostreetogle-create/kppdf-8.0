@@ -67,7 +67,7 @@ sudo docker ps
 | | |
 |---|---|
 | Домен | kppdf-crm.ru |
-| Tunnel | cloudflared на Ubuntu VM (см. kppdf-3.0 deploy/synology/tunnel_*.py) |
+| Tunnel | ~~cloudflared~~ — legacy kppdf-3.0 (см. `deploy/synology/tunnel_*.py` там). Канон v8: SSH reverse tunnel, systemd `kppdf-tunnel` на VM → VPS. См. `DEPLOY.md`. |
 
 ---
 

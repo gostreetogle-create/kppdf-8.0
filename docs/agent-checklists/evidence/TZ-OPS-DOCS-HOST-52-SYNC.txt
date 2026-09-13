@@ -1,0 +1,39 @@
+=== Replacements made ===
+
+docs/ops/home-host-access.md:
+  L82  "VM `192.168.1.103`" -> "VM `192.168.1.52`" (§4 факт по репо)
+  L228 "Ubuntu VM на Synology 192.168.1.103:3000" -> "...192.168.1.52:3000" (bridge diagram)
+  L278 "Поставить Tailscale на VM `192.168.1.103`" -> "...`192.168.1.52`" (§7 checklist)
+  (L231's existing cloudflared/kppdf-3.0-legacy note was already correct, untouched)
+
+docs/ops/PROMPT-ACCESS-METHOD-DEBATE.md:
+  L17 "LAN 192.168.1.103:3000" -> "LAN 192.168.1.52:3000"
+
+docs/ops/RUNBOOK-CLEAN-SYNLOGY-KP3-LOAD.md:
+  L9  "LAN 192.168.1.103 недоступен" -> "LAN 192.168.1.52 недоступен"
+
+deploy/synology/CREDENTIALS.example.md:
+  L70 "Tunnel | cloudflared на Ubuntu VM (см. kppdf-3.0 deploy/synology/tunnel_*.py) |"
+      -> "Tunnel | ~~cloudflared~~ — legacy kppdf-3.0 (см. `deploy/synology/tunnel_*.py`
+          там). Канон v8: SSH reverse tunnel, systemd `kppdf-tunnel` на VM -> VPS.
+          См. `DEPLOY.md`. |"
+      (no .103 reference was in this file — only the cloudflared legacy note per ЧТО ДЕЛАТЬ #2)
+
+=== Verification (ЧТО ДЕЛАТЬ #3) ===
+
+rg "192\.168\.1\.103" docs/ops/home-host-access.md docs/ops/PROMPT-ACCESS-METHOD-DEBATE.md \
+   docs/ops/RUNBOOK-CLEAN-SYNLOGY-KP3-LOAD.md deploy/synology/CREDENTIALS.example.md
+-> 0 matches (exit code 1 / no files found) in all 4 touched files.
+
+rg "192\.168\.1\.103" docs/ops (unscoped, to confirm historical files were correctly left alone)
+-> 1 match remaining: docs/ops/server-harden-evidence.md (explicitly listed in the TZ's
+   "не трогать" list — historical evidence, untouched by design).
+
+Not touched (per TZ "НЕ ИЗМЕНЯТЬ"): deploy/synology/{README,INSTALL,DEPLOY,RUNBOOK}.md
+(already canon .52, confirmed via earlier grep — no edits needed there), any product code,
+secrets, AUDIT-CONNECT-2026-08-02.md, wipe/deploy scripts.
+
+=== Gates ===
+
+Docs-only TZ — no BE/FE code touched, no build/test gates applicable. Verification is the
+rg check above (ACCEPT: "Live ops path указывает только .52").

@@ -4,11 +4,11 @@
 > Обновляет исполнитель **после каждого TZ** (не только в конце волны).  
 > Cursor/PO смотрят этот файл = «где агент сейчас».
 
-updated_at: 2026-09-13T16:12:00Z  
+updated_at: 2026-09-13T16:25:00Z  
 agent_slot: Claude  
 current_wave: **3**  
-current_tz: 3.3 OPS-DOCS-HOST-52-SYNC  
-status: **IN_WORK_WAVE3**
+current_tz: — (WAVE3 complete)  
+status: **WAVE3_DONE**
 
 ---
 
@@ -30,7 +30,7 @@ status: **IN_WORK_WAVE3**
 |-------|---------------|--------------|-------|
 | **1** | PHOTO → ADD-PAGE → SELECTED-REPLACE | — | **DONE** |
 | **2** | NECESSITY-CLEANUP A→B→C (COL-WIDTH в C) | editor+props+defaults+canvas | **DONE** |
-| **3** | CATEGORY-INLINE → OPS-DOCS-HOST-52 (+ VITRINA-PHOTO) | forms / docs / vitrina | ждёт отдельного GO |
+| **3** | VITRINA-PHOTO → CATEGORY-INLINE → OPS-DOCS-HOST-52 | forms / docs / vitrina | **DONE** |
 
 **Superseded (не брать):** TABLE-KIND-IA · TABLE-SOURCE-FIX · INSERT-APPLY-KIND.
 
@@ -73,6 +73,8 @@ status: **IN_WORK_WAVE3**
 2026-09-13T15:10:00Z | 3.2 CATEGORY-INLINE-CREATE | CLAIMED
 2026-09-13T16:10:00Z | 3.2 CATEGORY-INLINE-CREATE | DONE | commit=d746e2db | lockType on CategoryFormDialogComponent + "+" on all 3 catalog forms + invalid-Save summary alert on module/material (product already had it); live Playwright confirmed full round-trip on module form + locked-type nested dialog on product/material; found+documented (not fixed, out of BE conflict keys) an unrelated category.service.ts 500-on-duplicate-slug defect
 2026-09-13T16:10:00Z | 3.3 OPS-DOCS-HOST-52-SYNC | CLAIMED
+2026-09-13T16:25:00Z | 3.3 OPS-DOCS-HOST-52-SYNC | DONE | commit=(backfill pending) | .103->.52 in 3 live ops docs + cloudflared legacy note in CREDENTIALS.example.md; rg confirms 0 matches in touched files, historical server-harden-evidence.md correctly left untouched
+2026-09-13T16:25:00Z | WAVE3 | DONE | all 3 TZs DONE (3.1/3.2/3.3) — pack complete except VERIFY-VM52-SSH-REMAINDER (out-of-band, LAN-only) — see final report to PO
 ```
 
 _(агент дописывает строки сюда после каждого перехода статуса)_
@@ -100,7 +102,7 @@ Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md
 |---|-----|------------|--------|
 | 3.1 | VITRINA-PHOTO-BROKEN-IMG (`tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.done.md`) | `4c9e2301` | DONE |
 | 3.2 | CATEGORY-INLINE-CREATE (`tasks/_archive/2026-09/TZ-NX-CATALOG-CATEGORY-INLINE-CREATE.done.md`) | `d746e2db` | DONE |
-| 3.3 | OPS-DOCS-HOST-52-SYNC | | CLAIMED |
+| 3.3 | OPS-DOCS-HOST-52-SYNC (`tasks/_archive/2026-09/TZ-OPS-DOCS-HOST-52-SYNC.done.md`) | (backfill pending) | DONE |
 | — | VERIFY-VM52-SSH-REMAINDER | | OUT_OF_BAND (LAN) |
 
 Промпт: `tasks/_ready/2026-09-13-studio-ops/PROMPT-CLAUDE-STUDIO-OPS-WAVE3.md`
