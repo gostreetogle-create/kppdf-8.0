@@ -1,0 +1,53 @@
+=== Code audit (matches TZ's own domain preflight exactly) ===
+
+`studio-data-panel.component.ts` mode='selected': anchor chips were plain
+`<dd class="chip">` with no action; catalog chips had only `×` (`catalogRemove`).
+Write-paths already exist and are wired (`onCounterpartyChange`, `onAnchorChange`,
+`onCatalogSelectionChange`) — confirmed no new picker/write-path was needed, only
+a jump to the existing «Данные» TOC + selects.
+
+`activeCategory` inside `studio-data-panel.component.ts` was a private signal
+with no `@Input` — the host editor had no way to command "open category X" from
+outside. Added `StudioDataPanelCategoryJump { category, nonce }` as a proper
+input + constructor `effect()`; `nonce` exists specifically because Angular's
+input change detection would otherwise silently no-op a second jump to the
+*same* category (Client then Payer, both `whom`) — value-equal strings compare
+equal, an object with an incrementing `nonce` never does.
+
+=== Gates ===
+
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest studio-data-panel.component.spec.ts -> 21/21 PASS (17 existing + 4 new:
+  anchor «Изменить» emits editSelection + no separate ×; catalog chip keeps ×
+  AND gets «Изменить»; activateCategory jumps TOC reactively; repeat jump to
+  the same category with a new nonce still applies)
+FE jest studio-editor-selected-jump.spec.ts -> 5/5 PASS (client->whom,
+  supplier->more + payer->whom with a fresh nonce, catalog kind->products,
+  unknown key is a true no-op — verified by first moving away from the
+  'data' default, not just checking it stayed there by accident, repeat
+  jump nonce changes)
+FE jest (full) -> 125 suites / 865 passed + 7 skipped (872 total) PASS
+FE eslint (scoped: studio-data-panel.component.ts/.spec.ts, studio-editor.page.ts,
+  studio-editor-selected-jump.spec.ts) -> 0 errors, 5 pre-existing-pattern warnings
+pnpm architecture:check (repo root) -> PASS
+nx build kppdf-web (last) -> exit 0, same 2 pre-existing unrelated budget warnings
+
+=== Live browser evidence (Playwright, local dev, admin/admin123) ===
+
+Document 6aa5b1221b6e6163bba2fc12: picked a real counterparty on Данные -> Кому
+(PATCH 200, `context.counterpartyId` set), producing a Client anchor chip.
+Opened «Выбрано»:
+  - chip rendered with `data-test="studio-selected-edit-client"`, text
+    «Изменить», exactly one (no separate × on the anchor).
+  - clicked it -> `[data-test="studio-data-section-whom"]` visible (count 1),
+    `[data-test="studio-data-toc-whom"]` has class `active`, and
+    `document.activeElement` resolves to inside `[data-test="studio-counterparty-select"]`
+    (the actual focused control, confirmed via `closest('[data-test]')`) —
+    proves the `requestAnimationFrame` + `button` descendant-selector focus
+    fix works against the real `app-pi-select`/`app-pi-select-trigger`
+    component tree, not just in jsdom.
+
+34 pre-existing console 404s during this run are the SAME vitrina orphan-photo
+issue already found and filed in TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG's
+evidence (`tasks/_ready/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.md`) — unrelated
+to this TZ, not a regression, not re-investigated here.

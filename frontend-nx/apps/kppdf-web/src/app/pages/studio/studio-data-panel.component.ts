@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { SelectComponent, SelectOptionComponent } from '@kppdf/ui/select';
 import type { Counterparty, Order, Quotation, QuotationStatus } from '@kppdf/data-access';
@@ -7,6 +7,20 @@ import { StudioDataVitrinaComponent, type StudioCatalogSelections, type StudioSh
 /** TOC categories inside the wide «Данные» panel (TZ-NX-DOCSTUDIO-D50). */
 export type StudioDataCategory = 'products' | 'whom' | 'links' | 'more';
 export type StudioDataPanelMode = 'data' | 'selected';
+
+/**
+ * TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — a command to jump the panel to a
+ * given TOC category from outside (the «Выбрано» buffer's «Изменить»
+ * button, via the host editor). `nonce` guarantees the effect below re-fires
+ * even when the operator jumps to the *same* category twice in a row (e.g.
+ * Client then Payer, both `whom`) — a plain `category` value would compare
+ * equal to Angular's input change detection and silently no-op the second
+ * jump.
+ */
+export interface StudioDataPanelCategoryJump {
+  category: StudioDataCategory;
+  nonce: number;
+}
 
 const DATA_CATEGORIES: readonly { key: StudioDataCategory; label: string }[] = [
   { key: 'products', label: 'Товары' },
@@ -66,10 +80,29 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
             } @else {
               <div class="selected" data-test="studio-selected-anchors">
                 @for (anchor of selectedAnchors(); track anchor.key) {
-                  <dd class="chip"><strong>{{ anchor.label }}</strong><span>{{ anchor.name }}</span></dd>
+                  <dd class="chip">
+                    <strong>{{ anchor.label }}</strong><span>{{ anchor.name }}</span>
+                    <button
+                      type="button"
+                      class="chip-edit"
+                      [attr.data-test]="'studio-selected-edit-' + anchor.key"
+                      [attr.aria-label]="'Изменить ' + anchor.label"
+                      (click)="editSelection.emit(anchor.key)"
+                    >Изменить</button>
+                  </dd>
                 }
                 @for (chip of catalogChips(); track chip.key) {
-                  <dd class="chip" data-test="studio-catalog-chip"><strong>{{ chip.count }} {{ chip.label }}</strong><button type="button" class="chip-remove" (click)="catalogRemove.emit(chip.key)" [attr.aria-label]="'Убрать ' + chip.label">×</button></dd>
+                  <dd class="chip" data-test="studio-catalog-chip">
+                    <strong>{{ chip.count }} {{ chip.label }}</strong>
+                    <button
+                      type="button"
+                      class="chip-edit"
+                      [attr.data-test]="'studio-selected-edit-' + chip.key"
+                      [attr.aria-label]="'Изменить ' + chip.label"
+                      (click)="editSelection.emit(chip.key)"
+                    >Изменить</button>
+                    <button type="button" class="chip-remove" (click)="catalogRemove.emit(chip.key)" [attr.aria-label]="'Убрать ' + chip.label">×</button>
+                  </dd>
                 }
               </div>
               <div class="insert-suggest" data-test="studio-insert-suggest">
@@ -328,7 +361,8 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
       .selected { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; }
       .chip { display: flex; gap: 6px; align-items: baseline; margin: 0; padding: 5px 7px; border: 1px solid var(--color-rule); background: var(--color-paper-2); font-size: 11px; }
       .chip strong { color: var(--color-muted-foreground-strong); }
-      .chip-remove { margin-left: auto; border: 0; background: transparent; color: var(--color-muted-foreground); cursor: pointer; font-size: 14px; line-height: 1; }
+      .chip-edit { margin-left: auto; border: 0; background: transparent; color: var(--color-link, var(--color-ink)); cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0; }
+      .chip-remove { border: 0; background: transparent; color: var(--color-muted-foreground); cursor: pointer; font-size: 14px; line-height: 1; }
       .insert-suggest { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--color-rule); }
       .insert-btn {
         padding: 7px 10px;
@@ -381,6 +415,8 @@ export class StudioDataPanelComponent {
   readonly catalogWriteBusy = input(false);
   readonly showKpStatus = input(false);
   readonly quotationStatus = input<QuotationStatus | ''>('');
+  /** TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — host-driven TOC jump, see `StudioDataPanelCategoryJump`. */
+  readonly activateCategory = input<StudioDataPanelCategoryJump | null>(null);
 
   readonly counterpartyChange = output<string>();
   readonly quotationChange = output<string>();
@@ -394,11 +430,20 @@ export class StudioDataPanelComponent {
   readonly insertTable = output<StudioShowcaseKind>();
   /** TZ-NX-DOCSTUDIO-VITRINA-EDIT — vitrina «Изменить» Save landed; parent re-hydrates this kind's A4 table(s). */
   readonly catalogEntitySaved = output<StudioShowcaseKind>();
+  /** TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — a chip's «Изменить» was clicked; host maps the key to a section+focus jump. */
+  readonly editSelection = output<string>();
 
   protected readonly categories = DATA_CATEGORIES;
   readonly activeCategory = signal<StudioDataCategory>('products');
   /** TZ-NX-DOCSTUDIO-D53 — Плательщик is a secondary disclosure; shown by default once a value already exists. */
   protected readonly payerDisclosureOpen = signal(false);
+
+  constructor() {
+    effect(() => {
+      const jump = this.activateCategory();
+      if (jump) this.activeCategory.set(jump.category);
+    });
+  }
 
   /** «Число позиций»: заполненные party-якоря + сумма count по каждому catalog-чипу (не число групп). */
   protected readonly selectedCount = () =>

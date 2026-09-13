@@ -63,7 +63,7 @@ import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
-import { StudioDataPanelComponent } from './studio-data-panel.component';
+import { StudioDataPanelComponent, type StudioDataCategory, type StudioDataPanelCategoryJump } from './studio-data-panel.component';
 import { StudioPagesPanelComponent } from './studio-pages-panel.component';
 import {
   StudioUnsavedChangesDialogComponent,
@@ -138,6 +138,23 @@ const STUDIO_CATALOG_KIND_LABELS: Record<StudioShowcaseKind, string> = {
   modules: 'Модули',
   parts: 'Детали',
   materials: 'Материалы',
+};
+
+/**
+ * TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — «Изменить» on a «Выбрано» chip
+ * jumps to the *same* place the value is already edited in «Данные», never
+ * a second picker. `focusTestId` is optional — the catalog kinds land on
+ * the «Товары» vitrina category with no specific field to focus (per the
+ * TZ's own known_limitation: no deep-link to a specific card).
+ */
+const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; focusTestId?: string }> = {
+  client: { category: 'whom', focusTestId: 'studio-counterparty-select' },
+  payer: { category: 'whom', focusTestId: 'studio-payer-select' },
+  supplier: { category: 'more', focusTestId: 'studio-supplier-select' },
+  products: { category: 'products' },
+  modules: { category: 'products' },
+  parts: { category: 'products' },
+  materials: { category: 'products' },
 };
 
 @Component({
@@ -260,6 +277,7 @@ const STUDIO_CATALOG_KIND_LABELS: Record<StudioShowcaseKind, string> = {
                 [contextSaveError]="contextSaveError()"
                 [showKpStatus]="isKpDoc()"
                 [quotationStatus]="linkedQuotationStatus()"
+                [activateCategory]="pendingDataJump()"
                 (counterpartyChange)="onCounterpartyChange($event)"
                 (payerChange)="onAnchorChange('payer', $event)"
                 (supplierChange)="onAnchorChange('supplier', $event)"
@@ -281,6 +299,7 @@ const STUDIO_CATALOG_KIND_LABELS: Record<StudioShowcaseKind, string> = {
                 [catalogWriteBusy]="catalogWriteBusy()"
                 (catalogRemove)="removeCatalogChip($event)"
                 (insertTable)="insertCatalogTable($event)"
+                (editSelection)="onEditSelection($event)"
               />
             }
             @case ('template') {
@@ -891,6 +910,33 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   onSection(id: string): void {
     onStudioSectionClick(id as StudioWorkspaceSection, this.activeSection, this.panelCollapsed);
+  }
+
+  /** TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — see `StudioDataPanelCategoryJump` for the `nonce` reasoning. */
+  readonly pendingDataJump = signal<StudioDataPanelCategoryJump | null>(null);
+  private editSelectionNonce = 0;
+
+  /**
+   * A «Выбрано» chip's «Изменить» was clicked. Reuses the existing «Данные»
+   * TOC + selects — never a second picker/modal (PO-CANON). Focus targets
+   * the field's own stable id so the operator lands with the cursor ready,
+   * matching the same `requestAnimationFrame` + global `data-test` query
+   * pattern already used elsewhere on this page (e.g. the rich-text editor
+   * focus above) rather than inventing a new mechanism.
+   */
+  onEditSelection(key: string): void {
+    const jump = STUDIO_SELECTED_JUMP_MAP[key];
+    if (!jump) return;
+    this.editSelectionNonce += 1;
+    this.pendingDataJump.set({ category: jump.category, nonce: this.editSelectionNonce });
+    this.onSection('data');
+    const focusTestId = jump.focusTestId;
+    if (focusTestId) {
+      // `app-pi-select`'s own host isn't focusable — its interactive trigger
+      // is the inner <button> (app-pi-select-trigger); the host only carries
+      // `data-test` for the whole control.
+      requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-test="${focusTestId}"] button`)?.focus());
+    }
   }
 
   async saveDocument(): Promise<boolean> {

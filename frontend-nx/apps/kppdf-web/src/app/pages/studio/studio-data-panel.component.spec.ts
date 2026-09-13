@@ -244,4 +244,73 @@ describe('StudioDataPanelComponent', () => {
     expect(gridBlock).not.toMatch(/max-height\s*:/);
     expect(gridBlock).not.toMatch(/overflow-y\s*:/);
   });
+
+  describe('«Изменить» jump (TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP)', () => {
+    it('anchor chip has an «Изменить» button (no separate ×) that emits editSelection with its key', () => {
+      const emitted: string[] = [];
+      fixture.componentInstance.editSelection.subscribe((key) => emitted.push(key));
+      fixture.componentRef.setInput('selectedAnchors', [{ key: 'client', label: 'Клиент', name: 'ООО Альфа' }]);
+      fixture.componentRef.setInput('mode', 'selected');
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const editBtn = el.querySelector('[data-test="studio-selected-edit-client"]') as HTMLButtonElement;
+      expect(editBtn).toBeTruthy();
+      expect(editBtn.textContent?.trim()).toBe('Изменить');
+      expect(el.querySelector('[data-test="studio-selected-anchors"] .chip-remove')).toBeFalsy();
+
+      editBtn.click();
+      expect(emitted).toEqual(['client']);
+    });
+
+    it('catalog chip keeps its × (still emits catalogRemove) and also gets an «Изменить» button emitting editSelection', () => {
+      const editEmitted: string[] = [];
+      const removeEmitted: string[] = [];
+      fixture.componentInstance.editSelection.subscribe((key) => editEmitted.push(key));
+      fixture.componentInstance.catalogRemove.subscribe((key) => removeEmitted.push(key));
+      fixture.componentRef.setInput('catalogChips', [{ key: 'products', label: 'изделия', count: 2 }]);
+      fixture.componentRef.setInput('mode', 'selected');
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const chip = el.querySelector('[data-test="studio-catalog-chip"]') as HTMLElement;
+      const editBtn = chip.querySelector('[data-test="studio-selected-edit-products"]') as HTMLButtonElement;
+      const removeBtn = chip.querySelector('.chip-remove') as HTMLButtonElement;
+      expect(editBtn.textContent?.trim()).toBe('Изменить');
+      expect(removeBtn.textContent?.trim()).toBe('×');
+
+      editBtn.click();
+      expect(editEmitted).toEqual(['products']);
+      removeBtn.click();
+      expect(removeEmitted).toEqual(['products']);
+    });
+
+    it('activateCategory jumps the TOC to the given category, reactively (host-driven, no picker/modal)', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      expect(tocButton('products').classList.contains('active')).toBe(true);
+
+      fixture.componentRef.setInput('activateCategory', { category: 'whom', nonce: 1 });
+      fixture.detectChanges();
+      expect(tocButton('whom').classList.contains('active')).toBe(true);
+      expect(el.querySelector('[data-test="studio-counterparty-select"]')).toBeTruthy();
+
+      fixture.componentRef.setInput('activateCategory', { category: 'more', nonce: 2 });
+      fixture.detectChanges();
+      expect(tocButton('more').classList.contains('active')).toBe(true);
+      expect(el.querySelector('[data-test="studio-supplier-select"]')).toBeTruthy();
+    });
+
+    it('a repeat jump to the same category (new nonce) still applies — operator can re-jump without visiting elsewhere first', () => {
+      fixture.componentRef.setInput('activateCategory', { category: 'whom', nonce: 1 });
+      fixture.detectChanges();
+      // Operator manually switches away.
+      tocButton('links').click();
+      fixture.detectChanges();
+      expect(tocButton('links').classList.contains('active')).toBe(true);
+
+      fixture.componentRef.setInput('activateCategory', { category: 'whom', nonce: 2 });
+      fixture.detectChanges();
+      expect(tocButton('whom').classList.contains('active')).toBe(true);
+    });
+  });
 });
