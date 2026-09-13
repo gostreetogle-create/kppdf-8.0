@@ -192,7 +192,12 @@ describe('StudioEditorPage — one document write queue (TZ-NX-DOCSTUDIO-ADD-PAG
   });
 
   it('a second conflict while the dialog is open toasts once instead of silently doing nothing', async () => {
-    const update = jest.fn().mockReturnValue(of({ ok: false, error: { message: 'conflict' } }));
+    // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — a genuine, persistent 409 (real
+    // second-tab edit): every attempt gets one soft retry (refetch + retry
+    // once) before the dialog opens, so `update` fires twice per addPage.
+    const update = jest.fn().mockReturnValue(
+      of({ ok: false, error: { status: 409, error: { code: 'STUDIO_DOCUMENT_REVISION_CONFLICT' }, message: 'conflict' } }),
+    );
     configure({ update });
 
     fixture = TestBed.createComponent(StudioEditorPage);
@@ -203,7 +208,9 @@ describe('StudioEditorPage — one document write queue (TZ-NX-DOCSTUDIO-ADD-PAG
     component.addPage();
     await flush();
 
-    expect(update).toHaveBeenCalledTimes(2);
+    // 2 addPage calls x (1 original attempt + 1 soft retry, since the mock
+    // always 409s) = 4.
+    expect(update).toHaveBeenCalledTimes(4);
     expect(dialogOpen).toHaveBeenCalledTimes(1);
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
@@ -232,5 +239,124 @@ describe('StudioEditorPage — one document write queue (TZ-NX-DOCSTUDIO-ADD-PAG
     // Once for the initial document load, once more for the post-create refresh.
     expect(getById).toHaveBeenCalledTimes(2);
     expect(component.document()?.revision).toBe(9);
+  });
+
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — the audit's headline complaint: a
+   * single self-inflicted 409 (e.g. this queued write's turn came right
+   * after another queued write already bumped the revision) must resolve
+   * via the soft retry with ZERO dialogs, not just "fewer" — the operator
+   * should never see anything at all for this case.
+   */
+  it('a single self-inflicted 409 resolves via the soft retry with NO conflict dialog at all', async () => {
+    let calls = 0;
+    const update = jest.fn((_id: string, payload: { expectedRevision: number; manualPageCount?: number }) => {
+      calls += 1;
+      if (calls === 1) {
+        return of({ ok: false, error: { status: 409, error: { code: 'STUDIO_DOCUMENT_REVISION_CONFLICT' } } });
+      }
+      return of({ ok: true, data: { ...BASE_DOC, revision: payload.expectedRevision + 1, manualPageCount: payload.manualPageCount } });
+    });
+    const getById = jest.fn().mockReturnValue(of({ ok: true, data: { ...BASE_DOC, revision: 5 } }));
+    configure({ update, getById });
+
+    fixture = TestBed.createComponent(StudioEditorPage);
+    await flush();
+
+    const component = fixture.componentInstance as unknown as { addPage: () => void };
+    component.addPage();
+    await flush();
+
+    expect(update).toHaveBeenCalledTimes(2);
+    // The retry re-reads the JUST-refetched document's revision (5), not the stale one from initial load (1).
+    expect((update.mock.calls[1]![1] as { expectedRevision: number }).expectedRevision).toBe(5);
+    expect(dialogOpen).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — ШАГ2: a non-409 failure (validation,
+   * network, anything that isn't a revision conflict) is never "another tab
+   * changed this document" — it was never a second writer.
+   */
+  it('a non-409 write failure toasts — never the "another tab" dialog, and is never retried', async () => {
+    const update = jest.fn().mockReturnValue(
+      of({ ok: false, error: { status: 400, error: { message: 'Некорректные данные' } } }),
+    );
+    configure({ update });
+
+    fixture = TestBed.createComponent(StudioEditorPage);
+    await flush();
+
+    const component = fixture.componentInstance as unknown as { addPage: () => void };
+    component.addPage();
+    await flush();
+
+    // Not a revision conflict -> attemptWithRevisionRetry never retries it.
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(dialogOpen).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — `saveLayouts` (drag commit) used to
+   * be its own parallel serialization (`layoutSavePromise`), entirely
+   * separate from `catalogWriteChain` — the audit's #1 self-race source.
+   * Mirrors the `addPage`-waits-for-hydrate test above for the layout path:
+   * `changeLayout` (drag move) + `onLayoutCommit` (drag release, the public
+   * entry point the canvas's `(layoutCommit)` output calls) must queue
+   * behind an in-flight hydrate, not race it.
+   */
+  it('layout save (drag commit) waits for an in-flight hydrate instead of racing its stale revision', async () => {
+    const callOrder: string[] = [];
+    let releaseHydrate!: () => void;
+    const hydrateGate = new Promise<void>((resolve) => {
+      releaseHydrate = resolve;
+    });
+    const putDataSet = jest.fn((_id: string, key: string) => {
+      callOrder.push('hydrate-start');
+      return from(
+        hydrateGate.then(() => {
+          callOrder.push('hydrate-resolved');
+          return {
+            ok: true,
+            data: {
+              ...BASE_DOC,
+              revision: 7,
+              dataSets: BASE_DOC.dataSets!.map((entry) => (entry.key === key ? { ...entry, rows: [['row']] } : entry)),
+            },
+          };
+        }),
+      );
+    });
+    configure({ tables: [table('t-products', 'catalog-products')], putDataSet });
+    const updateLayouts = jest.fn((_id: string, payload: { expectedRevision: number }) => {
+      callOrder.push(`layout-save-fired:${payload.expectedRevision}`);
+      return of({ ok: true, data: [] });
+    });
+    blocksService.updateLayouts = updateLayouts;
+
+    fixture = TestBed.createComponent(StudioEditorPage);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const component = fixture.componentInstance as unknown as {
+      changeLayout: (id: string, layout: unknown) => void;
+      onLayoutCommit: () => void;
+    };
+    component.changeLayout('t-products', { page: 1, x: 0.2, y: 0.2, width: 0.3, height: 0.2, zIndex: 1, rotation: 0 });
+    component.onLayoutCommit();
+    await Promise.resolve();
+    await Promise.resolve();
+    // Hydrate is still pending — the layout save must be queued behind it, not fired yet.
+    expect(updateLayouts).not.toHaveBeenCalled();
+
+    releaseHydrate();
+    await flush();
+
+    expect(updateLayouts).toHaveBeenCalledTimes(1);
+    expect((updateLayouts.mock.calls[0]![1] as { expectedRevision: number }).expectedRevision).toBe(7);
+    expect(callOrder).toEqual(['hydrate-start', 'hydrate-resolved', 'layout-save-fired:7']);
+    expect(dialogOpen).not.toHaveBeenCalled();
   });
 });

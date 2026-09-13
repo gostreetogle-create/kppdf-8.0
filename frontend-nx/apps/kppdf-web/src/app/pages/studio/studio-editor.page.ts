@@ -15,6 +15,7 @@
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
+import type { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   Archive,
@@ -34,7 +35,7 @@ import {
   Save,
   Settings2,
 } from 'lucide-angular';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, type Observable } from 'rxjs';
 import {
   PiCounterpartiesService,
   PiDocTypesService,
@@ -59,7 +60,7 @@ import {
 } from '@kppdf/data-access';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import { extractErrorMessage } from '@kppdf/util-http';
+import { extractErrorMessage, type SilentResult } from '@kppdf/util-http';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
@@ -158,6 +159,23 @@ const STUDIO_CATALOG_KIND_LABELS: Record<StudioShowcaseKind, string> = {
  */
 function normalizeCatalogDataSourceKey(value: string): string {
   return value.trim().toLowerCase().replace(/^catalog-/, '').replace(/s$/, '');
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — the ONLY signal that should ever open
+ * the "another tab changed this document" dialog. Every 409 the studio-
+ * document/template-block write endpoints can throw IS
+ * `STUDIO_DOCUMENT_REVISION_CONFLICT` (the sole `ConflictException` in
+ * `studio-document.service.ts`), so status alone is a safe/sufficient
+ * check; the body code, when present, is matched too as a belt-and-
+ * suspenders guard against that specific class of 409 (not some other,
+ * future 409 this endpoint might grow that has nothing to do with a second
+ * writer).
+ */
+function isRevisionConflict(result: SilentResult<unknown>): boolean {
+  if (result.ok || result.error.status !== 409) return false;
+  const body = result.error.error as { code?: string } | null;
+  return body?.code == null || body.code === 'STUDIO_DOCUMENT_REVISION_CONFLICT';
 }
 
 /**
@@ -1077,8 +1095,12 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.enqueueDocumentWrite(async () => {
       const doc = this.document();
       if (!doc || doc.orientation === orientation) return;
-      const result = await firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, orientation }));
-      if (result.ok) this.document.set(result.data); else this.conflict();
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.update(current._id, { expectedRevision: current.revision ?? 1, orientation }),
+      );
+      if (!result) return;
+      if (result.ok) this.document.set(result.data);
+      else this.reportWriteFailure(result);
     });
   }
 
@@ -1086,11 +1108,15 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.enqueueDocumentWrite(async () => {
       const doc = this.document();
       if (!doc) return;
-      const indices = [...(doc.backgroundPageIndices ?? [])];
-      while (indices.length < this.pageCount()) indices.push(doc.defaultBackgroundIndex ?? -1);
-      indices[this.currentPage() - 1] = index;
-      const r = await firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, backgroundPageIndices: indices }));
-      if (r.ok) this.document.set(r.data); else this.conflict();
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) => {
+        const indices = [...(current.backgroundPageIndices ?? [])];
+        while (indices.length < this.pageCount()) indices.push(current.defaultBackgroundIndex ?? -1);
+        indices[this.currentPage() - 1] = index;
+        return this.documents.update(current._id, { expectedRevision: current.revision ?? 1, backgroundPageIndices: indices });
+      });
+      if (!result) return;
+      if (result.ok) this.document.set(result.data);
+      else this.reportWriteFailure(result);
     });
   }
 
@@ -1099,8 +1125,12 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       const doc = this.document();
       if (!doc || !Number.isFinite(opacity)) return;
       const value = Math.min(1, Math.max(0, opacity));
-      const r = await firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, backgroundOpacity: value }));
-      if (r.ok) this.document.set(r.data); else this.conflict();
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.update(current._id, { expectedRevision: current.revision ?? 1, backgroundOpacity: value }),
+      );
+      if (!result) return;
+      if (result.ok) this.document.set(result.data);
+      else this.reportWriteFailure(result);
     });
   }
 
@@ -1108,12 +1138,12 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.enqueueDocumentWrite(async () => {
       const doc = this.document();
       if (!doc) return;
-      const result = await firstValueFrom(this.documents.update(doc._id, {
-        expectedRevision: doc.revision ?? 1,
-        pageNumbering: enabled,
-      }));
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.update(current._id, { expectedRevision: current.revision ?? 1, pageNumbering: enabled }),
+      );
+      if (!result) return;
       if (result.ok) this.document.set(result.data);
-      else this.conflict();
+      else this.reportWriteFailure(result);
     });
   }
 
@@ -1278,32 +1308,40 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     void this.refreshCatalogTablesOfKind(kind);
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — was a bare `firstValueFrom` outside
+   * `catalogWriteChain`, reading `this.document()` synchronously before any
+   * await: a self-race against any other queued write (hydrate-on-load, a
+   * vitrina add) landing in the same window. Now queued, with one soft
+   * retry on a self-inflicted 409.
+   */
   private createTableBlock(): Promise<StudioBlock | null> {
-    const d = this.document();
-    if (!d) return Promise.resolve(null);
-    const layerNo = this.layersForPage().length + 1;
-    const zIndex = this.nextZIndex();
-    return firstValueFrom(
-      this.blocksService.create(d._id, {
-        expectedRevision: d.revision ?? 1,
-        type: 'table',
-        order: this.blocks().length,
-        title: `Таблица ${layerNo}`,
-        content: '',
-        layout: studioCenteredTableLayout(zIndex, this.currentPage()),
-        settings: {
-          tableTemplateColumns: STUDIO_DEFAULT_TABLE_COLUMNS,
-          tableTemplateSampleRows: STUDIO_DEFAULT_TABLE_ROWS,
-        },
-      }),
-    ).then(async (r) => {
-      if (!r.ok) {
-        this.conflict();
+    return this.enqueueDocumentWriteAndWait(async () => {
+      const d = this.document();
+      if (!d) return null;
+      const layerNo = this.layersForPage().length + 1;
+      const zIndex = this.nextZIndex();
+      const result = await this.attemptWithRevisionRetry<StudioBlock>((current) =>
+        this.blocksService.create(current._id, {
+          expectedRevision: current.revision ?? 1,
+          type: 'table',
+          order: this.blocks().length,
+          title: `Таблица ${layerNo}`,
+          content: '',
+          layout: studioCenteredTableLayout(zIndex, this.currentPage()),
+          settings: {
+            tableTemplateColumns: STUDIO_DEFAULT_TABLE_COLUMNS,
+            tableTemplateSampleRows: STUDIO_DEFAULT_TABLE_ROWS,
+          },
+        }),
+      );
+      if (!result || !result.ok) {
+        if (result) this.reportWriteFailure(result);
         return null;
       }
-      const block = r.data.layout
-        ? { ...r.data, layout: coerceStudioBlockLayout(r.data.layout) }
-        : r.data;
+      const block = result.data.layout
+        ? { ...result.data, layout: coerceStudioBlockLayout(result.data.layout) }
+        : result.data;
       this.blocks.update((b) => [...b, block]);
       await this.refreshDocumentRevisionAfterBlockWrite();
       return block;
@@ -1343,17 +1381,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         return;
       }
       await this.patchTableSettingsForBlock(blockId, { dataSource: { type: source } });
-      const doc = this.document();
-      if (!doc) return;
+      if (!this.document()) return;
       const catalogKey = source.startsWith('catalog-') ? (source.slice('catalog-'.length) as 'products' | 'modules' | 'parts' | 'materials') : '';
       const selectedCount = catalogKey ? this.catalogSelections()[catalogKey].length : 0;
       const dataSet = { source: { type: source }, rows: [], catalogSelectionCount: selectedCount };
-      const result = await firstValueFrom(this.documents.putDataSet(doc._id, `table-${blockId}`, {
-        expectedRevision: doc.revision ?? 1,
-        dataSet,
-      }));
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.putDataSet(current._id, `table-${blockId}`, { expectedRevision: current.revision ?? 1, dataSet }),
+      );
+      if (!result) return;
       if (!result.ok) {
-        this.conflict();
+        this.reportWriteFailure(result);
         return;
       }
       this.document.set(result.data);
@@ -1409,6 +1446,60 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
    */
   private enqueueDocumentWrite(run: () => Promise<void>): void {
     this.catalogWriteChain = this.catalogWriteChain.then(run);
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — same queue as `enqueueDocumentWrite`,
+   * but for a caller that needs the queued write's own result (block
+   * create paths whose `.then()` activates the new layer). `run` still must
+   * never reject — its settled value/void is what the caller's returned
+   * promise resolves to; the shared chain variable itself is kept as a
+   * `Promise<void>` regardless of `T`.
+   */
+  private enqueueDocumentWriteAndWait<T>(run: () => Promise<T>): Promise<T> {
+    const chained = this.catalogWriteChain.then(run);
+    this.catalogWriteChain = chained.then(() => undefined);
+    return chained;
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — one soft retry for a queued write
+   * that hits a self-inflicted 409: refetch the document, apply it, then
+   * let `request` rebuild its OWN payload from the now-current
+   * `this.document()` (via the `doc` it receives) and fire once more. A
+   * non-conflict failure, or a repeat 409 after the retry, is returned
+   * as-is — the caller routes it through `reportWriteFailure`. Returns
+   * `null` only when there is no document to write against at all (the
+   * caller's own early-return case, not a network failure).
+   */
+  private async attemptWithRevisionRetry<T>(
+    request: (doc: StudioDocument) => Observable<SilentResult<T>>,
+  ): Promise<SilentResult<T> | null> {
+    const doc = this.document();
+    if (!doc) return null;
+    const first = await firstValueFrom(request(doc));
+    if (first.ok || !isRevisionConflict(first)) return first;
+    const refreshed = await firstValueFrom(this.documents.getById(doc._id));
+    if (!refreshed.ok) return first;
+    this.document.set(refreshed.data);
+    return firstValueFrom(request(refreshed.data));
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — the ONLY place that decides dialog
+   * vs toast for a failed write. A genuine revision conflict (after the
+   * soft retry above already had its one shot) opens the "another tab"
+   * dialog; anything else — validation, network, a non-revision-gated
+   * block PATCH — is a toast. Calling every failure "another tab changed
+   * this document" was the audit's core complaint; most failures never
+   * were that.
+   */
+  private reportWriteFailure(result: { ok: false; error: HttpErrorResponse }, fallback = 'Не удалось сохранить'): void {
+    if (isRevisionConflict(result)) {
+      this.conflict();
+      return;
+    }
+    this.toast.error(extractErrorMessage(result.error) || fallback);
   }
 
   /**
@@ -1471,28 +1562,34 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — was a bare `firstValueFrom` outside
+   * `catalogWriteChain` (self-race candidate); now queued with one soft
+   * retry on a self-inflicted 409.
+   */
   private createTextLayer(): void {
-    const d = this.document();
-    if (!d) return;
-    const layerNo = this.blocks().filter((b) => b.layout).length + 1;
-    const zIndex = this.nextZIndex();
-    void firstValueFrom(
-      this.blocksService.create(d._id, {
-        expectedRevision: d.revision ?? 1,
-        type: 'text',
-        order: this.blocks().length,
-        title: `Слой ${layerNo}`,
-        content: 'Новый текст',
-        layout: studioCenteredTextLayout(0.3, 0.12, zIndex, this.currentPage()),
-      }),
-    ).then(async (r) => {
-      if (!r.ok) {
-        this.conflict();
+    this.enqueueDocumentWrite(async () => {
+      const d = this.document();
+      if (!d) return;
+      const layerNo = this.blocks().filter((b) => b.layout).length + 1;
+      const zIndex = this.nextZIndex();
+      const result = await this.attemptWithRevisionRetry<StudioBlock>((current) =>
+        this.blocksService.create(current._id, {
+          expectedRevision: current.revision ?? 1,
+          type: 'text',
+          order: this.blocks().length,
+          title: `Слой ${layerNo}`,
+          content: 'Новый текст',
+          layout: studioCenteredTextLayout(0.3, 0.12, zIndex, this.currentPage()),
+        }),
+      );
+      if (!result || !result.ok) {
+        if (result) this.reportWriteFailure(result);
         return;
       }
-      const block = r.data.layout
-        ? { ...r.data, layout: coerceStudioBlockLayout(r.data.layout) }
-        : r.data;
+      const block = result.data.layout
+        ? { ...result.data, layout: coerceStudioBlockLayout(result.data.layout) }
+        : result.data;
       this.blocks.update((b) => [...b, block]);
       await this.refreshDocumentRevisionAfterBlockWrite();
       this.activateLayer(block._id);
@@ -1595,7 +1692,9 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       }),
     );
     if (!r.ok) {
-      if (showConflict) this.conflict();
+      // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — block-level layout/settings PATCH,
+      // not document-revision-gated — never the "another tab" dialog.
+      if (showConflict) this.reportWriteFailure(r, 'Не удалось сохранить положение изображения');
       return false;
     }
     this.blocks.update((b) =>
@@ -1625,11 +1724,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.syncActiveLayerForPage();
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — the file-decode step (no document
+   * dependency) stays outside the queue; the revision-gated create is now
+   * queued with one soft retry on a self-inflicted 409 (was a bare
+   * `firstValueFrom`, reading `this.document()` before an `await` — the
+   * worst of the self-race sites, since that `await` widened the race
+   * window further).
+   */
   private async createImageLayer(file: File): Promise<void> {
-    const d = this.document();
-    if (!d) return;
     const layerNo = this.layersForPage().length + 1;
-    const zIndex = this.nextZIndex();
     const localUrl = URL.createObjectURL(file);
     const title = file.name.replace(/\.[^.]+$/, '') || `Фото ${layerNo}`;
     let natural = { width: 800, height: 600 };
@@ -1638,57 +1742,53 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     } catch {
       /* fallback dimensions */
     }
-    const layout = studioStaggerImageLayout(
-      studioImageLayoutFromNaturalSize(
-        natural.width,
-        natural.height,
-        zIndex,
-        this.currentPage(),
-      ),
-      this.pageBlocks().filter(
-        (b) => b.type === 'image' && !studioBlockIsPassportBackground(b),
-      ).length,
-    );
-    const createRes = await firstValueFrom(
-      this.blocksService.create(d._id, {
-        expectedRevision: d.revision ?? 1,
-        type: 'image',
-        order: this.blocks().length,
-        title,
-        content: '',
-        layout,
-        settings: {
-          naturalWidth: natural.width,
-          naturalHeight: natural.height,
-        },
-      }),
-    );
-    if (!createRes.ok) {
-      URL.revokeObjectURL(localUrl);
-      this.conflict();
-      return;
-    }
-    const block = createRes.data.layout
-      ? {
-          ...createRes.data,
-          layout: coerceStudioBlockLayout(createRes.data.layout),
-          settings: {
-            ...(createRes.data.settings ?? {}),
-            naturalWidth: natural.width,
-            naturalHeight: natural.height,
-            imageUrl: localUrl,
-          },
-        }
-      : {
-          ...createRes.data,
-          settings: {
-            naturalWidth: natural.width,
-            naturalHeight: natural.height,
-            imageUrl: localUrl,
-          },
-        };
-    this.blocks.update((b) => [...b, block]);
-    await this.refreshDocumentRevisionAfterBlockWrite();
+    const block = await this.enqueueDocumentWriteAndWait<StudioBlock | null>(async () => {
+      const d = this.document();
+      if (!d) {
+        URL.revokeObjectURL(localUrl);
+        return null;
+      }
+      const zIndex = this.nextZIndex();
+      const layout = studioStaggerImageLayout(
+        studioImageLayoutFromNaturalSize(natural.width, natural.height, zIndex, this.currentPage()),
+        this.pageBlocks().filter((b) => b.type === 'image' && !studioBlockIsPassportBackground(b)).length,
+      );
+      const result = await this.attemptWithRevisionRetry<StudioBlock>((current) =>
+        this.blocksService.create(current._id, {
+          expectedRevision: current.revision ?? 1,
+          type: 'image',
+          order: this.blocks().length,
+          title,
+          content: '',
+          layout,
+          settings: { naturalWidth: natural.width, naturalHeight: natural.height },
+        }),
+      );
+      if (!result || !result.ok) {
+        URL.revokeObjectURL(localUrl);
+        if (result) this.reportWriteFailure(result);
+        return null;
+      }
+      const created = result.data.layout
+        ? {
+            ...result.data,
+            layout: coerceStudioBlockLayout(result.data.layout),
+            settings: {
+              ...(result.data.settings ?? {}),
+              naturalWidth: natural.width,
+              naturalHeight: natural.height,
+              imageUrl: localUrl,
+            },
+          }
+        : {
+            ...result.data,
+            settings: { naturalWidth: natural.width, naturalHeight: natural.height, imageUrl: localUrl },
+          };
+      this.blocks.update((b) => [...b, created]);
+      await this.refreshDocumentRevisionAfterBlockWrite();
+      return created;
+    });
+    if (!block) return;
     this.openLayerProperties(block._id);
     await this.uploadImageToBlock(block._id, file, localUrl, natural);
   }
@@ -1832,7 +1932,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
           this.refreshPreviewIfActive();
         } else {
-          this.conflict();
+          // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — block style PATCH, not document-revision-gated.
+          this.reportWriteFailure(r, 'Не удалось сохранить стиль');
         }
       })
       .finally(() => this.pendingBlockPatches.update((n) => n - 1));
@@ -1858,7 +1959,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
           this.refreshPreviewIfActive();
         } else {
-          this.conflict();
+          // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — block content PATCH, not document-revision-gated.
+          this.reportWriteFailure(r, 'Не удалось сохранить текст');
         }
       })
       .finally(() => this.pendingBlockPatches.update((n) => n - 1));
@@ -2027,7 +2129,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       }),
     );
     if (!r.ok) {
-      this.conflict();
+      // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — a `template-blocks` PATCH (settings/
+      // title), not gated by the document's own `expectedRevision` — never a
+      // genuine "another tab" conflict, so never that dialog.
+      this.reportWriteFailure(r, 'Не удалось сохранить настройки таблицы');
       return false;
     }
     this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
@@ -2050,22 +2155,34 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
    * patch — same mechanism (force a fresh live fetch), the backend resolver
    * picks the new override up from `block.settings` on that fetch.
    */
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — was a bare `firstValueFrom` outside
+   * `catalogWriteChain` (self-race candidate — the audit's own table names
+   * this exact path) whose failure was a silent no-op (not even a toast).
+   * Now queued, with one soft retry on a self-inflicted 409, and an honest
+   * toast if it still fails — the operator used to have zero signal that a
+   * column-structure edit's live re-fetch never landed.
+   */
   private rehydrateLiveRowsAfterColumnChange(block: StudioBlock): void {
-    const doc = this.document();
-    if (!doc || block.type !== 'table') return;
+    if (block.type !== 'table') return;
     const sourceType = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
     if (!sourceType || !STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)) return;
-    const key = `table-${block._id}`;
-    const catalogKey = sourceType.startsWith('catalog-') ? sourceType.slice('catalog-'.length) : '';
-    const catalogSelectionCount = catalogKey
-      ? this.catalogSelections()[catalogKey as 'products' | 'modules' | 'parts' | 'materials'].length
-      : 0;
-    const dataSet = { source: { type: sourceType }, rows: [], catalogSelectionCount };
-    void firstValueFrom(this.documents.putDataSet(doc._id, key, {
-      expectedRevision: this.document()?.revision ?? doc.revision ?? 1,
-      dataSet,
-    })).then((result) => {
-      if (!result.ok) return;
+    this.enqueueDocumentWrite(async () => {
+      const doc = this.document();
+      if (!doc) return;
+      const key = `table-${block._id}`;
+      const catalogKey = sourceType.startsWith('catalog-') ? sourceType.slice('catalog-'.length) : '';
+      const catalogSelectionCount = catalogKey
+        ? this.catalogSelections()[catalogKey as 'products' | 'modules' | 'parts' | 'materials'].length
+        : 0;
+      const dataSet = { source: { type: sourceType }, rows: [], catalogSelectionCount };
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.putDataSet(current._id, key, { expectedRevision: current.revision ?? 1, dataSet }),
+      );
+      if (!result || !result.ok) {
+        if (result) this.reportWriteFailure(result, 'Не удалось обновить строки таблицы');
+        return;
+      }
       this.document.set(result.data);
       this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
       this.refreshPreviewIfActive();
@@ -2171,16 +2288,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     next: StudioCatalogSelections,
     idsCount: number,
   ): Promise<void> {
-    const doc = this.document();
-    if (!doc) return;
-    const patchResult = await firstValueFrom(
-      this.documents.update(doc._id, {
-        expectedRevision: doc.revision ?? 1,
-        context: { ...(doc.context ?? {}), catalogSelections: next },
+    if (!this.document()) return;
+    const patchResult = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+      this.documents.update(current._id, {
+        expectedRevision: current.revision ?? 1,
+        context: { ...(current.context ?? {}), catalogSelections: next },
       }),
     );
+    if (!patchResult) return;
     if (!patchResult.ok) {
-      this.conflict();
+      this.reportWriteFailure(patchResult);
       return;
     }
     this.document.set(patchResult.data);
@@ -2202,17 +2319,17 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           : item));
       }
       // Always the revision the PATCH above (or an earlier iteration of this
-      // same loop) just returned — never the snapshot from before this queue
-      // entry started running.
-      const currentRevision = this.document()?.revision ?? doc.revision ?? 1;
-      const result = await firstValueFrom(
-        this.documents.putDataSet(doc._id, `table-${block._id}`, {
-          expectedRevision: currentRevision,
+      // same loop, or a soft retry inside attemptWithRevisionRetry) just
+      // returned — never the snapshot from before this queue entry started.
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.putDataSet(current._id, `table-${block._id}`, {
+          expectedRevision: current.revision ?? 1,
           dataSet: { source: { type: source }, rows: [], catalogSelectionCount: idsCount },
         }),
       );
+      if (!result) return;
       if (!result.ok) {
-        this.conflict();
+        this.reportWriteFailure(result);
         return;
       }
       this.document.set(result.data);
@@ -2266,25 +2383,28 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (order?.counterpartyId) this.onCounterpartyChange(order.counterpartyId);
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — was a bare `firstValueFrom` outside
+   * `catalogWriteChain` (self-race candidate); now queued with one soft
+   * retry on a self-inflicted 409.
+   */
   onDocTypeChange(docTypeId: string): void {
-    const doc = this.document();
-    if (!doc) return;
+    if (!this.document()) return;
     this.docTypeSaving.set(true);
-    void firstValueFrom(
-      this.documents.update(doc._id, {
-        expectedRevision: doc.revision ?? 1,
-        docTypeId: docTypeId || undefined,
-      }),
-    ).then((r) => {
+    this.enqueueDocumentWrite(async () => {
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.update(current._id, { expectedRevision: current.revision ?? 1, docTypeId: docTypeId || undefined }),
+      );
       this.docTypeSaving.set(false);
-      if (r.ok) {
-        this.document.set(r.data);
+      if (!result) return;
+      if (result.ok) {
+        this.document.set(result.data);
         const docType = this.docTypes().find((item) => item._id === docTypeId);
         if (isKpDocType(docType)) {
-          void this.ensureLinkedQuotation(r.data._id);
+          void this.ensureLinkedQuotation(result.data._id);
         }
       } else {
-        this.conflict();
+        this.reportWriteFailure(result);
       }
     });
   }
@@ -2400,19 +2520,21 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
     onDialogCloseOnce(ref, this.injector, (value) => {
       if (!value || !value.name.trim()) return;
-      const current = this.document();
-      if (!current) return;
-      void firstValueFrom(
-        this.documents.update(current._id, {
-          expectedRevision: current.revision ?? 1,
-          name: value.name.trim(),
-        }),
-      ).then((r) => {
-        if (r.ok) {
-          this.document.set(r.data);
+      const name = value.name.trim();
+      // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — was a bare `firstValueFrom` outside
+      // `catalogWriteChain` (self-race candidate); now queued with one soft
+      // retry on a self-inflicted 409.
+      this.enqueueDocumentWrite(async () => {
+        if (!this.document()) return;
+        const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+          this.documents.update(current._id, { expectedRevision: current.revision ?? 1, name }),
+        );
+        if (!result) return;
+        if (result.ok) {
+          this.document.set(result.data);
           this.toast.success('Документ переименован');
         } else {
-          this.conflict();
+          this.reportWriteFailure(result);
         }
       });
     });
@@ -2545,25 +2667,32 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.patchDocumentContext(nextContext);
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — the hottest self-race path in the
+   * audit: every Кому/Ещё/Связи pick (client/payer/supplier/quotation/
+   * order) went through here as a bare `firstValueFrom` outside
+   * `catalogWriteChain`. Now queued, with one soft retry on a self-
+   * inflicted 409 (rebuilding the SAME `context` argument the caller
+   * closed over — it does not depend on document state changing between
+   * attempts, unlike a layout/qty payload).
+   */
   private patchDocumentContext(context: Record<string, unknown>): void {
-    const doc = this.document();
-    if (!doc) return;
+    if (!this.document()) return;
     this.contextSaving.set(true);
     this.contextSaveError.set(null);
-    void firstValueFrom(
-      this.documents.update(doc._id, {
-        expectedRevision: doc.revision ?? 1,
-        context,
-      }),
-    ).then((r) => {
+    this.enqueueDocumentWrite(async () => {
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.update(current._id, { expectedRevision: current.revision ?? 1, context }),
+      );
       this.contextSaving.set(false);
-      if (r.ok) {
-        this.document.set(r.data);
+      if (!result) return;
+      if (result.ok) {
+        this.document.set(result.data);
         this.refreshPreviewIfActive();
         void this.syncKpQuotationItems();
       } else {
-        this.contextSaveError.set(extractErrorMessage(r.error));
-        this.conflict();
+        this.contextSaveError.set(extractErrorMessage(result.error));
+        this.reportWriteFailure(result);
       }
     });
   }
@@ -2582,7 +2711,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         if (r.ok) {
           this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
         } else {
-          this.conflict();
+          // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — block title PATCH, not document-revision-gated.
+          this.reportWriteFailure(r, 'Не удалось переименовать слой');
         }
       })
       .finally(() => this.pendingBlockPatches.update((n) => n - 1));
@@ -2610,7 +2740,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       if (!confirmed) return;
       void firstValueFrom(this.blocksService.remove(id)).then((r) => {
         if (!r.ok) {
-          this.conflict();
+          // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — block delete is not document-revision-gated.
+          this.reportWriteFailure(r, 'Не удалось удалить слой');
           return;
         }
         this.blocks.update((b) => b.filter((x) => x._id !== id));
@@ -2640,41 +2771,48 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   addPage(): void {
     this.enqueueDocumentWrite(async () => {
-      const doc = this.document();
-      if (!doc) return;
-      const nextCount = this.pageCount() + 1;
-      const r = await firstValueFrom(
-        this.documents.update(doc._id, {
-          expectedRevision: doc.revision ?? 1,
-          manualPageCount: nextCount,
+      if (!this.document()) return;
+      const guessedCount = this.pageCount() + 1;
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) =>
+        this.documents.update(current._id, {
+          expectedRevision: current.revision ?? 1,
+          manualPageCount: this.pageCount() + 1,
         }),
       );
-      if (!r.ok) {
-        this.conflict();
+      if (!result) return;
+      if (!result.ok) {
+        this.reportWriteFailure(result);
         return;
       }
-      this.document.set(r.data);
+      this.document.set(result.data);
       this.refreshPreviewIfActive();
-      this.currentPage.set(r.data.manualPageCount ?? nextCount);
-      this.toast.success(`Страниц: ${r.data.manualPageCount ?? nextCount}`);
+      this.currentPage.set(result.data.manualPageCount ?? guessedCount);
+      this.toast.success(`Страниц: ${result.data.manualPageCount ?? guessedCount}`);
     });
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — was a bare `firstValueFrom` outside
+   * `catalogWriteChain` (self-race candidate, and a second, independent
+   * orientation-write entry point alongside the already-queued
+   * `setOrientation`); now queued with one soft retry on a self-inflicted
+   * 409. The toggle direction is recomputed from the CURRENT document on
+   * every attempt, not captured once — a retry must flip from whatever
+   * orientation the refetch actually shows, not a stale guess.
+   */
   toggleOrientation(): void {
-    const doc = this.document();
-    if (!doc) return;
-    const orientation = doc.orientation === 'landscape' ? 'portrait' : 'landscape';
-    void firstValueFrom(
-      this.documents.update(doc._id, {
-        expectedRevision: doc.revision ?? 1,
-        orientation,
-      }),
-    ).then((r) => {
-      if (!r.ok) {
-        this.conflict();
+    if (!this.document()) return;
+    this.enqueueDocumentWrite(async () => {
+      const result = await this.attemptWithRevisionRetry<StudioDocument>((current) => {
+        const orientation = current.orientation === 'landscape' ? 'portrait' : 'landscape';
+        return this.documents.update(current._id, { expectedRevision: current.revision ?? 1, orientation });
+      });
+      if (!result) return;
+      if (!result.ok) {
+        this.reportWriteFailure(result);
         return;
       }
-      this.document.set(r.data);
+      this.document.set(result.data);
       queueMicrotask(() => this.syncSheetSize());
     });
   }
@@ -2686,7 +2824,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       if (r.ok) {
         this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
       } else {
-        this.conflict();
+        // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — block locked flag, not document-revision-gated.
+        this.reportWriteFailure(r, 'Не удалось изменить блокировку слоя');
       }
     });
   }
@@ -2701,7 +2840,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
         this.refreshPreviewIfActive();
       } else {
-        this.conflict();
+        // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — block visibility flag, not document-revision-gated.
+        this.reportWriteFailure(r, 'Не удалось изменить видимость слоя');
       }
     });
   }
@@ -2740,7 +2880,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (this.timer) clearTimeout(this.timer);
     this.timer = window.setTimeout(() => {
       this.timer = undefined;
-      this.layoutSavePromise = this.saveLayouts();
+      this.layoutSavePromise = this.enqueueLayoutSave();
       void this.layoutSavePromise.finally(() => {
         if (this.layoutSavePromise) this.layoutSavePromise = null;
       });
@@ -2759,46 +2899,69 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (!this.layoutsDirty) {
       return Promise.resolve(true);
     }
-    this.layoutSavePromise = this.saveLayouts();
+    this.layoutSavePromise = this.enqueueLayoutSave();
     const pending = this.layoutSavePromise;
     return pending.finally(() => {
       if (this.layoutSavePromise === pending) this.layoutSavePromise = null;
     });
   }
 
-  private saveLayouts(): Promise<boolean> {
-    const d = this.document();
-    if (!d) return Promise.resolve(true);
-    const updates = this.blocks()
-      .filter((b): b is StudioBlock & { layout: StudioBlockLayout } => Boolean(b.layout))
-      .map((b) => ({
-        blockId: b._id,
-        layout: normalizeStudioBlockLayout(b.layout),
-      }));
-    if (updates.length === 0) return Promise.resolve(true);
-    return firstValueFrom(
-      this.blocksService.updateLayouts(d._id, { expectedRevision: d.revision ?? 1, updates }),
-    ).then(async (r) => {
-      if (r.ok) {
-        this.layoutsDirty = false;
-        // TZ-NX-DOCSTUDIO-S46 — the layout response never carries ephemeral
-        // client settings (liveRows from putDataSet hydrate), so merge each
-        // server block with the local one by id instead of a naked replace.
-        const localById = new Map(this.blocks().map((b) => [b._id, b]));
-        const normalized = r.data.map((block) => {
-          const merged = studioPreserveClientBlockSettings(localById.get(block._id), block);
-          return merged.layout
-            ? { ...merged, layout: coerceStudioBlockLayout(merged.layout) }
-            : merged;
-        });
-        this.blocks.set(normalized);
-        await this.refreshDocumentRevisionAfterBlockWrite();
-        this.ensureLiveRowsAfterLayoutSave(normalized);
-        return true;
-      }
-      this.conflict();
-      return false;
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — `saveLayouts` was its OWN parallel
+   * serialization (`layoutSavePromise`), entirely separate from
+   * `catalogWriteChain` — the audit's #1 self-race source, since a drag
+   * commit could fire concurrently with hydrate-on-load/addPage/etc against
+   * the same document revision. Wraps `saveLayouts()` in the shared queue,
+   * resolving THIS call's own promise from inside the queued run — the
+   * debounce timer and `flushLayouts()`'s external contract are unchanged,
+   * only what actually executes when the timer fires is now serialized.
+   */
+  private enqueueLayoutSave(): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      this.enqueueDocumentWrite(async () => {
+        resolve(await this.saveLayouts());
+      });
     });
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — one soft retry on a self-inflicted
+   * 409. The retry rebuilds `updates` from the CURRENT `this.blocks()`
+   * inside the retryable request, not a stale snapshot — a drag that
+   * landed during the network round-trip must not be lost (ШАГ3).
+   */
+  private async saveLayouts(): Promise<boolean> {
+    if (!this.document()) return true;
+    if (this.blocks().every((b) => !b.layout)) return true;
+    const result = await this.attemptWithRevisionRetry<StudioBlock[]>((current) => {
+      const updates = this.blocks()
+        .filter((b): b is StudioBlock & { layout: StudioBlockLayout } => Boolean(b.layout))
+        .map((b) => ({
+          blockId: b._id,
+          layout: normalizeStudioBlockLayout(b.layout),
+        }));
+      return this.blocksService.updateLayouts(current._id, { expectedRevision: current.revision ?? 1, updates });
+    });
+    if (!result) return true;
+    if (!result.ok) {
+      this.reportWriteFailure(result);
+      return false;
+    }
+    this.layoutsDirty = false;
+    // TZ-NX-DOCSTUDIO-S46 — the layout response never carries ephemeral
+    // client settings (liveRows from putDataSet hydrate), so merge each
+    // server block with the local one by id instead of a naked replace.
+    const localById = new Map(this.blocks().map((b) => [b._id, b]));
+    const normalized = result.data.map((block) => {
+      const merged = studioPreserveClientBlockSettings(localById.get(block._id), block);
+      return merged.layout
+        ? { ...merged, layout: coerceStudioBlockLayout(merged.layout) }
+        : merged;
+    });
+    this.blocks.set(normalized);
+    await this.refreshDocumentRevisionAfterBlockWrite();
+    this.ensureLiveRowsAfterLayoutSave(normalized);
+    return true;
   }
 
   /**

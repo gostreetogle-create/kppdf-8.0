@@ -66,7 +66,7 @@ describe('StudioEditorPage — catalog write queue (TZ-NX-DOCSTUDIO-S41)', () =>
     settings: { dataSource: { type: 'catalog-products' } },
   };
 
-  let documentsService: { update: jest.Mock; putDataSet: jest.Mock };
+  let documentsService: { update: jest.Mock; putDataSet: jest.Mock; getById: jest.Mock };
   let dialog: { open: jest.Mock };
   let revisionCounter: number;
 
@@ -88,6 +88,8 @@ describe('StudioEditorPage — catalog write queue (TZ-NX-DOCSTUDIO-S41)', () =>
             data: nextRevisionDoc({ dataSets: [{ key, ...(payload.dataSet as object) } as never] }),
           }),
       ),
+      // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — the soft-retry refetch path.
+      getById: jest.fn().mockReturnValue(of({ ok: true, data: BASE_DOC })),
     };
     dialog = { open: jest.fn() };
 
@@ -147,11 +149,19 @@ describe('StudioEditorPage — catalog write queue (TZ-NX-DOCSTUDIO-S41)', () =>
 
   it('a real 409 from another tab still opens the conflict dialog', async () => {
     const component = createEditor();
-    documentsService.update.mockReturnValueOnce(of({ ok: false, error: { message: 'conflict' } }));
+    // TZ-NX-DOCSTUDIO-REVISION-RACE-UX — a genuine, PERSISTENT 409 (a real
+    // second-tab edit, not a self-race): the write gets one soft retry
+    // (refetch via `getById` + retry once) before the dialog opens, so the
+    // mock must keep 409-ing on the retry too, not just the first call.
+    documentsService.update.mockReturnValue(
+      of({ ok: false, error: { status: 409, error: { code: 'STUDIO_DOCUMENT_REVISION_CONFLICT' }, message: 'conflict' } }),
+    );
 
     component.onCatalogSelectionChange({ kind: 'products', ids: ['p1'] });
     await component.catalogWriteChain;
 
+    expect(documentsService.update).toHaveBeenCalledTimes(2); // original attempt + 1 soft retry
+    expect(documentsService.getById).toHaveBeenCalledTimes(1);
     expect(dialog.open).toHaveBeenCalledTimes(1);
     expect(component.catalogWriteBusy()).toBe(false);
   });

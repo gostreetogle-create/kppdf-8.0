@@ -1,0 +1,219 @@
+=== ШАГ 0: Preflight — audit confirmed + widened ===
+
+Read `docs/audits/2026-09-13-docstudio-revision-conflict-spam.md`'s table in
+full, then read every symbol it names (`conflict`, `schedule`/`saveLayouts`,
+`createTextLayer`, `rehydrateLiveRowsAfterColumnChange`,
+`enqueueDocumentWrite`) plus `silent-http.ts` (`SilentResult` +
+`HttpErrorResponse`). Grepped every `this.conflict()` call site in
+`studio-editor.page.ts` (23 sites) and classified each one by hand against
+whether its underlying write actually carries `expectedRevision`:
+
+Sites the audit's own table already named, confirmed and fixed:
+  - `saveLayouts`/`schedule`/`flushLayouts` — own parallel serialization
+    (`layoutSavePromise`), entirely separate from `catalogWriteChain`.
+  - `createTextLayer` / `createImageLayer` — bare `firstValueFrom` outside
+    the queue, reading `this.document()` synchronously (image layer worse:
+    an `await` for image-dimension decoding sat between the read and the
+    write, widening the race window).
+  - `rehydrateLiveRowsAfterColumnChange` — bare `firstValueFrom`, AND its
+    failure was a bare `return` (not even a toast — the audit's own table
+    already flagged this "silent return" as part of the problem).
+  - `patchTableSettingsForBlock` (`template-blocks` PATCH, no
+    `expectedRevision`) — called `conflict()` unconditionally on any fail.
+
+Sites the audit's table did NOT name but matched the exact same pattern
+(found by the systematic per-call-site audit, not assumed complete from
+the table alone):
+  - `createTableBlock` — a THIRD block-create path (tables), same bug as
+    text/image create.
+  - `onDocTypeChange`, `patchDocumentContext` (the Кому/Ещё/Связи hot
+    path — every client/payer/supplier/quotation/order pick), `openRenameDialog`'s
+    rename write, `toggleOrientation` (a SECOND, independent orientation
+    write entry point alongside the already-queued `setOrientation`) — all
+    bare `firstValueFrom` outside the queue, all revision-gated.
+  - `commitCatalogSelectionChange` — ALREADY correctly queued externally
+    (S41's own manual chain), but called `conflict()` unconditionally on
+    any fail from either of its two writes (context PATCH, putDataSet).
+  - `addPage` — ALREADY correctly queued, same unconditional-`conflict()`
+    fail handling.
+  - `applyTableSource` — ALREADY correctly queued, same issue.
+  - Block-level (non-revision-gated) `template-blocks` PATCH sites calling
+    `conflict()` on ANY failure, never a genuine "another tab": `patchImageBlock`,
+    `patchBlockStyle`, `applyBlockContent`, `patchBlockTitle`, `toggleLock`,
+    `toggleVisible`, `deleteLayerById` (block remove — verified server-side
+    in `template-block.service.ts`'s `remove()`: soft-deletes the block,
+    never touches the parent `StudioDocument.revision` at all).
+
+=== ШАГ 1: One queue for every revision-gated write ===
+
+New `private enqueueDocumentWriteAndWait<T>(run): Promise<T>` (alongside
+the existing `enqueueDocumentWrite`) for callers that need the queued
+write's own result (`createTableBlock`/`createImageLayer`'s `.then()`
+activates the new layer) — same `catalogWriteChain`, kept as `Promise<void>`
+internally via `.then(() => undefined)`.
+
+`saveLayouts` is now called via a new `enqueueLayoutSave()` wrapper that
+resolves an explicit `Promise<boolean>` from inside a queued run —
+`schedule()`/`flushLayouts()`'s EXTERNAL contract (debounce timer,
+"already pending → return that promise", "not dirty → resolve true") is
+byte-for-byte unchanged; only what actually fires when the timer elapses
+is now serialized against every other document write.
+
+Every bare `firstValueFrom(this.documents.update/putDataSet/...)` outside
+the queue (createTableBlock/createTextLayer/createImageLayer/onDocTypeChange/
+patchDocumentContext/openRenameDialog/toggleOrientation/
+rehydrateLiveRowsAfterColumnChange) is now wrapped in
+`enqueueDocumentWrite`/`enqueueDocumentWriteAndWait`.
+
+=== ШАГ 2: Honest dialog vs toast ===
+
+New module-level `isRevisionConflict(result: SilentResult<unknown>): boolean`
+— `status === 409` (sufficient on its own: grepped the ENTIRE
+studio-document + template-block backend modules, confirmed exactly ONE
+`ConflictException` throw site in the whole domain,
+`STUDIO_DOCUMENT_REVISION_CONFLICT` — no other 409 flavor exists here to
+misclassify), with the body `code` matched too when present as a
+belt-and-suspenders check.
+
+New `private reportWriteFailure(result, fallback?)`: routes to `conflict()`
+only when `isRevisionConflict(result)`; every other failure is
+`toast.error(extractErrorMessage(result.error) || fallback)`. This is now
+the ONLY way any of the 23 audited call sites reaches `conflict()` — a
+final grep for `this.conflict()` after all edits shows exactly one call
+site left: inside `reportWriteFailure` itself.
+
+Every non-revision-gated block PATCH site (`patchImageBlock`,
+`patchBlockStyle`, `applyBlockContent`, `patchBlockTitle`, `toggleLock`,
+`toggleVisible`, `deleteLayerById`, `patchTableSettingsForBlock`) now
+routes its failure through `reportWriteFailure` too — structurally these
+endpoints don't send `expectedRevision` so `isRevisionConflict` can never
+fire true for them, meaning they always toast (defense-in-depth: correct
+even if one of these endpoints were ever given a revision gate later).
+
+=== ШАГ 3: One soft retry ===
+
+New `private async attemptWithRevisionRetry<T>(request: (doc) =>
+Observable<SilentResult<T>>): Promise<SilentResult<T> | null>`: reads
+`this.document()`, fires `request(doc)` once; if the result is a genuine
+revision conflict, `getById` → `document.set` → fires `request(refreshed)`
+ONE more time and returns THAT result (success, still-conflict, or a
+different error) — never more than one retry.
+
+Every caller's `request` callback rebuilds its OWN payload from the `doc`
+parameter it receives (not a variable captured before the retry), so a
+retry genuinely reflects current state, not a stale snapshot:
+  - `saveLayouts`'s `updates` is rebuilt from `this.blocks()` INSIDE the
+    retryable closure (ШАГ3's explicit requirement: a drag that landed
+    during the network round-trip must not be lost).
+  - `toggleOrientation`'s toggle direction is recomputed from `current.orientation`
+    each time (not a stale pre-computed target).
+  - `addPage`'s `manualPageCount` re-reads the live `this.pageCount()`
+    computed (which itself reads `this.document()`, already updated by the
+    retry's own `document.set` before the retry's `request` fires).
+
+=== ШАГ 4: Specs ===
+
+FE `studio-editor-write-serial.spec.ts` (7 tests, was 4): 2 EXISTING tests
+needed their mocks upgraded from a loosely-typed `{message:'conflict'}`
+error (no `.status` — predates this TZ's classifier, so it silently
+stopped being recognized as a conflict under the new logic) to a realistic
+persistent 409 (`{status:409, error:{code:'STUDIO_DOCUMENT_REVISION_CONFLICT'}}`)
+and their expected `update` call-counts adjusted for the new retry
+(2 addPage clicks x (1 attempt + 1 retry, since the mock never succeeds)
+= 4, not 2) — this was traced through BEFORE running the suite, then
+confirmed by the actual failure. +3 NEW tests: (a) a single self-inflicted
+409 resolves via the soft retry with **zero** dialogs (the TZ's headline
+acceptance criterion, tested directly and deterministically); (b) a
+non-409 failure toasts and is never retried; (c) layout save (drag commit)
+queued behind an in-flight hydrate, mirroring the existing addPage test
+for the layout path specifically.
+
+FE `studio-editor-catalog-queue.spec.ts` (3 tests, was 3): the existing "a
+real 409 from another tab still opens the conflict dialog" test had the
+exact same stale-mock problem — its `{message:'conflict'}` no longer
+classified as a conflict AND (more subtly) it used `mockReturnValueOnce`,
+which under the new retry logic would let the SECOND (retry) attempt
+succeed via the mock's default handler — silently resolving what the test
+title promises is unresolvable. Fixed to `mockReturnValue` (persistent
+409, matching a genuine ongoing second-tab edit) and added a `getById`
+mock (was entirely absent — the retry's refetch step would have thrown
+`TypeError: this.documents.getById is not a function` against the old,
+incomplete mock object).
+
+=== Live verification (local dev, admin/admin123, real Chromium via Playwright) ===
+
+Test document: one `catalog-products` table (real product "021",
+listPrice 300) with a matching `dataSets` entry, so document-load fires a
+real hydrate-on-load `putDataSet` — the exact scenario the audit describes.
+
+1. Raced hydrate-on-load against TWO `addPage()` clicks + one `+Текст`
+   click, fired as fast as Playwright could click through them (before
+   `wait_until="networkidle"`, deliberately not waiting for the hydrate to
+   settle first):
+     - 0 conflict dialogs shown (checked page text for "Документ изменён
+       в другом месте").
+     - 0 HTTP 409 responses observed at all (network response listener) —
+       the queue prevented the race from ever manifesting, not merely
+       resolved it via retry.
+     - 0 console errors.
+     - Final state verified via API: `manualPageCount: 3` (both addPage
+       calls landed), a new text block ("Слой 2") created, revision
+       progressed cleanly 4→8 across hydrate+addPage+addText+addPage with
+       no gaps or corruption.
+2. Raced hydrate-on-load against a real drag gesture (select block, then
+   mouse down/move/up on the canvas — had to route around the Данные
+   flyout's default-open overlap, same finding as prior TZs' live checks):
+     - 0 conflict dialog, 0 409s.
+     - Layout genuinely persisted: table block's `x`/`y` changed from
+       (0.1, 0.1) to (0.246, 0.177) server-side, confirming the drag
+       commit's `updateLayouts` call actually landed, not just "silently
+       did nothing alongside no dialog."
+3. Simulated a GENUINE, persistent second-tab conflict (one that even a
+   soft retry cannot resolve) via Playwright's `page.route()` network
+   interception on `PATCH /api/studio-documents/:id` for this exact
+   document — every PATCH unconditionally returns a real 409 body
+   (`STUDIO_DOCUMENT_REVISION_CONFLICT`), while GET requests pass through
+   untouched (so the retry's own `getById` refetch is real, not mocked).
+   Triggered via the rename dialog (a real UI flow, `data-test="studio-rename"`
+   → fill → `studio-rename-confirm`):
+     - The "Документ изменён в другом месте" dialog appeared, with the
+       exact expected description text, exactly once.
+   This is the deterministic equivalent of two tabs racing each other
+   continuously (which a live two-context Playwright test cannot reliably
+   force without also controlling exact timing of a third concurrent
+   writer) — it exercises the REAL bundled frontend code end-to-end
+   against a REAL 409 shape, only the specific PATCH responses are
+   scripted, not the Angular services (unlike the unit tests, which mock
+   at the service layer).
+
+Cleanup: both throwaway blocks + the document deleted via
+`docker exec kppdf-mongo mongosh` after each round of verification.
+
+=== Gates (verbatim summary) ===
+
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest studio-editor-write-serial.spec.ts -> 7/7 PASS (was 4; 2 existing
+  tests' mocks fixed for realism under the new classifier, +3 new)
+FE jest studio-editor-catalog-queue.spec.ts -> 3/3 PASS (was 3; 1 existing
+  test's mock fixed for realism + persistence under the new retry, +1
+  getById mock added)
+FE jest kppdf-web (full) -> 126 suites / 940 passed + 7 skipped (947
+  total) PASS (was 937)
+FE eslint (scoped: studio-editor.page.ts, studio-editor-write-serial.spec.ts,
+  studio-editor-catalog-queue.spec.ts) -> 0 errors, 10 pre-existing-style
+  warnings (no-non-null-assertion / one pre-existing unused-var, all
+  verified against lines untouched by this TZ or matching this file's
+  already-established `!` style)
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2)
+FE nx build kppdf-web (forced fresh, --skip-nx-cache, to rule out a stale
+  cache hit masking a build failure) -> exit 0, same 2 pre-existing
+  unrelated warnings only; Angular AOT template compilation validated
+  every new binding/type with zero errors; studio-editor-page lazy chunk
+  grew ~255 kB (was ~245-253 kB across prior sessions), consistent with
+  the added code, no unexpected regressions
+Live Playwright verification -> PASS on all three scenarios (self-race
+  during hydrate: 0 dialogs / 0 409s / correct final state; drag during
+  hydrate: 0 dialog, layout genuinely persisted; simulated persistent
+  second-tab 409 via network interception: dialog shown exactly once with
+  the correct message) — all throwaway test data deleted after each round
