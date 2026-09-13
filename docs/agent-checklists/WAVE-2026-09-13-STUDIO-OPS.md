@@ -4,7 +4,7 @@
 > Обновляет исполнитель **после каждого TZ** (не только в конце волны).  
 > Cursor/PO смотрят этот файл = «где агент сейчас».
 
-updated_at: 2026-09-13T15:10:00Z  
+updated_at: 2026-09-13T15:12:00Z  
 agent_slot: Claude  
 current_wave: **3**  
 current_tz: 3.2 CATEGORY-INLINE-CREATE  
@@ -69,7 +69,7 @@ status: **IN_WORK_WAVE3**
 2026-09-13T13:10:00Z | WAVE2 | DONE | 3 stages DONE, COL-WIDTH-APPLY absorbed (not run separately) — see final report to PO
 2026-09-13T14:00:00Z | WAVE3 | started | HEAD=a832c73a
 2026-09-13T14:00:00Z | 3.1 VITRINA-PHOTO-BROKEN-IMG | CLAIMED
-2026-09-13T15:10:00Z | 3.1 VITRINA-PHOTO-BROKEN-IMG | DONE | commit=(backfill pending) | live evidence: 21/22 broken img + 34x404 -> 0/0 after backend existence-check fix (product/material findAll), all 4 vitrina tabs; existing FE onerror mechanism found already-correct (scroll/lazy-load-gated), not re-implemented
+2026-09-13T15:10:00Z | 3.1 VITRINA-PHOTO-BROKEN-IMG | DONE | commit=4c9e2301 | live evidence: 21/22 broken img + 34x404 -> 0/0 after backend existence-check fix (product/material findAll), all 4 vitrina tabs; existing FE onerror mechanism found already-correct (scroll/lazy-load-gated), not re-implemented
 2026-09-13T15:10:00Z | 3.2 CATEGORY-INLINE-CREATE | CLAIMED
 ```
 
@@ -96,7 +96,7 @@ Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md
 
 | # | TZ | Commit SHA | Status |
 |---|-----|------------|--------|
-| 3.1 | VITRINA-PHOTO-BROKEN-IMG (`tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.done.md`) | (backfill pending) | DONE |
+| 3.1 | VITRINA-PHOTO-BROKEN-IMG (`tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.done.md`) | `4c9e2301` | DONE |
 | 3.2 | CATEGORY-INLINE-CREATE | | CLAIMED |
 | 3.3 | OPS-DOCS-HOST-52-SYNC | | PENDING |
 | — | VERIFY-VM52-SSH-REMAINDER | | OUT_OF_BAND (LAN) |
