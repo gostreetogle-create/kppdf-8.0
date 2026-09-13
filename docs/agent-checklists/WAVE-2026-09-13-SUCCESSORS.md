@@ -3,7 +3,7 @@
 updated_at: 2026-09-13T19:00:00Z  
 agent_slot: Claude  
 current_wave: **2**  
-status: **IN_WORK_WAVE2**
+status: **WAVE2_DONE**
 
 > Out-of-band (не в волнах): `TZ-VERIFY-VM52-SSH-REMAINDER-2026-09-13` — только LAN.
 
@@ -31,7 +31,7 @@ status: **IN_WORK_WAVE2**
 | 2.2 | `tasks/_archive/2026-09/TZ-NX-CATEGORY-DUPLICATE-SLUG-409.done.md` | DONE (`e2c40bb8`) |
 | 2.3 | `tasks/_archive/2026-09/TZ-NX-SORTORDER-EMPTY-MIN.done.md` | DONE (`15a1febb`) |
 | 2.4 | `tasks/_archive/2026-09/TZ-NX-SUPPLY-TASK-UNCONFIRM.done.md` | DONE (`2bb8aade`) |
-| 2.5 | `tasks/_ready/TZ-NX-DOCSTUDIO-ISSUER-SELECT.md` | CLAIMED |
+| 2.5 | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-ISSUER-SELECT.done.md` | DONE (`e6908e11`) |
 
 Промпт: `tasks/_ready/PROMPT-CLAUDE-SUCCESSORS-WAVE2.md` — **не стартовать** до WAVE1_DONE.
 
@@ -62,4 +62,6 @@ status: **IN_WORK_WAVE2**
 2026-09-13T20:35:00Z | 2.4 SUPPLY-TASK-UNCONFIRM | CLAIMED
 2026-09-13T21:15:00Z | 2.4 SUPPLY-TASK-UNCONFIRM | DONE | commit=2bb8aade | STATUS_FLOW confirmed->draft edge + unconfirm() (clears confirmedBy/At) + POST .../unconfirm; FE "В черновик" button + Подтвердить now gated behind AlertDialogComponent (reused confirmDirtyClose pattern, no native confirm); live UI round-trip + curl 400-from-draft both confirmed; SUPPLY-GATE stand smoke 23/23 PASS
 2026-09-13T21:15:00Z | 2.5 DOCSTUDIO-ISSUER-SELECT | CLAIMED
+2026-09-13T23:00:00Z | 2.5 DOCSTUDIO-ISSUER-SELECT | DONE | commit=e6908e11 | BE: UpdateStudioDocumentDto.organizationId + update() reuses OrganizationService.findById's existing IDOR visibility policy (raw unresolved org id, not the resolveOrganizationId fallback); FE: readonly "Наша фирма" text -> app-pi-select filtered to isOurCompany orgs (live evidence: 10/13 orgs on stand are supplier seed data, not issuer candidates), disabled when <=1 candidate; nav fix corrected mid-flight from a no-op edit (nav-categories.ts items[] is never rendered anywhere in app-shell — reverted) to the real visible surface (admin-group-chips.ts's ADMIN_TOC_CHIPS, the actual "Устройства|Роли" tab strip) -> new "Наши организации" chip, live-verified clickable to /registries/organizations; live-reproduced known_limitation is WORSE than TZ text describes (full GET/PATCH/DELETE 403 lockout for the switching admin, not just list-disappearance, with an unexplained infinite-spinner UX) -> filed as WARN per TZ's own instruction, documented in page.md + evidence, not blocking; fixed all 13 studio-editor-*.spec.ts PiOrganizationsService mocks (missing .list broke the full suite); all gates PASS (BE 136/1361, FE 125/903+7skip, architecture:check, nx build); both throwaway test docs deleted (one via API, one via direct Mongo after self-lockout)
+2026-09-13T23:00:00Z | WAVE2 | DONE | 5/5 TZ DONE (2.1-2.5) — see final report to PO; new wave NOT proposed per prompt instruction
 ```
