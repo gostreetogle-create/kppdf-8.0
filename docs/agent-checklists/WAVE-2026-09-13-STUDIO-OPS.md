@@ -42,7 +42,7 @@ status: **WAVE1_DONE**
 |---|---------|-------|----------|-------|---------|------------|--------|
 | 1.1 | `…/TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG.md` | claude 2026-09-13T09:35:00Z | `evidence/TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG.txt` | BE 135/1330 + FE 123/852+7skip + arch + build PASS | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG.done.md` | `8d2d722d` | DONE |
 | 1.2 | `…/TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL.md` | claude 2026-09-13T10:20:00Z | `evidence/TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL.txt` | FE 124/856+7skip + arch + build + live Playwright PASS | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-ADD-PAGE-WRITE-SERIAL.done.md` | `b8b14801` | DONE |
-| 1.3 | `…/TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP.md` | claude 2026-09-13T11:15:00Z | `evidence/TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP.txt` | FE 125/865+7skip + arch + build + live Playwright PASS | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP.done.md` | (this commit) | DONE |
+| 1.3 | `…/TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP.md` | claude 2026-09-13T11:15:00Z | `evidence/TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP.txt` | FE 125/865+7skip + arch + build + live Playwright PASS | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP.done.md` | `76cb9d00` | DONE |
 
 **Правило строки Status:** `PENDING` → `CLAIMED` → `IN_WORK` → `GATES` → `DONE` | `BLOCKED` | `FAILED`.  
 При остановке mid-wave: Status текущего = `BLOCKED`/`IN_WORK` + 3–7 строк в §Checkpoint ниже + не стартовать следующий TZ.
@@ -56,7 +56,7 @@ status: **WAVE1_DONE**
 2026-09-13T10:20:00Z | 1.2 ADD-PAGE-WRITE-SERIAL | CLAIMED
 2026-09-13T11:10:00Z | 1.2 ADD-PAGE-WRITE-SERIAL | DONE | commit=b8b14801 | live Playwright evidence PASS (3x add-page, 3x200, strictly increasing revision)
 2026-09-13T11:15:00Z | 1.3 SELECTED-REPLACE-JUMP | CLAIMED
-2026-09-13T12:05:00Z | 1.3 SELECTED-REPLACE-JUMP | DONE | commit=(this commit, SHA backfilled at next transition) | live Playwright evidence PASS (Изменить -> Данные/Кому, select focused)
+2026-09-13T12:05:00Z | 1.3 SELECTED-REPLACE-JUMP | DONE | commit=76cb9d00 | live Playwright evidence PASS (Изменить -> Данные/Кому, select focused)
 2026-09-13T12:05:00Z | WAVE1 | DONE | all 3 TZs DONE, 1 successor filed (VITRINA-PHOTO-BROKEN-IMG) — see final report to PO
 ```
 
