@@ -238,6 +238,13 @@ Row actions и toolbar create — **icon-only** Lucide через app-layer ко
 - Copy — `POST /materials/:id/duplicate`; Archive — `DELETE /materials/:id` с confirm; success → toast + `ctx.reload()`, error → toast / inline error в dialog.
 - `/constructor` и row action «Открыть в Конструкторе» сохранены.
 
+### Категория — создать без ухода из формы (2026-09-13, `TZ-NX-CATALOG-CATEGORY-INLINE-CREATE`)
+
+- Во всех трёх формах (module/product/material) рядом с select «Категория» — accent-«+» (`pi-registry-create-button`, `data-test="{mod|prod|mat}-category-create"`), открывает `CategoryFormDialogComponent` в режиме создания с новым `lockType?: CategoryType` (`mode:'create', category:null, categories:<текущий список>, lockType:'module'|'product'|'material'`). `lockType` фиксирует `type` (select типа disabled, но `getRawValue()` всё равно отправляет его — тот же паттерн, что и locked `materialKind`), значит nested create не может уйти не в тот тип каталога. По закрытию с созданной категорией — она дописывается в локальный список формы, `categoryId.setValue(created._id)`, `form.markAsDirty()`; без ухода в реестр «Категории» и без reload формы.
+- **Невидимый invalid Save (тот же симптом, что был у product до `TZ-NX-PO-SWEEP-01`) устранён и у module, и у material:** пустая обязательная категория/название/артикул + Save → видимый alert «Заполните обязательные поля: …» (module — включая «Виды работ», если строка невалидна) + auto-focus/scroll к первому невалидному полю, вместо тихого `markAllAsTouched()` без всякой реакции. Material уже имел построчный `[error]`-hint — теперь дополнен тем же summary-alert-механизмом, что у product/module.
+- Studio-витрина «Изменить» открывает те же самые `ModuleFormDialogComponent`/`ProductFormDialogComponent`/`MaterialFormDialogComponent` — «+» и invalid-alert работают идентично, без отдельной проводки.
+- **Живая проверка (Playwright, admin/admin123):** во всех трёх формах «+» открывает диалог с корректно заблокированным `type`; создание категории и авто-выбор подтверждены end-to-end на форме модуля (POST /categories → 201 → select показывает новую категорию → форма dirty); invalid Save показывает алерт с «Категория» на пустой форме.
+
 ### Complex (domain canon)
 
 **Комплекс** — производное **Product**, у которого в `composition[]` есть

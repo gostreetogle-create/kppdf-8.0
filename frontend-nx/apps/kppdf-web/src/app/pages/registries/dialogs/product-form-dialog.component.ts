@@ -42,6 +42,9 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { CompositionPanelComponent } from '../../composition/composition-panel.component';
 import { scrollCompositionBlockIntoView } from '../../composition/composition-focus-scroll';
 import { confirmDirtyClose } from '../../composition/dirty-dialog.guard';
+import { onDialogCloseOnce } from '../../on-dialog-close-once';
+import { RegistryCreateButtonComponent } from '../registry-create-button.component';
+import { CategoryFormDialogComponent, type CategoryFormDialogData } from './category-form-dialog.component';
 
 export interface ProductFormDialogData {
   mode: 'create' | 'edit';
@@ -76,6 +79,7 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
     PiFormSectionComponent,
     PiPhotoDropzoneComponent,
     CompositionPanelComponent,
+    RegistryCreateButtonComponent,
   ],
   template: `
     <app-pi-dialog
@@ -120,12 +124,19 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
               <app-pi-input id="prod-price" type="number" formControlName="listPrice" />
             </app-pi-form-field>
             <app-pi-form-field label="Категория" htmlFor="prod-category" [required]="true" [error]="fieldError('categoryId')" class="md:col-span-6">
-              <select id="prod-category" formControlName="categoryId" class="pi-input w-full" data-test="prod-category">
-                <option value="">— выберите —</option>
-                @for (c of categories(); track c._id) {
-                  <option [value]="c._id">{{ c.name }}</option>
-                }
-              </select>
+              <div class="flex items-center gap-2">
+                <select id="prod-category" formControlName="categoryId" class="pi-input flex-1" data-test="prod-category">
+                  <option value="">— выберите —</option>
+                  @for (c of categories(); track c._id) {
+                    <option [value]="c._id">{{ c.name }}</option>
+                  }
+                </select>
+                <pi-registry-create-button
+                  label="Создать категорию"
+                  dataTest="prod-category-create"
+                  (createClick)="openCreateCategory()"
+                />
+              </div>
             </app-pi-form-field>
             <app-pi-form-field label="Масса, кг" htmlFor="prod-weight" class="md:col-span-3">
               <app-pi-input id="prod-weight" type="number" formControlName="weightKg" />
@@ -350,6 +361,25 @@ export class ProductFormDialogComponent implements OnInit, AfterViewInit {
   private async loadCategories(): Promise<void> {
     const res = await firstValueFrom(this.categoriesService.list({ type: 'product' }));
     if (res.ok) this.categories.set(res.data.filter((c) => c.isActive));
+  }
+
+  /** ШАГ 2 — nested create, same pattern as `supply-request-form-dialog.openCreateMaterial`. */
+  protected openCreateCategory(): void {
+    const ref = this.dialog.open<Category | undefined>(CategoryFormDialogComponent, {
+      data: {
+        mode: 'create',
+        category: null,
+        categories: this.categories(),
+        lockType: 'product',
+      } satisfies CategoryFormDialogData,
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (category) => {
+      if (!category) return;
+      this.categories.update((list) => [...list, category]);
+      this.form.controls.categoryId.setValue(category._id);
+      this.form.markAsDirty();
+    });
   }
 
   /** P1 write-path: upload → append id, main = first when empty. */

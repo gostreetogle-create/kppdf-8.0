@@ -15,6 +15,14 @@ export interface CategoryFormDialogData {
   readonly category?: Category | null;
   /** Full current list — used to filter the parent picker to same-type siblings as `type` changes. */
   readonly categories: readonly Category[];
+  /**
+   * TZ-NX-CATALOG-CATEGORY-INLINE-CREATE: nested create triggered from a
+   * module/product/material form's own «+» — the type is already known from
+   * context, not a free choice. When set, the type select is disabled and
+   * locked to this value (still submitted via `getRawValue()`, same pattern
+   * as `material-form-dialog.component.ts`'s locked `materialKind`).
+   */
+  readonly lockType?: CategoryType;
 }
 
 /** RU labels for the 3 wireable types (audit scope) — `general` stays out of the create dropdown. */
@@ -136,7 +144,7 @@ export class CategoryFormDialogComponent {
 
   protected readonly form = this.fb.group({
     name: ['', Validators.required],
-    type: this.fb.control<CategoryType>(this.data.category?.type ?? 'material', Validators.required),
+    type: this.fb.control<CategoryType>(this.data.lockType ?? this.data.category?.type ?? 'material', Validators.required),
     parentId: [this.data.category?.parentId ?? ''],
     skuPrefix: ['', Validators.required],
     description: [''],
@@ -164,6 +172,9 @@ export class CategoryFormDialogComponent {
         description: category.description ?? '',
         isActive: category.isActive,
       });
+    }
+    if (this.data.lockType) {
+      this.form.controls.type.disable();
     }
     this.updateParentOptions();
   }

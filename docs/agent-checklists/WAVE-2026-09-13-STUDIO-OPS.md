@@ -4,10 +4,10 @@
 > Обновляет исполнитель **после каждого TZ** (не только в конце волны).  
 > Cursor/PO смотрят этот файл = «где агент сейчас».
 
-updated_at: 2026-09-13T15:12:00Z  
+updated_at: 2026-09-13T16:10:00Z  
 agent_slot: Claude  
 current_wave: **3**  
-current_tz: 3.2 CATEGORY-INLINE-CREATE  
+current_tz: 3.3 OPS-DOCS-HOST-52-SYNC  
 status: **IN_WORK_WAVE3**
 
 ---
@@ -71,6 +71,8 @@ status: **IN_WORK_WAVE3**
 2026-09-13T14:00:00Z | 3.1 VITRINA-PHOTO-BROKEN-IMG | CLAIMED
 2026-09-13T15:10:00Z | 3.1 VITRINA-PHOTO-BROKEN-IMG | DONE | commit=4c9e2301 | live evidence: 21/22 broken img + 34x404 -> 0/0 after backend existence-check fix (product/material findAll), all 4 vitrina tabs; existing FE onerror mechanism found already-correct (scroll/lazy-load-gated), not re-implemented
 2026-09-13T15:10:00Z | 3.2 CATEGORY-INLINE-CREATE | CLAIMED
+2026-09-13T16:10:00Z | 3.2 CATEGORY-INLINE-CREATE | DONE | commit=(backfill pending) | lockType on CategoryFormDialogComponent + "+" on all 3 catalog forms + invalid-Save summary alert on module/material (product already had it); live Playwright confirmed full round-trip on module form + locked-type nested dialog on product/material; found+documented (not fixed, out of BE conflict keys) an unrelated category.service.ts 500-on-duplicate-slug defect
+2026-09-13T16:10:00Z | 3.3 OPS-DOCS-HOST-52-SYNC | CLAIMED
 ```
 
 _(агент дописывает строки сюда после каждого перехода статуса)_
@@ -97,8 +99,8 @@ Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md
 | # | TZ | Commit SHA | Status |
 |---|-----|------------|--------|
 | 3.1 | VITRINA-PHOTO-BROKEN-IMG (`tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.done.md`) | `4c9e2301` | DONE |
-| 3.2 | CATEGORY-INLINE-CREATE | | CLAIMED |
-| 3.3 | OPS-DOCS-HOST-52-SYNC | | PENDING |
+| 3.2 | CATEGORY-INLINE-CREATE (`tasks/_archive/2026-09/TZ-NX-CATALOG-CATEGORY-INLINE-CREATE.done.md`) | (backfill pending) | DONE |
+| 3.3 | OPS-DOCS-HOST-52-SYNC | | CLAIMED |
 | — | VERIFY-VM52-SSH-REMAINDER | | OUT_OF_BAND (LAN) |
 
 Промпт: `tasks/_ready/2026-09-13-studio-ops/PROMPT-CLAUDE-STUDIO-OPS-WAVE3.md`

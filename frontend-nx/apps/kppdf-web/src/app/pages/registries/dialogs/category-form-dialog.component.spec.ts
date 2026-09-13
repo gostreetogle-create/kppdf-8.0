@@ -141,4 +141,19 @@ describe('CategoryFormDialogComponent', () => {
 
     expect(updateMock).toHaveBeenCalledWith('m1', expect.objectContaining({ skuPrefix: 'MTL' }));
   });
+
+  it('TZ-NX-CATALOG-CATEGORY-INLINE-CREATE: lockType disables the type select and still submits it via getRawValue', async () => {
+    await setup({ mode: 'create', category: null, categories: [], lockType: 'module' });
+
+    const typeSelect = fixture.nativeElement.querySelector('[data-test="category-type"]') as HTMLSelectElement;
+    expect(typeSelect.disabled).toBe(true);
+    expect(fixture.componentInstance['form'].controls.type.value).toBe('module');
+
+    typeName('Каркасы');
+    typeSkuPrefix('KRK');
+    (fixture.nativeElement.querySelector('[data-test="category-save"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+
+    expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'module' }));
+  });
 });

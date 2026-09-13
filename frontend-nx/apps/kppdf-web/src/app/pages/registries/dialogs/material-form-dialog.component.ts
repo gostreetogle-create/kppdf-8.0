@@ -1,9 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  ElementRef,
+  Injector,
+  OnInit,
+  ViewChild,
   computed,
   inject,
-  OnInit,
   signal,
 } from '@angular/core';
 import {
@@ -36,7 +40,7 @@ import {
   photoFrameOf,
   type PiPhotoItem,
 } from '@kppdf/ui/photo';
-import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
+import { PiDialogComponent, PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
@@ -45,6 +49,9 @@ import { PiFormSectionComponent } from '@kppdf/ui/form-section';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { formatMaterialKind } from '../data/material-formatters';
 import { CompositionPanelComponent } from '../../composition/composition-panel.component';
+import { onDialogCloseOnce } from '../../on-dialog-close-once';
+import { RegistryCreateButtonComponent } from '../registry-create-button.component';
+import { CategoryFormDialogComponent, type CategoryFormDialogData } from './category-form-dialog.component';
 
 const DIMENSION_TYPES: { value: MaterialDimensionType; label: string }[] = [
   { value: 'length', label: 'Длина' },
@@ -85,6 +92,7 @@ type DimensionGroup = FormGroup<{
     PiFormSectionComponent,
     PiPhotoDropzoneComponent,
     CompositionPanelComponent,
+    RegistryCreateButtonComponent,
   ],
   template: `
     <app-pi-dialog
@@ -93,7 +101,7 @@ type DimensionGroup = FormGroup<{
       [maxWidth]="'min(1120px, calc(100vw - 2rem))'"
       [showClose]="true"
     >
-      <form body [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" data-test="material-form">
+      <form body #formEl [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" data-test="material-form">
         <app-pi-form-section title="Основные данные" headingId="mat-form-basics" tone="gold">
           <div class="grid md:grid-cols-12 gap-form-field">
             <app-pi-form-field
@@ -157,17 +165,24 @@ type DimensionGroup = FormGroup<{
               [error]="fieldError('categoryId')"
               class="md:col-span-6"
             >
-              <select
-                id="mat-category"
-                formControlName="categoryId"
-                class="pi-input w-full"
-                data-test="mat-category"
-              >
-                <option value="">{{ categoryRequired() ? '— выберите —' : 'Без категории' }}</option>
-                @for (c of categories(); track c._id) {
-                  <option [value]="c._id">{{ c.name }}</option>
-                }
-              </select>
+              <div class="flex items-center gap-2">
+                <select
+                  id="mat-category"
+                  formControlName="categoryId"
+                  class="pi-input flex-1"
+                  data-test="mat-category"
+                >
+                  <option value="">{{ categoryRequired() ? '— выберите —' : 'Без категории' }}</option>
+                  @for (c of categories(); track c._id) {
+                    <option [value]="c._id">{{ c.name }}</option>
+                  }
+                </select>
+                <pi-registry-create-button
+                  label="Создать категорию"
+                  dataTest="mat-category-create"
+                  (createClick)="openCreateCategory()"
+                />
+              </div>
             </app-pi-form-field>
 
             <app-pi-form-field label="Цена, ₽" htmlFor="mat-price" class="md:col-span-3">
@@ -287,6 +302,7 @@ type DimensionGroup = FormGroup<{
   `,
 })
 export class MaterialFormDialogComponent implements OnInit {
+  @ViewChild('formEl') private formEl?: ElementRef<HTMLFormElement>;
   protected readonly dimensionTypes = DIMENSION_TYPES;
   protected readonly formatKind = formatMaterialKind;
 
@@ -297,6 +313,9 @@ export class MaterialFormDialogComponent implements OnInit {
   private readonly categoriesService = inject(PiCategoriesService);
   private readonly data = inject<MaterialFormDialogData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<Material | null | undefined>>(PI_DIALOG_REF);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -389,6 +408,63 @@ export class MaterialFormDialogComponent implements OnInit {
     return 'Некорректное значение';
   }
 
+  /** Order matches the form layout — first invalid one gets focus/scroll (same pattern as `product-form-dialog`). */
+  private static readonly REQUIRED_FIELDS: ReadonlyArray<{
+    key: 'name' | 'article' | 'unit' | 'categoryId';
+    label: string;
+    htmlId: string;
+  }> = [
+    { key: 'name', label: 'Название', htmlId: 'mat-name' },
+    { key: 'article', label: 'Артикул', htmlId: 'mat-article' },
+    { key: 'unit', label: 'Единица', htmlId: 'mat-unit' },
+    { key: 'categoryId', label: 'Категория', htmlId: 'mat-category' },
+  ];
+
+  private buildInvalidMessage(): string {
+    const missing = MaterialFormDialogComponent.REQUIRED_FIELDS.filter(
+      (f) => this.form.controls[f.key].invalid,
+    ).map((f) => f.label);
+    return missing.length
+      ? `Заполните обязательные поля: ${missing.join(', ')}`
+      : 'Проверьте поля формы — есть некорректные значения.';
+  }
+
+  private focusFirstInvalidField(): void {
+    const target = MaterialFormDialogComponent.REQUIRED_FIELDS.find(
+      (f) => this.form.controls[f.key].invalid,
+    );
+    if (!target) return;
+    const host = this.formEl?.nativeElement.querySelector<HTMLElement>(`#${target.htmlId}`);
+    if (!host) return;
+    // `app-pi-input` puts `id` on its host tag, not the native `<input>` it wraps — reach inside.
+    const el = host.matches('input, select, textarea')
+      ? host
+      : (host.querySelector<HTMLElement>('input, select, textarea') ?? host);
+    queueMicrotask(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus({ preventScroll: true });
+    });
+  }
+
+  /** ШАГ 2 — nested create; всегда lockType='material' (эта форма — только материалы/детали). */
+  protected openCreateCategory(): void {
+    const ref = this.dialog.open<Category | undefined>(CategoryFormDialogComponent, {
+      data: {
+        mode: 'create',
+        category: null,
+        categories: this.categories(),
+        lockType: 'material',
+      } satisfies CategoryFormDialogData,
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (category) => {
+      if (!category) return;
+      this.categories.update((list) => [...list, category]);
+      this.form.controls.categoryId.setValue(category._id);
+      this.form.markAsDirty();
+    });
+  }
+
   protected addDimension(): void {
     const used = new Set(this.dimensionsArray.controls.map((g) => g.controls.type.value));
     const next = DIMENSION_TYPES.find((t) => !used.has(t.value))?.value ?? 'length';
@@ -407,6 +483,8 @@ export class MaterialFormDialogComponent implements OnInit {
     if (this.submitting()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.errorMessage.set(this.buildInvalidMessage());
+      this.focusFirstInvalidField();
       return;
     }
 

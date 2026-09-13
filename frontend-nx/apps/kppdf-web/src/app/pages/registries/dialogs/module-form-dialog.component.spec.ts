@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import {
@@ -435,5 +436,93 @@ describe('ModuleFormDialogComponent — категория (TZ-NX-REG-CATEGORY-W
     const fixture = await setup({ mode: 'edit', module: { ...SAMPLE, categoryId: { _id: 'cat-1', name: 'Модули' } } });
 
     expect(fixture.componentInstance['form'].controls.categoryId.value).toBe('cat-1');
+  });
+});
+
+/** Same reactive DialogRef mock as `on-dialog-close-once.spec.ts` — `onDialogCloseOnce` reads `ref.closed()` inside an `effect()`. */
+function createMockDialogRef<T>(): DialogRef<T> & { close: jest.Mock } {
+  const closedSig = signal<T | undefined>(undefined);
+  const isClosed = signal(false);
+  return {
+    closed: computed(() => (isClosed() ? closedSig() : undefined)) as DialogRef<T>['closed'],
+    close: jest.fn((v?: T) => {
+      if (isClosed()) return;
+      closedSig.set(v);
+      isClosed.set(true);
+    }),
+  };
+}
+
+describe('ModuleFormDialogComponent — inline category create + invalid feedback (TZ-NX-CATALOG-CATEGORY-INLINE-CREATE)', () => {
+  let fixture: ComponentFixture<ModuleFormDialogComponent>;
+  let dialogOpenMock: jest.Mock;
+  const createModule = jest.fn();
+
+  beforeEach(async () => {
+    createModule.mockReset();
+    dialogOpenMock = jest.fn();
+    await TestBed.configureTestingModule({
+      imports: [ModuleFormDialogComponent],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: { mode: 'create' } },
+        { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+        { provide: PiModulesService, useValue: { create: createModule, update: jest.fn() } },
+        { provide: PiWorkTypesService, useValue: WORK_TYPES_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiDialogService, useValue: { open: dialogOpenMock } },
+        {
+          provide: PiCompositionService,
+          useValue: { getModuleTree: jest.fn(), getModuleComposition: jest.fn() },
+        },
+        { provide: PiCategoriesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ModuleFormDialogComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  it('creates a category via the "+" (locked to type=module) and auto-selects it', async () => {
+    const created = { _id: 'cat-new', name: 'Новая', slug: 'new', type: 'module', skuPrefix: 'NEW', sortOrder: 0, isActive: true };
+    const ref = createMockDialogRef<typeof created>();
+    dialogOpenMock.mockReturnValue(ref);
+
+    (fixture.nativeElement.querySelector('[data-test="mod-category-create"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(dialogOpenMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ data: expect.objectContaining({ lockType: 'module' }) }),
+    );
+
+    ref.close(created);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const select = fixture.nativeElement.querySelector('[data-test="mod-category"]') as HTMLSelectElement;
+    expect(select.value).toBe('cat-new');
+    expect(fixture.componentInstance['form'].dirty).toBe(true);
+  });
+
+  it('shows a visible alert naming Категория and does not call create when required fields are empty', async () => {
+    await fixture.componentInstance['onSubmit']();
+    fixture.detectChanges();
+
+    const alert = fixture.nativeElement.querySelector('[data-test="module-form-error"]');
+    expect(alert?.textContent).toContain('Категория');
+    expect(createModule).not.toHaveBeenCalled();
+  });
+
+  it('upload photo then a valid Save sends photoIds + mainPhotoId', async () => {
+    createModule.mockReturnValue(
+      of({ ok: true, data: { _id: 'mod-2', name: 'Каркас', article: 'MOD-2', categoryId: 'cat-1' } }),
+    );
+    fixture.componentInstance['form'].patchValue({ name: 'Каркас', article: 'MOD-2', categoryId: 'cat-1' });
+    await fixture.componentInstance['onPhotosSelected']([new File([''], 'a.png')]);
+    await fixture.componentInstance['onSubmit']();
+
+    expect(createModule).toHaveBeenCalledWith(
+      expect.objectContaining({ photoIds: ['mph-2'], mainPhotoId: 'mph-2' }),
+    );
   });
 });

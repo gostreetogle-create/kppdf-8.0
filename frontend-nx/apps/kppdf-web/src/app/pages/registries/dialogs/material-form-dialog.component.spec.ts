@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -8,7 +9,7 @@ import {
   PiPhotosService,
   PiUnitsService,
 } from '@kppdf/data-access';
-import { PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
+import { PI_DIALOG_DATA, PI_DIALOG_REF, PiDialogService } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 
@@ -435,5 +436,81 @@ describe('MaterialFormDialogComponent фото (TZ-NX-PHOTO-P1, деталь = m
     const payload = update.mock.calls[0][1];
     expect(payload.photoIds).toEqual([]);
     expect(payload.mainPhotoId).toBeNull();
+  });
+});
+
+describe('MaterialFormDialogComponent — inline category create + invalid feedback (TZ-NX-CATALOG-CATEGORY-INLINE-CREATE)', () => {
+  let fixture: ComponentFixture<MaterialFormDialogComponent>;
+  let dialogOpenMock: jest.Mock;
+  const createMaterial = jest.fn();
+
+  beforeEach(async () => {
+    createMaterial.mockReset();
+    dialogOpenMock = jest.fn();
+    await TestBed.configureTestingModule({
+      imports: [MaterialFormDialogComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: PI_DIALOG_DATA,
+          useValue: { mode: 'create', lockMaterialKind: 'part', allowKindSelect: true, entityLabel: 'деталь' },
+        },
+        { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+        {
+          provide: PiUnitsService,
+          useValue: {
+            list: jest.fn().mockReturnValue(
+              of({ ok: true, data: { items: [{ key: 'pcs', label: 'Штука', isActive: true, isSystem: true, sortOrder: 0 }], total: 1, page: 1, limit: 50 } }),
+            ),
+          },
+        },
+        { provide: PiMaterialsService, useValue: { create: createMaterial, update: jest.fn() } },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiDialogService, useValue: { open: dialogOpenMock } },
+        { provide: PiCategoriesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(MaterialFormDialogComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  it('creates a category via the "+" (locked to type=material) and auto-selects it', async () => {
+    const created = { _id: 'cat-new', name: 'Крепёж', slug: 'fasteners', type: 'material', skuPrefix: 'FST', sortOrder: 0, isActive: true };
+    const closedSig = signal<typeof created | undefined>(undefined);
+    const isClosed = signal(false);
+    dialogOpenMock.mockReturnValue({
+      closed: computed(() => (isClosed() ? closedSig() : undefined)),
+      close: (v?: typeof created) => {
+        closedSig.set(v);
+        isClosed.set(true);
+      },
+    });
+
+    (fixture.nativeElement.querySelector('[data-test="mat-category-create"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(dialogOpenMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ data: expect.objectContaining({ lockType: 'material' }) }),
+    );
+
+    closedSig.set(created);
+    isClosed.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const select = fixture.nativeElement.querySelector('[data-test="mat-category"]') as HTMLSelectElement;
+    expect(select.value).toBe('cat-new');
+    expect(fixture.componentInstance['form'].dirty).toBe(true);
+  });
+
+  it('shows a visible alert naming Категория and does not call create when required fields are empty (деталь)', async () => {
+    await fixture.componentInstance['onSubmit']();
+    fixture.detectChanges();
+
+    const alert = fixture.nativeElement.querySelector('[data-test="material-form-error"]');
+    expect(alert?.textContent).toContain('Категория');
+    expect(createMaterial).not.toHaveBeenCalled();
   });
 });

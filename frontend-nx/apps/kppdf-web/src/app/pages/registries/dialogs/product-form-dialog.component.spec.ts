@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import {
@@ -229,6 +230,63 @@ describe('ProductFormDialogComponent — категория (TZ-NX-REG-CATEGORY-
     await setup({ mode: 'edit', product: { ...SAMPLE, categoryId: { _id: 'cat-2', name: 'Вывески' } } });
 
     expect(fixture.componentInstance['form'].controls.categoryId.value).toBe('cat-2');
+  });
+});
+
+describe('ProductFormDialogComponent — inline category create (TZ-NX-CATALOG-CATEGORY-INLINE-CREATE)', () => {
+  let fixture: ComponentFixture<ProductFormDialogComponent>;
+  let dialogOpenMock: jest.Mock;
+
+  beforeEach(async () => {
+    dialogOpenMock = jest.fn();
+    await TestBed.configureTestingModule({
+      imports: [ProductFormDialogComponent],
+      providers: [
+        { provide: PI_DIALOG_DATA, useValue: { mode: 'create' } },
+        { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+        {
+          provide: PiProductsService,
+          useValue: { create: jest.fn(), update: jest.fn() },
+        },
+        { provide: PiUnitsService, useValue: UNITS_MOCK },
+        { provide: PiPhotosService, useValue: PHOTOS_MOCK },
+        { provide: PiDialogService, useValue: { open: dialogOpenMock } },
+        { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+        { provide: PiCategoriesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProductFormDialogComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  it('creates a category via the "+" (locked to type=product) and auto-selects it', async () => {
+    const created = { _id: 'cat-new', name: 'Вывески', slug: 'signage', type: 'product', skuPrefix: 'SGN', sortOrder: 0, isActive: true };
+    const closedSig = signal<typeof created | undefined>(undefined);
+    const isClosed = signal(false);
+    dialogOpenMock.mockReturnValue({
+      closed: computed(() => (isClosed() ? closedSig() : undefined)),
+      close: (v?: typeof created) => {
+        closedSig.set(v);
+        isClosed.set(true);
+      },
+    });
+
+    (fixture.nativeElement.querySelector('[data-test="prod-category-create"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(dialogOpenMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ data: expect.objectContaining({ lockType: 'product' }) }),
+    );
+
+    closedSig.set(created);
+    isClosed.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const select = fixture.nativeElement.querySelector('[data-test="prod-category"]') as HTMLSelectElement;
+    expect(select.value).toBe('cat-new');
+    expect(fixture.componentInstance['form'].dirty).toBe(true);
   });
 });
 

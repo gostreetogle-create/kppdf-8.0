@@ -48,6 +48,9 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { CompositionPanelComponent } from '../../composition/composition-panel.component';
 import { scrollCompositionBlockIntoView } from '../../composition/composition-focus-scroll';
 import { confirmDirtyClose } from '../../composition/dirty-dialog.guard';
+import { onDialogCloseOnce } from '../../on-dialog-close-once';
+import { RegistryCreateButtonComponent } from '../registry-create-button.component';
+import { CategoryFormDialogComponent, type CategoryFormDialogData } from './category-form-dialog.component';
 
 export interface ModuleFormDialogData {
   mode: 'create' | 'edit';
@@ -68,6 +71,7 @@ export interface ModuleFormDialogData {
     PiFormSectionComponent,
     PiPhotoDropzoneComponent,
     CompositionPanelComponent,
+    RegistryCreateButtonComponent,
   ],
   template: `
     <app-pi-dialog
@@ -77,7 +81,7 @@ export interface ModuleFormDialogData {
       [showClose]="true"
       (userClose)="onCancel()"
     >
-      <form body [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" data-test="module-form">
+      <form body #formEl [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" data-test="module-form">
         <app-pi-form-section title="Модуль" headingId="module-main" tone="gold">
           <div class="grid md:grid-cols-12 gap-form-field">
             <app-pi-form-field label="Название" htmlFor="mod-name" [required]="true" class="md:col-span-8">
@@ -87,12 +91,19 @@ export interface ModuleFormDialogData {
               <app-pi-input id="mod-article" formControlName="article" />
             </app-pi-form-field>
             <app-pi-form-field label="Категория" htmlFor="mod-category" [required]="true" class="md:col-span-6">
-              <select id="mod-category" formControlName="categoryId" class="pi-input w-full" data-test="mod-category">
-                <option value="">— выберите —</option>
-                @for (c of categories(); track c._id) {
-                  <option [value]="c._id">{{ c.name }}</option>
-                }
-              </select>
+              <div class="flex items-center gap-2">
+                <select id="mod-category" formControlName="categoryId" class="pi-input flex-1" data-test="mod-category">
+                  <option value="">— выберите —</option>
+                  @for (c of categories(); track c._id) {
+                    <option [value]="c._id">{{ c.name }}</option>
+                  }
+                </select>
+                <pi-registry-create-button
+                  label="Создать категорию"
+                  dataTest="mod-category-create"
+                  (createClick)="openCreateCategory()"
+                />
+              </div>
             </app-pi-form-field>
             <app-pi-form-field label="Ширина" htmlFor="mod-w" class="md:col-span-3">
               <app-pi-input id="mod-w" type="number" formControlName="width" />
@@ -202,6 +213,7 @@ export interface ModuleFormDialogData {
 })
 export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   @ViewChild('compositionBlock') private compositionBlock?: ElementRef<HTMLElement>;
+  @ViewChild('formEl') private formEl?: ElementRef<HTMLFormElement>;
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly modulesService = inject(PiModulesService);
   private readonly photosService = inject(PiPhotosService);
@@ -278,6 +290,8 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   protected async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.errorMessage.set(this.buildInvalidMessage());
+      this.focusFirstInvalidField();
       return;
     }
     const payload = this.buildPayload();
@@ -300,6 +314,74 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
     if (this.data.mode === 'edit') {
       this.ref.close(res.data);
     }
+  }
+
+  /** Order matches the form layout — first invalid one gets focus/scroll. */
+  private static readonly REQUIRED_FIELDS: ReadonlyArray<{
+    key: 'name' | 'article' | 'categoryId';
+    label: string;
+    htmlId: string;
+  }> = [
+    { key: 'name', label: 'Название', htmlId: 'mod-name' },
+    { key: 'article', label: 'Артикул', htmlId: 'mod-article' },
+    { key: 'categoryId', label: 'Категория', htmlId: 'mod-category' },
+  ];
+
+  private buildInvalidMessage(): string {
+    const missing = ModuleFormDialogComponent.REQUIRED_FIELDS.filter(
+      (f) => this.form.controls[f.key].invalid,
+    ).map((f) => f.label);
+    if (this.workTypesArray.controls.some((g) => g.invalid)) missing.push('Виды работ');
+    return missing.length
+      ? `Заполните обязательные поля: ${missing.join(', ')}`
+      : 'Проверьте поля формы — есть некорректные значения.';
+  }
+
+  private focusFirstInvalidField(): void {
+    const target = ModuleFormDialogComponent.REQUIRED_FIELDS.find(
+      (f) => this.form.controls[f.key].invalid,
+    );
+    const host = target
+      ? this.formEl?.nativeElement.querySelector<HTMLElement>(`#${target.htmlId}`)
+      : this.focusFirstInvalidWorkTypeRow();
+    if (!host) return;
+    // `app-pi-input` puts `id` on its host tag, not the native `<input>` it wraps — reach inside.
+    const el = host.matches('input, select, textarea')
+      ? host
+      : (host.querySelector<HTMLElement>('input, select, textarea') ?? host);
+    queueMicrotask(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus({ preventScroll: true });
+    });
+  }
+
+  private focusFirstInvalidWorkTypeRow(): HTMLElement | null {
+    const index = this.workTypesArray.controls.findIndex((g) => g.invalid);
+    if (index < 0) return null;
+    return (
+      this.formEl?.nativeElement.querySelector<HTMLElement>(
+        `[data-test="module-work-type-row-${index}"] select`,
+      ) ?? null
+    );
+  }
+
+  /** ШАГ 2 — nested create, same pattern as `supply-request-form-dialog.openCreateMaterial`. */
+  protected openCreateCategory(): void {
+    const ref = this.dialog.open<Category | undefined>(CategoryFormDialogComponent, {
+      data: {
+        mode: 'create',
+        category: null,
+        categories: this.categories(),
+        lockType: 'module',
+      } satisfies CategoryFormDialogData,
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (category) => {
+      if (!category) return;
+      this.categories.update((list) => [...list, category]);
+      this.form.controls.categoryId.setValue(category._id);
+      this.form.markAsDirty();
+    });
   }
 
   protected addWorkType(): void {

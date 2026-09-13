@@ -1,0 +1,110 @@
+=== ШАГ 1: CategoryFormDialogComponent lockType ===
+
+category-form-dialog.component.ts: `CategoryFormDialogData.lockType?: CategoryType` added.
+`type` control initial value = `this.data.lockType ?? this.data.category?.type ?? 'material'`.
+Constructor: `if (this.data.lockType) this.form.controls.type.disable();` — same pattern as
+material-form-dialog's existing locked `materialKind`. `getRawValue()` in `submit()` was
+already unchanged — it includes disabled controls' values, so the locked type is still
+submitted correctly (no code change needed there, verified live below).
+
+=== ШАГ 2: Select + "+" in the three catalog forms ===
+
+module-form-dialog.component.ts / product-form-dialog.component.ts / material-form-dialog.component.ts:
+each gained a `pi-registry-create-button` (existing shared accent-"+" component, no new
+styling) next to the category `<select>`, plus `openCreateCategory()` opening
+`CategoryFormDialogComponent` with `lockType` fixed to that form's own catalog type and
+`onDialogCloseOnce` wiring the created category back into the form (append to local
+`categories` signal, `categoryId.setValue(created._id)`, `form.markAsDirty()`) — same
+pattern as `supply-request-form-dialog.component.ts`'s existing `openCreateMaterial`.
+material-form-dialog.component.ts did not previously inject `PiDialogService`/`DestroyRef`/
+`Injector` at all (no prior nested-dialog use) — added minimally, only for this feature.
+
+=== ШАГ 3: Invalid Save feedback parity ===
+
+product-form-dialog.component.ts already had the summary-alert + focus/scroll mechanism
+(`REQUIRED_FIELDS`/`buildInvalidMessage()`/`focusFirstInvalidField()`, from a prior
+TZ-NX-PO-SWEEP-01) — untouched here except adding the "+" button.
+module-form-dialog.component.ts and material-form-dialog.component.ts previously had
+`onSubmit()` invalid branch = `this.form.markAllAsTouched(); return;` — completely silent,
+matching the TZ's described symptom. Both now mirror product's mechanism:
+`errorMessage.set(buildInvalidMessage()); focusFirstInvalidField();` before returning.
+module's `buildInvalidMessage()` additionally appends "Виды работ" to the missing-fields
+list when any `workTypesArray` row is invalid (its own required `workTypeId`), and
+`focusFirstInvalidWorkTypeRow()` falls back to scrolling/focusing the first invalid
+work-type row's select when no top-level field is invalid — per the TZ's explicit callout
+("в alert должны попадать и обязательные поля work-type, если invalid").
+material's `fieldError()`/`invalid()` per-field hints already existed (unchanged) — this
+TZ adds only the missing top-level summary alert + focus, matching product/module.
+
+=== ШАГ 4: Specs (new, all passing) ===
+
+- category-form-dialog.component.spec.ts: +1 test — lockType disables the select, still
+  submits it via getRawValue.
+- module-form-dialog.component.spec.ts: +3 tests — creates a category via "+" (locked
+  type=module) and auto-selects it; shows a visible alert naming Категория and does not
+  call create when required fields are empty; upload photo then a valid Save sends
+  photoIds + mainPhotoId.
+- product-form-dialog.component.spec.ts: +1 test — creates a category via "+" (locked
+  type=product) and auto-selects it (invalid-alert + photo-upload specs for product
+  already existed from a prior TZ, untouched).
+- material-form-dialog.component.spec.ts: +2 tests — creates a category via "+" (locked
+  type=material) and auto-selects it; shows a visible alert naming Категория and does not
+  call create when required fields are empty (деталь) (photo-upload spec already existed,
+  untouched).
+
+Testing note: `onDialogCloseOnce`'s `effect()` fires correctly once the fixture's own
+`await fixture.whenStable()` runs (a live component fixture ticks via NgZone automatically);
+an explicit `TestBed.flushEffects()` right after a native `.click()` in the same test
+triggered a spurious (non-failing but noisy) `NG0101: ApplicationRef.tick is called
+recursively` console.error — removed in favor of `whenStable()`, which is both cleaner and
+closer to how the real app actually resolves the dialog-close effect.
+
+=== Live Playwright verification (local dev, admin/admin123 — documented local dev seed
+    login) ===
+
+Module form (`/registries/modules` → Создать):
+  - invalid Save (empty form): visible alert appears, text contains "Категория" — confirmed.
+  - "+" next to category: nested CategoryFormDialog opens; live `ng.getComponent()` read
+    confirmed `data.lockType==='module'`, `form.controls.type.value==='module'`,
+    `form.controls.type.disabled===true` (the raw DOM `<select>.disabled`/`.value` lag one
+    Angular tick behind — confirmed `true`/`'module'` too once given a settle wait; a
+    same-tick DOM read is a test-timing artifact, not a real defect).
+  - Created a category (unique name/skuPrefix to avoid an unrelated pre-existing duplicate-
+    slug 500 in category.service.ts — see note below) → POST /categories 201 → nested
+    dialog closed → module's category select shows the new category selected → module
+    form flagged dirty. Full round-trip confirmed.
+
+Product form (`/registries/products` → Создать) and Material form
+(`/registries/materials` → Создать): both open their form, both show the "+" button, both
+open the nested dialog with the correct locked type (`product`/`material` respectively)
+and a disabled type select — confirmed via the same DOM read after settle.
+
+No page-level JS errors observed in any run.
+
+Test-data hygiene: 3 categories created during live verification (module "1789305514
+Живой тест категория", plus 2 curl reproduction categories) were deleted via
+`DELETE /categories/:id` immediately after the check — no leftover test data.
+
+=== Out-of-scope finding, NOT fixed (per TZ "НЕ ИЗМЕНЯТЬ": no BE Category schema/DTO changes) ===
+
+`category.service.ts`'s `create()` returns a raw 500 "Internal server error" for a
+duplicate `slug` (a Mongo unique-index violation), not a clean 409 like `ProductService`/
+`MaterialService`'s own duplicate-sku handling (`rethrowDuplicateSku`/`rethrowDuplicate`).
+Discovered only because `suggestSkuPrefix()` truncates to 16 characters, so two categories
+whose names share the same first ~16 transliterated characters collide on slug — reproduced
+live (first live-test run picked a name whose truncated slug collided with a category from
+an earlier run in the shared dev DB, live 500 observed and diagnosed via direct curl
+reproduction before being ruled out as unrelated to this TZ's own code). Not touched here —
+`CreateCategoryDto`/`category.service.ts` are outside this TZ's conflict keys and its
+explicit "НЕ ИЗМЕНЯТЬ" list. Worth a separate TZ if the PO wants a friendlier duplicate-name
+error at scale (categories registry currently has no client-side duplicate check either).
+
+=== Gates (verbatim summary) ===
+
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest (scoped: module/product/material/category-form-dialog specs) -> 4 suites, all green
+FE jest (full) -> 125 suites / 892 passed + 7 skipped (899 total) PASS (was 885 — +7 new tests)
+FE eslint (scoped: all 8 touched .ts/.spec.ts files) -> 0 problems
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17, resolved since baseline: 2)
+FE nx build kppdf-web (last) -> exit 0, same pre-existing budget/NG8102 warnings as prior TZs
+Live Playwright verification (module/product/material forms, all 3 catalog forms) -> PASS
