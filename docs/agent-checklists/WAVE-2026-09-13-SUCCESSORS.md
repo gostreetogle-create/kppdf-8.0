@@ -18,7 +18,7 @@ status: **WAVE1_DONE** (волна 2 не стартована — ждёт от
 
 | # | TZ | Status |
 |---|-----|--------|
-| 1.1 | `tasks/_archive/2026-09/TZ-NX-SHELL-RAILS-ALWAYS.done.md` | DONE (SHA backfill pending) |
+| 1.1 | `tasks/_archive/2026-09/TZ-NX-SHELL-RAILS-ALWAYS.done.md` | DONE (`63abd04c`) |
 
 Промпт: `tasks/_ready/PROMPT-CLAUDE-SUCCESSORS-WAVE1-SHELL.md`
 
@@ -39,6 +39,6 @@ status: **WAVE1_DONE** (волна 2 не стартована — ждёт от
 ```
 2026-09-13T17:30:00Z | WAVE1 | started | HEAD=6ceeb4a6
 2026-09-13T17:30:00Z | 1.1 SHELL-RAILS-ALWAYS | CLAIMED
-2026-09-13T18:00:00Z | 1.1 SHELL-RAILS-ALWAYS | DONE | commit=(backfill pending) | overreach from TZ-NX-SHELL-01-IDLE-RAILS reverted: both rails always in DOM, grid always 3 columns, history moved from header into rail tops (one <-> pair site-wide); live Playwright confirmed on /counterparties (idle) and /production (setTools); no demo/disabled placeholder tools restored
+2026-09-13T18:00:00Z | 1.1 SHELL-RAILS-ALWAYS | DONE | commit=63abd04c | overreach from TZ-NX-SHELL-01-IDLE-RAILS reverted: both rails always in DOM, grid always 3 columns, history moved from header into rail tops (one <-> pair site-wide); live Playwright confirmed on /counterparties (idle) and /production (setTools); no demo/disabled placeholder tools restored
 2026-09-13T18:00:00Z | WAVE1 | DONE | 1/1 TZ DONE — WAVE2 (MODULE-LIST-PHOTOS -> CATEGORY-SLUG-409 -> SORTORDER-EMPTY-MIN -> SUPPLY-TASK-UNCONFIRM -> DOCSTUDIO-ISSUER-SELECT) NOT started, per prompt instruction — see final report to PO
 ```
