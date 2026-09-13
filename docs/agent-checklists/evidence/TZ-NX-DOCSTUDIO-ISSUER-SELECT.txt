@@ -1,0 +1,237 @@
+=== ШАГ 0: Evidence (dev stand, admin/admin123) ===
+
+Admin JWT payload: {"sub":"6a6a5aa8414225da04787ca0","username":"admin",
+"role":"admin","version":5,"orgId":null,...} — admin is UNSCOPED
+(organizationId=null).
+
+`GET /api/organizations?limit=100` -> 13 total:
+  - 10 with `type:['supplier'], isOurCompany` undefined (legacy supplier
+    seed data misplaced in the Organization collection — NOT issuer
+    candidates).
+  - 3 with `isOurCompany: true, type:['customer']` (test-artifact names:
+    "Самопроверка F5 UI", "Самопроверка F5 КП", "Самопроверка КП 2026-08-09").
+
+-> Derived design decision (not explicit in the TZ text): the issuer
+select's option list MUST filter to `isOurCompany === true`, not the full
+Organization list, or it would show 10 irrelevant supplier rows as if they
+were "our own firm" choices.
+
+Existing studio documents on the stand both had `organizationId` =
+the supplier org "АО «Лакокраска-Сервис»" (`resolveOrganizationId`'s
+alphabetical-first-by-name fallback for an unscoped caller) — confirming
+the previous read-only "Наша фирма: …" text was already showing a
+non-`isOurCompany` org, i.e. was already misleading before this TZ.
+
+=== ШАГ 1: Discoverability (nav) ===
+
+Domain preflight in the TZ (and this session's own earlier pass) assumed
+`nav-categories.ts`'s `NAV_CATEGORIES.admin.items` array drives a visible
+nav link, and initially "fixed" the dead `/organizations` path there to
+point at `/registries`. Live-checked with Playwright: `app-shell.component.ts`
+only ever renders `[routerLink]="cat.entryPath"` for the header quicknav
+chip — `cat.items` beyond the declared entry is NEVER iterated/rendered
+anywhere in the app shell. That edit was therefore cosmetic-only (no visible
+effect before or after) and was REVERTED (`git checkout --` on
+`nav-categories.ts` + `nav-categories.spec.ts`) to avoid a misleading
+"fixed" comment describing a no-op.
+
+The REAL, PO-visible "Наши организации" nav lives in the Admin section's
+in-page TOC row (`ADMIN_TOC_CHIPS` in `admin-group-chips.ts`, rendered by
+the shared `<app-pi-group-workspace [toc]>` on `/admin/devices` and
+`/admin/roles` — this is what actually produces the visible "Устройства" /
+"Роли" tab strip a PO sees under "Админ"). Added a third chip:
+  { id: 'organizations', label: 'Наши организации',
+    route: '/registries/organizations', pageKey: 'organizations' }
+— points straight at the live registry sub-route (`registries.routes.ts`'s
+`UrlMatcher` already serves `/registries/organizations`; confirmed via
+direct navigation: renders "Организации / Организации и поставщики (GET
+/organizations)." with 13 records).
+
+Live Playwright verification: on `/admin/devices`, the TOC row now reads
+"Устройства | Роли | Наши организации"; clicking the third link navigates
+to `http://localhost:4201/registries/organizations` and renders the live
+registry (not a 404/blank).
+
+=== ШАГ 2: BE — issuer reassignment ===
+
+`UpdateStudioDocumentDto`: new optional `organizationId` (`@IsObjectId`).
+
+`StudioDocumentService` gained a 6th constructor param, `OrganizationService`
+(new `OrganizationModule` import in `studio-document.module.ts` — confirmed
+it exports `OrganizationService`, no circular-dependency risk).
+
+`update()`, right after `assertDocTypeForFinal(...)`:
+  if (dto.organizationId !== undefined) {
+    await this.organizationService.findById(dto.organizationId, { organizationId });
+    doc.organizationId = this.toObjectId(dto.organizationId, 'organizationId');
+  }
+Reuses `OrganizationService.findById(id, user)`'s existing IDOR-safe
+visibility check verbatim (unscoped caller sees any org; a caller bound to
+one org can only "pick" that same org, else 404) instead of duplicating
+the policy inline. Uses the RAW (unresolved) `organizationId` param for
+that check — resolving via `resolveOrganizationId()` first would make an
+unscoped admin look bound to whatever fallback org that resolves to,
+defeating the admin's intended full visibility.
+
+Live curl round-trip (fresh throwaway doc, deleted after):
+  - POST /studio-documents -> organizationId = supplier-fallback org
+    (revision 1).
+  - PATCH {expectedRevision:1, organizationId:<isOurCompany org>} (admin,
+    unscoped) -> 200, organizationId updated, revision 2.
+  - PATCH {expectedRevision:2, organizationId:'000000000000000000000000'}
+    (nonexistent org) -> did NOT reach my new IDOR check as a clean 404 —
+    see known_limitation below, it hit a DIFFERENT pre-existing 403 first.
+
+Bound-user IDOR rejection path: NOT separately live-tested (no bound
+non-admin test user exists on this dev stand — every seeded account is
+either admin or has no organizationId set). Covered by 4 new unit tests in
+`studio-document.service.spec.ts` (admin picks any org; bound caller
+rejected on a different org via mocked `organizationService.findById`
+throwing; bound caller re-selecting their own org is a no-op-equivalent
+pass; field omitted from patch leaves organizationId untouched — service
+never calls `organizationService.findById` in that case).
+
+=== ШАГ 3: FE — select in "Ещё" ===
+
+`studio-data-panel.component.ts`: replaced the readonly issuer `<dt>/<dd
+data-test="studio-issuer-readonly">` block with `app-pi-select`
+(`data-test="studio-issuer-select"`), options from `issuerOrgs()`
+(`{{org.shortName || org.name}}`), value = `issuerOrgId()`, disabled when
+`issuerOrgs().length <= 1` (honest — no fake multi-choice when there's
+nothing to choose between), emits `issuerOrgChange`. Renamed input
+`issuerOrgName` -> `issuerOrgId` (current value) + new `issuerOrgs` input
+(candidate list); removed now-orphaned `.label`/`.value` CSS rules.
+
+`studio-editor.page.ts`:
+  - New `orgsApi.list({limit:100})` bootstrap subscription (same
+    `takeUntilDestroyed` pattern as the sibling `docTypesApi`/
+    `counterpartiesApi` subscriptions), filtering the result to
+    `org.isOurCompany === true` into a new `issuerOrgs` signal.
+  - `issuerOrgId` is now a `computed(() => this.document()?.organizationId
+    ?? '')` (derived, not a separate write target) instead of a fetched-
+    and-cached name string; removed the `loadIssuerOrg()` private method
+    and its call site entirely (no longer needed — the select renders its
+    label by matching `issuerOrgId()` against `issuerOrgs()` directly).
+  - New `onIssuerOrgChange(organizationId)`: direct
+    `documents.update(doc._id, {expectedRevision, organizationId})` write
+    (mirrors `onDocTypeChange()`'s/`onQuotationStatusChange()`'s pattern —
+    a top-level document-identity field, NOT routed through the
+    `catalogWriteChain` content-edit queue), updates `document.set(r.data)`
+    + toast + `refreshPreviewIfActive()` on success, sets
+    `contextSaveError`/toast on failure (NOT the generic `conflict()`
+    dialog `onDocTypeChange` falls back to — an IDOR 404 here is not a
+    stale-revision conflict, and showing "another tab changed this
+    document" would be actively misleading).
+
+Every split `studio-editor-*.spec.ts` file (13 files, the page has no
+single combined spec) mocks `PiOrganizationsService` per-file; all of them
+needed a `list` mock added alongside the existing `getById` mock (which is
+now unused dead weight in those mocks but harmless) since the new
+constructor-time subscription would otherwise throw
+`this.orgsApi.list is not a function` for every test in every one of those
+files — this is exactly what happened on the first full-suite run (56
+failing tests / 13 failing suites) and was root-caused and fixed by adding
+`list: jest.fn().mockReturnValue(of({ok:true,data:{items:[]}}))` to each.
+
+=== ШАГ 4: Docs ===
+
+`docs/pages/document-studio.page.md`:
+  - §1.3 panel table: "Поставщик/Исполнитель -> PATCH document.context"
+    split into accurate per-field routing (Поставщик -> anchors.supplier;
+    Исполнитель -> organizationId directly, not context).
+  - §2.2 "Исполнитель (наша фирма)" paragraph rewritten: select, not
+    read-only; isOurCompany filter; visibility policy; disabled-when-<=1
+    rule; pointer to Реестры -> Организации; pointer to the new
+    `admin-group-chips.ts` TOC fix (not `nav-categories.ts`, which was
+    reverted as a no-op).
+  - New known_limitation paragraph documenting the scope-lockout finding
+    below (not just "list disappearance" as originally described).
+  - §2.2 table row "Исполнитель | (из JWT org)" -> "organizationId (select,
+    не anchors/context)".
+  - §3.3 "Ещё" TOC content cell + PO/manager glossary paragraph: "read-only
+    Наша фирма: …" -> select wording; "Исполнитель — наша фирма, read-only
+    (из JWT)" -> "выбирается select'ом среди isOurCompany фирм".
+
+=== known_limitation (live-reproduced, WORSE than the TZ's own description) ===
+
+The TZ text says: "после смены issuer документ может «пропасть» из
+текущего списка admin, если list всё ещё фильтрует fallback-org." Live
+reproduction on the dev stand shows this understates the actual severity:
+
+  1. Created a fresh doc as unscoped admin (organizationId = fallback org,
+     "АО «Лакокраска-Сервис»", via `resolveOrganizationId`'s
+     alphabetical-first-by-name default).
+  2. PATCH organizationId -> an `isOurCompany` org ("Самопроверка F5 UI")
+     -> 200, succeeds (this TZ's own select+PATCH path working exactly as
+     designed).
+  3. ANY subsequent request for that same doc by the SAME unscoped admin
+     -> 403 "Studio document belongs to another organization scope" — on
+     GET, PATCH, *and* DELETE. Confirmed via curl (all three) and via a
+     live FE reload in the browser (Playwright): the editor page hangs
+     forever on "Загрузка документа…" with no error message shown to the
+     operator, only a silent 403 in the network console.
+  4. It does not just "disappear from the list" — `findById()` (the same
+     helper `update()`/`GET :id` both call) throws 403 unconditionally
+     on any org mismatch, so the document becomes fully inaccessible
+     (read AND write) to that admin from that point forward. There is no
+     recovery path via the UI or API for that admin — not even to switch
+     the issuer back — since every further call re-runs the same
+     scope check before any patch is applied.
+  5. Root cause: `resolveOrganizationId(null)` (used for the CALLER's own
+     tenant scope on every method) and the NEW per-document `organizationId`
+     identity field this TZ makes user-editable are the same physical
+     field/concept (`StudioDocument.organizationId`) — pre-existing
+     conflation the TZ's own preflight explicitly names and accepts.
+  Cleanup: both throwaway test documents were deleted directly via
+  `docker exec kppdf-mongo mongosh kppdf --eval
+  'db.studio_documents.deleteOne(...)'` since the API itself was locked
+  out for the admin session that created them.
+
+Per the TZ's own instruction ("Если воспроизведётся — WARN + successor
+«list by selected org / admin all-orgs», не блокировать этот TZ если
+select+PATCH+preview ок на открытом документе") this is filed as a WARN,
+not a blocker — the select+PATCH+preview path itself (ШАГ 3's actual scope)
+works correctly on an already-open document; the lockout only bites on the
+*next* request after switching away from the fallback org. Documented in
+`document-studio.page.md`'s known_limitation paragraph; a successor TZ is
+warranted to decouple tenant-scope resolution from issuer-identity, or at
+minimum surface a real error state (not an infinite spinner) when
+`findById`'s scope check rejects.
+
+=== Gates (verbatim summary) ===
+
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest studio-document (6 suites incl. service spec) -> 93/93 PASS
+  (service spec: 37/37, was 33, +4 new)
+BE jest (full) -> 136 suites / 1361 tests PASS
+BE eslint (scoped: studio-document.service.ts/.module.ts,
+  update-studio-document.dto.ts, studio-document.service.spec.ts) -> 0 problems
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0 (both before
+  and after the admin-group-chips.ts fix)
+FE jest studio-data-panel.component.spec.ts -> 23/23 PASS (was 21ish before
+  this TZ's D50/D53 tests were rewritten in place)
+FE jest admin-devices.page.spec.ts -> 4/4 PASS (was 3, +1 new TOC-chip test)
+FE jest kppdf-web (full) -> first full run: 13 suites / 56 tests FAILED
+  (`this.orgsApi.list is not a function` in every studio-editor-*.spec.ts
+  file) -> root-caused + fixed (added `list` mock to all 13 files' existing
+  `PiOrganizationsService` provider) -> re-run: 125 suites / 903 passed +
+  7 skipped (910 total) PASS
+FE eslint kppdf-web (whole project) -> 38 pre-existing errors / 273
+  pre-existing warnings, ALL in files/lines untouched by this TZ (verified
+  line-by-line against `git diff`/`git log -S` for every file this TZ's
+  edits touch, incl. the one file also touched by TZ 2.4 (`supply.page.ts`)
+  — its one flagged line predates both TZs) -> 0 new problems from this TZ
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2) — run twice (before and after the
+  admin-group-chips.ts fix)
+FE nx build kppdf-web -> exit 0 both times, same 2 pre-existing unrelated
+  warnings (studio-table-properties.component.ts nullish-coalescing,
+  initial-bundle-budget) — Angular AOT template compilation validated
+  every new binding name with zero errors
+Live Playwright/curl verification -> PASS: isOurCompany-only option list
+  (3 of 13 orgs); switch persists (PATCH 200, revision++, toast, preview-
+  refresh path exercised); nav discoverability fix confirmed end-to-end
+  (click -> live registry, not a 404); known_limitation lockout reproduced
+  and documented as WARN per TZ's own instruction; both throwaway test
+  documents deleted (one via API before lockout, one via direct Mongo
+  after lockout).

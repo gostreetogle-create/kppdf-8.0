@@ -78,6 +78,16 @@ describe('DevicesAdminPage (TZ-NX-UX-16-admin-devices-FIX)', () => {
     expect(table.textContent).toContain('Владельца');
   });
 
+  it('shows a live «Наши организации» TOC link into the registry (TZ-NX-DOCSTUDIO-ISSUER-SELECT)', async () => {
+    await setup();
+    const toc = fixture.nativeElement.querySelector('[data-test="group-toc"]') as HTMLElement;
+    const link = Array.from(toc.querySelectorAll('a')).find(
+      (a) => a.textContent?.trim() === 'Наши организации',
+    ) as HTMLAnchorElement | undefined;
+    expect(link).toBeTruthy();
+    expect(link?.getAttribute('href')).toBe('/registries/organizations');
+  });
+
   it('opens a destructive confirm before revoking and reloads on success', async () => {
     await setup();
     const closedSignal = signal<boolean | undefined>(undefined);

@@ -14,7 +14,8 @@ describe('StudioDataPanelComponent', () => {
       providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     fixture = TestBed.createComponent(StudioDataPanelComponent);
-    fixture.componentRef.setInput('issuerOrgName', 'OOO Test');
+    fixture.componentRef.setInput('issuerOrgId', 'org1');
+    fixture.componentRef.setInput('issuerOrgs', [{ _id: 'org1', name: 'OOO Test' }]);
     fixture.componentRef.setInput('counterparties', [{ _id: 'cp1', name: 'Client 1' }]);
     fixture.componentRef.setInput('quotations', [{ _id: 'q1', number: 'KP-1' }]);
     fixture.componentRef.setInput('orders', [{ _id: 'o1', number: 'Z-1' }]);
@@ -58,7 +59,7 @@ describe('StudioDataPanelComponent', () => {
     expect(el.querySelector('[data-test="studio-data-vitrina"]')).toBeTruthy();
   });
 
-  it('«Связи» holds КП/Статус/Заказ; «Ещё» holds Поставщик + read-only Исполнитель (TZ-NX-DOCSTUDIO-D50)', () => {
+  it('«Связи» holds КП/Статус/Заказ; «Ещё» holds Поставщик + Исполнитель select (TZ-NX-DOCSTUDIO-D50)', () => {
     tocButton('links').click();
     fixture.componentRef.setInput('showKpStatus', true);
     fixture.componentRef.setInput('quotationStatus', 'draft');
@@ -73,6 +74,7 @@ describe('StudioDataPanelComponent', () => {
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('[data-test="studio-supplier-select"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="studio-issuer-select"]')).toBeTruthy();
     expect(el.textContent).toContain('OOO Test');
     expect(el.querySelector('[data-test="studio-quotation-select"]')).toBeFalsy();
   });
@@ -196,7 +198,7 @@ describe('StudioDataPanelComponent', () => {
     expect(el.querySelector('[data-test="studio-payer-disclosure-toggle"]')).toBeFalsy();
   });
 
-  it('shows a one-line hint on «Связи» and read-only «Наша фирма: …» + hint on «Ещё» (TZ-NX-DOCSTUDIO-D53)', () => {
+  it('shows a one-line hint on «Связи» and the «Исполнитель» select + hint on «Ещё» (TZ-NX-DOCSTUDIO-D53 / TZ-NX-DOCSTUDIO-ISSUER-SELECT)', () => {
     tocButton('links').click();
     fixture.detectChanges();
     let el = fixture.nativeElement as HTMLElement;
@@ -205,7 +207,42 @@ describe('StudioDataPanelComponent', () => {
     tocButton('more').click();
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('[data-test="studio-issuer-readonly"]')?.textContent).toContain('Наша фирма: OOO Test');
+    expect(el.querySelector('[data-test="studio-issuer-select"]')?.textContent).toContain('OOO Test');
+  });
+
+  describe('«Исполнитель» select (TZ-NX-DOCSTUDIO-ISSUER-SELECT)', () => {
+    it('ignores option clicks when there is only one candidate org (single-org guard)', () => {
+      const emitted: string[] = [];
+      fixture.componentInstance.issuerOrgChange.subscribe((value) => emitted.push(value));
+      tocButton('more').click();
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const option = el.querySelector('[data-test="studio-issuer-select"] app-pi-select-option button') as HTMLButtonElement;
+      option.click();
+
+      expect(emitted).toEqual([]);
+    });
+
+    it('emits issuerOrgChange when a candidate is picked among 2+ orgs', () => {
+      fixture.componentRef.setInput('issuerOrgId', 'org1');
+      fixture.componentRef.setInput('issuerOrgs', [
+        { _id: 'org1', name: 'OOO Test' },
+        { _id: 'org2', name: 'OOO Vtoraya' },
+      ]);
+      fixture.detectChanges();
+      tocButton('more').click();
+      fixture.detectChanges();
+
+      const emitted: string[] = [];
+      fixture.componentInstance.issuerOrgChange.subscribe((value) => emitted.push(value));
+      const el = fixture.nativeElement as HTMLElement;
+      const options = el.querySelectorAll('[data-test="studio-issuer-select"] app-pi-select-option button');
+      expect(options.length).toBe(2);
+      (options[1] as HTMLButtonElement).click();
+
+      expect(emitted).toEqual(['org2']);
+    });
   });
 
   it('shows KP status select on «Связи» when showKpStatus=true', () => {

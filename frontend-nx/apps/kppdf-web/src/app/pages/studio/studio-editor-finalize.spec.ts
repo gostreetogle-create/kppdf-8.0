@@ -75,7 +75,7 @@ describe('StudioEditorPage.onFinalize — no native confirm', () => {
         { provide: PiCounterpartiesService, useValue: { list: emptyList({ items: [] }) } },
         { provide: PiQuotationsService, useValue: { list: emptyList([]) } },
         { provide: PiOrdersService, useValue: { list: emptyList([]) } },
-        { provide: PiOrganizationsService, useValue: {} },
+        { provide: PiOrganizationsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } })) } },
         { provide: PiDocTypesService, useValue: { list: emptyList([]) } },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
         { provide: PiDialogService, useValue: dialog },

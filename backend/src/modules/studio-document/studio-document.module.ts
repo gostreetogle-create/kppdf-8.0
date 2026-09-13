@@ -24,6 +24,7 @@ import { DocType, DocTypeSchema } from '../doc-type/doc-type.schema';
 import { StudioOutputService } from './studio-output.service';
 import { StudioDataResolverService } from './studio-data-resolver';
 import { StudioQuotationLifecycleService } from './studio-quotation-lifecycle.service';
+import { OrganizationModule } from '../organization/organization.module';
 
 /**
  * TZ-DOC-STUDIO-201b — StudioDocument module (persistence + org scope + revision API).
@@ -47,6 +48,7 @@ import { StudioQuotationLifecycleService } from './studio-quotation-lifecycle.se
     GeneratedDocumentModule,
     QuotationModule,
     OrderModule,
+    OrganizationModule,
   ],
   controllers: [StudioDocumentController],
   providers: [StudioDocumentService, StudioOutputService, StudioDataResolverService, StudioQuotationLifecycleService],

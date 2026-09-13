@@ -75,5 +75,7 @@ export interface UpdateStudioDocumentPayload {
   readonly context?: Record<string, unknown>;
   readonly dataAnchors?: readonly Record<string, unknown>[];
   readonly docTypeId?: string;
+  /** TZ-NX-DOCSTUDIO-ISSUER-SELECT — «Исполнитель» (наша фирма). */
+  readonly organizationId?: string;
 }
 

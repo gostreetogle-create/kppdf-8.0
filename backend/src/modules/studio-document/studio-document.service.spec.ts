@@ -83,6 +83,9 @@ function createService(fallbackOrgId: Types.ObjectId | null = null) {
   const dataResolver = {
     resolveDataSets: jest.fn().mockResolvedValue([]),
   };
+  const organizationService = {
+    findById: jest.fn(),
+  };
   return {
     service: new StudioDocumentService(
       model as never,
@@ -90,6 +93,7 @@ function createService(fallbackOrgId: Types.ObjectId | null = null) {
       templateService as never,
       blockService as never,
       dataResolver as never,
+      organizationService as never,
     ),
     model: model as {
       create: jest.Mock;
@@ -101,6 +105,7 @@ function createService(fallbackOrgId: Types.ObjectId | null = null) {
     templateService,
     blockService,
     dataResolver,
+    organizationService,
   };
 }
 
@@ -274,6 +279,61 @@ describe('StudioDocumentService (TZ-DOC-STUDIO-201b)', () => {
 
       expect(doc.status).toBe('final');
       expect(doc.revision).toBe(2);
+    });
+
+    describe('organizationId — «Исполнитель» (TZ-NX-DOCSTUDIO-ISSUER-SELECT)', () => {
+      it('an unscoped/admin caller (organizationId=null) may switch the issuer to any existing org', async () => {
+        // fallback org (ORG_A) is only needed so resolveOrganizationId's own
+        // internal fallback lookup (used for the document's *scope* check,
+        // unrelated to the new issuer pick below) has something to resolve to.
+        const { service, model, organizationService } = createService(new Types.ObjectId(ORG_A));
+        const doc = studioDoc({ revision: 1 });
+        model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+        organizationService.findById.mockResolvedValue({ _id: ORG_B });
+
+        await service.update(DOC_ID, { expectedRevision: 1, organizationId: ORG_B }, null);
+
+        expect(organizationService.findById).toHaveBeenCalledWith(ORG_B, { organizationId: null });
+        expect(String(doc.organizationId)).toBe(ORG_B);
+        expect(doc.revision).toBe(2);
+      });
+
+      it('a caller bound to their own org cannot switch the issuer to a different org (same IDOR policy as OrganizationService)', async () => {
+        const { service, model, organizationService } = createService();
+        const doc = studioDoc({ revision: 1, organizationId: new Types.ObjectId(ORG_A) });
+        model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+        organizationService.findById.mockRejectedValue(new NotFoundException(`Organization ${ORG_B} not found`));
+
+        await expect(
+          service.update(DOC_ID, { expectedRevision: 1, organizationId: ORG_B }, ORG_A),
+        ).rejects.toBeInstanceOf(NotFoundException);
+        expect(doc.save).not.toHaveBeenCalled();
+        expect(String(doc.organizationId)).toBe(ORG_A);
+      });
+
+      it('a bound caller may re-select their own org (no-op-equivalent, still a valid pick)', async () => {
+        const { service, model, organizationService } = createService();
+        const doc = studioDoc({ revision: 1, organizationId: new Types.ObjectId(ORG_A) });
+        model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+        organizationService.findById.mockResolvedValue({ _id: ORG_A });
+
+        await service.update(DOC_ID, { expectedRevision: 1, organizationId: ORG_A }, ORG_A);
+
+        expect(organizationService.findById).toHaveBeenCalledWith(ORG_A, { organizationId: ORG_A });
+        expect(String(doc.organizationId)).toBe(ORG_A);
+        expect(doc.revision).toBe(2);
+      });
+
+      it('leaves organizationId untouched when the field is omitted from the patch', async () => {
+        const { service, model, organizationService } = createService();
+        const doc = studioDoc({ revision: 1, organizationId: new Types.ObjectId(ORG_A) });
+        model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+
+        await service.update(DOC_ID, { expectedRevision: 1, name: 'Untouched issuer' }, ORG_A);
+
+        expect(organizationService.findById).not.toHaveBeenCalled();
+        expect(String(doc.organizationId)).toBe(ORG_A);
+      });
     });
   });
 

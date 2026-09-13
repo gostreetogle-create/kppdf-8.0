@@ -47,6 +47,7 @@ import {
   type Counterparty,
   type DocType,
   type Order,
+  type Organization,
   type Quotation,
   type QuotationStatus,
   type StudioBlock,
@@ -279,7 +280,8 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
             }
             @case ('data') {
               <pi-studio-data-panel
-                [issuerOrgName]="issuerOrgName()"
+                [issuerOrgId]="issuerOrgId()"
+                [issuerOrgs]="issuerOrgs()"
                 [counterpartyId]="counterpartyId()"
                 [payerId]="payerId()"
                 [supplierId]="supplierId()"
@@ -300,6 +302,7 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
                 (counterpartyChange)="onCounterpartyChange($event)"
                 (payerChange)="onAnchorChange('payer', $event)"
                 (supplierChange)="onAnchorChange('supplier', $event)"
+                (issuerOrgChange)="onIssuerOrgChange($event)"
                 (catalogRemove)="removeCatalogChip($event)"
                 (catalogChange)="onCatalogSelectionChange($event)"
                 (catalogEntitySaved)="onCatalogEntitySaved($event)"
@@ -567,7 +570,9 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   };
 
   readonly document = signal<StudioDocument | null>(null);
-  readonly issuerOrgName = signal('');
+  /** TZ-NX-DOCSTUDIO-ISSUER-SELECT — select value; derived, not a separate write target. */
+  readonly issuerOrgId = computed(() => this.document()?.organizationId ?? '');
+  readonly issuerOrgs = signal<Organization[]>([]);
   readonly counterparties = signal<Counterparty[]>([]);
   readonly quotations = signal<Quotation[]>([]);
   readonly orders = signal<Order[]>([]);
@@ -782,7 +787,6 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
               materials: Array.isArray((selections as Record<string, unknown>)['materials']) ? (selections as Record<string, unknown>)['materials'] as string[] : [],
             });
           }
-          this.loadIssuerOrg(r.data.organizationId);
           void firstValueFrom(this.blocksService.list(id)).then((b) => {
             if (b.ok) {
               const normalized = b.data.map((block) =>
@@ -834,6 +838,20 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         if (res.ok) this.docTypes.set(res.data ?? []);
+      });
+
+    /**
+     * TZ-NX-DOCSTUDIO-ISSUER-SELECT — candidates for «Исполнитель»: orgs
+     * flagged `isOurCompany`, not the full Organization list (which also
+     * holds supplier/customer counterparty-style rows — confirmed live:
+     * 10 of 13 orgs on the dev stand are `type:['supplier']` seed data with
+     * no `isOurCompany` flag at all).
+     */
+    this.orgsApi
+      .list({ limit: 100 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) this.issuerOrgs.set((res.data.items ?? []).filter((org) => org.isOurCompany === true));
       });
 
     if (typeof ResizeObserver !== 'undefined') {
@@ -2224,6 +2242,38 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-ISSUER-SELECT — reassigns `StudioDocument.organizationId`
+   * itself (the document's own tenant scope), not a `context` anchor. Uses
+   * `contextSaveError`/toast (not the generic `conflict()` dialog
+   * `onDocTypeChange` falls back to) — an IDOR 404 from picking an org the
+   * caller isn't allowed to see would otherwise show the misleading "another
+   * tab changed this document" message.
+   */
+  onIssuerOrgChange(organizationId: string): void {
+    const doc = this.document();
+    if (!doc || !organizationId) return;
+    this.contextSaving.set(true);
+    this.contextSaveError.set(null);
+    void firstValueFrom(
+      this.documents.update(doc._id, {
+        expectedRevision: doc.revision ?? 1,
+        organizationId,
+      }),
+    ).then((r) => {
+      this.contextSaving.set(false);
+      if (r.ok) {
+        this.document.set(r.data);
+        this.toast.success('Исполнитель обновлён');
+        this.refreshPreviewIfActive();
+      } else {
+        const message = extractErrorMessage(r.error);
+        this.contextSaveError.set(message);
+        this.toast.error(message || 'Не удалось сменить исполнителя');
+      }
+    });
+  }
+
   onQuotationStatusChange(status: QuotationStatus): void {
     const doc = this.document();
     if (!doc || !this.isKpDoc()) return;
@@ -2468,16 +2518,6 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         this.contextSaveError.set(extractErrorMessage(r.error));
         this.conflict();
       }
-    });
-  }
-
-  private loadIssuerOrg(organizationId: string | undefined): void {
-    if (!organizationId) {
-      this.issuerOrgName.set('');
-      return;
-    }
-    void firstValueFrom(this.orgsApi.getById(organizationId)).then((res) => {
-      this.issuerOrgName.set(res.ok ? res.data.name : organizationId);
     });
   }
 

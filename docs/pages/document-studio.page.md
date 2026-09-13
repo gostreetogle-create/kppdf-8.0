@@ -121,7 +121,7 @@ S16 целевая IA, дополненная C3 и пересобранная P
 | Иконка | Панель | Содержимое |
 |--------|--------|------------|
 | **Элементы** | Flyout 340px | + Текст, + Фото, + Таблица (новый слой) |
-| **Данные** | Wide flyout | TOC **Товары \| Кому \| Связи \| Ещё** (D56; D50–D55, § 3.3) — витрина каталога, Клиент/Плательщик, КП/Статус/Заказ, Поставщик/Исполнитель → PATCH `document.context` |
+| **Данные** | Wide flyout | TOC **Товары \| Кому \| Связи \| Ещё** (D56; D50–D55, § 3.3) — витрина каталога, Клиент/Плательщик, КП/Статус/Заказ → PATCH `document.context`; Поставщик → `anchors.supplier`; Исполнитель → `document.organizationId` напрямую (TZ-NX-DOCSTUDIO-ISSUER-SELECT) |
 | **Выбрано** | Flyout 340px | Буфер выбранных anchors/catalog chips + «Вставить на лист»; badge на левом rail (D56) |
 | **Шаблон** | Flyout | Тип документа (`docTypeId`), CTA «Сохранить как шаблон» |
 | **Слои** | Flyout | Z-order, lock, видимость (глаз), удаление, «Свойства» на плитке |
@@ -182,7 +182,9 @@ flowchart LR
 
 **S8-1 DONE (2026-08-31):** `StudioOutputService.renderStudioDocument` перед рендером читает `doc.context` (counterpartyId/quotationId/orderId/contractId/contactPersonId/siteId) и строит substitution bag через `DocumentTemplateService.buildSubstitutionBag` (reuse cascade: order→quotation→counterparty и т.д.). Bag прокидывается в рендер через `StudioDocumentAggregate.data` (приоритет над buildDto-stub'ами). Каскад КП/заказ→клиент работает как в legacy. В **Редакторе** токен по-прежнему виден сырым — это норма.
 
-**Исполнитель (наша фирма):** берётся из `document.organizationId` пользователя; в панели «Данные» показывается read-only имя (`issuerOrgName`). Токены `{{organization.*}}` подставляются из того же bag.
+**Исполнитель (наша фирма):** `document.organizationId` — **выбирается select'ом** в «Данные» → «Ещё» (TZ-NX-DOCSTUDIO-ISSUER-SELECT, 2026-09-13; ранее — read-only имя из JWT). Options = только `Organization.isOurCompany === true` (не полный список организаций — там же лежат поставщики-контрагенты без этого флага). Смена — прямой PATCH `organizationId` с revision-gate (та же visibility-политика, что у `OrganizationService`: unscoped/admin может выбрать любую org, bound-пользователь — только свою, иначе 404). Select disabled, если кандидат один (или ноль) — честно, без притворного multi-choice. Токены `{{organization.*}}` подставляются из того же bag. Карточки/реквизиты фирм — Реестры → Организации (там же дискаверится живой TOC-пункт «Наши организации» в разделе Админ, `admin-group-chips.ts`, а не мёртвый пункт `nav-categories.ts`/`/organizations` — тот массив нигде не рендерится как список ссылок).
+
+**known_limitation:** `StudioDocumentService.resolveOrganizationId` резолвит org unscoped-вызывающего как «первая по имени» — если исполнитель документа сменён на org, отличную от этого fallback, тот же unscoped/admin далее получает 403 «belongs to another organization scope» на GET/PATCH/DELETE этого документа (не просто «пропадает из списка» — полный lockout без recovery-пути в UI, воспроизведено живым тестом). Известное и принятое TZ ограничение — не блокирует ACCEPT; successor нужен для entangled tenant-scope vs issuer-identity в `organizationId`.
 
 **Продукт / каталог:** выбор витрины сохраняется в `context.catalogSelections`; catalog dataSets live-resolve на Preview/PDF.
 
@@ -217,7 +219,7 @@ flowchart LR
 | Поставщик | `anchors.supplier` | Токены `{{anchor.supplier.*}}` |
 | КП | `quotationId` | Токены `{{quotation.*}}`; строки таблиц с source `quotation-items` |
 | Заказ | `orderId` | Токены `{{order.*}}` (S40); строки таблиц с source `order-items` |
-| Исполнитель | (из JWT org) | `{{organization.*}}`, scope ERP |
+| Исполнитель | `organizationId` (select, не anchors/context) | `{{organization.*}}`, scope ERP |
 
 Выбор КП/заказа в NX заполняет клиента автоматически, если клиент ещё пуст; legacy builder сохраняет собственный cascade при render.
 
@@ -255,12 +257,13 @@ flowchart LR
 | **Товары** | Витрина каталога (Изделия/Модули/Детали/Материалы) — как раньше, S15/S27/S43. Каждая карточка — кнопка **«Изменить»** между названием и Добавить/Убрать (`TZ-NX-DOCSTUDIO-VITRINA-EDIT`): открывает тот же Product/Module/Material form dialog, что и `/registries` (reuse `createCatalogRegistryDialogHost` / `createMaterialRegistryDialogHost`, без ухода со страницы студии). После Save карточка обновляется (имя/SKU/фото) и, если на листе есть wired-таблица этого kind, `refreshCatalogTablesOfKind` подтягивает её строки — фото/название на A4 меняются без F5. |
 | **Кому** | **Клиент** первым; **Плательщик** — secondary disclosure «Указать плательщика отдельно» (открыт сразу, если уже задан) |
 | **Связи** | **КП**, Статус КП (если `showKpStatus`), Заказ + строка-подсказка «подставятся их номер и строки»; у КП и Заказа есть первый пункт «— не выбрано —» для сброса связи |
-| **Ещё** | Поставщик (hint «редко для КП») + read-only «Наша фирма: …» |
+| **Ещё** | Поставщик (hint «редко для КП») + select «Исполнитель (наша фирма)» (TZ-NX-DOCSTUDIO-ISSUER-SELECT) |
 
 Словарь для PO/менеджера (не путать со схемой): **Клиент = покупатель** (кому продаём,
 `Counterparty`); Плательщик обычно = клиент, указывается отдельно только если платит
-кто-то другой; Поставщик — редкое поле, не для типового КП; Исполнитель — наша фирма,
-read-only (берётся из JWT, не выбирается).
+кто-то другой; Поставщик — редкое поле, не для типового КП; Исполнитель — наша фирма
+(`Organization`, не `Counterparty`), **выбирается select'ом** среди `isOurCompany` фирм —
+не read-only и не из JWT напрямую.
 
 **Выбрано (D56):** отдельная кнопка левого rail открывает тот же буфер anchors/catalog chips; badge повторяет число позиций, а CTA «Вставить на лист» использует общий write path.
 

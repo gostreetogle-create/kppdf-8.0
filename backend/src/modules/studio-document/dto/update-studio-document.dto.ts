@@ -40,6 +40,18 @@ export class UpdateStudioDocumentDto {
   @IsObjectId()
   sourceTemplateId?: string;
 
+  /**
+   * TZ-NX-DOCSTUDIO-ISSUER-SELECT — «Исполнитель» (наша фирма). Reassigns
+   * `StudioDocument.organizationId` itself (the document's own tenant
+   * scope), not a `context` anchor — service enforces the same visibility
+   * policy as `OrganizationService.findAll`/`findById` (a bound user can
+   * only pick their own org).
+   */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObjectId()
+  organizationId?: string;
+
   @ApiPropertyOptional({ enum: ['A3', 'A4', 'A5'] })
   @IsOptional()
   @IsEnum(['A3', 'A4', 'A5'])

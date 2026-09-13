@@ -12,6 +12,7 @@ import {
   Organization,
   OrganizationDocument,
 } from '../organization/organization.schema';
+import { OrganizationService } from '../organization/organization.service';
 import {
   StudioDocument,
   StudioDocumentDocument,
@@ -55,6 +56,7 @@ export class StudioDocumentService {
     private readonly templateService: DocumentTemplateService,
     private readonly blockService: TemplateBlockService,
     private readonly dataResolver: StudioDataResolverService,
+    private readonly organizationService: OrganizationService,
   ) {}
 
   /**
@@ -231,6 +233,18 @@ export class StudioDocumentService {
       dto.docTypeId,
     );
 
+    if (dto.organizationId !== undefined) {
+      // TZ-NX-DOCSTUDIO-ISSUER-SELECT: same visibility policy as
+      // OrganizationService.findAll/findById — an unscoped/admin caller
+      // (organizationId is null/undefined) may pick any existing org; a
+      // caller bound to their own org can only "pick" that same org
+      // (findById 404s otherwise, closing the same IDOR class as everywhere
+      // else in this service). The RAW (unresolved) organizationId is used
+      // here on purpose — resolveOrganizationId's fallback would otherwise
+      // make an unscoped admin look bound to that fallback org.
+      await this.organizationService.findById(dto.organizationId, { organizationId });
+      doc.organizationId = this.toObjectId(dto.organizationId, 'organizationId');
+    }
     if (dto.name !== undefined) doc.name = dto.name;
     if (dto.docTypeId !== undefined) {
       doc.docTypeId = this.toObjectId(dto.docTypeId, 'docTypeId');

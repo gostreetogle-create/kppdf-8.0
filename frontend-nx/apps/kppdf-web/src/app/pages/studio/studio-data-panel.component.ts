@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { SelectComponent, SelectOptionComponent } from '@kppdf/ui/select';
-import type { Counterparty, Order, Quotation, QuotationStatus } from '@kppdf/data-access';
+import type { Counterparty, Order, Organization, Quotation, QuotationStatus } from '@kppdf/data-access';
 import { StudioDataVitrinaComponent, type StudioCatalogSelections, type StudioShowcaseKind } from './studio-data-vitrina.component';
 
 /** TOC categories inside the wide «Данные» panel (TZ-NX-DOCSTUDIO-D50). */
@@ -271,10 +271,24 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
               <p class="hint">Редко нужен для КП — чаще для других типов документов</p>
             </div>
             <div>
-              <dt class="label">Исполнитель</dt>
-              <dd class="value" data-test="studio-issuer-readonly">
-                {{ issuerOrgName() ? 'Наша фирма: ' + issuerOrgName() : '—' }}
-              </dd>
+              <app-pi-form-field label="Исполнитель (наша фирма)" htmlFor="studio-issuer-select">
+                <app-pi-select
+                  id="studio-issuer-select"
+                  size="sm"
+                  ariaLabel="Исполнитель (наша фирма)"
+                  [disabled]="contextSaving() || issuerOrgs().length <= 1"
+                  [value]="issuerOrgId() || null"
+                  (valueChange)="issuerOrgChange.emit($event ?? '')"
+                  data-test="studio-issuer-select"
+                >
+                  @for (org of issuerOrgs(); track org._id) {
+                    <app-pi-select-option [value]="org._id">
+                      {{ org.shortName || org.name }}
+                    </app-pi-select-option>
+                  }
+                </app-pi-select>
+              </app-pi-form-field>
+              <p class="hint">Юрлицо бланка и токенов «organization.*». Карточки фирм — Реестры → Организации.</p>
             </div>
           </dl>
         }
@@ -330,13 +344,6 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
         flex-direction: column;
         gap: 12px;
         font-size: 12px;
-      }
-      .label {
-        color: var(--color-muted-foreground);
-      }
-      .value {
-        margin: 2px 0 0;
-        color: var(--color-ink);
       }
       .disclosure-link {
         padding: 0;
@@ -398,7 +405,10 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
 })
 export class StudioDataPanelComponent {
   readonly mode = input<StudioDataPanelMode>('data');
-  readonly issuerOrgName = input('');
+  /** TZ-NX-DOCSTUDIO-ISSUER-SELECT — current document.organizationId; select value. */
+  readonly issuerOrgId = input('');
+  /** Candidates for «Исполнитель» — orgs flagged `isOurCompany` (not the full Organization list, which also holds supplier/customer counterparty-style rows). */
+  readonly issuerOrgs = input<Organization[]>([]);
   readonly counterpartyId = input('');
   readonly quotationId = input('');
   readonly orderId = input('');
@@ -424,6 +434,7 @@ export class StudioDataPanelComponent {
   readonly orderChange = output<string>();
   readonly payerChange = output<string>();
   readonly supplierChange = output<string>();
+  readonly issuerOrgChange = output<string>();
   readonly catalogRemove = output<string>();
   readonly catalogChange = output<{ kind: StudioShowcaseKind; ids: readonly string[] }>();
   /** TZ-NX-DOCSTUDIO-D52 — «Вставить на лист»: parent creates/focuses the matching table + wires putDataSet. */
