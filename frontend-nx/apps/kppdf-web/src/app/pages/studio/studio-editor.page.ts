@@ -342,6 +342,7 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
                 (tableRowsChange)="patchTableRows($event)"
                 (tableDisabledRowsChange)="patchTableDisabledRows($event)"
                 (tableLiveQtyChange)="onLiveTableQtyChange($event)"
+                (tableRefreshCatalogRows)="refreshActiveTableCatalogRows()"
                 (applyLibraryText)="applyLibraryText($event)"
                 (saveTextBlock)="openSaveTextBlockDialog()"
               />
@@ -1719,6 +1720,19 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const block = this.activeTableBlock();
     if (!block) return;
     this.patchTableSettingsForBlock(block._id, { tableTemplateSampleRows: rows });
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап A) — «Обновить строки» on
+   * the catalog-source status view. Reuses `refreshCatalogTablesOfKind`
+   * (same queued heal `insertCatalogTable`/VITRINA-EDIT already use) — one
+   * write path, not a new one for this button.
+   */
+  refreshActiveTableCatalogRows(): void {
+    const block = this.activeTableBlock();
+    const sourceType = (block?.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+    if (!sourceType?.startsWith('catalog-')) return;
+    void this.refreshCatalogTablesOfKind(sourceType.slice('catalog-'.length) as StudioShowcaseKind);
   }
 
   onTableSourceChange(source: 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'): void {

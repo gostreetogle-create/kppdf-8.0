@@ -4,11 +4,11 @@
 > Обновляет исполнитель **после каждого TZ** (не только в конце волны).  
 > Cursor/PO смотрят этот файл = «где агент сейчас».
 
-updated_at: 2026-09-13T12:05:00+03:00  
+updated_at: 2026-09-13T10:30:00Z  
 agent_slot: Claude  
-current_wave: **1**  
-current_tz: _(нет — волна 1 DONE)_  
-status: **WAVE1_DONE**
+current_wave: **2**  
+current_tz: NECESSITY-CLEANUP (этап A)  
+status: **IN_WORK_WAVE2**
 
 ---
 
@@ -28,9 +28,9 @@ status: **WAVE1_DONE**
 
 | Волна | TZ по порядку | Conflict hot | Старт |
 |-------|---------------|--------------|-------|
-| **1** | PHOTO-BROKEN-IMG → ADD-PAGE-WRITE-SERIAL → SELECTED-REPLACE-JUMP | resolver/canvas → editor → data-panel+editor | **сейчас** |
-| **2** | NECESSITY-CLEANUP этапы A→B→C (COL-WIDTH внутри C) | editor+props+defaults+canvas | после отчёта волны 1 |
-| **3** | CATEGORY-INLINE-CREATE → OPS-DOCS-HOST-52-SYNC | forms / docs ops | после волны 2 (или Freebuff параллельно волне 2 **только** CATEGORY, если Necessity уже claimed Claude) |
+| **1** | PHOTO → ADD-PAGE → SELECTED-REPLACE | — | **DONE** |
+| **2** | NECESSITY-CLEANUP A→B→C (COL-WIDTH в C) | editor+props+defaults+canvas | **GO** |
+| **3** | CATEGORY-INLINE → OPS-DOCS-HOST-52 (+ VITRINA-PHOTO) | forms / docs / vitrina | после волны 2 |
 
 **Superseded (не брать):** TABLE-KIND-IA · TABLE-SOURCE-FIX · INSERT-APPLY-KIND.
 
@@ -58,21 +58,26 @@ status: **WAVE1_DONE**
 2026-09-13T11:15:00Z | 1.3 SELECTED-REPLACE-JUMP | CLAIMED
 2026-09-13T12:05:00Z | 1.3 SELECTED-REPLACE-JUMP | DONE | commit=76cb9d00 | live Playwright evidence PASS (Изменить -> Данные/Кому, select focused)
 2026-09-13T12:05:00Z | WAVE1 | DONE | all 3 TZs DONE, 1 successor filed (VITRINA-PHOTO-BROKEN-IMG) — see final report to PO
+2026-09-13T10:30:00Z | WAVE2 | started | HEAD=670a9e7b
+2026-09-13T10:30:00Z | NECESSITY-CLEANUP (master TZ) | CLAIMED | этап A starting
+2026-09-13T11:15:00Z | 2.A NECESSITY IA | DONE | commit=(this commit) | Вид->Макет колонок rename + CTA; Источник строк status/Обновить/Сменить for catalog rowSource; wiring gap in studio-properties-panel.component.ts fixed (not in declared conflict keys, flagged)
+2026-09-13T11:15:00Z | 2.B NECESSITY SoT+round-trip | IN_WORK
 ```
 
 _(агент дописывает строки сюда после каждого перехода статуса)_
 
 ---
 
-## Волна 2 — прогресс (не стартовать до DONE волны 1)
+## Волна 2 — прогресс
 
-| # | Этап | Status |
-|---|------|--------|
-| 2.A | NECESSITY IA | PENDING |
-| 2.B | NECESSITY SoT + source round-trip | PENDING |
-| 2.C | NECESSITY dead controls / COL-WIDTH | PENDING |
+| # | Этап | Commit SHA | Status |
+|---|------|------------|--------|
+| 2.A | NECESSITY IA | (this commit) | DONE |
+| 2.B | NECESSITY SoT + source round-trip | | IN_WORK |
+| 2.C | NECESSITY dead controls / COL-WIDTH absorb | | PENDING |
 
-Checklist волны 2: создать при старте промпта 2 (или расширить этот файл секцией).
+Master TZ: `tasks/_ready/2026-09-13-studio-ops/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.md`  
+Промпт: `…/PROMPT-CLAUDE-STUDIO-OPS-WAVE2.md`
 
 ---
 
@@ -82,6 +87,7 @@ Checklist волны 2: создать при старте промпта 2 (и�
 |---|-----|--------|
 | 3.1 | CATEGORY-INLINE-CREATE | PENDING |
 | 3.2 | OPS-DOCS-HOST-52-SYNC | PENDING |
+| 3.3 | VITRINA-PHOTO-BROKEN-IMG (`tasks/_ready/TZ-NX-DOCSTUDIO-VITRINA-PHOTO-BROKEN-IMG.md`) | PENDING — successor WAVE1 |
 | — | VERIFY-VM52-SSH-REMAINDER | OUT_OF_BAND (LAN) |
 
 ---

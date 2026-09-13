@@ -333,3 +333,145 @@ describe('StudioTablePropertiesComponent — column structure unlock', () => {
     expect(added).toEqual({ key: 'qty', label: 'Количество', type: 'number', width: 20, align: 'right' });
   });
 });
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап A) — an Insert-created
+ * catalog table used to show a bare «Источник строк» enum that looked like
+ * a pointless duplicate of the Insert button the operator already clicked.
+ * It now shows a status («Строки: Изделия из Выбрано») + «Обновить строки»
+ * + «Сменить…» instead; the full select is still there for manual/КП/заказ,
+ * where it's the only way to reach that source.
+ */
+describe('StudioTablePropertiesComponent — source status vs full select (этап A)', () => {
+  const CATALOG_TABLE: StudioBlock = {
+    _id: 'tbl-catalog',
+    type: 'table',
+    order: 0,
+    title: 'Продукты',
+    content: '',
+    layout: { page: 1, x: 0.1, y: 0.1, width: 0.5, height: 0.4, zIndex: 1, rotation: 0 },
+    settings: {
+      tableTemplateColumns: [
+        { key: 'name', label: 'Наименование', type: 'text', align: 'left', width: 60 },
+        { key: 'qty', label: 'Кол-во', type: 'number', align: 'right', width: 40 },
+      ],
+      dataSource: { type: 'catalog-products' },
+      liveRows: [
+        ['Стол', '1'],
+        ['Стул', '4'],
+      ],
+    },
+  };
+
+  const MANUAL_TABLE: StudioBlock = {
+    ...CATALOG_TABLE,
+    _id: 'tbl-manual',
+    settings: { ...CATALOG_TABLE.settings, dataSource: undefined, liveRows: undefined },
+  };
+
+  let fixture: ComponentFixture<StudioTablePropertiesComponent>;
+  const templatesService = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [StudioTablePropertiesComponent],
+      providers: [{ provide: PiTableTemplatesService, useValue: templatesService }, provideRouter([])],
+    }).compileComponents();
+  });
+
+  function create(block: StudioBlock): StudioTablePropertiesComponent {
+    fixture = TestBed.createComponent(StudioTablePropertiesComponent);
+    fixture.componentRef.setInput('block', block);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  it('catalog-sourced table shows a status line + Обновить/Сменить, not the bare select', () => {
+    create(CATALOG_TABLE);
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test="studio-table-source-status"]')?.textContent).toContain('Из Выбрано: Изделия (2)');
+    expect(host.querySelector('[data-test="studio-table-refresh-rows"]')).not.toBeNull();
+    expect(host.querySelector('[data-test="studio-table-change-source"]')).not.toBeNull();
+    expect(host.querySelector('[data-test="studio-table-source-select"]')).toBeNull();
+  });
+
+  it('manual table still shows the full source select directly (only way to reach КП/заказ/catalog)', () => {
+    create(MANUAL_TABLE);
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test="studio-table-source-select"]')).not.toBeNull();
+    expect(host.querySelector('[data-test="studio-table-source-status"]')).toBeNull();
+  });
+
+  it('«Обновить строки» emits refreshCatalogRows without touching sourceChange', () => {
+    const component = create(CATALOG_TABLE);
+    const refreshSpy = jest.fn();
+    const sourceSpy = jest.fn();
+    component.refreshCatalogRows.subscribe(refreshSpy);
+    component.sourceChange.subscribe(sourceSpy);
+
+    (fixture.nativeElement.querySelector<HTMLButtonElement>('[data-test="studio-table-refresh-rows"]')!).click();
+
+    expect(refreshSpy).toHaveBeenCalledTimes(1);
+    expect(sourceSpy).not.toHaveBeenCalled();
+  });
+
+  it('«Сменить…» reveals the full select; picking a value emits sourceChange and closes it back to status', () => {
+    const component = create(CATALOG_TABLE);
+    const sourceSpy = jest.fn();
+    component.sourceChange.subscribe(sourceSpy);
+    const host: HTMLElement = fixture.nativeElement;
+
+    (host.querySelector<HTMLButtonElement>('[data-test="studio-table-change-source"]')!).click();
+    fixture.detectChanges();
+    expect(host.querySelector('[data-test="studio-table-source-select"]')).not.toBeNull();
+    expect(host.querySelector('[data-test="studio-table-source-status"]')).toBeNull();
+
+    const select = host.querySelector<HTMLSelectElement>('[data-test="studio-table-source-select"]')!;
+    select.value = 'manual';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(sourceSpy).toHaveBeenCalledWith('manual');
+  });
+
+  it('reopening «Сменить…» can be cancelled back to the status view without emitting anything', () => {
+    const component = create(CATALOG_TABLE);
+    const sourceSpy = jest.fn();
+    component.sourceChange.subscribe(sourceSpy);
+    const host: HTMLElement = fixture.nativeElement;
+
+    (host.querySelector<HTMLButtonElement>('[data-test="studio-table-change-source"]')!).click();
+    fixture.detectChanges();
+    (host.querySelector<HTMLButtonElement>('[data-test="studio-table-change-source-cancel"]')!).click();
+    fixture.detectChanges();
+
+    expect(host.querySelector('[data-test="studio-table-source-status"]')).not.toBeNull();
+    expect(sourceSpy).not.toHaveBeenCalled();
+  });
+
+  it('switching to a different block resets the «Сменить…» reveal back to status', () => {
+    create(CATALOG_TABLE);
+    const host: HTMLElement = fixture.nativeElement;
+    (host.querySelector<HTMLButtonElement>('[data-test="studio-table-change-source"]')!).click();
+    fixture.detectChanges();
+    expect(host.querySelector('[data-test="studio-table-source-select"]')).not.toBeNull();
+
+    fixture.componentRef.setInput('block', { ...CATALOG_TABLE, _id: 'tbl-catalog-2' });
+    fixture.detectChanges();
+
+    expect(host.querySelector('[data-test="studio-table-source-status"]')).not.toBeNull();
+  });
+
+  it('renamed «Макет колонок» label + a missing-template CTA for a catalog table with no template applied', () => {
+    create(CATALOG_TABLE);
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.textContent).toContain('Макет колонок');
+    expect(host.querySelector('[data-test="studio-table-template-missing"]')).not.toBeNull();
+  });
+
+  it('no missing-template CTA once a template is applied', () => {
+    create({ ...CATALOG_TABLE, settings: { ...CATALOG_TABLE.settings, tableTemplateId: 'tmpl-1' } });
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test="studio-table-template-missing"]')).toBeNull();
+  });
+});

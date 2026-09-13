@@ -1,0 +1,44 @@
+=== ЭТАП A — IA (2026-09-13) ===
+
+Code audit confirmed exactly what the necessity-wave/kind-vs-source audits described:
+- `studio-table-properties.component.ts`: bare "Источник строк" enum always visible,
+  including for an already-Insert'd catalog table — reads as a pointless duplicate of
+  the Insert button the operator already clicked.
+- "Вид таблицы" label gave no hint of the dependency on "Источник строк", and an empty
+  template silently fell back to STUDIO_DEFAULT_TABLE_COLUMNS with no CTA.
+
+Fix:
+1. "Вид таблицы" -> "Макет колонок" (same select, renamed label). CTA
+   `data-test="studio-table-template-missing"` appears when no template is applied on
+   a catalog-sourced table, pointing at the select above / the registry link.
+2. "Источник строк" for a catalog-* rowSource now shows a status view
+   (`data-test="studio-table-source-status"`, text "Из Выбрано: {kind} (N)" where N =
+   actual hydrated liveRows.length) + [Обновить строки] (emits `refreshCatalogRows`,
+   wired in `studio-editor.page.ts` to the existing queued `refreshCatalogTablesOfKind`
+   -- no new write path) + [Сменить…] (reveals the full select as an explicit two-step
+   gesture, no new modal/dialog). manual/КП/заказ tables are unaffected -- they still
+   show the full select directly, since that's the only way to reach those sources.
+3. Wiring gap found and fixed: `studio-properties-panel.component.ts` (a thin
+   pass-through wrapper between the editor page and the table-properties component,
+   NOT in this TZ's declared conflict keys but structurally required to route any new
+   output through) needed one new `tableRefreshCatalogRows` output added -- flagged
+   here as a deliberate, narrow, necessary deviation from the literal conflict-keys
+   list, not silent scope creep.
+
+Gates:
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest studio-table-properties.component.spec.ts -> 20/20 PASS (12 existing + 8 new:
+  status view vs full select, Обновить emits refreshCatalogRows only, Сменить reveals
+  select + emits sourceChange + resets on block switch, cancel path, missing-template
+  CTA present/absent)
+FE jest studio-editor-catalog-insert.spec.ts -> 5/5 PASS (3 existing + 2 new:
+  refreshActiveTableCatalogRows re-puts via the queued heal for a catalog table,
+  no-ops for a manual one)
+FE jest (full) -> 125 suites / 875 passed + 7 skipped (882 total) PASS
+FE eslint (scoped: table-properties + its spec, properties-panel, editor.page.ts,
+  catalog-insert spec) -> 0 errors, 29 pre-existing-pattern warnings (non-null-assertion)
+pnpm architecture:check (repo root) -> PASS
+nx build kppdf-web (last) -> exit 0, same 2 pre-existing unrelated budget warnings
+
+Not touched: registry CRUD, putDataSet endpoint, Insert button itself, BE files
+(этап A is FE-only IA per TZ scope).
