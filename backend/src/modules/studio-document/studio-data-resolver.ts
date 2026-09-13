@@ -90,7 +90,14 @@ type DataSetEntry = {
 const COLUMN_ALIASES: Record<string, string[]> = {
   name: ['name', 'productname', 'title', 'product', 'наименование'],
   qty: ['qty', 'quantity', 'count', 'кол-во', 'количество'],
-  price: ['price', 'unitprice', 'unit_price', 'цена'],
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM — `listPrice`/`basePrice`/`pricePerUnit`
+   * are the catalog fields this resolver itself reads (`fetchLiveRows`
+   * below); a manually-typed or registry-template column key using one of
+   * those exact names used to silently fail to bind (only `price`/
+   * `unitPrice` matched), showing an empty "Цена" cell despite a live qty.
+   */
+  price: ['price', 'unitprice', 'unit_price', 'цена', 'listprice', 'list_price', 'baseprice', 'base_price', 'priceperunit', 'price_per_unit'],
   sum: ['sum', 'total', 'amount', 'сумма'],
   unit: ['unit', 'ед', 'ед.изм'],
   sku: ['sku', 'productsku', 'артикул', 'article'],

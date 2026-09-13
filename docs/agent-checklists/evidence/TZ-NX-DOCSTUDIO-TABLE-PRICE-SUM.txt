@@ -1,0 +1,156 @@
+=== ШАГ 1: Aliases (FE+BE parity) ===
+
+BE `COLUMN_ALIASES.price` (studio-data-resolver.ts): added `listprice`,
+`list_price`, `baseprice`, `base_price`, `priceperunit`, `price_per_unit`
+(the exact catalog field names `fetchLiveRows` itself reads via
+`item['listPrice'] ?? item['basePrice'] ?? item['pricePerUnit']`) — a
+manually-typed or registry-template column using one of those names used to
+silently fail to bind (only `price`/`unitPrice` matched before).
+
+FE `STUDIO_STANDARD_COLUMN_ALIASES` (studio-table-defaults.ts): same price
+additions for parity; added `name` (BE parity, was missing) and `sum`
+(`sum`/`total`/`amount`/`сумма`, BE already had it) groups — both needed
+for `isKnownStudioColumnKey`'s type-select lock (ШАГ4) to cover every
+standard key, not just the ones offered as quick-add chips.
+
+=== ШАГ 2: Quick-add «+ Сумма» ===
+
+`STUDIO_STANDARD_COLUMN_FIELDS` gained `{ key: 'sum', label: 'Сумма', type:
+'currency', align: 'right' }`. `missingStandardColumnFields`/
+`createStandardStudioTableColumn` are already generic over this array (no
+code change needed beyond the new entry) — the chip appears only when no
+existing column key matches a sum-alias, exactly mirroring how «+ Цена»
+already worked.
+
+=== ШАГ 3: Heal labels on add/rehydrate ===
+
+New `healStudioTableColumns(columns)` in `studio-table-defaults.ts`: for
+each column, if the (trimmed, case-insensitive) label is empty or exactly
+"цена" AND the key is a sum-alias -> label becomes "Сумма"; if empty/"цена"
+AND the key is a price-alias -> label becomes "Цена". A deliberate custom
+label (anything else) and any unrecognized key are left untouched — this
+directly reproduces-then-fixes the PO screenshot bug: two columns both
+titled "Цена" (one actually price, one actually sum) heal into "Цена" +
+"Сумма" respectively. Wired into the single existing choke point for every
+column-structure change, `emitColumnStructure()` in
+`studio-table-properties.component.ts` (add/remove/reorder/rename-key/
+rename-label all funnel through it already) — the same path S47's
+live-rows rehydrate already runs through, per the TZ's own instruction.
+Also folds in ШАГ4's type-canon (below) into the same function/call site.
+
+=== ШАГ 4: Type-select lock ===
+
+New `isKnownStudioColumnKey(key)` — true for any key recognized by a
+standard alias group (name/qty/price/sum/unit/sku/photo/description).
+`lineValue` (backend hydrate) and the canvas both bind purely by
+`column.key`; `column.type` is never read for these — the FE select made it
+look like a working control that silently did nothing when changed for a
+standard key. The type `<select>` in `studio-table-properties.component.ts`
+is now `[disabled]` when `isKnownColumnKey(col.key)` is true (kept, not
+hidden, to avoid reflowing the column-row's fixed CSS grid columns per-row)
+and carries a `title` hint ("Тип не влияет на подстановку из каталога —
+определяется по ключу колонки"), true for every type-select regardless of
+disabled state since the underlying fact is universal. `healStudioTableColumns`
+also canonicalizes `type` for known keys on every structure change (qty ->
+number, price/sum -> currency, every other known key -> text); an
+unrecognized/custom key's type is left exactly as the operator set it via
+the still-live select.
+
+=== ШАГ 5: Specs ===
+
+BE `studio-data-resolver.spec.ts` (+3 tests, was 34 -> 37): new price-alias
+group test (listPrice/list_price/basePrice/base_price/pricePerUnit/
+price_per_unit all bind via `mapLineItemsToRows`); new sum-alias group test
+(sum/total/amount/сумма); new describe block "modules without a price
+field" — a `catalog-modules` row through `StudioDataResolverService` with a
+mocked `ProductModule` (no price field at all) resolves price=`0`, sum=`0`
+instead of throwing (acceptance criterion 4). The `price*qty` recompute
+scenario (acceptance criterion 1) was ALREADY covered by
+TZ-NX-DOCSTUDIO-TABLE-LINE-QTY's pre-existing `blockWithSum` tests (qty=1
+default and qty=3 override, both with a `sum` column) — confirmed by
+inspection, no gap to fill there.
+
+FE `studio-table-defaults.spec.ts` (+13 tests, was 17 -> 30): fixed 2
+pre-existing `missingStandardColumnFields` tests whose expected arrays
+predated the new 7th (`sum`) standard field ("all 6" -> "all 7", explicit
+`sum` in both the missing-list and the all-present fixture); added alias
+tests (existing sum column recognized under total/amount/сумма; existing
+price column recognized under all 6 new catalog field-name aliases); new
+`isKnownStudioColumnKey` describe block (every alias group incl. name/sum;
+false for a custom key); new `healStudioTableColumns` describe block
+(fixes the exact "two columns both labeled Цена" repro; heals a blank
+label; leaves a deliberate custom label alone; leaves an unrecognized key's
+label+type fully untouched; canonicalizes type per group; returns the same
+object reference — no needless churn — when nothing needs healing).
+
+FE `studio-table-properties.component.spec.ts` (+3 tests, was 21 -> 24):
+"+ Сумма" chip appears and adds the canonical column; chip disappears once
+a sum-alias column already exists; type-select disabled for a standard key
+(price) and enabled for a custom key (`col4`) — this last test needed the
+same `await fixture.whenStable(); fixture.detectChanges();` microtask-flush
+pattern already documented elsewhere in this file for `[ngModel]`-bound
+elements' initial `disabled`/value state, not a real behavior bug (verified
+by first confirming `isKnownColumnKey('price')` itself already returned
+`true` synchronously — the DOM property just hadn't caught up to the
+template binding within the same tick).
+
+No BE/FE spec changes were needed outside these three files + the two
+implementation files + `document-studio.page.md`.
+
+=== Live verification (local dev, admin/admin123) ===
+
+Real-Mongo end-to-end (curl, not mocks): created a throwaway studio
+document, a table block with columns `[name, qty, listPrice, sum]`, wired
+it to `catalog-products` with a real product (`021`, `listPrice: 300`) via
+`PUT .../data-sets/table-<id>`:
+  - `dataSets[0].rows` -> `[['021', '1', '300', '300']]` — the `listPrice`
+    KEY (not `price`) correctly bound to the product's price (ШАГ1's exact
+    fix); `sum` correctly computed `price * qty`.
+  - `POST .../preview` HTML rendered the same values in the actual table
+    cells + footer "Итого: 300".
+  - Applied `tableQtyOverrides: {0: 5}` via `PATCH /template-blocks/:id`,
+    re-hydrated -> rows `[['021', '5', '300', '1500']]` (300*5=1500,
+    acceptance criterion 1's exact price/qty/sum triple, confirmed live).
+  - Cleanup: `db.studio_documents.deleteOne` + `db.template_blocks.deleteMany`
+    via `docker exec kppdf-mongo mongosh` (both immediately after
+    verification).
+
+Live Playwright (real browser, not TestBed): logged in as admin, opened a
+second throwaway document with a `[name, qty, price]` table, jumped to
+Свойства via the Слои panel's «Свойства» row-button (canvas-click was
+unreliable — the Данные flyout overlaps the canvas by default and
+intercepts pointer events):
+  - «+ Сумма» chip present and clickable.
+  - After click: new column `key=sum, label=Сумма` appended exactly as
+    designed.
+  - Price type-select: `disabled=True`.
+  - The newly-added Сумма type-select: `disabled=True` (confirms the
+    lock/heal applies immediately to a column added in the SAME session,
+    not only pre-existing ones).
+  - Cleanup: same Mongo deleteOne/deleteMany pair immediately after.
+
+=== Gates (verbatim summary) ===
+
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest studio-data-resolver --silent -> 37/37 PASS (was 34, +3 new)
+BE jest (full) --silent -> 136 suites / 1364 tests PASS (was 1361)
+BE eslint (scoped: studio-data-resolver.ts/.spec.ts) -> 0 problems
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest studio-table-defaults.spec.ts -> 30/30 PASS (was 17, +13 new)
+FE jest studio-table-properties.component.spec.ts -> 24/24 PASS (was 21, +3 new)
+FE jest kppdf-web (full) -> 125 suites / 916 passed + 7 skipped (923 total)
+  PASS (was 903)
+FE eslint (scoped: studio-table-defaults.ts/.spec.ts,
+  studio-table-properties.component.ts/.spec.ts) -> 0 errors, 39 warnings
+  (all pre-existing `no-non-null-assertion` style already used throughout
+  these spec files, none newly introduced by this TZ's added lines)
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2)
+FE nx build kppdf-web -> exit 0, same 2 pre-existing unrelated warnings
+  (nullish-coalescing hint on a pre-existing line, initial-bundle-budget);
+  Angular AOT template compilation validated the new `isKnownColumnKey`
+  binding with zero errors
+Live curl + real Mongo verification -> PASS (listPrice-key binding,
+  sum=price*qty at qty=1 and qty=5, both throwaway docs cleaned up)
+Live Playwright verification -> PASS (quick-add chip, type-select lock on
+  both pre-existing and newly-added columns, throwaway doc cleaned up)

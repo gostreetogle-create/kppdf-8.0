@@ -216,10 +216,19 @@ export function isStudioPhotoColumnKey(key: string): boolean {
  * TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE — parity with backend `COLUMN_ALIASES`
  * (studio-data-resolver.ts), used only to detect whether a standard field is
  * already present (under any alias) before offering to quick-add it again.
+ *
+ * TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM — `name` and `sum` added for full parity
+ * (backend has both); `price` gained the catalog field-name aliases
+ * (`listPrice`/`basePrice`/`pricePerUnit`) the resolver itself reads. Also
+ * reused by `isKnownStudioColumnKey`/`healStudioTableColumns` below to lock
+ * the type-select and heal labels for every standard key, not just the ones
+ * offered as quick-add chips.
  */
 const STUDIO_STANDARD_COLUMN_ALIASES: Record<string, readonly string[]> = {
+  name: ['name', 'productname', 'title', 'product', 'наименование'],
   qty: ['qty', 'quantity', 'count', 'кол-во', 'количество'],
-  price: ['price', 'unitprice', 'unit_price', 'цена'],
+  price: ['price', 'unitprice', 'unit_price', 'цена', 'listprice', 'list_price', 'baseprice', 'base_price', 'priceperunit', 'price_per_unit'],
+  sum: ['sum', 'total', 'amount', 'сумма'],
   unit: ['unit', 'ед', 'ед.изм'],
   sku: ['sku', 'productsku', 'артикул', 'article'],
   photo: PHOTO_COLUMN_KEY_ALIASES,
@@ -246,6 +255,8 @@ export const STUDIO_STANDARD_COLUMN_FIELDS: readonly StudioStandardColumnField[]
   { key: 'unit', label: 'Ед.', type: 'text', align: 'left' },
   { key: 'description', label: 'Описание', type: 'text', align: 'left' },
   { key: 'price', label: 'Цена', type: 'currency', align: 'right' },
+  /** TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM — was computable (`total = price * qty`) but had no quick-add chip; operator had to know to use generic «+ Колонка» with key=`sum`. */
+  { key: 'sum', label: 'Сумма', type: 'currency', align: 'right' },
 ] as const;
 
 export function missingStandardColumnFields(block: {
@@ -260,6 +271,56 @@ export function missingStandardColumnFields(block: {
 
 export function createStandardStudioTableColumn(field: StudioStandardColumnField): StudioTableColumn {
   return { key: field.key, label: field.label, type: field.type, width: 20, align: field.align };
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM — true for any column key recognized by a
+ * standard alias group (name/qty/price/sum/unit/sku/photo/description).
+ * `lineValue` (backend hydrate) and the canvas both bind purely by
+ * `column.key` — `column.type` is never read for these, so exposing a type
+ * picker for them is a control that looks load-bearing but isn't; used to
+ * lock the type-select in `studio-table-properties.component.ts`.
+ */
+export function isKnownStudioColumnKey(key: string): boolean {
+  const normalized = key.trim().toLowerCase();
+  return Object.values(STUDIO_STANDARD_COLUMN_ALIASES).some((aliases) => aliases.includes(normalized));
+}
+
+/** Canonical `type` for a known key (qty→number, price/sum→currency, the rest→text); `null` for an unrecognized/custom key — its type stays whatever the operator picked. */
+function canonicalStudioColumnType(key: string): StudioTableColumn['type'] | null {
+  if (STUDIO_STANDARD_COLUMN_ALIASES['qty']!.includes(key)) return 'number';
+  if (STUDIO_STANDARD_COLUMN_ALIASES['price']!.includes(key) || STUDIO_STANDARD_COLUMN_ALIASES['sum']!.includes(key)) return 'currency';
+  return isKnownStudioColumnKey(key) ? 'text' : null;
+}
+
+/** Canonical label for a blank or "Цена"-duplicate label on a price/sum-alias key; `null` otherwise (custom labels and unrecognized keys are left alone). */
+function canonicalStudioColumnLabel(key: string, label: string): string | null {
+  const trimmed = label.trim().toLowerCase();
+  if (trimmed !== '' && trimmed !== 'цена') return null;
+  if (STUDIO_STANDARD_COLUMN_ALIASES['sum']!.includes(key)) return 'Сумма';
+  if (STUDIO_STANDARD_COLUMN_ALIASES['price']!.includes(key)) return 'Цена';
+  return null;
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM — heals column label + type on every
+ * structure change (quick-add / manual add-remove-reorder-rename), the same
+ * choke point S47's live-rows rehydrate already runs through
+ * (`emitColumnStructure` in `studio-table-properties.component.ts`). Fixes
+ * the PO-reported bug directly: a sum-alias column mislabeled "Цена" (a
+ * duplicate of the price column's own title, e.g. from an old template or a
+ * manually-renamed key) becomes "Сумма"; an empty/duplicate price-alias
+ * label becomes "Цена". A deliberate custom label (anything else) and any
+ * unrecognized key are left untouched — this is a repair for the specific
+ * reported confusion, not a blanket relabel.
+ */
+export function healStudioTableColumns(columns: readonly StudioTableColumn[]): StudioTableColumn[] {
+  return columns.map((col) => {
+    const key = col.key.trim().toLowerCase();
+    const label = canonicalStudioColumnLabel(key, col.label) ?? col.label;
+    const type = canonicalStudioColumnType(key) ?? col.type;
+    return label === col.label && type === col.type ? col : { ...col, label, type };
+  });
 }
 
 export function studioTableHiddenColumnKeys(block: { settings?: Record<string, unknown> }): string[] {

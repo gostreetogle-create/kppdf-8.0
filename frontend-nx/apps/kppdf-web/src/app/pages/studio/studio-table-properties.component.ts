@@ -45,6 +45,8 @@ import {
   filterHiddenColumnKeysForColumns,
   createStudioTableColumn,
   createStandardStudioTableColumn,
+  healStudioTableColumns,
+  isKnownStudioColumnKey,
   missingStandardColumnFields,
   type StudioStandardColumnField,
   type StudioTableColumn,
@@ -181,7 +183,8 @@ import {
               class="table-props__select table-props__col-select"
               [ngModel]="col.type"
               (ngModelChange)="updateColumnField(i, 'type', $event)"
-              [disabled]="disabled || !columnsEditable()"
+              [disabled]="disabled || !columnsEditable() || isKnownColumnKey(col.key)"
+              title="Тип не влияет на подстановку из каталога — определяется по ключу колонки"
               [attr.data-test]="'studio-table-col-type-' + i"
             >
               @for (t of columnTypes; track t) {
@@ -1046,13 +1049,19 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
 
   private emitColumnStructure(nextColumns: StudioTableColumn[]): void {
     const prevColumns = studioTableColumns(this.block);
-    const rows = remapRowsForColumnChange(prevColumns, nextColumns, studioTableRows(this.block));
-    const hidden = filterHiddenColumnKeysForColumns(studioTableHiddenColumnKeys(this.block), nextColumns);
+    const healedColumns = healStudioTableColumns(nextColumns);
+    const rows = remapRowsForColumnChange(prevColumns, healedColumns, studioTableRows(this.block));
+    const hidden = filterHiddenColumnKeysForColumns(studioTableHiddenColumnKeys(this.block), healedColumns);
     this.settingsChange.emit({
-      tableTemplateColumns: nextColumns,
+      tableTemplateColumns: healedColumns,
       tableTemplateSampleRows: rows,
       tableHiddenColumnKeys: hidden,
     });
+  }
+
+  /** TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM — locks the type-select for standard keys (see `isKnownStudioColumnKey`). */
+  protected isKnownColumnKey(key: string): boolean {
+    return isKnownStudioColumnKey(key);
   }
 
 

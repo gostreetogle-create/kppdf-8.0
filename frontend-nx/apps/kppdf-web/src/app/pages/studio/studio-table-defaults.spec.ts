@@ -2,6 +2,8 @@ import type { TableTemplate } from '@kppdf/data-access';
 import {
   buildTableSettingsFromTemplate,
   createStandardStudioTableColumn,
+  healStudioTableColumns,
+  isKnownStudioColumnKey,
   isStudioQtyColumnKey,
   missingStandardColumnFields,
   remapRowsForColumnChange,
@@ -18,6 +20,7 @@ import {
   studioVisibleTableRows,
   templateSampleRowsToMatrix,
   withStudioTableQtyOverride,
+  type StudioTableColumn,
 } from './studio-table-defaults';
 
 describe('studio-table-defaults', () => {
@@ -137,7 +140,7 @@ describe('studio-table-defaults', () => {
   });
 
   describe('missingStandardColumnFields (TZ-NX-DOCSTUDIO-TABLE-COL-STRUCTURE)', () => {
-    it('offers all 6 standard fields for a table with only name/price', () => {
+    it('offers all 7 standard fields for a table with only name/price (TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM adds sum)', () => {
       const block = {
         settings: {
           tableTemplateColumns: [
@@ -147,7 +150,7 @@ describe('studio-table-defaults', () => {
         },
       };
       const missing = missingStandardColumnFields(block).map((f) => f.key);
-      expect(missing).toEqual(['qty', 'sku', 'photo', 'unit', 'description']);
+      expect(missing).toEqual(['qty', 'sku', 'photo', 'unit', 'description', 'sum']);
     });
 
     it('recognizes an existing column under any alias, not just the canonical key', () => {
@@ -165,10 +168,10 @@ describe('studio-table-defaults', () => {
       expect(missing).toContain('photo');
     });
 
-    it('returns nothing missing once all 6 are present', () => {
+    it('returns nothing missing once all 7 are present', () => {
       const block = {
         settings: {
-          tableTemplateColumns: ['qty', 'sku', 'photo', 'unit', 'description', 'price'].map((key) => ({
+          tableTemplateColumns: ['qty', 'sku', 'photo', 'unit', 'description', 'price', 'sum'].map((key) => ({
             key,
             label: key,
             type: 'text' as const,
@@ -178,6 +181,25 @@ describe('studio-table-defaults', () => {
         },
       };
       expect(missingStandardColumnFields(block)).toEqual([]);
+    });
+
+    it('recognizes an existing sum column under any alias (total/amount/сумма), not just "sum"', () => {
+      const block = {
+        settings: {
+          tableTemplateColumns: [
+            { key: 'name', label: 'Наименование', type: 'text' as const, width: 40, align: 'left' as const },
+            { key: 'total', label: 'Итого', type: 'currency' as const, width: 20, align: 'right' as const },
+          ],
+        },
+      };
+      expect(missingStandardColumnFields(block).map((f) => f.key)).not.toContain('sum');
+    });
+
+    it('recognizes a price column under the new catalog field-name aliases (listPrice/basePrice/pricePerUnit)', () => {
+      for (const key of ['listPrice', 'list_price', 'basePrice', 'base_price', 'pricePerUnit', 'price_per_unit']) {
+        const block = { settings: { tableTemplateColumns: [{ key, label: 'X', type: 'currency' as const, width: 20, align: 'right' as const }] } };
+        expect(missingStandardColumnFields(block).map((f) => f.key)).not.toContain('price');
+      }
     });
   });
 
@@ -215,6 +237,74 @@ describe('studio-table-defaults', () => {
       expect(next).toEqual({ 0: 3, 1: 7 });
       expect(base).toEqual({ 0: 3 });
       expect(withStudioTableQtyOverride(base, 0, -4)).toEqual({ 0: 0 });
+    });
+  });
+
+  describe('isKnownStudioColumnKey (TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM)', () => {
+    it('recognizes every standard alias group, including name and sum', () => {
+      expect(isKnownStudioColumnKey('name')).toBe(true);
+      expect(isKnownStudioColumnKey('productName')).toBe(true);
+      expect(isKnownStudioColumnKey('qty')).toBe(true);
+      expect(isKnownStudioColumnKey('price')).toBe(true);
+      expect(isKnownStudioColumnKey('listPrice')).toBe(true);
+      expect(isKnownStudioColumnKey('sum')).toBe(true);
+      expect(isKnownStudioColumnKey('total')).toBe(true);
+      expect(isKnownStudioColumnKey('unit')).toBe(true);
+      expect(isKnownStudioColumnKey('sku')).toBe(true);
+      expect(isKnownStudioColumnKey('photo')).toBe(true);
+      expect(isKnownStudioColumnKey('description')).toBe(true);
+    });
+
+    it('is false for a custom/unrecognized key (manual + Колонка)', () => {
+      expect(isKnownStudioColumnKey('col3')).toBe(false);
+      expect(isKnownStudioColumnKey('custom-field')).toBe(false);
+    });
+  });
+
+  describe('healStudioTableColumns (TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM)', () => {
+    const col = (key: string, label: string, type: StudioTableColumn['type'] = 'text'): StudioTableColumn => ({
+      key,
+      label,
+      type,
+      width: 20,
+      align: 'left',
+    });
+
+    it('fixes the reported bug: two columns both labeled «Цена» -> price stays, sum column becomes «Сумма»', () => {
+      const healed = healStudioTableColumns([col('price', 'Цена', 'currency'), col('sum', 'Цена', 'currency')]);
+      expect(healed.map((c) => c.label)).toEqual(['Цена', 'Сумма']);
+    });
+
+    it('heals a blank label on a recognized price/sum key', () => {
+      const healed = healStudioTableColumns([col('unitPrice', ''), col('total', '')]);
+      expect(healed.map((c) => c.label)).toEqual(['Цена', 'Сумма']);
+    });
+
+    it('leaves a deliberate custom label on a recognized key untouched', () => {
+      const healed = healStudioTableColumns([col('sum', 'Итого по разделу', 'currency')]);
+      expect(healed[0]!.label).toBe('Итого по разделу');
+    });
+
+    it('leaves an unrecognized/custom key fully untouched (label and type)', () => {
+      const custom = col('col3', 'Цена', 'number');
+      const healed = healStudioTableColumns([custom]);
+      expect(healed[0]).toBe(custom);
+    });
+
+    it('canonicalizes type for known keys: qty->number, price/sum->currency, the rest->text', () => {
+      const healed = healStudioTableColumns([
+        col('qty', 'Количество', 'text'),
+        col('price', 'Цена', 'text'),
+        col('sum', 'Сумма', 'text'),
+        col('sku', 'Артикул', 'number'),
+      ]);
+      expect(healed.map((c) => c.type)).toEqual(['number', 'currency', 'currency', 'text']);
+    });
+
+    it('returns the same object reference when nothing needs healing (no needless churn)', () => {
+      const untouched = col('name', 'Наименование', 'text');
+      const healed = healStudioTableColumns([untouched]);
+      expect(healed[0]).toBe(untouched);
     });
   });
 });

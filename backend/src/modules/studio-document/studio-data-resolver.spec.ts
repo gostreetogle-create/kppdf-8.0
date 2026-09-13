@@ -71,6 +71,20 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     expect(rows).toEqual([['ART-9']]);
   });
 
+  it('binds the catalog field-name aliases (listPrice/basePrice/pricePerUnit) as price (TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM)', () => {
+    for (const key of ['listPrice', 'list_price', 'basePrice', 'base_price', 'pricePerUnit', 'price_per_unit']) {
+      const rows = mapLineItemsToRows([{ unitPrice: 777 }], [{ key, label: 'X' }]);
+      expect(rows).toEqual([['777']]);
+    }
+  });
+
+  it('binds sum aliases (sum/total/amount/сумма) to the line total (TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM)', () => {
+    for (const key of ['sum', 'total', 'amount', 'сумма']) {
+      const rows = mapLineItemsToRows([{ total: 3500 }], [{ key, label: 'Сумма' }]);
+      expect(rows).toEqual([['3500']]);
+    }
+  });
+
   it('renders table HTML with escaped cell values', () => {
     const html = renderStudioTableHtml(columns, [['<b>Тест</b>', '1', '99']]);
     expect(html).toContain('<table');
@@ -688,6 +702,35 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
       );
 
       expect(resolved[0]).toMatchObject({ rows: [['Стол', '1', '1200']] });
+    });
+  });
+
+  describe('modules without a price field (TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM, known_limitation)', () => {
+    it('resolves price/sum to 0 for a catalog-modules row instead of failing (ProductModule has no price field)', async () => {
+      const moduleDoc = new Types.ObjectId();
+      const moduleModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: moduleDoc, name: 'Каркас', sku: 'M-1', unit: 'шт' }]) }) };
+      const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+      const photoModel = { find: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
+      const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, { find: jest.fn() } as never, moduleModel as never, { find: jest.fn() } as never, orgModel as never, photoModel as never);
+      const blockWithSum = {
+        ...tableBlock,
+        settings: {
+          tableTemplateColumns: [
+            { key: 'name', label: 'Наименование' },
+            { key: 'qty', label: 'Кол-во' },
+            { key: 'price', label: 'Цена' },
+            { key: 'sum', label: 'Сумма' },
+          ],
+        },
+      } as unknown as TemplateBlockDocument;
+
+      const resolved = await resolver.resolveDataSets(
+        { organizationId: orgId, context: { catalogSelections: { modules: [moduleDoc.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-modules' }, rows: [] }] } as never,
+        [blockWithSum],
+        true,
+      );
+
+      expect(resolved[0]).toMatchObject({ rows: [['Каркас', '1', '0', '0']] });
     });
   });
 

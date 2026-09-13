@@ -347,6 +347,68 @@ describe('StudioTablePropertiesComponent — column structure unlock', () => {
     expect(widthInput.getAttribute('aria-label')).toBe('Ширина, %');
     expect(host.querySelector('[data-test="studio-table-width-hint"]')?.textContent).toContain('сумма ≈ 100%');
   });
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM — a «+ Сумма» chip was missing entirely;
+   * an operator who wanted a computed total column had no discoverable way
+   * to add one (only the generic «+ Колонка» + manually typing key=`sum`).
+   */
+  it('offers a «+ Сумма» chip and adds it at the canonical key/type/label', () => {
+    const component = create(TABLE_WITH_TEMPLATE);
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test="studio-table-quick-add-sum"]')).not.toBeNull();
+
+    const settingsSpy = jest.fn();
+    component.settingsChange.subscribe(settingsSpy);
+    (host.querySelector<HTMLButtonElement>('[data-test="studio-table-quick-add-sum"]')!).click();
+
+    expect(settingsSpy).toHaveBeenCalledTimes(1);
+    const patch = settingsSpy.mock.calls[0]![0] as { tableTemplateColumns: { key: string; label: string; type: string }[] };
+    const added = patch.tableTemplateColumns.at(-1)!;
+    expect(added).toEqual({ key: 'sum', label: 'Сумма', type: 'currency', width: 20, align: 'right' });
+  });
+
+  it('does not offer «+ Сумма» once a sum-alias column already exists', () => {
+    create({
+      ...TABLE_WITH_TEMPLATE,
+      settings: {
+        ...TABLE_WITH_TEMPLATE.settings,
+        tableTemplateColumns: [...(TABLE_WITH_TEMPLATE.settings!['tableTemplateColumns'] as unknown[]), { key: 'total', label: 'Итого', type: 'currency', align: 'right', width: 15 }],
+      },
+    });
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test="studio-table-quick-add-sum"]')).toBeNull();
+  });
+
+  /**
+   * TZ-NX-DOCSTUDIO-TABLE-PRICE-SUM — `column.type` is never read by
+   * `lineValue`/the backend hydrate path for a standard key; the select made
+   * it look like a working control that did nothing when changed for those
+   * keys, so it's disabled there and only left live for a custom key.
+   */
+  it('disables the type select for a standard key (price) and keeps it enabled for a custom key', async () => {
+    create(TABLE_WITH_TEMPLATE);
+    // Standalone NgModel defers its initial writeValue() to a microtask (see
+    // the same note on the live-qty test above) — flush before reading DOM state.
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    // TABLE_WITH_TEMPLATE columns: [photo, name, price] -> index 2 is price (known key).
+    const priceType = host.querySelector<HTMLSelectElement>('[data-test="studio-table-col-type-2"]')!;
+    expect(priceType.disabled).toBe(true);
+
+    create({
+      ...TABLE_WITH_TEMPLATE,
+      settings: {
+        ...TABLE_WITH_TEMPLATE.settings,
+        tableTemplateColumns: [...(TABLE_WITH_TEMPLATE.settings!['tableTemplateColumns'] as unknown[]), { key: 'col4', label: 'Колонка 4', type: 'text', align: 'left', width: 10 }],
+      },
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const customType = fixture.nativeElement.querySelector<HTMLSelectElement>('[data-test="studio-table-col-type-3"]')!;
+    expect(customType.disabled).toBe(false);
+  });
 });
 
 /**
