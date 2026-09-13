@@ -38,10 +38,11 @@ interface ShellToolRailState {
 }
 
 /**
- * TZ-NX-SHELL-01-IDLE-RAILS — no page has registered real rail tools yet (or
- * it just cleared its own): empty, not a disabled-placeholder fallback. A
- * page opts in by calling setTools(); `AppShellComponent` only renders an
- * `<aside>` for a side that actually has tools.
+ * TZ-NX-SHELL-01-IDLE-RAILS / TZ-NX-SHELL-RAILS-ALWAYS — no page has
+ * registered real rail tools yet (or it just cleared its own): empty, not a
+ * disabled-placeholder fallback. `AppShellComponent`'s `<aside>`s are always
+ * in the DOM regardless of this state; an idle side just shows its own
+ * history button with no tools below it.
  */
 const DEFAULT_STATE: ShellToolRailState = { owner: null, left: [], right: [] };
 

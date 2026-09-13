@@ -119,7 +119,7 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 - Прямой заход по закладке (нет previous) → всегда fallback на список.
 - Helper: `frontend/src/app/shared/navigation/catalog-return.util.ts` (`CatalogReturnStore`).
 
-## NX shell rails (frontend-nx, TZ-NX-SHELL-01-IDLE-RAILS, 2026-09-10)
+## NX shell rails (frontend-nx, TZ-NX-SHELL-RAILS-ALWAYS, 2026-09-13)
 
 Всё выше в этом файле — **legacy** `frontend/` chrome (`PiChromeToolsService`,
 `app-chrome-rail-left/right`, `data-test="app-nav-back"`). NX (`frontend-nx`)
@@ -129,12 +129,21 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 | Что | NX канон |
 |-----|----------|
 | Rails по умолчанию | **Нет disabled placeholder-иконок** («Фильтры (скоро)» и т.п.). Дефолт `ShellToolRailService` = `{ owner: null, left: [], right: [] }` — пусто, не demo-заглушки. |
-| Когда рендерится `<aside>` | Только если на этой стороне `tools.length > 0` (страница вызвала `setTools`). Пустая сторона — `aside` вообще не в DOM (`@if`), не `hidden`/`display:none`. |
-| Grid | `.shell-workspace` colonnes — `computed()` (`gridTemplateColumns`) в `AppShellComponent`: обе стороны пусты → `minmax(0,1fr)` (контент во всю ширину); одна сторона → 2 колонки; обе → 3 колонки (`var(--shell-rail-w) minmax(0,1fr) var(--shell-rail-w)`). |
-| История ←→ | **Один SoT — header** (рядом с уведомлениями/темой), `data-test="shell-nav-back"` / `"shell-nav-forward"`. **Не** дублируется внутри rails (в отличие от legacy-канона ниже, где ←→ сидят в самих rail-панелях). |
-| Page tools API | `ShellToolRailService.setTools(owner, { left, right })` / `clear(owner)` — не поменялось; только рендер-условие в `AppShellComponent` и дефолт стали honest-empty. |
+| Когда рендерится `<aside>` | **Всегда, на обеих сторонах**, вне зависимости от `tools.length` — один и тот же каркас сайта на любой странице. `tools.length` влияет только на то, что рендерится *внутри* rail (page-tools), не на существование самого `<aside>`. |
+| Верх каждого rail | История: **←** (`shell-nav-back`) в left rail, **→** (`shell-nav-forward`) в right rail — единственная пара ←→ на сайте (не дублируется в header). Ниже — тонкий `.shell-rail-spacer` (hairline), затем живые `leftTools()`/`rightTools()`, если есть. |
+| Grid | `.shell-workspace` colonnes — константа в `AppShellComponent` (`gridTemplateColumns`), **всегда** 3 колонки: `var(--shell-rail-w) minmax(0,1fr) var(--shell-rail-w)`. Не схлопывается на idle-страницах — тот же каркас, что и с page-tools. |
+| Page tools API | `ShellToolRailService.setTools(owner, { left, right })` / `clear(owner)` — не поменялось. `clear()` убирает только зарегистрированные tools, rails остаются в DOM. |
 | Живые консьюмеры | `/production` (Гант) и `/studio/:id` — оба зовут `setTools` из `effect()` в конструкторе; регрессия проверена в `app-shell.component.spec.ts` + `production-cockpit.page.spec.ts` + `studio-editor-chrome-ia.spec.ts`. |
-| `tool-rail-definitions.ts` | **Удалён** (2026-09-10) — единственная цель файла была отдавать disabled demo-иконки; больше не нужен. |
+| `tool-rail-definitions.ts` | **Удалён** (2026-09-10) — единственная цель файла была отдавать disabled demo-иконки; **не восстановлен** этой TZ (rails always ≠ demo tools back). |
+| Mobile | Только сужение `--shell-rail-w` под 768px (CSS `@media`) — rails не скрываются целиком; никакого отдельного toolbar-fallback для этого шага нет (зафиксировано, не расширялось). |
+
+**История правки (2026-09-13, `TZ-NX-SHELL-RAILS-ALWAYS`):** предыдущая версия
+этой таблицы (`TZ-NX-SHELL-01-IDLE-RAILS`, 2026-09-10) убрала `<aside>` из DOM
+целиком на пустых страницах и перенесла ←→ в header — PO-скрины Гант/Клиенты
+2026-09-13 показали это как overreach: просьба была «не рисовать disabled
+demo-иконки», а не «сносить сами панели». Канон снова — always-rails +
+history в самих rails, тот же каркас сайта на любом экране; disabled
+placeholder-иконки по-прежнему запрещены.
 
 Аудит/канон повода: PO-скрин `/counterparties` с зачёркнутыми пустыми L/R
 menu. См. `docs/agent-checklists/WAVE-NX-SHELL-HUB-POLISH.md`.

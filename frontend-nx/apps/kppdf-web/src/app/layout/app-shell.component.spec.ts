@@ -12,7 +12,7 @@ import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { appRoutes } from '../app.routes';
 
-describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
+describe('AppShellComponent (TZ-NX-SHELL-RAILS-ALWAYS)', () => {
   let fixture: ComponentFixture<AppShellComponent>;
 
   const back = jest.fn();
@@ -80,24 +80,27 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
   const referenceQuickNav = (): HTMLAnchorElement | null =>
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-reference"]');
 
-  it('idle route (no setTools) renders no rails — full-width main workspace (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
+  it('idle route (no setTools) still renders both rails — same 3-column site frame everywhere (TZ-NX-SHELL-RAILS-ALWAYS)', async () => {
     await setup('/admin/devices');
     const grid = fixture.nativeElement.querySelector('[data-test="shell-workspace-grid"]') as HTMLElement;
     expect(grid).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="shell-sidebar"]')).toBeNull();
-    expect(grid.style.gridTemplateColumns).toBe('minmax(0,1fr)');
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeTruthy();
+    expect(grid.style.gridTemplateColumns).toBe('var(--shell-rail-w, 4rem) minmax(0,1fr) var(--shell-rail-w, 4rem)');
   });
 
-  it('places back/forward history buttons once in the header, not duplicated in idle rails (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
+  it('places back/forward history buttons in the rails (← left, → right), not duplicated in the header (TZ-NX-SHELL-RAILS-ALWAYS)', async () => {
     await setup('/admin/devices');
     const header = fixture.nativeElement.querySelector('header');
-    expect(header?.querySelector('[data-test="shell-nav-back"]')).toBeTruthy();
-    expect(header?.querySelector('[data-test="shell-nav-forward"]')).toBeTruthy();
-    // no rails at all on an idle route — nothing to duplicate into
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeNull();
+    expect(header?.querySelector('[data-test="shell-nav-back"]')).toBeNull();
+    expect(header?.querySelector('[data-test="shell-nav-forward"]')).toBeNull();
+    const left = fixture.nativeElement.querySelector('[data-test="shell-rail-left"]');
+    const right = fixture.nativeElement.querySelector('[data-test="shell-rail-right"]');
+    expect(left?.querySelector('[data-test="shell-nav-back"]')).toBeTruthy();
+    expect(right?.querySelector('[data-test="shell-nav-forward"]')).toBeTruthy();
+    // exactly one ←→ pair on the whole page
+    expect(fixture.nativeElement.querySelectorAll('[data-test="shell-nav-back"]').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('[data-test="shell-nav-forward"]').length).toBe(1);
   });
 
   it('shows only existing-route header chips (admin, registries, docs, deals, production, clients, supply, warehouse) — no dead links', async () => {
@@ -140,14 +143,14 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     expect(adminQuickNav()!.getAttribute('aria-current')).toBe('page');
   });
 
-  it('never renders disabled "скоро" demo placeholder tools (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
+  it('never renders disabled "скоро" demo placeholder tools (TZ-NX-SHELL-01-IDLE-RAILS / TZ-NX-SHELL-RAILS-ALWAYS)', async () => {
     await setup('/admin/devices');
     expect(fixture.nativeElement.querySelector('[data-test="shell-tool-left-filters"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="shell-tool-right-search"]')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('скоро');
   });
 
-  it('shows rails with grid columns for both sides when a page registers tools on both, then hides them again on clear() (TZ-NX-SHELL-01-IDLE-RAILS)', async () => {
+  it('shows live page tools inside the always-present rails, then removes only the tools (not the rails) on clear() (TZ-NX-SHELL-RAILS-ALWAYS)', async () => {
     await setup('/admin/devices');
     const rail = TestBed.inject(ShellToolRailService);
     rail.setTools('demo-owner', {
@@ -159,15 +162,19 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     const grid = fixture.nativeElement.querySelector('[data-test="shell-workspace-grid"]') as HTMLElement;
     expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-tool-left-l1"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-tool-right-r1"]')).toBeTruthy();
     expect(grid.style.gridTemplateColumns).toBe('var(--shell-rail-w, 4rem) minmax(0,1fr) var(--shell-rail-w, 4rem)');
 
     rail.clear('demo-owner');
     fixture.detectChanges();
 
-    // Regression guard: clearing must NOT fall back to placeholder rails (old bug).
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeNull();
-    expect(grid.style.gridTemplateColumns).toBe('minmax(0,1fr)');
+    // Rails stay in the DOM (same site frame); only the page's own tools disappear.
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-left"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-tool-left-l1"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="shell-tool-right-r1"]')).toBeNull();
+    expect(grid.style.gridTemplateColumns).toBe('var(--shell-rail-w, 4rem) minmax(0,1fr) var(--shell-rail-w, 4rem)');
   });
 
   describe('TZ-NX-PO-SWEEP-07 — rail category popover menu', () => {
@@ -347,8 +354,10 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     ]);
     expect(tools[1].getAttribute('aria-label')).toBe('Выбрано');
     expect(tools[1].querySelector('[data-test="shell-tool-badge"]')?.textContent?.trim()).toBe('15');
-    // right side got no tools in this call — its rail must not render either.
-    expect(fixture.nativeElement.querySelector('[data-test="shell-rail-right"]')).toBeNull();
+    // right side got no tools in this call — its rail still renders (always-on), just with no tools.
+    const right = fixture.nativeElement.querySelector('[data-test="shell-rail-right"]');
+    expect(right).toBeTruthy();
+    expect(right!.querySelectorAll('[data-test^="shell-tool-right-"]').length).toBe(0);
     rail.clear('studio-editor');
   });
 

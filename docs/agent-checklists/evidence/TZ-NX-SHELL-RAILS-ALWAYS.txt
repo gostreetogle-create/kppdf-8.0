@@ -1,0 +1,113 @@
+=== Root cause (overreach from TZ-NX-SHELL-01-IDLE-RAILS, 2026-09-10) ===
+
+That TZ's actual mandate was "no disabled 'скоро' demo placeholder icons in
+L/R rails". The implementation went further than asked: it made the `<aside>`
+itself conditional on `tools.length > 0` (`@if`), collapsing the grid to
+`minmax(0,1fr)` on any idle page, and relocated the ←→ history buttons into
+the header as the "single SoT" since the rails could vanish entirely. PO
+screenshots of Гант and Клиенты (2026-09-13) showed this as the panels
+"disappearing" — not what was asked.
+
+=== Fix (app-shell.component.ts) ===
+
+1. Removed the `@if (leftTools().length > 0)` / `@if (rightTools().length > 0)`
+   conditions — both `<aside>`s are now unconditional, always in the DOM.
+2. `gridTemplateColumns` changed from a `computed()` with 4 branches
+   (0/1/2-sided) to a fixed 3-column constant
+   (`var(--shell-rail-w, 4rem) minmax(0,1fr) var(--shell-rail-w, 4rem)`) —
+   the grid never collapses.
+3. Moved the ←/→ buttons (`data-test="shell-nav-back"` / `"shell-nav-forward"`,
+   same `NavHistoryService` wiring, same disabled-when-no-history behavior)
+   from the header into the top of their own rail (← in left, → in right).
+   Removed the header's copy entirely — one ←→ pair on the whole site again.
+4. Added a `.shell-rail-spacer` (thin hairline `<div>`) between the history
+   button and the page's own live tools, so the two are visually grouped
+   separately within each rail.
+5. `shell-tool-rail.service.ts`: no functional change (public `setTools`/
+   `clear`/`invoke` API untouched) — only its stale doc-comment ("no `<aside>`
+   for empty side") updated to match the new always-rendered reality.
+
+=== Specs rewritten (app-shell.component.spec.ts) ===
+
+- "idle route... renders no rails" -> "idle route... still renders both
+  rails" — checks both asides present + grid stays 3-column.
+- "places back/forward... in the header" -> "places back/forward... in the
+  rails, not duplicated in the header" — checks header has zero ←→ buttons,
+  each rail has exactly its own one, and there is exactly one of each on the
+  whole page.
+- "shows rails... then hides them again on clear()" -> "shows live page
+  tools inside the always-present rails, then removes only the tools (not
+  the rails) on clear()" — same `setTools`/`clear()` exercise, but now
+  asserts the `<aside>`s survive `clear()` and only the tool buttons
+  disappear; grid stays 3-column throughout (regression guard against the
+  old "clear() falls back to demo placeholders" bug is preserved in spirit —
+  clear() still can't make anything reappear, it just no longer removes the
+  rail itself either).
+- "renders a selected-buffer rail tool..." — the assertion that
+  `shell-rail-right` is `null` when only left tools were registered is now
+  `toBeTruthy()` (rail always renders) + a new check that it has zero
+  `shell-tool-right-*` children.
+- "never renders disabled 'скоро' demo placeholder tools" — unchanged
+  assertion, title annotated with both TZ ids (still true under the new
+  canon, was never in question).
+
+All 26 tests in the file pass; no other spec file references
+`shell-rail-left/right`/`shell-nav-back/forward` in a way that assumed the
+old conditional-render behavior (checked via repo-wide grep before editing).
+
+=== Docs updated ===
+
+- `docs/pages/page-chrome.md` § "NX shell rails" — table replaced to describe
+  always-rendered rails + history-in-rails; added a short "История правки"
+  paragraph explaining the 2026-09-10 overreach and the 2026-09-13 correction
+  (so a future reader doesn't wonder why the canon flipped).
+- `docs/PO-CANON.md`'s page-tools line was already corrected by Cursor before
+  this TZ started (confirmed via `git diff` — matches this TZ's own canon
+  exactly: "Панели L/R всегда на месте... History ←→ — в rails"). Not
+  re-edited, just verified consistent.
+
+=== known_limitation (per TZ, not expanded) ===
+
+Only responsive behavior found for the rails is `--shell-rail-w` narrowing
+under `@media (max-width: 767px)` (2.75rem instead of 4rem) — rails stay
+visible, just narrower. No separate mobile toolbar-fallback exists in
+`app-shell.component.ts` for any breakpoint; not added, not touched, per the
+TZ's explicit "не расширять scope" instruction. Recorded here as the fact,
+not implemented.
+
+=== Live Playwright verification (local dev, admin/admin123) ===
+
+`/counterparties` (idle, no setTools):
+  left rail present: True | right rail present: True
+  back button inside left rail: True | forward button inside right rail: True
+  header has NO back button: True | header has NO forward button: True
+  grid columns (computed): 64px 1142px 64px (both rails equal width)
+  left/right page-tools count: 0/0 (bare history only, no placeholders)
+  page contains "скоро": False
+
+`/production` (Гант, has setTools):
+  left rail present: True | right rail present: True
+  back button inside left rail: True | forward button inside right rail: True
+  header has NO back button: True | header has NO forward button: True
+  grid columns (computed): 64px 1142px 64px
+  left page-tools count: 3 | right page-tools count: 1 (live tools render
+  correctly under the history button, not "icons floating with no rail")
+  page contains "скоро": False
+
+No page-level JS errors in either run.
+
+=== Gates (verbatim summary) ===
+
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest app-shell.component.spec.ts -> 26/26 PASS
+FE jest (full) -> 125 suites / 892 passed + 7 skipped (899 total) PASS (same
+  totals as before this TZ — no regression, no new/removed tests elsewhere)
+FE eslint (scoped: app-shell.component.ts/.spec.ts, shell-tool-rail.service.ts)
+  -> 0 errors, 19 pre-existing no-non-null-assertion warnings (all in the
+  spec file, none introduced by this change)
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2)
+FE nx build kppdf-web (last) -> exit 0, same pre-existing unrelated
+  budget/NG8102 warnings as prior TZs
+Live Playwright verification (/counterparties idle, /production with
+  setTools) -> PASS, both ACCEPT #1 and #2 confirmed live

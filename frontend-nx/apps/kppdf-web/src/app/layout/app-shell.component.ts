@@ -42,12 +42,15 @@ import { collectPageRoutePaths } from './route-paths';
 import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuItem } from './shell-tool-rail.service';
 
 /**
- * TZ-NX-SHELL-rail-layout-fix — operational shell matching legacy chrome:
- * full-width header + central workspace, with narrow left/right tool rails
- * that appear only for pages that actually register tools via
- * `ShellToolRailService.setTools()` (TZ-NX-SHELL-01-IDLE-RAILS — no disabled
- * demo placeholders). Back/forward history lives once in the header (single
- * SoT), not duplicated inside idle rails.
+ * TZ-NX-SHELL-RAILS-ALWAYS — operational shell matching legacy chrome:
+ * full-width header + central workspace with narrow left/right rails that
+ * are **always** in the DOM (same site frame everywhere), not conditional on
+ * a page having registered tools. Each rail's own history button (←
+ * left / → right) lives at the top of that rail — the header carries no
+ * duplicate ←→ pair. `ShellToolRailService.setTools()` still only ever
+ * supplies *live* icons (TZ-NX-SHELL-01-IDLE-RAILS's "no disabled demo
+ * placeholders" rule stands); an idle page's rail shows just its own history
+ * button, not an empty gap where the rail used to disappear.
  * `/kit/*` stays on `KitLayoutComponent` (not nested here).
  */
 @Component({
@@ -109,30 +112,6 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
             <button
               type="button"
               class="pi-icon-btn pi-focus-ring"
-              data-test="shell-nav-back"
-              [disabled]="!navHistory.canGoBack()"
-              [attr.aria-disabled]="navHistory.canGoBack() ? null : 'true'"
-              (click)="navHistory.back()"
-              aria-label="Назад"
-              title="Назад"
-            >
-              <lucide-angular [img]="backIcon" [size]="14" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              class="pi-icon-btn pi-focus-ring"
-              data-test="shell-nav-forward"
-              [disabled]="!navHistory.canGoForward()"
-              [attr.aria-disabled]="navHistory.canGoForward() ? null : 'true'"
-              (click)="navHistory.forward()"
-              aria-label="Вперёд"
-              title="Вперёд"
-            >
-              <lucide-angular [img]="forwardIcon" [size]="14" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              class="pi-icon-btn pi-focus-ring"
               aria-label="Уведомления (скоро)"
               title="Уведомления (скоро)"
               disabled
@@ -179,48 +158,71 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
       <div
         class="shell-workspace flex-1 min-h-0 min-w-0"
         data-test="shell-workspace-grid"
-        [style.grid-template-columns]="gridTemplateColumns()"
+        [style.grid-template-columns]="gridTemplateColumns"
       >
-        @if (leftTools().length > 0) {
-          <aside
-            class="shell-rail shell-rail-left"
-            data-test="shell-rail-left"
-            aria-label="Левая панель инструментов"
-            aria-orientation="vertical"
+        <aside
+          class="shell-rail shell-rail-left"
+          data-test="shell-rail-left"
+          aria-label="Левая панель инструментов"
+          aria-orientation="vertical"
+        >
+          <button
+            type="button"
+            class="shell-rail-button pi-focus-ring"
+            data-test="shell-nav-back"
+            [disabled]="!navHistory.canGoBack()"
+            [attr.aria-disabled]="navHistory.canGoBack() ? null : 'true'"
+            (click)="navHistory.back()"
+            aria-label="Назад"
+            title="Назад"
           >
-            @for (tool of leftTools(); track tool.id) {
-              <button
-                type="button"
-                class="shell-rail-button shell-rail-tool pi-focus-ring"
-                [class.is-active]="activeToolId() === tool.id"
-                [attr.data-test]="'shell-tool-left-' + tool.id"
-                [attr.aria-label]="tool.ariaLabel"
-                [attr.title]="tool.title"
-                [disabled]="tool.disabled === true"
-                [attr.aria-disabled]="tool.disabled === true ? 'true' : null"
-                (click)="onShellToolClick(tool)"
-              >
-                <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
-                @if (tool.badge && tool.badge > 0) {
-                  <span class="shell-tool-badge" data-test="shell-tool-badge" aria-hidden="true">{{ tool.badge }}</span>
-                }
-              </button>
-            }
-          </aside>
-        }
+            <lucide-angular [img]="backIcon" [size]="14" aria-hidden="true" />
+          </button>
+          <div class="shell-rail-spacer" aria-hidden="true"></div>
+          @for (tool of leftTools(); track tool.id) {
+            <button
+              type="button"
+              class="shell-rail-button shell-rail-tool pi-focus-ring"
+              [class.is-active]="activeToolId() === tool.id"
+              [attr.data-test]="'shell-tool-left-' + tool.id"
+              [attr.aria-label]="tool.ariaLabel"
+              [attr.title]="tool.title"
+              [disabled]="tool.disabled === true"
+              [attr.aria-disabled]="tool.disabled === true ? 'true' : null"
+              (click)="onShellToolClick(tool)"
+            >
+              <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
+              @if (tool.badge && tool.badge > 0) {
+                <span class="shell-tool-badge" data-test="shell-tool-badge" aria-hidden="true">{{ tool.badge }}</span>
+              }
+            </button>
+          }
+        </aside>
 
         <main class="shell-main min-w-0 min-h-0 overflow-y-auto overflow-x-hidden bg-paper">
           <router-outlet />
         </main>
 
-        @if (rightTools().length > 0) {
-          <aside
-            class="shell-rail shell-rail-right"
-            data-test="shell-rail-right"
-            aria-label="Правая панель инструментов"
-            aria-orientation="vertical"
+        <aside
+          class="shell-rail shell-rail-right"
+          data-test="shell-rail-right"
+          aria-label="Правая панель инструментов"
+          aria-orientation="vertical"
+        >
+          <button
+            type="button"
+            class="shell-rail-button pi-focus-ring"
+            data-test="shell-nav-forward"
+            [disabled]="!navHistory.canGoForward()"
+            [attr.aria-disabled]="navHistory.canGoForward() ? null : 'true'"
+            (click)="navHistory.forward()"
+            aria-label="Вперёд"
+            title="Вперёд"
           >
-            @for (tool of rightTools(); track tool.id) {
+            <lucide-angular [img]="forwardIcon" [size]="14" aria-hidden="true" />
+          </button>
+          <div class="shell-rail-spacer" aria-hidden="true"></div>
+          @for (tool of rightTools(); track tool.id) {
               <div class="shell-rail-item">
                 <button
                   type="button"
@@ -270,7 +272,6 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
               </div>
             }
           </aside>
-        }
       </div>
     </div>
   `,
@@ -298,6 +299,15 @@ import { ShellToolRailService, type ShellToolRailItem, type ShellToolRailMenuIte
 
     .shell-rail-right {
       border-left: 1px solid var(--color-rule);
+    }
+
+    /* TZ-NX-SHELL-RAILS-ALWAYS — separates the rail's own history button
+       (always first) from the page's live tools below it. */
+    .shell-rail-spacer {
+      align-self: stretch;
+      height: 1px;
+      margin: 2px 6px;
+      background: var(--color-rule);
     }
 
     .shell-rail-button {
@@ -446,19 +456,12 @@ export class AppShellComponent {
   protected readonly menuAnchor = signal<{ top: number; right: number } | null>(null);
 
   /**
-   * TZ-NX-SHELL-01-IDLE-RAILS — a side only takes a grid column when it has
-   * real tools; an idle page (no `setTools` call) gets the full-width main
-   * column, matching `--shell-rail-w` (redefined narrower under 768px).
+   * TZ-NX-SHELL-RAILS-ALWAYS — both rails are always in the DOM (same site
+   * frame everywhere), so the grid is always 3 columns; `--shell-rail-w` is
+   * redefined narrower under 768px for small screens.
    */
-  protected readonly gridTemplateColumns = computed(() => {
-    const railW = 'var(--shell-rail-w, 4rem)';
-    const hasLeft = this.leftTools().length > 0;
-    const hasRight = this.rightTools().length > 0;
-    if (hasLeft && hasRight) return `${railW} minmax(0,1fr) ${railW}`;
-    if (hasLeft) return `${railW} minmax(0,1fr)`;
-    if (hasRight) return `minmax(0,1fr) ${railW}`;
-    return 'minmax(0,1fr)';
-  });
+  protected readonly gridTemplateColumns =
+    'var(--shell-rail-w, 4rem) minmax(0,1fr) var(--shell-rail-w, 4rem)';
 
   protected readonly navHistory = inject(NavHistoryService);
 
