@@ -1,5 +1,5 @@
 import { CategoryService } from './category.service';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 
 function category(overrides: Record<string, unknown> = {}): any {
   const value: any = {
@@ -108,5 +108,53 @@ describe('CategoryService (CATALOG-377)', () => {
     await expect(
       service.update('507f1f77bcf86cd799439011', { parentId: '507f1f77bcf86cd799439011' }, null),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  describe('duplicate key -> 409, not a raw 500 (TZ-NX-CATEGORY-DUPLICATE-SLUG-409)', () => {
+    it('create() maps a duplicate {type, slug} to a readable ConflictException', async () => {
+      const { service, model } = setup();
+      model.create.mockRejectedValue({ code: 11000, keyPattern: { type: 1, slug: 1 } });
+
+      await expect(
+        service.create({ name: 'Дубликат', slug: 'metals', type: 'material', skuPrefix: 'DUP' }, null),
+      ).rejects.toMatchObject({
+        constructor: ConflictException,
+        message: 'Категория с таким названием уже существует для этого типа',
+      });
+    });
+
+    it('create() maps a duplicate skuPrefix to its own readable ConflictException', async () => {
+      const { service, model } = setup();
+      model.create.mockRejectedValue({ code: 11000, keyPattern: { skuPrefix: 1 } });
+
+      await expect(
+        service.create({ name: 'Другое имя', slug: 'other-slug', type: 'material', skuPrefix: 'MTL' }, null),
+      ).rejects.toMatchObject({
+        constructor: ConflictException,
+        message: 'Префикс SKU уже используется другой категорией',
+      });
+    });
+
+    it('update() maps a duplicate {type, slug} to a readable ConflictException, not a raw 500', async () => {
+      const { service, model, parent } = setup();
+      model.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(parent) });
+      parent.save.mockRejectedValueOnce({ code: 11000, keyPattern: { type: 1, slug: 1 } });
+
+      await expect(
+        service.update('507f1f77bcf86cd799439011', { slug: 'taken-slug' }, null),
+      ).rejects.toMatchObject({
+        constructor: ConflictException,
+        message: 'Категория с таким названием уже существует для этого типа',
+      });
+    });
+
+    it('re-throws a non-duplicate-key error unchanged', async () => {
+      const { service, model } = setup();
+      model.create.mockRejectedValue(new Error('unexpected db error'));
+
+      await expect(
+        service.create({ name: 'X', slug: 'x', type: 'material', skuPrefix: 'X1' }, null),
+      ).rejects.toThrow('unexpected db error');
+    });
   });
 });

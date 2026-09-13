@@ -1,0 +1,63 @@
+=== Root cause (confirmed exactly as TZ described) ===
+
+`Category` has TWO unique indexes: compound `{type, slug}` and a standalone
+`skuPrefix`. Neither `CategoryService.create()` nor `.update()` caught a
+Mongo E11000 duplicate-key error — it propagated straight to NestJS's
+default exception filter as a raw 500 "Internal server error", exactly the
+class of bug `ProductService`/`MaterialService` already guard against for
+their own unique fields (sku/article).
+
+=== Fix (category.service.ts) ===
+
+1. `create()`: wrapped `this.model.create(...)` in try/catch, delegating to
+   a new `rethrowDuplicate()` helper on any error.
+2. `update()`: wrapped `doc.save()` the same way (an `update()` that changes
+   `slug`/`type`/`skuPrefix` can hit the same unique-index collision).
+3. `rethrowDuplicate(err)`: on Mongo code 11000, inspects `err.keyPattern`
+   to give a specific, readable RU message — `skuPrefix` collision vs.
+   `{type, slug}` collision get distinct messages (mirrors the fact these
+   are two independent unique indexes, not one). Any other error is
+   re-thrown unchanged (not swallowed).
+
+Per the TZ's "НЕ" list, did not touch the slug DTO's validation rules and
+did not add an auto-suffix-on-collision retry (`-2`/`-3`) — the TZ marked
+that "опционально", and a clean 409 + the FE's own existing toast (already
+confirmed working in WAVE3.2's evidence) is a complete, honest fix without
+adding retry-loop complexity nobody asked for.
+
+=== Specs (category.service.spec.ts, new describe block) ===
+
+- `create()` maps a duplicate `{type, slug}` to the readable ConflictException.
+- `create()` maps a duplicate `skuPrefix` to its own readable ConflictException.
+- `update()` maps a duplicate `{type, slug}` to a readable ConflictException,
+  not a raw 500.
+- A non-duplicate-key error (plain `Error`) is re-thrown unchanged, not
+  accidentally swallowed into a false-positive 409.
+
+8/8 tests in the file pass (was 4, +4 new).
+
+=== Live verification (local dev, admin/admin123 — documented local dev
+    seed login) ===
+
+1. POST /api/categories (unique name/slug/skuPrefix) -> 201, created.
+2. POST /api/categories with the SAME type+slug (different skuPrefix) ->
+   409, body: {"message":"Категория с таким названием уже существует для
+   этого типа"} — was a raw 500 before this fix.
+3. POST /api/categories with a DIFFERENT type+slug but the SAME skuPrefix
+   as step 1 -> 409, body: {"message":"Префикс SKU уже используется другой
+   категорией"} — confirms the second, independent unique index is also
+   now handled, not just the one the TZ's own reproduction happened to hit.
+
+Test category created in step 1 (`6aa6c46c45dba27bb304bd7a`) deleted via
+`DELETE /api/categories/:id` immediately after — no leftover test data.
+
+=== Gates (verbatim summary) ===
+
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest category.service.spec.ts -> 8/8 PASS (was 4, +4 new)
+BE jest (full) -> 135 suites / 1348 tests PASS (was 1344, +4 new)
+BE eslint (scoped: category.service.ts/.spec.ts) -> 0 errors, 3
+  pre-existing no-explicit-any warnings, none in new code
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2)
+Live curl verification -> PASS (both unique-index collisions now 409, not 500)

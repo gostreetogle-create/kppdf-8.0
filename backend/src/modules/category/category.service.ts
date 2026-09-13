@@ -26,7 +26,11 @@ export class CategoryService {
 
   async create(dto: CreateCategoryDto, organizationId?: string | null): Promise<CategoryDocument> {
     const fullPath = await this.buildFullPath(dto.name, dto.parentId, organizationId);
-    return this.model.create({ ...dto, fullPath, ...this.organizationWrite(organizationId) });
+    try {
+      return await this.model.create({ ...dto, fullPath, ...this.organizationWrite(organizationId) });
+    } catch (err) {
+      this.rethrowDuplicate(err);
+    }
   }
 
   async findAll(type?: string, organizationId?: string | null): Promise<CategoryDocument[]> {
@@ -56,7 +60,11 @@ export class CategoryService {
     }
     const newFullPath = await this.buildFullPath(newName, newParentId, organizationId, id);
     Object.assign(doc, { ...dto, fullPath: newFullPath });
-    await doc.save();
+    try {
+      await doc.save();
+    } catch (err) {
+      this.rethrowDuplicate(err);
+    }
     if (nameChanged || parentChanged || oldFullPath !== newFullPath) {
       await this.rebuildDescendantFullPaths(id, organizationId);
     }
@@ -189,6 +197,26 @@ export class CategoryService {
       currentId = doc.parentId.toString();
     }
     return false;
+  }
+
+  /**
+   * TZ-NX-CATEGORY-DUPLICATE-SLUG-409 — a raw Mongo E11000 on the compound
+   * `{type, slug}` unique index (common after `suggestSkuPrefix()`'s ~16-char
+   * translit truncation collapses two different names to the same slug) or
+   * on the standalone `skuPrefix` unique index used to surface as an
+   * uncaught 500 ("Internal server error"), same class of bug
+   * `ProductService`/`MaterialService` already guard against for their own
+   * unique fields.
+   */
+  private rethrowDuplicate(err: unknown): never {
+    if ((err as { code?: number })?.code === 11000) {
+      const keyPattern = (err as { keyPattern?: Record<string, unknown> }).keyPattern ?? {};
+      if ('skuPrefix' in keyPattern) {
+        throw new ConflictException('Префикс SKU уже используется другой категорией');
+      }
+      throw new ConflictException('Категория с таким названием уже существует для этого типа');
+    }
+    throw err;
   }
 
   private organizationFilter(organizationId?: string | null): Record<string, unknown> {

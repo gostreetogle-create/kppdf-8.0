@@ -28,8 +28,8 @@ status: **IN_WORK_WAVE2**
 | # | TZ | Status |
 |---|-----|--------|
 | 2.1 | `tasks/_archive/2026-09/TZ-NX-MODULE-LIST-POPULATE-PHOTOS.done.md` | DONE (`31edb081`) |
-| 2.2 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-CATEGORY-DUPLICATE-SLUG-409.md` | CLAIMED |
-| 2.3 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-SORTORDER-EMPTY-MIN.md` | PENDING |
+| 2.2 | `tasks/_archive/2026-09/TZ-NX-CATEGORY-DUPLICATE-SLUG-409.done.md` | DONE (SHA backfill pending) |
+| 2.3 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-SORTORDER-EMPTY-MIN.md` | CLAIMED |
 | 2.4 | `tasks/_ready/TZ-NX-SUPPLY-TASK-UNCONFIRM.md` | PENDING |
 | 2.5 | `tasks/_ready/TZ-NX-DOCSTUDIO-ISSUER-SELECT.md` | PENDING |
 
@@ -56,4 +56,6 @@ status: **IN_WORK_WAVE2**
 2026-09-13T19:00:00Z | 2.1 MODULE-LIST-POPULATE-PHOTOS | CLAIMED
 2026-09-13T19:35:00Z | 2.1 MODULE-LIST-POPULATE-PHOTOS | DONE | commit=31edb081 | findAll now populates photoIds/mainPhotoId + blankMissingUploadUrls (reused WAVE3.1 helper); live: negative path 0 broken/0x404 on photo-less dataset, positive path temporary real-photo PATCH renders correctly then reverted; findById left untouched (out of scope, used for mutate-then-save)
 2026-09-13T19:35:00Z | 2.2 CATEGORY-DUPLICATE-SLUG-409 | CLAIMED
+2026-09-13T20:00:00Z | 2.2 CATEGORY-DUPLICATE-SLUG-409 | DONE | commit=(backfill pending) | create/update now catch E11000 -> ConflictException 409 with a distinct message for both unique indexes ({type,slug} and standalone skuPrefix, the latter not in the TZ's own repro but same bug); live curl confirmed both collisions 409 not 500, test category cleaned up
+2026-09-13T20:00:00Z | 2.3 SORTORDER-EMPTY-MIN | CLAIMED
 ```
