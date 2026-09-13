@@ -368,3 +368,82 @@ describe('StudioBlocksCanvasComponent — column width applies to th/td (TZ-NX-D
     expect((headers[1] as HTMLElement).style.width).toBe('50%');
   });
 });
+
+/**
+ * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — `textHtml()` used to be a raw
+ * `bypassSecurityTrustHtml` with zero token handling: a plain-text
+ * `{{organization.shortName}}` rendered as ordinary black text on the
+ * canvas (only the RTE dialog migrated tokens to chips). Default is now
+ * chips (`tokens` mode); `values` mode substitutes from the bag as plain
+ * ink instead, per the TZ's own explicit "не chip" wording for resolved
+ * values.
+ */
+describe('StudioBlocksCanvasComponent — text token display mode (TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP)', () => {
+  const TEXT_BLOCK: StudioBlock = {
+    _id: 'txt-1',
+    type: 'text',
+    order: 0,
+    title: 'Текст',
+    content: 'Исполнитель: {{organization.shortName}}',
+    layout: { page: 1, x: 0.1, y: 0.1, width: 0.5, height: 0.12, zIndex: 1, rotation: 0 },
+  };
+
+  let fixture: ComponentFixture<StudioBlocksCanvasComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [StudioBlocksCanvasComponent] }).compileComponents();
+  });
+
+  function createCanvas(blocks: readonly StudioBlock[]): StudioBlocksCanvasComponent {
+    fixture = TestBed.createComponent(StudioBlocksCanvasComponent);
+    fixture.componentRef.setInput('blocks', [...blocks]);
+    fixture.componentRef.setInput('selectedId', null);
+    fixture.componentRef.setInput('activeLayerId', null);
+    fixture.componentRef.setInput('currentPage', 1);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  it('default «tokens» mode renders a chip, not raw {{…}} black text', () => {
+    createCanvas([TEXT_BLOCK]);
+    const host: HTMLElement = fixture.nativeElement;
+    const chip = host.querySelector('.studio-block__text-body .substitution-token');
+    expect(chip).not.toBeNull();
+    expect(chip!.textContent).toBe('{{organization.shortName}}');
+  });
+
+  it('«values» mode substitutes the resolved value as plain text, no chip', () => {
+    createCanvas([TEXT_BLOCK]);
+    fixture.componentRef.setInput('tokenDisplayMode', 'values');
+    fixture.componentRef.setInput('substitutionBag', { organization: { shortName: 'Ромашка' } });
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('.studio-block__text-body .substitution-token')).toBeNull();
+    expect(host.querySelector('.studio-block__text-body')!.textContent).toContain('Исполнитель: Ромашка');
+  });
+
+  it('«values» mode keeps an unresolved token as a chip (empty bag)', () => {
+    createCanvas([TEXT_BLOCK]);
+    fixture.componentRef.setInput('tokenDisplayMode', 'values');
+    fixture.componentRef.setInput('substitutionBag', {});
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    const chip = host.querySelector('.studio-block__text-body .substitution-token');
+    expect(chip).not.toBeNull();
+    expect(chip!.textContent).toBe('{{organization.shortName}}');
+  });
+
+  it('switching back to «tokens» restores the chip without reloading the document', () => {
+    createCanvas([TEXT_BLOCK]);
+    fixture.componentRef.setInput('tokenDisplayMode', 'values');
+    fixture.componentRef.setInput('substitutionBag', { organization: { shortName: 'Ромашка' } });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.substitution-token')).toBeNull();
+
+    fixture.componentRef.setInput('tokenDisplayMode', 'tokens');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.substitution-token')).not.toBeNull();
+  });
+});

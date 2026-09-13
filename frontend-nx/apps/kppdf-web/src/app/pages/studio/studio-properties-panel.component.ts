@@ -92,6 +92,8 @@ function layerDisplayName(block: StudioBlock): string {
             <pi-studio-text-properties
               [block]="selected"
               [disabled]="!!selected.locked"
+              [tokenDisplayMode]="tokenDisplayMode"
+              (tokenDisplayModeChange)="tokenDisplayModeChange.emit($event)"
               (contentChange)="contentChange.emit($event)"
               (styleChange)="styleChange.emit($event)"
               (applyLibraryText)="applyLibraryText.emit($event)"
@@ -330,6 +332,9 @@ export class StudioPropertiesPanelComponent {
   @Output() readonly tableRefreshCatalogRows = new EventEmitter<void>();
   @Output() readonly applyLibraryText = new EventEmitter<TextBlock>();
   @Output() readonly saveTextBlock = new EventEmitter<void>();
+  /** TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — session-level, owned by `studio-editor.page.ts`. */
+  @Input() tokenDisplayMode: 'tokens' | 'values' = 'tokens';
+  @Output() readonly tokenDisplayModeChange = new EventEmitter<'tokens' | 'values'>();
 
   protected readonly imageUrl = studioImageUrl;
   protected readonly isPassportBackground = studioBlockIsPassportBackground;

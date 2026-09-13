@@ -9,6 +9,7 @@ import {
   studioCanvasBackgroundBlocks,
   studioCanvasForegroundBlocks,
   studioImageUrl,
+  studioTextDisplayHtml,
 } from './studio-block-helpers';
 import {
   columnWidthPercents,
@@ -213,10 +214,25 @@ import {
     .studio-block__text-body :where(p) {
       margin: 0;
     }
+    /* TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — matches the RTE dialog's own
+       .substitution-token chip (pi-rich-text-editor.component.ts) so a
+       token looks the same whether it is being edited or just viewed on
+       the canvas. Editor-only: this component is never used for
+       Просмотр/PDF (those render fully server-side, see
+       studio-output.service.ts), so this styling can't leak into the
+       printed form. */
     :host ::ng-deep .studio-block__text-body .substitution-token {
-      color: oklch(var(--color-info));
+      display: inline-block;
+      padding: 1px 6px;
       /* TZ-NX-DOCSTUDIO-S45: guaranteed gap token↔next text (no double spaces). */
-      margin-right: 4px;
+      margin: 0 4px 0 1px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.85em;
+      font-weight: 600;
+      color: oklch(var(--color-info));
+      background: oklch(var(--color-paper-2));
+      border: 1px solid oklch(var(--color-rule));
+      border-radius: 2px;
     }
     .studio-block--text.studio-block--editable.selected {
       background: transparent;
@@ -332,6 +348,13 @@ export class StudioBlocksCanvasComponent {
   @Input() sheetHeight = 900;
   /** Read-only compositing (preview / print check) — no drag, resize, or table edit. */
   @Input() readOnly = false;
+  /**
+   * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — session-level (not per-block, not
+   * persisted) display mode for `{{token}}` substitutions on the canvas.
+   */
+  @Input() tokenDisplayMode: 'tokens' | 'values' = 'tokens';
+  /** Flat bag consulted only in `values` mode — see `resolveStudioTokenValue`. */
+  @Input() substitutionBag: Record<string, unknown> = {};
   @Output() selected = new EventEmitter<string>();
   @Output() layoutChanged = new EventEmitter<{ id: string; layout: StudioBlockLayout }>();
   @Output() layoutCommit = new EventEmitter<void>();
@@ -449,9 +472,20 @@ export class StudioBlocksCanvasComponent {
     return String(lh);
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — was raw `bypassSecurityTrustHtml`
+   * with no token handling at all: a plain-text `{{organization.shortName}}`
+   * rendered as ordinary black text (S44's `.substitution-token` CSS below
+   * had nothing to attach to, since nothing ever emitted that class here —
+   * the RTE dialog already did via its own `migratePlainTokensToNodes` call,
+   * this canvas view never did). Now chips by default; substitutes to plain
+   * ink in «Значения» mode (`studioTextDisplayHtml`) — display-only, never
+   * writes back to `block.content`.
+   */
   textHtml(block: StudioBlock): SafeHtml {
     const raw = block.content?.trim() || block.title?.trim() || 'Текст';
-    return this.sanitizer.bypassSecurityTrustHtml(raw);
+    const html = studioTextDisplayHtml(raw, this.tokenDisplayMode, this.substitutionBag);
+    return this.sanitizer.bypassSecurityTrustHtml(html);
   }
 
   openTextBlock(event: MouseEvent, block: StudioBlock): void {

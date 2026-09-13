@@ -73,6 +73,30 @@ const ALIGN_OPTIONS: readonly {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="text-props" data-test="studio-text-properties">
+      <div class="text-props__mode" role="group" aria-label="Отображение подстановок на холсте" data-test="studio-token-display-mode">
+        <button
+          type="button"
+          class="text-props__mode-btn pi-focus-ring"
+          [class.text-props__mode-btn--active]="tokenDisplayMode === 'tokens'"
+          [attr.aria-pressed]="tokenDisplayMode === 'tokens'"
+          data-test="studio-token-display-mode-tokens"
+          (click)="tokenDisplayModeChange.emit('tokens')"
+        >
+          Токены
+        </button>
+        <button
+          type="button"
+          class="text-props__mode-btn pi-focus-ring"
+          [class.text-props__mode-btn--active]="tokenDisplayMode === 'values'"
+          [attr.aria-pressed]="tokenDisplayMode === 'values'"
+          data-test="studio-token-display-mode-values"
+          (click)="tokenDisplayModeChange.emit('values')"
+        >
+          Значения
+        </button>
+      </div>
+      <p class="text-props__hint">Как будет на бланке — предпросмотр на холсте, не влияет на PDF/Просмотр и не пишет в текст.</p>
+
       <div class="text-props__library">
         <label class="text-props__field">
           <span class="text-props__label">Категория</span>
@@ -253,6 +277,23 @@ const ALIGN_OPTIONS: readonly {
   `,
   styles: [`
     .text-props { display: flex; flex-direction: column; gap: 10px; }
+    .text-props__mode { display: flex; gap: 4px; }
+    .text-props__mode-btn {
+      flex: 1;
+      padding: 6px 8px;
+      border: 1px solid var(--color-rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--color-paper-2);
+      color: var(--color-ink);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .text-props__mode-btn:hover { background: var(--color-paper-3); }
+    .text-props__mode-btn--active {
+      background: var(--color-gold);
+      border-color: var(--color-gold-deep);
+    }
     .text-props__library {
       display: flex; flex-direction: column; gap: 8px;
       padding-bottom: 8px;
@@ -315,6 +356,9 @@ export class StudioTextPropertiesComponent implements OnChanges {
 
   @Input({ required: true }) block!: StudioBlock;
   @Input() disabled = false;
+  /** TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — session-level, owned by `studio-editor.page.ts`, not per-block. */
+  @Input() tokenDisplayMode: 'tokens' | 'values' = 'tokens';
+  @Output() readonly tokenDisplayModeChange = new EventEmitter<'tokens' | 'values'>();
   @Output() readonly contentChange = new EventEmitter<string>();
   @Output() readonly styleChange = new EventEmitter<Partial<StudioBlockStyle>>();
   @Output() readonly applyLibraryText = new EventEmitter<TextBlock>();

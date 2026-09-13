@@ -352,6 +352,8 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
                 [block]="propertiesBlock()"
                 [quotationId]="quotationId()"
                 [orderId]="orderId()"
+                [tokenDisplayMode]="tokenDisplayMode()"
+                (tokenDisplayModeChange)="tokenDisplayMode.set($event)"
                 (styleChange)="patchBlockStyle($event)"
                 (contentChange)="patchBlockContent($event)"
                 (titleChange)="patchBlockTitle($event)"
@@ -398,6 +400,8 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
               [sheetWidth]="sheetSize().width"
               [sheetHeight]="sheetSize().height"
               [readOnly]="false"
+              [tokenDisplayMode]="tokenDisplayMode()"
+              [substitutionBag]="editorSubstitutionBag()"
               (selected)="onSelect($event)"
               (layoutChanged)="changeLayout($event.id, $event.layout)"
               (layoutCommit)="onLayoutCommit()"
@@ -576,6 +580,12 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly counterparties = signal<Counterparty[]>([]);
   readonly quotations = signal<Quotation[]>([]);
   readonly orders = signal<Order[]>([]);
+  /**
+   * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — session-level (this editor tab only),
+   * not per-block and not persisted: reloading (F5) resets to the default
+   * «Токены», by design (ACCEPT #4).
+   */
+  readonly tokenDisplayMode = signal<'tokens' | 'values'>('tokens');
   readonly contextSaving = signal(false);
   readonly contextSaveError = signal<string | null>(null);
   readonly catalogSelections = signal<{ products: readonly string[]; modules: readonly string[]; parts: readonly string[]; materials: readonly string[] }>({ products: [], modules: [], parts: [], materials: [] });
@@ -700,6 +710,43 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const raw = this.document()?.context?.['orderId'];
     return typeof raw === 'string' ? raw : '';
   });
+  /**
+   * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — «Значения» display mode's source bag,
+   * per the TZ's own preference order: built entirely from context ALREADY
+   * loaded in this editor session (issuer org / counterparty anchors /
+   * quotation / order) — no new resolve API. Covers the typical
+   * `{{organization.*}}` / `{{counterparty.*}}` / `{{anchor.*}}` /
+   * `{{quotation.*}}` / `{{order.*}}` tokens the audit's own repro used;
+   * anything needing a deeper server-side cascade (e.g. order→quotation→
+   * counterparty fallback chains, or fields this editor never fetches, like
+   * `organization.logoUrl`) stays an unresolved chip — documented
+   * known_limitation, not silently wrong.
+   */
+  readonly editorSubstitutionBag = computed<Record<string, unknown>>(() => {
+    const bag: Record<string, unknown> = {};
+    const org = this.issuerOrgs().find((item) => item._id === this.issuerOrgId());
+    if (org) bag['organization'] = org;
+
+    const findCounterparty = (id: string) => (id ? this.counterparties().find((cp) => cp._id === id) : undefined);
+    const client = findCounterparty(this.counterpartyId());
+    if (client) bag['counterparty'] = client;
+
+    const anchor: Record<string, unknown> = {};
+    if (client) anchor['client'] = client;
+    const payer = findCounterparty(this.payerId());
+    if (payer) anchor['payer'] = payer;
+    const supplier = findCounterparty(this.supplierId());
+    if (supplier) anchor['supplier'] = supplier;
+    if (Object.keys(anchor).length > 0) bag['anchor'] = anchor;
+
+    const quotation = this.quotations().find((item) => item._id === this.quotationId());
+    if (quotation) bag['quotation'] = quotation;
+    const order = this.orders().find((item) => item._id === this.orderId());
+    if (order) bag['order'] = order;
+
+    return bag;
+  });
+
   readonly docTypeId = computed(() => {
     const raw = this.document()?.docTypeId;
     return typeof raw === 'string' ? raw : '';

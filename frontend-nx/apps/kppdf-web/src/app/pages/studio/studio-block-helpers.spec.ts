@@ -7,6 +7,9 @@ import {
   studioImageSettingsForUpdate,
   studioMergeBlockSettings,
   studioPreserveClientBlockSettings,
+  resolveStudioTokenValue,
+  renderStudioTokensAsValues,
+  studioTextDisplayHtml,
 } from './studio-block-helpers';
 
 function block(id: string, page = 1, zIndex = 1): StudioBlock {
@@ -145,5 +148,76 @@ describe('studioPreserveClientBlockSettings (TZ-NX-DOCSTUDIO-S46)', () => {
     const local = table({ settings: { dataSource: { type: 'manual' } } });
     const remote2 = table({ settings: {} });
     expect(studioPreserveClientBlockSettings(local, remote2)).toBe(remote2);
+  });
+});
+
+describe('resolveStudioTokenValue (TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP)', () => {
+  const bag = {
+    organization: { shortName: 'Ромашка', inn: '123' },
+    anchor: { client: { name: 'ООО Клиент' } },
+    items: ['A', 'B'],
+  };
+
+  it('walks a dotted path into the bag', () => {
+    expect(resolveStudioTokenValue(bag, 'organization.shortName')).toBe('Ромашка');
+    expect(resolveStudioTokenValue(bag, 'anchor.client.name')).toBe('ООО Клиент');
+  });
+
+  it('supports a numeric array index segment', () => {
+    expect(resolveStudioTokenValue(bag, 'items.0')).toBe('A');
+    expect(resolveStudioTokenValue(bag, 'items.9')).toBeNull();
+  });
+
+  it('returns null (not "") for an unresolved path, and coerces a real empty string correctly', () => {
+    expect(resolveStudioTokenValue(bag, 'organization.missing')).toBeNull();
+    expect(resolveStudioTokenValue(bag, 'nope.nope')).toBeNull();
+    expect(resolveStudioTokenValue({ x: '' }, 'x')).toBe('');
+  });
+});
+
+describe('renderStudioTokensAsValues (TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP)', () => {
+  const bag = { organization: { shortName: 'Ромашка' } };
+
+  it('substitutes a resolved token as plain escaped text — no chip styling', () => {
+    const html = renderStudioTokensAsValues('Изготовитель: {{organization.shortName}}', bag);
+    expect(html).toBe('Изготовитель: Ромашка');
+    expect(html).not.toContain('substitution-token');
+  });
+
+  it('keeps the exact chip markup for an unresolved token, not a bare "" or "—"', () => {
+    const html = renderStudioTokensAsValues('Клиент: {{counterparty.name}}', bag);
+    expect(html).toContain('data-substitution-token=""');
+    expect(html).toContain('data-token="{{counterparty.name}}"');
+    expect(html).toContain('class="substitution-token"');
+    expect(html).toContain('{{counterparty.name}}');
+  });
+
+  it('escapes HTML-significant characters in a resolved value (canvas renders via innerHTML)', () => {
+    const html = renderStudioTokensAsValues('{{organization.shortName}}', { organization: { shortName: '<b>x</b> & "y"' } });
+    expect(html).toBe('&lt;b&gt;x&lt;/b&gt; &amp; &quot;y&quot;');
+  });
+
+  it('returns plain text unchanged when it holds no tokens at all', () => {
+    expect(renderStudioTokensAsValues('Просто текст', bag)).toBe('Просто текст');
+  });
+
+  it('never touches the source string / has no write-path — pure function', () => {
+    const before = 'A {{organization.shortName}} B';
+    renderStudioTokensAsValues(before, bag);
+    expect(before).toBe('A {{organization.shortName}} B');
+  });
+});
+
+describe('studioTextDisplayHtml (TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP)', () => {
+  const bag = { organization: { shortName: 'Ромашка' } };
+
+  it('«tokens» mode chips every {{…}} occurrence (canvas previously showed raw text)', () => {
+    const html = studioTextDisplayHtml('{{organization.shortName}}', 'tokens', bag);
+    expect(html).toContain('class="substitution-token"');
+    expect(html).toContain('{{organization.shortName}}');
+  });
+
+  it('«values» mode substitutes from the bag instead', () => {
+    expect(studioTextDisplayHtml('{{organization.shortName}}', 'values', bag)).toBe('Ромашка');
   });
 });

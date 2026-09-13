@@ -1,4 +1,5 @@
 import type { StudioBlock } from '@kppdf/data-access';
+import { migratePlainTokensToNodes } from '@kppdf/ui/rich-text';
 
 export function studioImageUrl(block: StudioBlock): string | null {
   const url = block.settings?.['imageUrl'];
@@ -114,5 +115,72 @@ export function studioPreserveClientBlockSettings(
   }
   if (Object.keys(restored).length === 0) return remote;
   return { ...remote, settings: { ...remoteSettings, ...restored } };
+}
+
+const STUDIO_TOKEN_RE = /\{\{\s*([\w.]+)\s*\}\}/g;
+
+function escapeStudioTokenHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — dotted-path lookup into a flat
+ * substitution bag, mirroring backend `DocumentRenderService.renderHtml`'s
+ * inner `substitute()` walk (same `key.path` semantics, same array-index
+ * support) so a token that resolves in Preview/PDF resolves the same way
+ * here. Returns `null` for an unresolved path — distinct from `''`, a
+ * legitimately resolved blank value.
+ */
+export function resolveStudioTokenValue(bag: Record<string, unknown>, path: string): string | null {
+  const value = path.split('.').reduce<unknown>((acc, key) => {
+    if (acc == null) return undefined;
+    if (Array.isArray(acc)) {
+      const idx = Number.parseInt(key, 10);
+      return Number.isFinite(idx) ? acc[idx] : undefined;
+    }
+    if (typeof acc === 'object') return (acc as Record<string, unknown>)[key];
+    return undefined;
+  }, bag);
+  return value == null ? null : String(value);
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — «Значения» display mode: replaces each
+ * `{{token}}` with its resolved value as plain ink, no chip styling («как
+ * будет на бланке», per the TZ's own wording — not a second write-path,
+ * `block.content` itself is never touched). An unresolved token keeps the
+ * exact same chip markup `migratePlainTokensToNodes` would give it in
+ * «Токены» mode (chosen over a bare "—" placeholder) — a resolved token
+ * turning to plain ink next to an unresolved one still wearing its chip is
+ * itself the signal that it didn't resolve.
+ */
+export function renderStudioTokensAsValues(html: string, bag: Record<string, unknown>): string {
+  if (!html || !html.includes('{{')) return html;
+  return html.replace(STUDIO_TOKEN_RE, (match, path: string) => {
+    const value = resolveStudioTokenValue(bag, path);
+    if (value == null) {
+      return `<span data-substitution-token="" data-token="${match}" class="substitution-token" contenteditable="false">${match}</span>`;
+    }
+    return escapeStudioTokenHtml(value);
+  });
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — canvas text HTML for the active token
+ * display mode: «tokens» chips every `{{…}}` occurrence
+ * (`migratePlainTokensToNodes`, already used by the RTE dialog — the canvas
+ * itself never called it before this TZ, hence plain black `{{…}}` text);
+ * «values» substitutes from `bag` instead (see `renderStudioTokensAsValues`).
+ */
+export function studioTextDisplayHtml(
+  raw: string,
+  mode: 'tokens' | 'values',
+  bag: Record<string, unknown>,
+): string {
+  return mode === 'values' ? renderStudioTokensAsValues(raw, bag) : migratePlainTokensToNodes(raw);
 }
 

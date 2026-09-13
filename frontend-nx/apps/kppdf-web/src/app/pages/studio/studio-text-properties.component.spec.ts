@@ -114,3 +114,59 @@ describe('StudioTextPropertiesComponent — Поле ERP insert (TZ-NX-DOCSTUDIO
     expect(toast.error).toHaveBeenCalled();
   });
 });
+
+/**
+ * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — «Токены»/«Значения» segment, always
+ * visible at the top of the panel while a text block is selected. Session-
+ * level: this component just displays the parent's current mode and emits
+ * on click, it holds no state of its own.
+ */
+describe('StudioTextPropertiesComponent — Токены/Значения segment (TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP)', () => {
+  let fixture: ComponentFixture<StudioTextPropertiesComponent>;
+
+  const BLOCK: StudioBlock = { _id: 'b1', type: 'text', order: 0, content: '', isActive: true };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [StudioTextPropertiesComponent],
+      providers: [
+        { provide: PiTextBlockCategoriesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
+        { provide: PiTextBlocksService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
+        { provide: PiRegistryDataSourcesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
+        { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(StudioTextPropertiesComponent);
+    fixture.componentRef.setInput('block', BLOCK);
+    fixture.detectChanges();
+  });
+
+  it('is always visible for a selected text block, defaulting to «Токены» pressed', () => {
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test="studio-token-display-mode"]')).not.toBeNull();
+    const tokensBtn = host.querySelector('[data-test="studio-token-display-mode-tokens"]') as HTMLButtonElement;
+    const valuesBtn = host.querySelector('[data-test="studio-token-display-mode-values"]') as HTMLButtonElement;
+    expect(tokensBtn.getAttribute('aria-pressed')).toBe('true');
+    expect(valuesBtn.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('reflects the tokenDisplayMode input when set to «values»', () => {
+    fixture.componentRef.setInput('tokenDisplayMode', 'values');
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('[data-test="studio-token-display-mode-tokens"]')?.getAttribute('aria-pressed')).toBe('false');
+    expect(host.querySelector('[data-test="studio-token-display-mode-values"]')?.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('emits tokenDisplayModeChange on click, and does not toggle its own displayed state (parent-owned)', () => {
+    const emitted: ('tokens' | 'values')[] = [];
+    fixture.componentInstance.tokenDisplayModeChange.subscribe((v) => emitted.push(v));
+    const host: HTMLElement = fixture.nativeElement;
+
+    (host.querySelector('[data-test="studio-token-display-mode-values"]') as HTMLButtonElement).click();
+    expect(emitted).toEqual(['values']);
+    // Parent hasn't fed the new value back via the input yet — display stays as-is (no local state).
+    expect(host.querySelector('[data-test="studio-token-display-mode-tokens"]')?.getAttribute('aria-pressed')).toBe('true');
+  });
+});

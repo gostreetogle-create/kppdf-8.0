@@ -1,0 +1,206 @@
+=== ШАГ 1: Чипы токенов (default path) ===
+
+Root cause confirmed by reading, matching the audit exactly: S44 added CSS
+for `.substitution-token` (color/margin), but `studio-blocks-canvas.component.ts`'s
+`textHtml()` was a bare `bypassSecurityTrustHtml(raw)` — it never called
+`migratePlainTokensToNodes` (the function that wraps `{{…}}` in that span),
+so the class never existed in the DOM. The RTE dialog already called it
+(`pi-rich-text-editor.component.ts` line 418/445) — only the CANVAS view
+never did.
+
+Fix: `textHtml()` now calls the new `studioTextDisplayHtml(raw, mode, bag)`
+helper (`studio-block-helpers.ts`), which chips via the SAME
+`migratePlainTokensToNodes` the RTE already uses (re-exported from
+`@kppdf/ui/rich-text`'s barrel — was previously internal to
+`substitution-token.extension.ts`, not part of the public API surface) in
+`tokens` mode.
+
+Canvas CSS upgraded from color+margin only to the full chip look (mono
+font, padding, background, border, border-radius) — copied from the RTE's
+own `.substitution-token` style (`pi-rich-text-editor.component.ts`) so a
+token looks identical whether being edited or just viewed, per the TZ's
+"mono + фон/бордер + info" wording. Uses `em` for font-size (not RTE's
+fixed `11px`) since canvas text blocks have variable per-block font sizes.
+
+Confirmed via reading `studio-editor.page.ts`'s template that
+`pi-studio-blocks-canvas` only ever renders in the `@else` branch of
+`viewMode() === 'preview'` — Просмотр is a completely separate
+server-rendered `<iframe [srcdoc]>` fed by `documents.preview()`. The new
+canvas-only CSS therefore cannot leak into Просмотр/PDF by construction,
+not just by convention.
+
+=== ШАГ 2: Toggle in Свойства текста ===
+
+New segment `data-test="studio-token-display-mode"` (`Токены` |
+`Значения`) at the TOP of `studio-text-properties.component.ts`, always
+visible for a selected text block. State lives in `studio-editor.page.ts`
+as a plain session signal (`tokenDisplayMode`) — NOT per-block, NOT
+persisted to Mongo (resets to default `tokens` on F5, per ACCEPT #4).
+Threaded through the existing `StudioPropertiesPanelComponent` wrapper
+(pass-through `@Input`/`@Output`, no new logic there) down to
+`StudioTextPropertiesComponent`, and separately down to
+`StudioBlocksCanvasComponent` (canvas reads it directly as an `@Input`,
+does not go through the properties panel).
+
+=== ШАГ 3: «Значения» mode — display-only, no write-path ===
+
+New pure functions in `studio-block-helpers.ts`:
+  - `resolveStudioTokenValue(bag, path)` — dotted-path walk into a flat
+    bag, deliberately mirroring `DocumentRenderService.renderHtml`'s inner
+    `substitute()` regex/reduce walk exactly (same key.path semantics,
+    same array-index support) so a token that resolves in Preview/PDF
+    resolves the same way here. Returns `null` (not `''`) for an
+    unresolved path.
+  - `renderStudioTokensAsValues(html, bag)` — replaces each `{{token}}`
+    with its resolved value as plain escaped ink (TZ's own "не chip"
+    wording for resolved values); an UNRESOLVED token keeps the exact same
+    chip markup `migratePlainTokensToNodes` would give it — the chosen
+    option between "оставить chip или «—»" (documented here per the TZ's
+    "выбрать одно, задокументировать" instruction): a resolved token
+    turning to plain ink next to an unresolved one still wearing its chip
+    IS the signal that it didn't resolve, no separate "—" placeholder
+    needed.
+  - `studioTextDisplayHtml(raw, mode, bag)` — the single entry point
+    `textHtml()` calls; `tokens` -> `migratePlainTokensToNodes`, `values`
+    -> `renderStudioTokensAsValues`.
+
+Bag source, per the TZ's own preference order (Domain preflight): NOT a
+new backend resolve API. `editorSubstitutionBag` in `studio-editor.page.ts`
+is a `computed()` built ENTIRELY from context this editor session already
+loads (`issuerOrgs`/`issuerOrgId` -> `organization`; `counterparties`/
+`counterpartyId`/`payerId`/`supplierId` -> `counterparty` + `anchor.client|
+payer|supplier`; `quotations`/`quotationId` -> `quotation`;
+`orders`/`orderId` -> `order`) — covers exactly the token namespaces the
+audit's own repro used (`{{organization.shortName}}`). Deeper/rarer paths
+(server-side cascade fallbacks, fields this editor never fetches like
+`organization.logoUrl`) are an explicit, documented known_limitation, not
+silently wrong — they render as an unresolved chip.
+
+dblclick-to-edit (`openTextBlock` -> RTE dialog) needed ZERO code change to
+satisfy "always edits tokens (source), regardless of canvas mode" — the
+RTE is a structurally separate component with its own independent
+`migratePlainTokensToNodes` call on `block.content` (the raw source, never
+touched by the canvas's display-only substitution) — live-verified below.
+
+=== ШАГ 4: Insert + docs ===
+
+Insert ERP field / formula (`studio-text-properties.component.ts`'s
+existing `openDataFieldPicker`/`onFormulaPick`) needed no change — they
+already insert atomic `{{…}}` tokens into the RTE, which the canvas now
+correctly displays as chips (previously plain text) with zero code change
+on the insert side.
+
+`docs/pages/document-studio.page.md` updated: §2.1 table row + §2.2 new
+paragraph (root cause, mechanism, bag source + known_limitation, dblclick
+independence, Просмотр/PDF isolation) + §3.5 bullet for the new segment.
+
+=== Specs ===
+
+FE `studio-block-helpers.spec.ts` (+22 tests, was ~10 -> ~32... exact prior
+count not recorded, delta is +22 new describe blocks): `resolveStudioTokenValue`
+(dotted path, array index, null-vs-empty-string distinction),
+`renderStudioTokensAsValues` (resolved->plain text, unresolved->chip,
+HTML-escaping, no-tokens passthrough, purity/no-write-path),
+`studioTextDisplayHtml` (both modes).
+
+FE `studio-blocks-canvas.component.spec.ts` (+4 tests, was 14 -> 18):
+default chip rendering, values-mode substitution (no chip), values-mode
+unresolved-token chip fallback, mode-switch-back restores the chip without
+a document reload.
+
+FE `studio-text-properties.component.spec.ts` (+3 tests, was 2 -> 5):
+segment always visible + default-pressed state, reflects the
+`tokenDisplayMode` input, emits `tokenDisplayModeChange` on click without
+mutating its own displayed state (parent-owned, no local state).
+
+New FE `studio-editor-token-display.spec.ts` (+4 tests, matching the
+established one-file-per-concern split convention for this very large
+page's specs): default mode; `editorSubstitutionBag` shape matches the
+`organization`/`counterparty`/`anchor.{client,payer,supplier}`/
+`quotation`/`order` namespaces exactly; mode-signal toggling; empty bag
+when nothing is loaded/selected (no stray keys).
+
+No BE spec changes — this TZ touched zero backend files (the "тонкий
+resolve API" escape hatch in the TZ's own SIZE note was NOT needed; the
+already-loaded-context option covered every scenario the audit's repro and
+ACCEPT criteria required).
+
+=== Live verification (local dev, admin/admin123) ===
+
+Real browser (Playwright), one throwaway document with a text block
+`"Klient: {{counterparty.shortName}}"` and `context.counterpartyId` set to
+a real Counterparty ("ООО «Загородный Дом»", shortName "Загородный Дом"):
+  1. Default load: canvas `.substitution-token` chip count = 1, chip text
+     = the raw token — confirmed chips-by-default (ACCEPT #1).
+  2. Opened Свойства via the Слои panel's «Свойства» row-jump (canvas
+     click is unreliable — the Данные flyout overlaps it by default,
+     same finding as the PRICE-SUM TZ's live check). Segment control
+     present.
+  3. Clicked «Значения»: canvas text became "Klient: Загородный Дом" —
+     the REAL counterparty's shortName, resolved live — chip count = 0
+     (ACCEPT #2, plain ink not chip, confirmed exactly).
+  4. Double-clicked the block to open the RTE dialog: RTE content STILL
+     read "Klient: {{counterparty.shortName}}" (raw token) — confirmed
+     dblclick-to-edit is completely independent of canvas display mode,
+     with zero special-casing needed in the implementation.
+  5. Clicked back to «Токены»: canvas reverted to the chip (count = 1)
+     without a page reload — ACCEPT #3 confirmed.
+  Cleanup: `db.studio_documents.deleteOne` + `db.template_blocks.deleteMany`
+  via `docker exec kppdf-mongo mongosh` immediately after.
+
+An EARLIER attempt in this same session tried to use `{{organization.*}}`
+by PATCHing the throwaway doc's `organizationId` to a non-fallback
+`isOurCompany` org for the live repro — this immediately reproduced
+TZ-NX-DOCSTUDIO-ISSUER-SELECT's own documented known_limitation (403
+"belongs to another organization scope" self-lockout on the very next
+request), so that document was abandoned and deleted via direct Mongo
+before any further calls; the counterparty-anchor scenario above was used
+instead specifically BECAUSE it carries none of that scope-lockout risk
+(counterparty selection only touches `document.context`, never
+`document.organizationId`).
+
+Просмотр/PDF chip-isolation was NOT separately live-verified (no code
+change touches `document-render.service.ts`'s `substitute()`, which never
+wraps a resolved value in any span at all, chip or otherwise — confirmed
+by reading, not assumed) — a live PDF/Просмотр round-trip would only be
+re-confirming pre-existing, untouched behavior.
+
+=== Gates (verbatim summary) ===
+
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0 (one
+  interim compile error self-caught and fixed: a JSDoc comment inside the
+  canvas component's `styles: [\`...\`]` template-literal array contained
+  backticks around inline-code references, which prematurely terminated
+  the outer template literal — TS1005 "',' expected" with no useful
+  file/line beyond the array itself; rewrote as a plain `/* ... */` block
+  comment without backticks — a previously-logged project pitfall, applied
+  proactively rather than re-discovered by trial and error)
+FE jest studio-block-helpers.spec.ts -> 22/22 new-describe-blocks PASS
+  (whole file: was passing before, all prior tests unaffected)
+FE jest studio-blocks-canvas.component.spec.ts -> 18/18 PASS (was 14)
+FE jest studio-text-properties.component.spec.ts -> 5/5 PASS (was 2)
+FE jest studio-editor-token-display.spec.ts (new file) -> 4/4 PASS
+FE jest kppdf-web (full) -> 126 suites / 937 passed + 7 skipped (944
+  total) PASS (was 125 suites / 916 passed)
+FE jest paper-and-ink (lib, touched via the rich-text barrel export
+  addition) -> 35/35 suites, 363/363 tests PASS
+FE eslint (scoped: studio-blocks-canvas.component.ts/.spec.ts,
+  studio-block-helpers.ts/.spec.ts, studio-text-properties.component.ts/
+  .spec.ts, studio-properties-panel.component.ts, studio-editor.page.ts,
+  studio-editor-token-display.spec.ts, rich-text/index.ts) -> 0 errors,
+  30 warnings (all pre-existing-style `no-non-null-assertion`/one
+  pre-existing unused-var, none newly introduced by this TZ's added lines
+  — verified per-file against what existed before this session's edits)
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2)
+FE nx build kppdf-web -> exit 0, same 2 pre-existing unrelated warnings
+  only; Angular AOT template compilation validated every new binding name
+  (incl. the two new canvas inputs and the properties-panel pass-through)
+  with zero errors
+Live Playwright verification -> PASS: chips-by-default, Значения-mode
+  substitution with a real DB value, dblclick-always-tokens independence,
+  mode-switch-back without reload — all confirmed in an actual running
+  browser against the real dev stack; throwaway document + blocks deleted
+  via direct Mongo (both PATCH and DELETE go through the same
+  scope-checked studio-documents API, so cleanup used the same
+  container-exec path established in the PRICE-SUM TZ's own evidence)

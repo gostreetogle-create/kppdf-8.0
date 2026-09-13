@@ -159,7 +159,7 @@ S16 целевая IA, дополненная C3 и пересобранная P
 
 | Механизм | Где настраивается | Синтаксис | Когда подставляются данные |
 |----------|-------------------|-----------|----------------------------|
-| **Текстовые токены** | Свойства → текст → «Поле ERP» | `{{source.field}}`, напр. `{{counterparty.name}}` | **Просмотр / PDF / архив** (серверный рендер). В режиме **Редактор** на листе виден **сырой токен**. |
+| **Текстовые токены** | Свойства → текст → «Поле ERP» | `{{source.field}}`, напр. `{{counterparty.name}}` | **Просмотр / PDF / архив** (серверный рендер). В режиме **Редактор** на листе токен по умолчанию — **чип** (`TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP`, 2026-09-14), не сырой текст; переключатель «Значения» в Свойствах показывает подставленное превью тут же, без выхода в Просмотр. |
 | **Строки таблицы из ERP** | Свойства таблицы → селект «Источник строк» (`onTableSourceChange` → `putDataSet`) | dataSet `source.type`: `manual` \| `quotation-items` \| `order-items` \| `catalog-*` | **Редактор** (live rows сразу после выбора, S29) и **Просмотр / PDF**. Строки live-read до finalize, потом snapshot. |
 
 Каталог полей для текстовых токенов: `GET /api/registry/data-sources` → диалог «Постановочные данные» (`studio-data-field-picker-dialog`).
@@ -182,7 +182,11 @@ flowchart LR
 2. В текстовом блоке через **Поле ERP** вставить, например, `{{counterparty.name}}`.
 3. Переключить **Просмотр** (или PDF) — сервер подставляет значение из БД.
 
-**S8-1 DONE (2026-08-31):** `StudioOutputService.renderStudioDocument` перед рендером читает `doc.context` (counterpartyId/quotationId/orderId/contractId/contactPersonId/siteId) и строит substitution bag через `DocumentTemplateService.buildSubstitutionBag` (reuse cascade: order→quotation→counterparty и т.д.). Bag прокидывается в рендер через `StudioDocumentAggregate.data` (приоритет над buildDto-stub'ами). Каскад КП/заказ→клиент работает как в legacy. В **Редакторе** токен по-прежнему виден сырым — это норма.
+**S8-1 DONE (2026-08-31):** `StudioOutputService.renderStudioDocument` перед рендером читает `doc.context` (counterpartyId/quotationId/orderId/contractId/contactPersonId/siteId) и строит substitution bag через `DocumentTemplateService.buildSubstitutionBag` (reuse cascade: order→quotation→counterparty и т.д.). Bag прокидывается в рендер через `StudioDocumentAggregate.data` (приоритет над buildDto-stub'ами). Каскад КП/заказ→клиент работает как в legacy.
+
+**Токены-чипы на холсте + «Токены / Значения» (`TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP`, 2026-09-14):** S44 повесил CSS на `.substitution-token`, но `studio-blocks-canvas.component.ts`'s `textHtml()` никогда не оборачивал `{{…}}` в этот класс (только RTE-диалог это делал через свой собственный `migratePlainTokensToNodes`) — на холсте токен читался обычным чёрным текстом. Теперь `textHtml()` тоже вызывает `migratePlainTokensToNodes` по умолчанию (chip: моно-шрифт + фон + бордер + info-цвет, идентично RTE), и в Свойствах текста (всегда видимый сегмент `data-test="studio-token-display-mode"`, default **Токены**) есть переключатель **Значения** — холст показывает подставленный текст обычным чернилами («как будет на бланке»), не трогая `block.content` и не открывая второй write-path. Режим **сессионный** (сигнал в `studio-editor.page.ts`, не per-block, не в Mongo) — все текстовые блоки переключаются разом; F5 сбрасывает на дефолт «Токены».
+
+Источник bag для «Значения» — **не** новый resolve API, а то, что редактор уже загрузил в этой сессии (issuer org / counterparty anchors / КП / заказ, `editorSubstitutionBag` в `studio-editor.page.ts`) — покрывает типовые `{{organization.*}}` / `{{counterparty.*}}` / `{{anchor.*}}` / `{{quotation.*}}` / `{{order.*}}`. **Known limitation:** более глубокие/редкие пути (например, серверный fallback-каскад заказ→КП→клиент, или поля вроде `organization.logoUrl`, которых нет во FE-типе `Organization`) в «Значения» не резолвятся — токен остаётся чипом (нерезолвленный токен **сохраняет вид чипа**, не «—»; резолвленный — обычный текст без чипа, это и есть визуальный сигнал «не подставилось»). Дабл-клик по блоку всегда открывает RTE с **токенами** (source), независимо от текущего режима холста — RTE не подключён к этому переключателю, редактирует raw content как раньше. Просмотр/PDF рендерятся полностью на сервере (`document-render.service.ts`) и никогда не видели chip-CSS — этот TZ его не касался.
 
 **Исполнитель (наша фирма):** `document.organizationId` — **выбирается select'ом** в «Данные» → «Ещё» (TZ-NX-DOCSTUDIO-ISSUER-SELECT, 2026-09-13; ранее — read-only имя из JWT). Options = только `Organization.isOurCompany === true` (не полный список организаций — там же лежат поставщики-контрагенты без этого флага). Смена — прямой PATCH `organizationId` с revision-gate (та же visibility-политика, что у `OrganizationService`: unscoped/admin может выбрать любую org, bound-пользователь — только свою, иначе 404). Select disabled, если кандидат один (или ноль) — честно, без притворного multi-choice. Токены `{{organization.*}}` подставляются из того же bag. Карточки/реквизиты фирм — Реестры → Организации (там же дискаверится живой TOC-пункт «Наши организации» в разделе Админ, `admin-group-chips.ts`, а не мёртвый пункт `nav-categories.ts`/`/organizations` — тот массив нигде не рендерится как список ссылок).
 
@@ -293,9 +297,10 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 
 ### 3.5 Свойства (текст)
 
+- **Токены / Значения** (верх панели, всегда видно, `TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP`, 2026-09-14): сессионный переключатель отображения холста — default «Токены» (чипы); «Значения» — подставленное превью «как будет на бланке», см. §2.2.
 - Rich-text (TipTap), шрифт/размер/цвет/выравнивание на уровне блока (`TemplateBlock.style`).
 - Библиотека: pick/save → реестр «Тексты».
-- **Поле ERP:** вставка токена (см. §2).
+- **Поле ERP:** вставка токена (см. §2). RTE всегда редактирует токен-source, независимо от режима холста выше.
 
 ### 3.6 Свойства (таблица)
 
