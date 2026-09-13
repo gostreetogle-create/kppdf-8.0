@@ -27,7 +27,7 @@ status: **IN_WORK_WAVE2**
 
 | # | TZ | Status |
 |---|-----|--------|
-| 2.1 | `tasks/_archive/2026-09/TZ-NX-MODULE-LIST-POPULATE-PHOTOS.done.md` | DONE (SHA backfill pending) |
+| 2.1 | `tasks/_archive/2026-09/TZ-NX-MODULE-LIST-POPULATE-PHOTOS.done.md` | DONE (`31edb081`) |
 | 2.2 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-CATEGORY-DUPLICATE-SLUG-409.md` | CLAIMED |
 | 2.3 | `tasks/_ready/2026-09-13-studio-ops/TZ-NX-SORTORDER-EMPTY-MIN.md` | PENDING |
 | 2.4 | `tasks/_ready/TZ-NX-SUPPLY-TASK-UNCONFIRM.md` | PENDING |
@@ -54,6 +54,6 @@ status: **IN_WORK_WAVE2**
 2026-09-13T18:00:00Z | WAVE1 | DONE | 1/1 TZ DONE — WAVE2 (MODULE-LIST-PHOTOS -> CATEGORY-SLUG-409 -> SORTORDER-EMPTY-MIN -> SUPPLY-TASK-UNCONFIRM -> DOCSTUDIO-ISSUER-SELECT) NOT started, per prompt instruction — see final report to PO
 2026-09-13T19:00:00Z | WAVE2 | started | HEAD=43acfbf3
 2026-09-13T19:00:00Z | 2.1 MODULE-LIST-POPULATE-PHOTOS | CLAIMED
-2026-09-13T19:35:00Z | 2.1 MODULE-LIST-POPULATE-PHOTOS | DONE | commit=(backfill pending) | findAll now populates photoIds/mainPhotoId + blankMissingUploadUrls (reused WAVE3.1 helper); live: negative path 0 broken/0x404 on photo-less dataset, positive path temporary real-photo PATCH renders correctly then reverted; findById left untouched (out of scope, used for mutate-then-save)
+2026-09-13T19:35:00Z | 2.1 MODULE-LIST-POPULATE-PHOTOS | DONE | commit=31edb081 | findAll now populates photoIds/mainPhotoId + blankMissingUploadUrls (reused WAVE3.1 helper); live: negative path 0 broken/0x404 on photo-less dataset, positive path temporary real-photo PATCH renders correctly then reverted; findById left untouched (out of scope, used for mutate-then-save)
 2026-09-13T19:35:00Z | 2.2 CATEGORY-DUPLICATE-SLUG-409 | CLAIMED
 ```
