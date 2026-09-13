@@ -29,7 +29,7 @@ status: **IN_WORK_WAVE2**
 |---|-----|--------|
 | 2.1 | `tasks/_archive/2026-09/TZ-NX-MODULE-LIST-POPULATE-PHOTOS.done.md` | DONE (`31edb081`) |
 | 2.2 | `tasks/_archive/2026-09/TZ-NX-CATEGORY-DUPLICATE-SLUG-409.done.md` | DONE (`e2c40bb8`) |
-| 2.3 | `tasks/_archive/2026-09/TZ-NX-SORTORDER-EMPTY-MIN.done.md` | DONE (SHA backfill pending) |
+| 2.3 | `tasks/_archive/2026-09/TZ-NX-SORTORDER-EMPTY-MIN.done.md` | DONE (`15a1febb`) |
 | 2.4 | `tasks/_ready/TZ-NX-SUPPLY-TASK-UNCONFIRM.md` | CLAIMED |
 | 2.5 | `tasks/_ready/TZ-NX-DOCSTUDIO-ISSUER-SELECT.md` | PENDING |
 
@@ -58,6 +58,6 @@ status: **IN_WORK_WAVE2**
 2026-09-13T19:35:00Z | 2.2 CATEGORY-DUPLICATE-SLUG-409 | CLAIMED
 2026-09-13T20:00:00Z | 2.2 CATEGORY-DUPLICATE-SLUG-409 | DONE | commit=e2c40bb8 | create/update now catch E11000 -> ConflictException 409 with a distinct message for both unique indexes ({type,slug} and standalone skuPrefix, the latter not in the TZ's own repro but same bug); live curl confirmed both collisions 409 not 500, test category cleaned up
 2026-09-13T20:00:00Z | 2.3 SORTORDER-EMPTY-MIN | CLAIMED
-2026-09-13T20:35:00Z | 2.3 SORTORDER-EMPTY-MIN | DONE | commit=(backfill pending) | live evidence: POST /table-templates sortOrder:"" -> 400 exact PO message; fixed shared doc-studio-payloads.ts (omits empty/non-finite sortOrder, closes table-template+text-block at once) + BE Transform belt on CreateTableTemplateDto; live re-verify 400->201, sortOrder omitted, -1 still rejected; other DTOs from preflight list not audited, left as backlog per known_limitation
+2026-09-13T20:35:00Z | 2.3 SORTORDER-EMPTY-MIN | DONE | commit=15a1febb | live evidence: POST /table-templates sortOrder:"" -> 400 exact PO message; fixed shared doc-studio-payloads.ts (omits empty/non-finite sortOrder, closes table-template+text-block at once) + BE Transform belt on CreateTableTemplateDto; live re-verify 400->201, sortOrder omitted, -1 still rejected; other DTOs from preflight list not audited, left as backlog per known_limitation
 2026-09-13T20:35:00Z | 2.4 SUPPLY-TASK-UNCONFIRM | CLAIMED
 ```
