@@ -1,0 +1,112 @@
+=== ШАГ 0: Live evidence (mandatory, not guessed) ===
+
+Local dev, admin/admin123, `/registries/table-templates` -> Create.
+Filled "Название", cleared "Порядок" (input started at "0", cleared to "").
+Added one column (key/label required). Clicked "Сохранить".
+
+Network (before fix):
+  POST /api/table-templates
+  request body: {"name":"Evidence test sortOrder","category":"custom",
+    "sortOrder":"","columns":[{"key":"k1","label":"Label 1","type":"text",
+    "width":100,"align":"left"}]}
+  status: 400
+  response body message: "sortOrder: Значение слишком мало; sortOrder:
+    Должно быть числом"
+  visible alert (same text) shown to the operator.
+
+Confirms exactly the TZ's own domain-preflight hypothesis: `app-pi-input`'s
+CVA writes the native `<input>`'s `.value` (always a string) back into the
+FormControl — a cleared "Порядок" is the literal string `''`, sent as-is in
+JSON since `tableTemplatePayload()` never wrapped it in `Number()`.
+`CreateTableTemplateDto.sortOrder` (`@IsOptional() @IsNumber() @Min(0)`, no
+`@Type`) validates the raw string as-is: `@IsOptional()` only skips
+null/undefined, not `''`, so both `@IsNumber()` and `@Min(0)` fail against a
+string value, producing both RU messages together.
+
+Same exact field/pattern (`app-pi-input type="number" formControlName="sortOrder"`,
+`sortOrder: [0]`, no Number() wrap) also exists in
+`text-block-form-dialog.component.ts`, sharing the same
+`doc-studio-payloads.ts` builder file — `CreateTextBlockDto.sortOrder` has
+`@IsOptional() @IsNumber()` (no `@Min`), so it would 400 with just "Должно
+быть числом" on an empty Порядок, not the exact PO-reported message, but
+the same root defect. Fixed for free by fixing the shared builder (see
+known_limitation below for what was NOT touched).
+
+=== Fix ===
+
+ШАГ 1 (FE, primary): `doc-studio-payloads.ts` — new `finiteSortOrderOrUndefined()`
+helper; both `textBlockPayload()` and `tableTemplatePayload()` now pass
+`sortOrder` through it instead of forwarding the raw FormGroup value.
+`''`/`null`/`undefined`/non-finite -> omitted from the payload (not sent,
+`JSON.stringify` drops `undefined` properties, same as the existing
+`description`/`dataSource` omit-when-empty pattern in the same functions).
+A numeric string (e.g. from a differently-behaving CVA) is coerced via
+`Number()` rather than blindly omitted, so a real value still gets through.
+
+ШАГ 2 (BE belt): `create-table-template.dto.ts` — `sortOrder` gains
+`@Transform(emptyOrNanToUndefined)` before its existing `@IsOptional()
+@IsNumber() @Min(0)`, normalizing `''`/`null`/`NaN` to `undefined` so
+`@IsOptional()` actually takes effect for any client that still sends the
+raw empty value. `UpdateTableTemplateDto extends PartialType(CreateTableTemplateDto)`,
+so the same behavior applies to PATCH without touching that file.
+`CreateTextBlockDto` was NOT given the same `@Transform` — it has no
+`@Min`, so the FE fix alone (which the shared builder file already
+provides) closes its instance of the bug without needing a matching BE
+belt; adding one anyway would be untested scope beyond what ШАГ 0
+reproduced.
+
+=== Specs ===
+
+FE `doc-studio-payloads.spec.ts` (+5 tests): empty string -> omitted (both
+payload builders); explicit 0 and 5 preserved; a non-numeric string ('abc')
+-> omitted (not sent as NaN); a numeric string ('3') -> coerced to the real
+number 3.
+
+BE `create-table-template.dto.spec.ts` (new file, 5 tests): empty string ->
+no validation error, `dto.sortOrder` is `undefined`; omitted field -> valid;
+explicit 0 -> valid, preserved; `-1` -> still rejected (Min(0) not
+weakened); `'abc'` -> still rejected (non-numeric, non-empty is a real
+error, not silently accepted).
+
+=== Live re-verification after the fix (exact same repro steps) ===
+
+  POST /api/table-templates
+  request body: {"name":"Evidence test sortOrder","category":"custom",
+    "columns":[{"key":"k1","label":"Label 1","type":"text","width":100,
+    "align":"left"}]}   <- sortOrder key absent entirely
+  status: 201
+  response body: sortOrder:0 (schema default applied), entity created
+    cleanly, no visible alert.
+
+Test table-template created during verification
+(`6aa6c6fe3cf4bf4fe089d32d`) deleted immediately after — no leftover data.
+
+=== known_limitation (per TZ, not expanded) ===
+
+Only `table-template`'s form/DTO pair was the one ШАГ 0 actually
+reproduced and is fully closed (FE + BE belt + specs). `text-block`'s
+identical FE pattern is fixed as a side effect of the shared payload
+builder (same file, same function family, zero extra risk), but its DTO
+did not get a matching `@Transform` since it has no `@Min` to misfire —
+not a gap, just nothing to add there. Other DTOs the TZ's own preflight
+named as *possible* additional instances (unit, role, document-table-type,
+quotation lines, composition-line) were **not** audited or touched — no
+live evidence was gathered for any of them in this session, and the TZ's
+own known_limitation explicitly permits closing "1–2 горячих формы" and
+leaving the rest as a backlog note rather than a blind global sweep.
+
+=== Gates (verbatim summary) ===
+
+BE tsc -p tsconfig.build.json --noEmit -> exit 0
+BE jest create-table-template.dto -> 5/5 PASS (new file)
+BE jest (full) -> 136 suites / 1353 tests PASS (was 1348, +5 new)
+BE eslint (scoped: create-table-template.dto.ts/.spec.ts) -> 0 problems
+FE tsc -p apps/kppdf-web/tsconfig.app.json --noEmit -> exit 0
+FE jest doc-studio-payloads.spec.ts -> 8/8 PASS (was 3, +5 new)
+FE jest (full) -> 125 suites / 897 passed + 7 skipped (904 total) PASS (was 899)
+FE eslint (scoped: doc-studio-payloads.ts/.spec.ts) -> 0 problems
+pnpm architecture:check (repo root) -> PASS (1487 files; baseline 17,
+  resolved since baseline: 2)
+FE nx build kppdf-web (last) -> exit 0, same pre-existing unrelated warnings
+Live curl/Playwright re-verification -> PASS (400 -> 201, sortOrder omitted
+  from request, schema default 0 applied, no visible alert)

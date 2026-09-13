@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -16,6 +16,20 @@ import {
   TABLE_TEMPLATE_CATEGORIES,
   type TableTemplateCategory,
 } from '../table-template.schema';
+
+/**
+ * TZ-NX-SORTORDER-EMPTY-MIN belt-and-braces — a well-behaved client now omits
+ * `sortOrder` entirely when its "Порядок" field is empty, but this normalizes
+ * `''`/`null`/`NaN` to `undefined` regardless, so `@IsOptional()` actually
+ * skips validation for any client that still sends the raw empty value
+ * instead of raising the confusing "Значение слишком мало"/"Должно быть
+ * числом" pair for what is really just an unset optional field.
+ */
+const emptyOrNanToUndefined = ({ value }: { value: unknown }): unknown => {
+  if (value === '' || value === null) return undefined;
+  if (typeof value === 'number' && Number.isNaN(value)) return undefined;
+  return value;
+};
 
 /**
  * TZ-86 Phase A.2 — TableColumnDto extended.
@@ -50,7 +64,7 @@ export class CreateTableTemplateDto {
 
   @IsOptional() @IsIn(TABLE_TEMPLATE_CATEGORIES) category?: TableTemplateCategory;
 
-  @IsOptional() @IsNumber() @Min(0) sortOrder?: number;
+  @IsOptional() @Transform(emptyOrNanToUndefined) @IsNumber() @Min(0) sortOrder?: number;
 
   /**
    * Sample rows for the preview endpoint. Each row is `unknown[]` aligned
