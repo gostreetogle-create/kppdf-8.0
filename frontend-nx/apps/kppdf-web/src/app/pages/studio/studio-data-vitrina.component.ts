@@ -22,15 +22,9 @@ import {
 } from '../registries/data/material-registry-dialog-host';
 import type { MaterialRegistryDialogConfig } from '../registries/data/material-registry-actions';
 import type { RegistryActionContext } from '../registries/model/registry.types';
+import type { StudioShowcaseKind, StudioCatalogSelections } from '@kppdf/features/doc-studio';
 
-export type StudioShowcaseKind = 'products' | 'modules' | 'parts' | 'materials';
-
-export interface StudioCatalogSelections {
-  products: readonly string[];
-  modules: readonly string[];
-  parts: readonly string[];
-  materials: readonly string[];
-}
+export type { StudioShowcaseKind, StudioCatalogSelections };
 
 const EMPTY_SELECTIONS: StudioCatalogSelections = { products: [], modules: [], parts: [], materials: [] };
 

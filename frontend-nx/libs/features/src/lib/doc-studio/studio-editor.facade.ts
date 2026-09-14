@@ -29,11 +29,7 @@ import {
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { extractErrorMessage, type SilentResult } from '@kppdf/util-http';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
-import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
-import type { StudioDataCategory, StudioDataPanelCategoryJump } from './studio-data-panel.component';
-import type { StudioCatalogSelections, StudioShowcaseKind } from './studio-data-vitrina.component';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
 import {
   StudioTextLibraryPickerDialogComponent,
   type StudioTextLibraryPickResult,
@@ -43,7 +39,7 @@ import {
   type StudioRenameDocumentResult,
   StudioSaveAsTemplateDialogComponent,
   type StudioSaveAsTemplateResult,
-} from '@kppdf/features/doc-studio';
+} from './ui';
 import {
   onStudioSectionClick,
   studioPanelIsTable,
@@ -75,7 +71,7 @@ import {
   buildTableSettingsFromTemplate,
   type StudioTableRowSource,
   studioTextBlockSlug,
-} from '@kppdf/features/doc-studio';
+} from './util';
 
 /** Mirrors backend LIVE_HYDRATABLE_SOURCE_TYPES (studio-document.service.ts). */
 const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
@@ -86,6 +82,45 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
   'catalog-parts',
   'catalog-materials',
 ]);
+
+/**
+ * TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES (Phase 4) — relocated here from
+ * `studio-data-panel.component.ts` (still in `apps/kppdf-web` — Phase 3 kept
+ * it there, it composes the also-app-resident `studio-data-vitrina`, which
+ * itself pulls the `registries` feature — a lib can't import an app file).
+ * `studio-data-panel.component.ts` now imports both back from
+ * `@kppdf/features/doc-studio` — same shape, single definition.
+ */
+export type StudioDataCategory = 'products' | 'whom' | 'links' | 'more';
+
+/**
+ * TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — a command to jump the panel to a
+ * given TOC category from outside (the «Выбрано» buffer's «Изменить»
+ * button, via the host editor). `nonce` guarantees the effect below re-fires
+ * even when the operator jumps to the *same* category twice in a row (e.g.
+ * Client then Payer, both `whom`) — a plain `category` value would compare
+ * equal to Angular's input change detection and silently no-op the second
+ * jump.
+ */
+export interface StudioDataPanelCategoryJump {
+  category: StudioDataCategory;
+  nonce: number;
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES (Phase 4) — relocated here from
+ * `studio-data-vitrina.component.ts` (same reason as `StudioDataCategory`
+ * above — that component stays in app, imports both back from
+ * `@kppdf/features/doc-studio`).
+ */
+export type StudioShowcaseKind = 'products' | 'modules' | 'parts' | 'materials';
+
+export interface StudioCatalogSelections {
+  products: readonly string[];
+  modules: readonly string[];
+  parts: readonly string[];
+  materials: readonly string[];
+}
 
 /** RU labels for Insert/toast messages, keyed by vitrina kind (mirrors StudioDataVitrinaComponent tabs). */
 const STUDIO_CATALOG_KIND_LABELS: Record<StudioShowcaseKind, string> = {
@@ -1786,35 +1821,31 @@ export class StudioEditorFacade implements OnDestroy {
     });
   }
 
-  openSaveTableTemplateDialog(): void {
+  /**
+   * TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES (Phase 4) — the facade lives in
+   * `libs/features` now and must not import `apps/kppdf-web/**`
+   * (`TableTemplateFormDialogComponent` is a shared registry dialog under
+   * `app/doc-studio/dialogs/`, out of this wave's move scope). The actual
+   * `PiDialogService.open(...)` call moved to the page
+   * (`openSaveTableTemplateDialog()`); this method keeps every byte of the
+   * original prefill-payload logic (`buildTableTemplatePayloadFromBlock` +
+   * the early-return guards), just split into "what to prefill" (here) vs.
+   * "what to do with the result" (`applySavedTableTemplate` below).
+   */
+  buildSaveTableTemplateDraft(): ReturnType<typeof buildTableTemplatePayloadFromBlock> | null {
     const block = this.propertiesBlock();
-    if (!block || block.type !== 'table' || block.locked) return;
-    const draft = buildTableTemplatePayloadFromBlock(block, block.title?.trim() || 'Таблица');
-    const ref = this.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, {
-      data: {
-        mode: 'create',
-        template: {
-          _id: '',
-          name: draft.name,
-          sortOrder: draft.sortOrder,
-          columns: draft.columns,
-          sampleRows: draft.sampleRows,
-          isActive: true,
-        },
-        initialSampleRows: draft.sampleRows,
-      },
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (value) => {
-      if (value) {
-        this.toast.success(`Вид таблицы «${value.name}» сохранён`);
-        this.patchTableSettings({
-          tableTemplateId: value._id,
-          tableTemplateName: value.name,
-          tableTemplateColumns: value.columns,
-          tableTemplateSampleRows: draft.sampleRows.map((row) => row.map((c) => String(c ?? ''))),
-        });
-      }
+    if (!block || block.type !== 'table' || block.locked) return null;
+    return buildTableTemplatePayloadFromBlock(block, block.title?.trim() || 'Таблица');
+  }
+
+  /** Post-dialog-close half of the save-table-template flow — see `buildSaveTableTemplateDraft` above. */
+  applySavedTableTemplate(value: TableTemplate, draftSampleRows: unknown[][]): void {
+    this.toast.success(`Вид таблицы «${value.name}» сохранён`);
+    this.patchTableSettings({
+      tableTemplateId: value._id,
+      tableTemplateName: value.name,
+      tableTemplateColumns: value.columns,
+      tableTemplateSampleRows: draftSampleRows.map((row) => row.map((c) => String(c ?? ''))),
     });
   }
 
@@ -1828,34 +1859,24 @@ export class StudioEditorFacade implements OnDestroy {
     this.toast.success(`Текст «${textBlock.name}» вставлен`);
   }
 
-  openSaveTextBlockDialog(): void {
+  /**
+   * TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES (Phase 4) — same split as
+   * `buildSaveTableTemplateDraft` above: `TextBlockFormDialogComponent` is
+   * an app-only shared registry dialog, so the actual `dialog.open(...)`
+   * moved to the page (`openSaveTextBlockDialog()`). The prefill payload
+   * (including the TZ-NX-TEXT-BLOCK-CATEGORY-INLINE-CREATE `tags: []` fix
+   * below) is unchanged.
+   */
+  buildSaveTextBlockDraft(): { name: string; slug: string; content: string } | null {
     const block = this.propertiesBlock();
-    if (!block || block.type !== 'text' || block.locked) return;
+    if (!block || block.type !== 'text' || block.locked) return null;
     const defaultName = block.title?.trim() || 'Текст';
-    const ref = this.dialog.open<TextBlock | null | undefined>(TextBlockFormDialogComponent, {
-      data: {
-        mode: 'create',
-        textBlock: {
-          _id: '',
-          name: defaultName,
-          slug: studioTextBlockSlug(defaultName),
-          content: block.content ?? '',
-          // TZ-NX-TEXT-BLOCK-CATEGORY-INLINE-CREATE — found live: this
-          // prefill object omitted `tags`, and TextBlockFormDialogComponent's
-          // constructor unconditionally does `row.tags.join(', ')`, crashing
-          // the whole page on every "Сохранить в библиотеку текстов" click.
-          tags: [],
-          sortOrder: 0,
-          isActive: true,
-        },
-      },
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (value) => {
-      if (value) {
-        this.toast.success(`Текст «${value.name}» сохранён в библиотеку`);
-      }
-    });
+    return { name: defaultName, slug: studioTextBlockSlug(defaultName), content: block.content ?? '' };
+  }
+
+  /** Post-dialog-close half of the save-text-block flow — see `buildSaveTextBlockDraft` above. */
+  applySavedTextBlock(value: TextBlock): void {
+    this.toast.success(`Текст «${value.name}» сохранён в библиотеку`);
   }
 
   removeCatalogChip(kind: string): void {

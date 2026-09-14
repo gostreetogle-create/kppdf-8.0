@@ -2,8 +2,10 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
+  Injector,
   OnDestroy,
   computed,
   effect,
@@ -34,22 +36,27 @@ import type {
   StudioBlockLayout,
   StudioBlockStyle,
   QuotationStatus,
+  TableTemplate,
   TextBlock,
 } from '@kppdf/data-access';
+import { PiDialogService } from '@kppdf/ui/dialog';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
-import { StudioEditorFacade } from './studio-editor.facade';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
+import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
 import type { StudioShowcaseKind } from './studio-data-vitrina.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
 import {
+  StudioEditorFacade,
   StudioBlocksCanvasComponent,
   StudioPagesPanelComponent,
   StudioElementsPanelComponent,
   StudioLayersPanelComponent,
   StudioTemplatePanelComponent,
   StudioWorkspaceShellComponent,
+  type StudioTableRowSource,
 } from '@kppdf/features/doc-studio';
-import type { StudioTableRowSource } from '@kppdf/features/doc-studio';
 
 const STUDIO_TOOL_OWNER = 'studio-editor';
 
@@ -415,6 +422,10 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
 export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly facade = inject(StudioEditorFacade);
   private readonly shellTools = inject(ShellToolRailService);
+  /** Only for the two shared registry dialogs the facade can no longer open itself — see `openSaveTableTemplateDialog`/`openSaveTextBlockDialog`. */
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private readonly sheetHostRef = viewChild<ElementRef<HTMLElement>>('sheetHost');
   private resizeObserver?: ResizeObserver;
   private readonly onStudioBeforeUnload = (event: BeforeUnloadEvent): void => {
@@ -681,9 +692,63 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   patchTableSettings(patch: Record<string, unknown>): void { this.facade.patchTableSettings(patch); }
   patchTableDisabledRows(indices: number[]): void { this.facade.patchTableDisabledRows(indices); }
   onLiveTableQtyChange(event: { rowIndex: number; value: string }): void { this.facade.onLiveTableQtyChange(event); }
-  openSaveTableTemplateDialog(): void { this.facade.openSaveTableTemplateDialog(); }
+  /**
+   * TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES (Phase 4) — `TableTemplateFormDialogComponent`
+   * is a shared registry dialog under `app/doc-studio/dialogs/`; the facade
+   * (now in `libs/features`) can't import it. Page opens the dialog and
+   * hands the result to the facade's `applySavedTableTemplate` — the
+   * facade still owns 100% of the prefill (`buildSaveTableTemplateDraft`)
+   * and save logic, only the `PiDialogService.open(...)` call itself moved.
+   */
+  openSaveTableTemplateDialog(): void {
+    const draft = this.facade.buildSaveTableTemplateDraft();
+    if (!draft) return;
+    const ref = this.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, {
+      data: {
+        mode: 'create',
+        template: {
+          _id: '',
+          name: draft.name,
+          sortOrder: draft.sortOrder,
+          columns: draft.columns,
+          sampleRows: draft.sampleRows,
+          isActive: true,
+        },
+        initialSampleRows: draft.sampleRows,
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (value) => {
+      if (value) this.facade.applySavedTableTemplate(value, draft.sampleRows);
+    });
+  }
   applyLibraryText(textBlock: TextBlock): void { this.facade.applyLibraryText(textBlock); }
-  openSaveTextBlockDialog(): void { this.facade.openSaveTextBlockDialog(); }
+  /** Same split as `openSaveTableTemplateDialog` above — `TextBlockFormDialogComponent` is also app-only. */
+  openSaveTextBlockDialog(): void {
+    const draft = this.facade.buildSaveTextBlockDraft();
+    if (!draft) return;
+    const ref = this.dialog.open<TextBlock | null | undefined>(TextBlockFormDialogComponent, {
+      data: {
+        mode: 'create',
+        textBlock: {
+          _id: '',
+          name: draft.name,
+          slug: draft.slug,
+          content: draft.content,
+          // TZ-NX-TEXT-BLOCK-CATEGORY-INLINE-CREATE — prefill must include
+          // `tags`, or TextBlockFormDialogComponent's constructor crashes
+          // on `row.tags.join(', ')`.
+          tags: [],
+          sortOrder: 0,
+          isActive: true,
+        },
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (value) => {
+      if (value) this.facade.applySavedTextBlock(value);
+    });
+  }
   removeCatalogChip(kind: string): void { this.facade.removeCatalogChip(kind); }
   onCatalogSelectionChange(change: { kind: StudioShowcaseKind; ids: readonly string[] }): void { this.facade.onCatalogSelectionChange(change); }
   onCounterpartyChange(counterpartyId: string): void { this.facade.onCounterpartyChange(counterpartyId); }

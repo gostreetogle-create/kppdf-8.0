@@ -3,24 +3,12 @@ import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { SelectComponent, SelectOptionComponent } from '@kppdf/ui/select';
 import type { Counterparty, Order, Organization, Quotation, QuotationStatus } from '@kppdf/data-access';
 import { StudioDataVitrinaComponent, type StudioCatalogSelections, type StudioShowcaseKind } from './studio-data-vitrina.component';
+import type { StudioDataCategory, StudioDataPanelCategoryJump } from '@kppdf/features/doc-studio';
 
-/** TOC categories inside the wide «Данные» panel (TZ-NX-DOCSTUDIO-D50). */
-export type StudioDataCategory = 'products' | 'whom' | 'links' | 'more';
+export type { StudioDataCategory, StudioDataPanelCategoryJump };
+
+/** TOC categories inside the wide «Данные» панель (TZ-NX-DOCSTUDIO-D50). */
 export type StudioDataPanelMode = 'data' | 'selected';
-
-/**
- * TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — a command to jump the panel to a
- * given TOC category from outside (the «Выбрано» buffer's «Изменить»
- * button, via the host editor). `nonce` guarantees the effect below re-fires
- * even when the operator jumps to the *same* category twice in a row (e.g.
- * Client then Payer, both `whom`) — a plain `category` value would compare
- * equal to Angular's input change detection and silently no-op the second
- * jump.
- */
-export interface StudioDataPanelCategoryJump {
-  category: StudioDataCategory;
-  nonce: number;
-}
 
 const DATA_CATEGORIES: readonly { key: StudioDataCategory; label: string }[] = [
   { key: 'products', label: 'Товары' },
