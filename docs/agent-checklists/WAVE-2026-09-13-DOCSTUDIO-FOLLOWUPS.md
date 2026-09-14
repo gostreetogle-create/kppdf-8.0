@@ -34,4 +34,4 @@ status: **STARTED**
 | 2026-09-14T07:08+03 | PO запросил промпт волны; Claude READY |
 | 2026-09-14 | Claude wave STARTED; baseline `nx build kppdf-web` green; current = 1 (PREVIEW-UPLOADS-INLINE) |
 | 2026-09-14 | #1 PREVIEW-UPLOADS-INLINE DONE — `f3ac3c69`; BE tsc/tests(1366)/lint + architecture:check PASS; archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-PREVIEW-UPLOADS-INLINE.done.md`; current = 2 (UNSCOPED-ORG-SCOPE) |
-| 2026-09-14 | #2 UNSCOPED-ORG-SCOPE DONE — SHA pending push; BE tests(1369)+FE tests(942)+nx build+architecture:check PASS, lint 0 new errors (38 pre-existing, git-stash verified); archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE.done.md`; current = 3 (TEXT-PROPS-CANON) |
+| 2026-09-14 | #2 UNSCOPED-ORG-SCOPE DONE — `19087f1b`; BE tests(1369)+FE tests(942)+nx build+architecture:check PASS, lint 0 new errors (38 pre-existing, git-stash verified); archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE.done.md`; current = 3 (TEXT-PROPS-CANON) |
