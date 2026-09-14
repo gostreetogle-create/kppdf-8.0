@@ -38,6 +38,15 @@ master-detail страница.
   disable-with-reason (см. `units.registry.ts`), у самого «delete» такого хука
   не было.
 
+**Inline create из формы текста** (`TZ-NX-TEXT-BLOCK-CATEGORY-INLINE-CREATE`, 2026-09-14):
+диалог «Создать/Редактировать текст» (`text-block-form-dialog.component.ts`, студия
+save-to-library + реестр «Тексты») — Категория и Подкатегория теперь в ките
+`app-pi-select-add-row` («+» рядом с select, не произвольный flex), «+» открывает тот
+же `TextBlockCategoryFormDialogComponent` (nested dialog, паттерн как
+`module-form-dialog.openCreateCategory`) — создать корень/лист и сразу выбрать его,
+без ухода в `/registries/text-block-categories`. Реестр остаётся SoT списка/удаления/
+редактирования вне этой формы.
+
 Разделы ниже (Route/Dialogs/Services/State/Особенности) описывают
 **удалённую** master-detail страницу — оставлены как UX-референс миграции, не
 SoT.

@@ -1,0 +1,91 @@
+{
+  "task": "TZ-NX-TEXT-BLOCK-CATEGORY-INLINE-CREATE",
+  "docId": "6aa79f2b60e89ca7347424d1",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa79f2b60e89ca7347424d1",
+  "rootName": "Смоук-корень mu0wsfxf",
+  "subName": "Смоук-лист mu0wsfxf",
+  "checks": [
+    {
+      "name": "text_block_dblclick_dispatched",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "save_to_library_button_clicked",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "text_block_dialog_open",
+      "pass": true,
+      "detail": {
+        "formOpen": true,
+        "hasRootAdd": true,
+        "hasSubAdd": true,
+        "subAddDisabled": true,
+        "rootAddInSelectAddRow": true
+      }
+    },
+    {
+      "name": "both_add_buttons_present",
+      "pass": true,
+      "detail": {
+        "formOpen": true,
+        "hasRootAdd": true,
+        "hasSubAdd": true,
+        "subAddDisabled": true,
+        "rootAddInSelectAddRow": true
+      }
+    },
+    {
+      "name": "sub_add_disabled_before_root_picked",
+      "pass": true,
+      "detail": true
+    },
+    {
+      "name": "root_add_uses_kit_select_add_row",
+      "pass": true,
+      "detail": true
+    },
+    {
+      "name": "root_category_created_and_selected",
+      "pass": true,
+      "detail": {
+        "rootSelected": "Смоук-корень mu0wsfxf",
+        "rootSelectValue": "6aa79f3260e89ca73474255c",
+        "subAddDisabled": false
+      }
+    },
+    {
+      "name": "sub_add_enabled_after_root_picked",
+      "pass": true,
+      "detail": false
+    },
+    {
+      "name": "sub_category_created_and_selected",
+      "pass": true,
+      "detail": {
+        "subSelected": "Смоук-лист mu0wsfxf"
+      }
+    },
+    {
+      "name": "save_button_found_and_clicked",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "text_dialog_closed_after_save",
+      "pass": true,
+      "detail": {
+        "formStillOpen": false
+      }
+    }
+  ],
+  "pass": true
+}

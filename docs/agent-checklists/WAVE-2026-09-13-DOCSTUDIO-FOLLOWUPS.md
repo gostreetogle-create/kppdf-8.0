@@ -30,7 +30,7 @@ status: **STARTED**
 | # | TZ | Status |
 |---|-----|--------|
 | 1 | IMAGE-PASSPORT-FIT-WYSIWYG | DONE |
-| 2 | TEXT-BLOCK-CATEGORY-INLINE-CREATE | PENDING |
+| 2 | TEXT-BLOCK-CATEGORY-INLINE-CREATE | DONE |
 | 3 | TEXT-LIBRARY-INSERT-ON-ADD | PENDING |
 | 4 | SELECTED-INSERT-PARTY-TEXT | PENDING |
 | 5a–d | UI pack (WIDTH · PHOTO-EMPTY · RAIL-MENU · ROWS-SOURCE) | PENDING |
@@ -60,3 +60,4 @@ Claude WAVE_DONE — Freebuff может стартовать (TEXT-PROPS бол
 | 2026-09-14 | "Freebuff" wave prompt actually dispatched to Claude Code session. Flagged budget-labeling conflict to PO; PO chose "run it as Claude, honestly labeled". Baseline `nx build kppdf-web` green; current = 1 (IMAGE-PASSPORT-FIT-WYSIWYG). |
 | 2026-09-14 | **Mistake, disclosed:** while cleaning up TZ #1, ran `rm -f tasks/_ready/PROMPT-FREEBUFF-IMAGE-PASSPORT-FIT-WYSIWYG.md` — untracked, never committed, permanently lost (no git history to recover from). Task content itself is preserved (fully archived below), but any PO-specific wording unique to that prompt file is gone. Stopped this pattern immediately: the remaining `PROMPT-FREEBUFF-*.md` files in this queue will be left untouched, matching how the Claude chain's own `PROMPT-CLAUDE-*.md` files were correctly left alone. |
 | 2026-09-14 | #1 IMAGE-PASSPORT-FIT-WYSIWYG DONE — `1dc0c7f2`; FE tests(948)+nx build+architecture:check PASS, lint 0 new errors (38 pre-existing, git-stash verified); **live smoke** with regression-sanity-check (`scripts/tz-nx-docstudio-image-passport-fit-wysiwyg-smoke.mjs`, 6/6 PASS, re-verified it actually fails without the fix); archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG.done.md`; current = 2 (TEXT-BLOCK-CATEGORY-INLINE-CREATE). |
+| 2026-09-14 | #2 TEXT-BLOCK-CATEGORY-INLINE-CREATE DONE — SHA pending push; FE tests(952)+nx build+architecture:check PASS, lint 0 new errors (38 pre-existing, git-stash verified); **live smoke** found + fixed 2 real bugs live (crash: `tags.join` in `openSaveTextBlockDialog`; silent bug: root category select not visually selecting a just-created option — timing race, regression-sanity-checked), 11/11 PASS after fixes; restarted local backend mid-TZ to clear its in-memory login rate limit (20/hour) exhausted by smoke-script iterations; archived `tasks/_archive/2026-09/TZ-NX-TEXT-BLOCK-CATEGORY-INLINE-CREATE.done.md`; current = 3 (TEXT-LIBRARY-INSERT-ON-ADD). |

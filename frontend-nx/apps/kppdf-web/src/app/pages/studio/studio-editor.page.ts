@@ -2291,6 +2291,11 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           name: defaultName,
           slug: studioTextBlockSlug(defaultName),
           content: block.content ?? '',
+          // TZ-NX-TEXT-BLOCK-CATEGORY-INLINE-CREATE — found live: this
+          // prefill object omitted `tags`, and TextBlockFormDialogComponent's
+          // constructor unconditionally does `row.tags.join(', ')`, crashing
+          // the whole page on every "Сохранить в библиотеку текстов" click.
+          tags: [],
           sortOrder: 0,
           isActive: true,
         },
