@@ -253,16 +253,14 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
     expect(html).toContain('Позиция 30');
   });
 
-  it('maps a persisted product photo into the live table image cell and keeps empty photos neutral', async () => {
+  it('maps a persisted product photo into the live table image cell and keeps empty photos blank (TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK)', async () => {
     const tableTemplate = {
       findById: jest.fn().mockResolvedValue({
         columns: [{ key: 'photo', label: 'Фото', type: 'text', align: 'center' }],
       }),
       preview: jest.fn((_id: string, rows: unknown[][]) => {
         const cell = rows[0]?.[0] as { kind?: string; url?: string } | undefined;
-        return cell?.kind === 'image' && cell.url
-          ? `<img src="${cell.url}" alt="" />`
-          : '<span class="pi-photo-empty">Нет фото</span>';
+        return cell?.kind === 'image' && cell.url ? `<img src="${cell.url}" alt="" />` : '';
       }),
     };
     const service = makeService({
@@ -291,8 +289,9 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
       tableLayout: [{ key: 'photo', visible: true }],
       sheetLayout: { showPhotoColumn: true },
     });
-    expect(withoutPhoto).toContain('Нет фото');
+    expect(withoutPhoto).not.toContain('Нет фото');
     expect(withoutPhoto).not.toContain('<img');
+    expect(withoutPhoto).not.toContain('pi-photo-empty');
   });
 
   it('renders КП terms with values and preserves unknown variables', async () => {

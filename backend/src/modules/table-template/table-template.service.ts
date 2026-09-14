@@ -462,8 +462,9 @@ export class TableTemplateService implements OnModuleInit {
       }
       if (typeof value === 'string') {
         const trimmed = value.trim();
+        // TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK: no photo → blank cell, not a «Нет фото» label.
         if (!trimmed || /^\[(?:img|image|фото|photo)\]$/i.test(trimmed)) {
-          return '<span class="pi-photo-empty">Нет фото</span>';
+          return '';
         }
         return this.formatImageCell(
           trimmed,
@@ -472,7 +473,7 @@ export class TableTemplateService implements OnModuleInit {
         );
       }
       if (value === null || value === undefined || value === '') {
-        return '<span class="pi-photo-empty">Нет фото</span>';
+        return '';
       }
     }
     if (value === null || value === undefined || value === '') {
@@ -595,11 +596,12 @@ export class TableTemplateService implements OnModuleInit {
     photoOptions?: TablePhotoOptions,
     photoFit?: TableRowPresentation['photoFit'],
   ): string {
+    // TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK: no photo / unresolved file → blank cell.
     if (typeof value !== 'string' || !value) {
-      return '<span class="pi-photo-empty">Нет фото</span>';
+      return '';
     }
     const url = this.resolvePhotoUrl(value.trim());
-    if (!url) return '<span class="pi-photo-empty">Нет фото</span>';
+    if (!url) return '';
     const fit =
       photoFit === 'contain' || photoFit === 'cover' ? photoFit : null;
     if (!photoOptions) {

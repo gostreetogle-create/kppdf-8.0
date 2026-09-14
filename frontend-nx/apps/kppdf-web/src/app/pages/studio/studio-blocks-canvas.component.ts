@@ -148,10 +148,11 @@ import {
                           @for (cell of row; track $index; let ci = $index) {
                             @if (isPhotoColumnAt(block, ci)) {
                               <td class="table-preview__photo-cell" [style.width.%]="colWidthPct(block, ci)">
+                                <!-- TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK: no photo / broken load = blank cell,
+                                     no "Нет фото" text and no browser broken-image icon. Row height comes from
+                                     the shared td padding (line 304), not from this cell's own content. -->
                                 @if (cell && !isPhotoLoadFailed(cell)) {
                                   <img [src]="cell" alt="" class="table-preview__photo" [ngStyle]="photoCellStyle(block, cell)" (error)="onPhotoLoadError(cell)" />
-                                } @else {
-                                  <span class="table-preview__photo-empty">Нет фото</span>
                                 }
                               </td>
                             } @else {
@@ -326,12 +327,6 @@ import {
       max-width: 100%;
       margin: 0 auto;
     }
-    .table-preview__photo-empty {
-      display: block;
-      font-size: 8px;
-      font-style: italic;
-      color: var(--color-muted-foreground);
-    }
     .studio-block--image img {
       width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;
     }
@@ -433,7 +428,7 @@ export class StudioBlocksCanvasComponent {
    * the backend already drops a verified-missing file to `''` (S48/S-SMOKE),
    * but a URL that was valid when resolved can still fail to load (upload
    * mid-flight, dev-server restart) with no further re-render to catch it.
-   * Once a URL 404s here it stays "Нет фото" for this component instance —
+   * Once a URL 404s here it stays blank for this component instance —
    * matches the empty-cell state exactly, never a raw broken-image icon.
    */
   private readonly failedPhotoUrls = signal<ReadonlySet<string>>(new Set());

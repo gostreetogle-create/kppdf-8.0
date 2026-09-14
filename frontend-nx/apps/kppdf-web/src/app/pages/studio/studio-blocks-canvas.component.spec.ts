@@ -177,8 +177,9 @@ describe('StudioBlocksCanvasComponent — liveRows respect hidden columns (TZ-NX
  * TZ-NX-DOCSTUDIO-S48 — the Фото column used to render whatever raw string sat
  * in that cell position (e.g. quantity `1` after a BUG-1 column-count
  * mismatch, or a URL as plain text). It must render an `<img>` when a URL is
- * present and an honest "Нет фото" placeholder when the cell is empty — never
- * a bare digit or raw URL text.
+ * present and a blank cell when it is empty — never a bare digit or raw URL
+ * text. TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK (2026-09-14) reversed S48's
+ * own "Нет фото" placeholder text — PO wants a silent blank cell instead.
  */
 describe('StudioBlocksCanvasComponent — photo column renders image or empty state (TZ-NX-DOCSTUDIO-S48)', () => {
   const TABLE_WITH_PHOTO: StudioBlock = {
@@ -232,10 +233,10 @@ describe('StudioBlocksCanvasComponent — photo column renders image or empty st
    * TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG — a URL that resolved as valid
    * server-side can still fail to load client-side (upload mid-flight, dev
    * server restart); the browser's default broken-image icon must never be
-   * the end state on canvas, only the same «Нет фото» as a genuinely empty
-   * cell.
+   * the end state on canvas. TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK: that
+   * end state is now a blank cell, not a "Нет фото" label.
    */
-  it('falls back to «Нет фото» when the <img> fails to load, instead of a broken-image icon', () => {
+  it('falls back to a blank cell when the <img> fails to load, instead of a broken-image icon (TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK)', () => {
     createCanvas([TABLE_WITH_PHOTO]);
     const host: HTMLElement = fixture.nativeElement;
     const firstRowPhotoCell = host.querySelectorAll('tbody tr')[0]!.querySelectorAll('td')[1]!;
@@ -246,17 +247,17 @@ describe('StudioBlocksCanvasComponent — photo column renders image or empty st
     fixture.detectChanges();
 
     expect(firstRowPhotoCell.querySelector('img')).toBeNull();
-    expect(firstRowPhotoCell.querySelector('.table-preview__photo-empty')?.textContent).toBe('Нет фото');
+    expect(firstRowPhotoCell.textContent?.trim()).toBe('');
   });
 
-  it('renders «Нет фото» for an empty photo cell, not a blank cell or a stray digit', () => {
+  it('renders a blank cell for an empty photo cell, not a "Нет фото" label or a stray digit (TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK)', () => {
     createCanvas([TABLE_WITH_PHOTO]);
     const host: HTMLElement = fixture.nativeElement;
     const rows = host.querySelectorAll('tbody tr');
     const secondRowPhotoCell = rows[1]!.querySelectorAll('td')[1]!;
 
     expect(secondRowPhotoCell.querySelector('img')).toBeNull();
-    expect(secondRowPhotoCell.querySelector('.table-preview__photo-empty')?.textContent).toBe('Нет фото');
+    expect(secondRowPhotoCell.textContent?.trim()).toBe('');
   });
 
   it('non-photo columns still render as plain text cells', () => {

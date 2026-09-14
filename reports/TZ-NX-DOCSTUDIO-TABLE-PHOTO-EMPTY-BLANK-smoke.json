@@ -1,0 +1,75 @@
+{
+  "task": "TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK",
+  "docId": "6aa7af788dd51ca5124decc0",
+  "revisionAfterBlock": 1,
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7af788dd51ca5124decc0",
+  "checks": [
+    {
+      "name": "backend_preview_html_has_no_photo_empty_label",
+      "pass": true,
+      "detail": {
+        "htmlLength": 5353
+      }
+    },
+    {
+      "name": "backend_preview_html_has_no_photo_empty_class",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "backend_preview_empty_photo_row_has_no_img",
+      "pass": true,
+      "detail": {
+        "emptyRowHtml": "<tr><th scope=\"col\" style=\"text-align:left;width:75%\">Наименование</th><th scope=\"col\" style=\"text-align:center;width:25%\">Фото</th></tr></thead><tbody><tr><td style=\"text-align:left;width:75%\">Без фото</td><td style=\"text-align:center;width:25%\"></td></tr>"
+      }
+    },
+    {
+      "name": "canvas_has_no_photo_empty_label_anywhere",
+      "pass": true,
+      "detail": {
+        "hasNoPhotoLabel": false,
+        "photoCellCount": 2,
+        "firstCellHasImg": false,
+        "secondCellHasImg": false
+      }
+    },
+    {
+      "name": "canvas_empty_photo_row_has_no_img",
+      "pass": true,
+      "detail": {
+        "hasNoPhotoLabel": false,
+        "photoCellCount": 2,
+        "firstCellHasImg": false,
+        "secondCellHasImg": false
+      }
+    },
+    {
+      "name": "canvas_no_photo_empty_label_after_load_error",
+      "pass": true,
+      "detail": {
+        "hasNoPhotoLabel": false,
+        "secondCellHasImg": false,
+        "secondCellText": ""
+      }
+    },
+    {
+      "name": "canvas_img_removed_after_load_error",
+      "pass": true,
+      "detail": {
+        "hasNoPhotoLabel": false,
+        "secondCellHasImg": false,
+        "secondCellText": ""
+      }
+    },
+    {
+      "name": "canvas_cell_blank_after_load_error",
+      "pass": true,
+      "detail": {
+        "hasNoPhotoLabel": false,
+        "secondCellHasImg": false,
+        "secondCellText": ""
+      }
+    }
+  ],
+  "pass": true
+}

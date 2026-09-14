@@ -130,12 +130,15 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     expect(html).toContain('max-height:64px');
   });
 
-  it('renders «Нет фото» for an empty photo cell instead of a blank/qty-looking cell', () => {
+  it('renders a blank cell for an empty photo, not a «Нет фото» label (TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK)', () => {
     const html = renderStudioTableHtml(
       [{ key: 'photo', label: 'Фото' }, { key: 'name', label: 'Наименование' }],
       [['', 'Мангал']],
     );
-    expect(html).toContain('<span class="pi-photo-empty">Нет фото</span>');
+    expect(html).not.toContain('Нет фото');
+    expect(html).not.toContain('pi-photo-empty');
+    expect(html).not.toContain('<img');
+    expect(html).toMatch(/<td[^>]*><\/td>/);
   });
 
   it('escapes a double quote in a photo URL so it cannot break out of the src attribute', () => {
@@ -510,7 +513,7 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
   });
 
   describe('orphaned photo references (TZ-NX-DOCSTUDIO-TABLE-PHOTO-SMOKE)', () => {
-    it('resolves to empty (renders «Нет фото») when the Photo doc exists but the file is missing on disk', async () => {
+    it('resolves to an empty cell value when the Photo doc exists but the file is missing on disk (rendered blank, not «Нет фото» — TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK)', async () => {
       const product = new Types.ObjectId();
       const photo = new Types.ObjectId();
       const productModel = {

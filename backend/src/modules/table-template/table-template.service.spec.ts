@@ -34,7 +34,7 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
     expect(html).toContain('>3</td>');
   });
 
-  it('TZ-QA-445C: photo column string URL becomes <img>; [img] placeholder → Нет фото', async () => {
+  it('TZ-QA-445C: photo column string URL becomes <img>; [img] placeholder → blank cell (TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK)', async () => {
     const model = {
       findById: jest.fn().mockReturnValue({
         exec: jest.fn().mockResolvedValue({
@@ -57,12 +57,13 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
     const placeholder = await service.preview('507f1f77bcf86cd799439011', [
       ['[img]', 'Стенд'],
     ]);
-    expect(placeholder).toContain('Нет фото');
+    expect(placeholder).not.toContain('Нет фото');
+    expect(placeholder).not.toContain('pi-photo-empty');
     expect(placeholder).not.toContain('[img]');
     expect(placeholder).not.toContain('<img');
   });
 
-  it('does not render an unsafe image URL', async () => {
+  it('does not render an unsafe image URL — blank cell, not «Нет фото» (TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK)', async () => {
     const model = {
       findById: jest.fn().mockReturnValue({
         exec: jest.fn().mockResolvedValue({
@@ -80,7 +81,8 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
     ]);
 
     expect(html).not.toContain('<img');
-    expect(html).toContain('Нет фото');
+    expect(html).not.toContain('Нет фото');
+    expect(html).not.toContain('pi-photo-empty');
     expect(html).toContain('border:1px solid #ccc');
   });
 

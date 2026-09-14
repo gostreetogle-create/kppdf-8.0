@@ -142,11 +142,16 @@ function normalizePhotoFrameServer(frame: Partial<PhotoFrame> | undefined): Phot
 }
 
 /**
- * TZ-NX-DOCSTUDIO-S48 / TZ-NX-PO-SWEEP-05 — thumbnail or honest empty state
- * (mirrors legacy `table-template.service.ts` `formatCell`'s photo branch,
- * no Create-КП rewrite). `frame` = the catalog photo's own РАМКА
+ * TZ-NX-DOCSTUDIO-S48 / TZ-NX-PO-SWEEP-05 — thumbnail or blank cell (mirrors
+ * legacy `table-template.service.ts` `formatCell`'s photo branch, no
+ * Create-КП rewrite). `frame` = the catalog photo's own РАМКА
  * (`Photo.frame`); `blockFit` = the table block's «Фото в ячейке» override,
  * which only ever overrides `fit` — pan/crop stay catalog-owned.
+ *
+ * TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK — no photo / missing file used to
+ * render a «Нет фото» label (PO: intentional at the time, S48); PO reversed
+ * that — an empty photo cell should be blank, not carry text or a broken-
+ * image icon. Row height comes from the shared `td` padding, not this cell.
  */
 function renderPhotoCellHtml(
   value: string,
@@ -155,7 +160,7 @@ function renderPhotoCellHtml(
   maxHeightPx = STUDIO_TABLE_PHOTO_MAX_HEIGHT_DEFAULT_PX,
 ): string {
   const url = value.trim();
-  if (!url) return '<span class="pi-photo-empty">Нет фото</span>';
+  if (!url) return '';
   const normalized = normalizePhotoFrameServer(frame);
   const fit = blockFit ?? normalized.fit;
   const style = `max-width:100%;max-height:${maxHeightPx}px;object-fit:${fit};object-position:${normalized.posX}% ${normalized.posY}%`;
