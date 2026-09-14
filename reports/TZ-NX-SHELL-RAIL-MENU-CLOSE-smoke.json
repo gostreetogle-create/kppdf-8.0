@@ -1,0 +1,42 @@
+{
+  "task": "TZ-NX-SHELL-RAIL-MENU-CLOSE",
+  "docId": "6aa7b1528dd51ca5124df14c",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7b1528dd51ca5124df14c",
+  "checks": [
+    {
+      "name": "document_menu_button_clicked",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "document_menu_opened",
+      "pass": true
+    },
+    {
+      "name": "elements_button_clicked",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "menu_closed_after_clicking_another_tool",
+      "pass": true,
+      "detail": {
+        "menuStillOpen": false,
+        "elementsPanelOpen": true
+      }
+    },
+    {
+      "name": "elements_panel_actually_opened",
+      "pass": true,
+      "detail": {
+        "menuStillOpen": false,
+        "elementsPanelOpen": true
+      }
+    }
+  ],
+  "pass": true
+}

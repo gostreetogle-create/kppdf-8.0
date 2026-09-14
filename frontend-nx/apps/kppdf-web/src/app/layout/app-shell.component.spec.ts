@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { of } from 'rxjs';
 
 import { AppShellComponent } from './app-shell.component';
-import { ShellToolRailService } from './shell-tool-rail.service';
+import { ShellToolRailService, type ShellToolRailItem } from './shell-tool-rail.service';
 import { NavHistoryService } from './nav-history.service';
 import { AuthService } from '@kppdf/data-access/auth';
 import { CapabilitiesService } from '@kppdf/data-access/capabilities';
@@ -427,6 +427,74 @@ describe('AppShellComponent (TZ-NX-SHELL-RAILS-ALWAYS)', () => {
           data: expect.objectContaining({ username: 'admin' }),
         }),
       );
+    });
+  });
+
+  describe('TZ-NX-SHELL-RAIL-MENU-CLOSE — «Документ» menu closes when another rail tool is clicked', () => {
+    const dummyIcon = {} as ShellToolRailItem['icon'];
+
+    async function setupWithDocumentMenu(): Promise<{
+      elementsClick: jest.Mock;
+      menuButton: () => HTMLButtonElement;
+      elementsButton: () => HTMLButtonElement;
+      menuPopover: () => HTMLElement | null;
+    }> {
+      await setup('/studio/doc-1');
+      const shellTools = TestBed.inject(ShellToolRailService);
+      const elementsClick = jest.fn();
+      const items: ShellToolRailItem[] = [
+        {
+          id: 'document', side: 'right', ariaLabel: 'Документ', title: 'Документ', icon: dummyIcon,
+          items: [{ id: 'save', label: 'Сохранить', onClick: jest.fn() }],
+        },
+        { id: 'elements', side: 'right', ariaLabel: 'Элементы', title: 'Элементы', icon: dummyIcon, onClick: elementsClick },
+      ];
+      shellTools.setTools('test-owner', { left: [], right: items });
+      fixture.detectChanges();
+      return {
+        elementsClick,
+        menuButton: () => fixture.nativeElement.querySelector('[data-test="shell-tool-right-document"]'),
+        elementsButton: () => fixture.nativeElement.querySelector('[data-test="shell-tool-right-elements"]'),
+        menuPopover: () => fixture.nativeElement.querySelector('.shell-rail-menu'),
+      };
+    }
+
+    it('clicking a plain rail tool (no items) while the Документ menu is open closes the menu AND invokes the tool', async () => {
+      const { elementsClick, menuButton, elementsButton, menuPopover } = await setupWithDocumentMenu();
+
+      menuButton().click();
+      fixture.detectChanges();
+      expect(menuPopover()).toBeTruthy();
+
+      elementsButton().click();
+      fixture.detectChanges();
+
+      expect(menuPopover()).toBeNull();
+      expect(elementsClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('clicking the same category button again still just toggles the menu closed (no regression)', async () => {
+      const { menuButton, menuPopover } = await setupWithDocumentMenu();
+
+      menuButton().click();
+      fixture.detectChanges();
+      expect(menuPopover()).toBeTruthy();
+
+      menuButton().click();
+      fixture.detectChanges();
+      expect(menuPopover()).toBeNull();
+    });
+
+    it('an outside/empty click while the menu is open still closes it (no regression to TZ-NX-PO-SWEEP-07)', async () => {
+      const { menuButton, menuPopover } = await setupWithDocumentMenu();
+
+      menuButton().click();
+      fixture.detectChanges();
+      expect(menuPopover()).toBeTruthy();
+
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      fixture.detectChanges();
+      expect(menuPopover()).toBeNull();
     });
   });
 });

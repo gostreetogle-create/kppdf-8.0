@@ -531,6 +531,12 @@ export class AppShellComponent {
       this.openMenuFor.set(tool.id);
       return;
     }
+    // TZ-NX-SHELL-RAIL-MENU-CLOSE: a tool without its own submenu is still a
+    // `.shell-rail-item`, so `onDocumentClickOutside`'s guard below let it
+    // through without ever closing an already-open category menu (e.g.
+    // «Документ») — the menu stayed open behind whichever section the click
+    // actually navigated to.
+    this.closeMenu();
     this.shellTools.invoke(tool);
   }
 
