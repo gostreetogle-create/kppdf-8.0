@@ -56,7 +56,10 @@ describe('StudioEditorPage — token display mode + substitution bag (TZ-NX-DOCS
     },
   };
 
-  function configure(): void {
+  function configure(opts: { blocks?: readonly unknown[]; doc?: StudioDocument } = {}): {
+    toast: { success: jest.Mock; error: jest.Mock; warning: jest.Mock };
+  } {
+    const toast = { success: jest.fn(), error: jest.fn(), warning: jest.fn() };
     TestBed.configureTestingModule({
       imports: [StudioEditorPage],
       providers: [
@@ -65,9 +68,9 @@ describe('StudioEditorPage — token display mode + substitution bag (TZ-NX-DOCS
         { provide: API_BASE_URL, useValue: '/api' },
         {
           provide: PiStudioDocumentsService,
-          useValue: { getById: jest.fn().mockReturnValue(of({ ok: true, data: BASE_DOC })) },
+          useValue: { getById: jest.fn().mockReturnValue(of({ ok: true, data: opts.doc ?? BASE_DOC })) },
         },
-        { provide: PiStudioBlocksService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
+        { provide: PiStudioBlocksService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: opts.blocks ?? [] })) } },
         {
           provide: PiCounterpartiesService,
           useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [CLIENT, PAYER, SUPPLIER] } })) },
@@ -79,7 +82,7 @@ describe('StudioEditorPage — token display mode + substitution bag (TZ-NX-DOCS
           useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [ORG] } })) },
         },
         { provide: PiDocTypesService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) } },
-        { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+        { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
         { provide: Router, useValue: { navigate: jest.fn() } },
         {
@@ -88,6 +91,7 @@ describe('StudioEditorPage — token display mode + substitution bag (TZ-NX-DOCS
         },
       ],
     }).compileComponents();
+    return { toast };
   }
 
   let fixture: ComponentFixture<StudioEditorPage>;
@@ -103,15 +107,16 @@ describe('StudioEditorPage — token display mode + substitution bag (TZ-NX-DOCS
   interface TestableEditor {
     tokenDisplayMode: { (): 'tokens' | 'values'; set: (v: 'tokens' | 'values') => void };
     editorSubstitutionBag: () => Record<string, unknown>;
+    onTokenDisplayModeChange: (mode: 'tokens' | 'values') => void;
   }
 
-  it('defaults to «Токены» (not persisted, resets on reload per ACCEPT #4)', async () => {
+  it('defaults to «Значения» (TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON; not persisted, resets on reload)', async () => {
     configure();
     fixture = TestBed.createComponent(StudioEditorPage);
     await flush();
     const component = fixture.componentInstance as unknown as TestableEditor;
 
-    expect(component.tokenDisplayMode()).toBe('tokens');
+    expect(component.tokenDisplayMode()).toBe('values');
   });
 
   it('builds organization/counterparty/anchor/quotation/order from already-loaded editor context', async () => {
@@ -140,6 +145,66 @@ describe('StudioEditorPage — token display mode + substitution bag (TZ-NX-DOCS
 
     component.tokenDisplayMode.set('tokens');
     expect(component.tokenDisplayMode()).toBe('tokens');
+  });
+
+  /**
+   * TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON — switching to «Значения» with an
+   * unresolved `{{counterparty.*}}`/`{{organization.*}}` still in the
+   * document (no client/issuer picked) is a quiet, one-time nudge, not a
+   * silent no-op. Uses `configure({ doc, blocks })` with no `counterpartyId`
+   * in context so the bag genuinely has no `counterparty` entry.
+   */
+  describe('onTokenDisplayModeChange — missing-entity hint', () => {
+    const DOC_NO_CLIENT: StudioDocument = { ...BASE_DOC, context: { anchors: {} } };
+    const textBlockWith = (content: string) => [{ _id: 'b1', type: 'text', order: 0, content, isActive: true }];
+
+    it('toasts a warning once when the document text references {{counterparty.*}} and no client is picked', async () => {
+      const { toast } = configure({ doc: DOC_NO_CLIENT, blocks: textBlockWith('Клиент: {{counterparty.name}}') });
+      fixture = TestBed.createComponent(StudioEditorPage);
+      await flush();
+      const component = fixture.componentInstance as unknown as TestableEditor;
+      expect(component.editorSubstitutionBag()['counterparty']).toBeUndefined();
+
+      component.onTokenDisplayModeChange('values');
+
+      expect(toast.warning).toHaveBeenCalledTimes(1);
+      expect(toast.warning.mock.calls[0]![0] as string).toMatch(/клиента/i);
+      expect(component.tokenDisplayMode()).toBe('values');
+    });
+
+    it('toasts nothing when the client is already resolved in the bag', async () => {
+      const { toast } = configure({ blocks: textBlockWith('Клиент: {{counterparty.name}}') });
+      fixture = TestBed.createComponent(StudioEditorPage);
+      await flush();
+      const component = fixture.componentInstance as unknown as TestableEditor;
+      expect(component.editorSubstitutionBag()['counterparty']).toEqual(CLIENT);
+
+      component.onTokenDisplayModeChange('values');
+
+      expect(toast.warning).not.toHaveBeenCalled();
+    });
+
+    it('never toasts switching back to «Токены», even with an unresolved token present', async () => {
+      const { toast } = configure({ doc: DOC_NO_CLIENT, blocks: textBlockWith('{{counterparty.name}}') });
+      fixture = TestBed.createComponent(StudioEditorPage);
+      await flush();
+      const component = fixture.componentInstance as unknown as TestableEditor;
+
+      component.onTokenDisplayModeChange('tokens');
+
+      expect(toast.warning).not.toHaveBeenCalled();
+    });
+
+    it('never toasts for unrelated token kinds this editor has no picker for (e.g. {{table.*}})', async () => {
+      const { toast } = configure({ doc: DOC_NO_CLIENT, blocks: textBlockWith('{{table.subtotal}}') });
+      fixture = TestBed.createComponent(StudioEditorPage);
+      await flush();
+      const component = fixture.componentInstance as unknown as TestableEditor;
+
+      component.onTokenDisplayModeChange('values');
+
+      expect(toast.warning).not.toHaveBeenCalled();
+    });
   });
 
   it('omits organization/counterparty/anchor/quotation/order entirely when nothing is loaded/selected yet', async () => {

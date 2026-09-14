@@ -99,59 +99,71 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
             </button>
           </div>
 
-          <div class="pi-rte-sep"></div>
+          @if (!compact()) {
+            <div class="pi-rte-sep"></div>
 
-          <!-- Alignment -->
-          <div class="pi-rte-group">
-            <button
-              type="button"
-              class="pi-rte-btn"
-              [class.is-active]="activeStates().alignLeft"
-              (click)="setTextAlign('left')"
-              title="По левому краю"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path
-                  d="M1 2h12M1 5h8M1 8h10M1 11h6"
-                  stroke="currentColor"
-                  stroke-width="1.2"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="pi-rte-btn"
-              [class.is-active]="activeStates().alignCenter"
-              (click)="setTextAlign('center')"
-              title="По центру"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path
-                  d="M1 2h12M3 5h8M2 8h10M4 11h6"
-                  stroke="currentColor"
-                  stroke-width="1.2"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="pi-rte-btn"
-              [class.is-active]="activeStates().alignRight"
-              (click)="setTextAlign('right')"
-              title="По правому краю"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path
-                  d="M1 2h12M5 5h8M3 8h10M7 11h6"
-                  stroke="currentColor"
-                  stroke-width="1.2"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </button>
-          </div>
+            <!--
+              TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON — hidden in compact mode (the
+              document studio's text panel): that panel has its own
+              block.style.align row, the studio's SoT for canvas/PDF
+              alignment (studio-text-properties.component.ts). This
+              TipTap-side textAlign is a second, redundant path there (sets
+              alignment INSIDE the paragraph HTML, never read by
+              canvas/Preview/PDF) — kept only for non-compact usage
+              (text-block-form-dialog.component.ts's plain library editor,
+              which has no separate block-style align control).
+            -->
+            <div class="pi-rte-group">
+              <button
+                type="button"
+                class="pi-rte-btn"
+                [class.is-active]="activeStates().alignLeft"
+                (click)="setTextAlign('left')"
+                title="По левому краю"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M1 2h12M1 5h8M1 8h10M1 11h6"
+                    stroke="currentColor"
+                    stroke-width="1.2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="pi-rte-btn"
+                [class.is-active]="activeStates().alignCenter"
+                (click)="setTextAlign('center')"
+                title="По центру"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M1 2h12M3 5h8M2 8h10M4 11h6"
+                    stroke="currentColor"
+                    stroke-width="1.2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="pi-rte-btn"
+                [class.is-active]="activeStates().alignRight"
+                (click)="setTextAlign('right')"
+                title="По правому краю"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M1 2h12M5 5h8M3 8h10M7 11h6"
+                    stroke="currentColor"
+                    stroke-width="1.2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          }
         </div>
       }
 

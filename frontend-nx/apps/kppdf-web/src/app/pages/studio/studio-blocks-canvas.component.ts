@@ -234,6 +234,16 @@ import {
       border: 1px solid oklch(var(--color-rule));
       border-radius: 2px;
     }
+    /* TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON — «Значения» mode's unresolved token:
+       deliberately NOT the solid «Токены»-mode chip above (dashed + muted
+       instead of solid + info-color) so the two modes look different even
+       when nothing in the bag resolves yet. */
+    :host ::ng-deep .studio-block__text-body .substitution-token--unresolved {
+      color: var(--color-muted-foreground);
+      background: transparent;
+      border-style: dashed;
+      font-weight: 500;
+    }
     .studio-block--text.studio-block--editable.selected {
       background: transparent;
     }

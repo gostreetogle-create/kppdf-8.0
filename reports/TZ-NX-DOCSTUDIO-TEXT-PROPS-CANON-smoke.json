@@ -1,0 +1,86 @@
+{
+  "task": "TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON",
+  "docId": "6aa77cb0ca5c6cad80a01681",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa77cb0ca5c6cad80a01681",
+  "canvasScreenshot": "D:\\kppdf-8.0\\reports\\TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON-canvas.png",
+  "propertiesScreenshot": "D:\\kppdf-8.0\\reports\\TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON-properties.png",
+  "canvasState": {
+    "hasBlock": true,
+    "html": "Клиент: <span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token substitution-token--unresolved\" title=\"{{counterparty.name}}\" contenteditable=\"false\">{{counterparty.name}}</span>",
+    "hasUnresolvedModifier": true,
+    "hasPlainChip": false
+  },
+  "panelState": {
+    "panelVisible": true,
+    "valuesPressed": "true",
+    "tokensPressed": "false",
+    "studioAlignButtonCount": 4,
+    "rteToolbarGroupCount": 1
+  },
+  "checks": [
+    {
+      "name": "block_rendered_on_canvas",
+      "pass": true,
+      "detail": {
+        "hasBlock": true,
+        "html": "Клиент: <span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token substitution-token--unresolved\" title=\"{{counterparty.name}}\" contenteditable=\"false\">{{counterparty.name}}</span>",
+        "hasUnresolvedModifier": true,
+        "hasPlainChip": false
+      }
+    },
+    {
+      "name": "unresolved_token_uses_modifier_class",
+      "pass": true,
+      "detail": "Клиент: <span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token substitution-token--unresolved\" title=\"{{counterparty.name}}\" contenteditable=\"false\">{{counterparty.name}}</span>"
+    },
+    {
+      "name": "unresolved_token_not_plain_tokens_chip",
+      "pass": true,
+      "detail": "Клиент: <span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token substitution-token--unresolved\" title=\"{{counterparty.name}}\" contenteditable=\"false\">{{counterparty.name}}</span>"
+    },
+    {
+      "name": "properties_panel_opened",
+      "pass": true,
+      "detail": {
+        "panelVisible": true,
+        "valuesPressed": "true",
+        "tokensPressed": "false",
+        "studioAlignButtonCount": 4,
+        "rteToolbarGroupCount": 1
+      }
+    },
+    {
+      "name": "default_mode_is_values_pressed",
+      "pass": true,
+      "detail": {
+        "panelVisible": true,
+        "valuesPressed": "true",
+        "tokensPressed": "false",
+        "studioAlignButtonCount": 4,
+        "rteToolbarGroupCount": 1
+      }
+    },
+    {
+      "name": "tokens_not_pressed_by_default",
+      "pass": true,
+      "detail": {
+        "panelVisible": true,
+        "valuesPressed": "true",
+        "tokensPressed": "false",
+        "studioAlignButtonCount": 4,
+        "rteToolbarGroupCount": 1
+      }
+    },
+    {
+      "name": "one_studio_align_group_present",
+      "pass": true,
+      "detail": 4
+    },
+    {
+      "name": "rte_toolbar_has_only_bIu_group_no_align_in_compact",
+      "pass": true,
+      "detail": 1
+    }
+  ],
+  "pass": true
+}

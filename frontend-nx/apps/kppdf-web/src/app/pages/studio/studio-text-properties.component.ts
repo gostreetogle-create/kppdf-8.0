@@ -192,31 +192,6 @@ const ALIGN_OPTIONS: readonly {
             />
           </label>
         </div>
-        <app-pi-button
-          variant="secondary"
-          size="sm"
-          class="w-full"
-          data-test="studio-insert-data-field"
-          [disabled]="disabled"
-          (click)="openDataFieldPicker()"
-        >
-          <lucide-angular [img]="bracesIcon" [size]="14" aria-hidden="true" />
-          Поле ERP
-        </app-pi-button>
-        <label class="text-props__field text-props__field--compact">
-          <span class="text-props__label">Формула</span>
-          <select
-            class="text-props__select"
-            [ngModel]="selectedFormulaId()"
-            (ngModelChange)="onFormulaPick($event)"
-            [disabled]="disabled"
-            data-test="studio-text-formula-select"
-          >
-            @for (opt of formulaOptions; track opt.id) {
-              <option [value]="opt.id">{{ opt.label }}</option>
-            }
-          </select>
-        </label>
         <div class="text-props__row-2">
           <label class="text-props__field text-props__field--compact">
             <span class="text-props__label">Размер, pt</span>
@@ -260,6 +235,31 @@ const ALIGN_OPTIONS: readonly {
             </button>
           }
         </div>
+        <app-pi-button
+          variant="secondary"
+          size="sm"
+          class="w-full"
+          data-test="studio-insert-data-field"
+          [disabled]="disabled"
+          (click)="openDataFieldPicker()"
+        >
+          <lucide-angular [img]="bracesIcon" [size]="14" aria-hidden="true" />
+          Поле ERP
+        </app-pi-button>
+        <label class="text-props__field text-props__field--compact">
+          <span class="text-props__label">Формула</span>
+          <select
+            class="text-props__select"
+            [ngModel]="selectedFormulaId()"
+            (ngModelChange)="onFormulaPick($event)"
+            [disabled]="disabled"
+            data-test="studio-text-formula-select"
+          >
+            @for (opt of formulaOptions; track opt.id) {
+              <option [value]="opt.id">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
       </div>
 
       <app-pi-button

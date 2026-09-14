@@ -184,11 +184,20 @@ describe('renderStudioTokensAsValues (TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP)', () =>
     expect(html).not.toContain('substitution-token');
   });
 
-  it('keeps the exact chip markup for an unresolved token, not a bare "" or "—"', () => {
+  /**
+   * TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON — an unresolved token in «Значения»
+   * keeps the same substitution-token base markup/data-attrs, but gets the
+   * `--unresolved` modifier (dashed/muted, see studio-blocks-canvas.component
+   * .ts's CSS), NOT the identical `.substitution-token` chip «Токены» mode
+   * uses — that identity was the audit's "визуально no-op" bug (switching
+   * modes with nothing resolved looked unchanged).
+   */
+  it('marks an unresolved token distinctly from the plain «Токены» chip, not a bare "" or "—"', () => {
     const html = renderStudioTokensAsValues('Клиент: {{counterparty.name}}', bag);
     expect(html).toContain('data-substitution-token=""');
     expect(html).toContain('data-token="{{counterparty.name}}"');
-    expect(html).toContain('class="substitution-token"');
+    expect(html).toContain('class="substitution-token substitution-token--unresolved"');
+    expect(html).not.toContain('class="substitution-token"');
     expect(html).toContain('{{counterparty.name}}');
   });
 

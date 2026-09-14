@@ -149,21 +149,23 @@ export function resolveStudioTokenValue(bag: Record<string, unknown>, path: stri
 }
 
 /**
- * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — «Значения» display mode: replaces each
- * `{{token}}` with its resolved value as plain ink, no chip styling («как
- * будет на бланке», per the TZ's own wording — not a second write-path,
- * `block.content` itself is never touched). An unresolved token keeps the
- * exact same chip markup `migratePlainTokensToNodes` would give it in
- * «Токены» mode (chosen over a bare "—" placeholder) — a resolved token
- * turning to plain ink next to an unresolved one still wearing its chip is
- * itself the signal that it didn't resolve.
+ * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP / TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON —
+ * «Значения» display mode: replaces each `{{token}}` with its resolved value
+ * as plain ink, no chip styling («как будет на бланке», per the TZ's own
+ * wording — not a second write-path, `block.content` itself is never
+ * touched). An unresolved token gets the `substitution-token--unresolved`
+ * modifier (muted/dashed, see `studio-blocks-canvas.component.ts`'s CSS) —
+ * deliberately NOT the plain `.substitution-token` chip «Токены» mode uses,
+ * so switching to «Значения» with no client/issuer picked still reads as a
+ * different mode, not a dead toggle (TEXT-PROPS-CANON's fix for the audit's
+ * "визуально no-op" finding).
  */
 export function renderStudioTokensAsValues(html: string, bag: Record<string, unknown>): string {
   if (!html || !html.includes('{{')) return html;
   return html.replace(STUDIO_TOKEN_RE, (match, path: string) => {
     const value = resolveStudioTokenValue(bag, path);
     if (value == null) {
-      return `<span data-substitution-token="" data-token="${match}" class="substitution-token" contenteditable="false">${match}</span>`;
+      return `<span data-substitution-token="" data-token="${match}" class="substitution-token substitution-token--unresolved" title="${match}" contenteditable="false">${match}</span>`;
     }
     return escapeStudioTokenHtml(value);
   });

@@ -386,7 +386,7 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
                 [quotationId]="quotationId()"
                 [orderId]="orderId()"
                 [tokenDisplayMode]="tokenDisplayMode()"
-                (tokenDisplayModeChange)="tokenDisplayMode.set($event)"
+                (tokenDisplayModeChange)="onTokenDisplayModeChange($event)"
                 (styleChange)="patchBlockStyle($event)"
                 (contentChange)="patchBlockContent($event)"
                 (titleChange)="patchBlockTitle($event)"
@@ -614,11 +614,13 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly quotations = signal<Quotation[]>([]);
   readonly orders = signal<Order[]>([]);
   /**
-   * TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — session-level (this editor tab only),
+   * TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON — session-level (this editor tab only),
    * not per-block and not persisted: reloading (F5) resets to the default
-   * «Токены», by design (ACCEPT #4).
+   * «Значения» (superseded TOKEN-EDITOR-CHIP's ACCEPT #4, which defaulted to
+   * «Токены» — PO now wants the canvas to show "как будет на бланке" by
+   * default, chips being the exception when data is missing).
    */
-  readonly tokenDisplayMode = signal<'tokens' | 'values'>('tokens');
+  readonly tokenDisplayMode = signal<'tokens' | 'values'>('values');
   readonly contextSaving = signal(false);
   readonly contextSaveError = signal<string | null>(null);
   readonly catalogSelections = signal<{ products: readonly string[]; modules: readonly string[]; parts: readonly string[]; materials: readonly string[] }>({ products: [], modules: [], parts: [], materials: [] });
@@ -779,6 +781,33 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
     return bag;
   });
+
+  /**
+   * TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON — the mode toggle (unlike the canvas
+   * `tokenDisplayMode` binding itself) is the one moment worth a quiet nudge:
+   * flipping to «Значения» only to see the same `{{…}}` chips (because no
+   * client/issuer is picked yet) reads as a dead button otherwise. Scans
+   * every text block's raw content for the two entity-shaped prefixes the
+   * audit's own repro used — not a general unresolved-token scanner, and
+   * never fires switching back to «Токены» or on unrelated token kinds
+   * (`{{table.*}}`, `{{quotation.*}}`, …) which have no per-session picker.
+   */
+  protected onTokenDisplayModeChange(mode: 'tokens' | 'values'): void {
+    this.tokenDisplayMode.set(mode);
+    if (mode !== 'values') return;
+    const bag = this.editorSubstitutionBag();
+    const missing: string[] = [];
+    const hasCounterpartyToken = this.blocks().some(
+      (b) => b.type === 'text' && /\{\{\s*counterparty\./.test(b.content ?? ''),
+    );
+    if (hasCounterpartyToken && bag['counterparty'] == null) missing.push('клиента');
+    const hasOrganizationToken = this.blocks().some(
+      (b) => b.type === 'text' && /\{\{\s*organization\./.test(b.content ?? ''),
+    );
+    if (hasOrganizationToken && bag['organization'] == null) missing.push('исполнителя');
+    if (missing.length === 0) return;
+    this.toast.warning(`Выберите ${missing.join(' и ')} в «Данные» — иначе поля пустые`);
+  }
 
   readonly docTypeId = computed(() => {
     const raw = this.document()?.docTypeId;
