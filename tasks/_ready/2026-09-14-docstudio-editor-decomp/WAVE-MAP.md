@@ -64,5 +64,7 @@ Import path: `@kppdf/features/doc-studio` (secondary path in `tsconfig.base.json
 | 1 Facade in-place | DONE (142d66e4) |
 | 2 Util → features | DONE (b4169eec) |
 | 3 UI → features | DONE (9f50403d) |
-| 4 Facade → features | READY |
+| 4 Facade → features | DONE (e0b64de5) |
 | 5 UI split | PARK |
+
+**WAVE-DOCSTUDIO-EDITOR-DECOMP: Phases 1-4 all DONE (2026-09-14).** SHAs: 142d66e4, b4169eec, 9f50403d, e0b64de5. Phase 5 stays PARK — only on explicit PO command.

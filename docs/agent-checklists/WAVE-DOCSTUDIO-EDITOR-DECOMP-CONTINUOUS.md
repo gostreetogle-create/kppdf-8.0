@@ -13,7 +13,7 @@ updated_at: 2026-09-14T21:50:00+03:00
 | 1 | TZ-NX-DOCSTUDIO-EDITOR-FACADE | L | DONE | 142d66e4 | in-place facade |
 | 2 | TZ-NX-DOCSTUDIO-EDITOR-UTIL-MOVE | S | DONE | b4169eec | → features util |
 | 3 | TZ-NX-DOCSTUDIO-EDITOR-UI-MOVE | L | DONE | 9f50403d | → features ui (4 components stayed in app — see checklist) |
-| 4 | TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES | S | PENDING | — | facade → features |
+| 4 | TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES | S | DONE | e0b64de5 | facade → features |
 | 5 | TZ-NX-DOCSTUDIO-EDITOR-UI-SPLIT | — | PARK | — | не в этой сессии |
 
 States: `PENDING` → `CLAIMED` → `DONE` | `BLOCKED` | `DEFERRED`
@@ -37,12 +37,14 @@ States: `PENDING` → `CLAIMED` → `DONE` | `BLOCKED` | `DEFERRED`
 
 ### Phase 4
 - checklist: `docs/agent-checklists/TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES.md`
-- gates: _
-- archive: _
+- gates: tsc PASS / studio-editor 117/117 (840/847) / features 14/14 (152/152) / nx build PASS / rg app-import check: 0 hits
+- archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES.done.md` · commit e0b64de5
 
 ## Wave DONE when
 
-- [ ] Rows 1–4 = DONE + SHA
-- [ ] `nx build kppdf-web` green after Phase 4
-- [ ] WAVE-MAP status table updated
-- [ ] Phase 5 still PARK
+- [x] Rows 1–4 = DONE + SHA (142d66e4, b4169eec, 9f50403d, e0b64de5)
+- [x] `nx build kppdf-web` green after Phase 4
+- [x] WAVE-MAP status table updated
+- [x] Phase 5 still PARK
+
+**WAVE COMPLETE — 2026-09-14.**
