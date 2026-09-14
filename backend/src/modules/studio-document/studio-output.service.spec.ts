@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Types } from 'mongoose';
 import { DocumentRenderService } from '../document-render/document-render.service';
 import { BLANK_A4_TEMPLATE_NAME } from '../document-template/blank-a4-template.constants';
@@ -236,6 +238,68 @@ describe('StudioOutputService (Wave 9–10)', () => {
       'user-1',
     );
     expect(result.studioDocument.status).toBe('final');
+  });
+
+  it('preview inlines an existing local upload as a data URI (same as PDF)', async () => {
+    const uploadsDir = join(process.cwd(), 'uploads', 'studio-preview-inline-test');
+    const publicUrl = '/uploads/studio-preview-inline-test/sample.png';
+    await mkdir(uploadsDir, { recursive: true });
+    await writeFile(join(uploadsDir, 'sample.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    try {
+      const doc = studioDoc();
+      const studioService = {
+        findById: jest.fn().mockResolvedValue(doc),
+        update: jest.fn(),
+      };
+      const blockService = {
+        findAllByStudioDocument: jest.fn().mockResolvedValue([
+          {
+            _id: new Types.ObjectId().toString(),
+            type: 'text',
+            order: 0,
+            content: `<img src="${publicUrl}" alt="">`,
+            isActive: true,
+            showLine: false,
+            layout: { page: 1, x: 0.1, y: 0.1, width: 0.8, zIndex: 1, rotation: 0 },
+          },
+        ]),
+      };
+      const service = createOutputService({ studioService, blockService });
+
+      const result = await service.preview(DOC_ID, { organizationId: ORG_ID.toString() });
+
+      expect(result.html).toContain('data:image/png;base64,');
+      expect(result.html).not.toContain(publicUrl);
+    } finally {
+      await rm(uploadsDir, { recursive: true, force: true });
+    }
+  });
+
+  it('preview leaves a missing local upload as a bare /uploads/ URL', async () => {
+    const missingUrl = '/uploads/studio-preview-inline-test/missing.png';
+    const doc = studioDoc();
+    const studioService = {
+      findById: jest.fn().mockResolvedValue(doc),
+      update: jest.fn(),
+    };
+    const blockService = {
+      findAllByStudioDocument: jest.fn().mockResolvedValue([
+        {
+          _id: new Types.ObjectId().toString(),
+          type: 'text',
+          order: 0,
+          content: `<img src="${missingUrl}" alt="">`,
+          isActive: true,
+          showLine: false,
+          layout: { page: 1, x: 0.1, y: 0.1, width: 0.8, zIndex: 1, rotation: 0 },
+        },
+      ]),
+    };
+    const service = createOutputService({ studioService, blockService });
+
+    const result = await service.preview(DOC_ID, { organizationId: ORG_ID.toString() });
+
+    expect(result.html).toContain(missingUrl);
   });
 
   it('preview renders multipage HTML with page numbering', async () => {

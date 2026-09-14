@@ -331,6 +331,8 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 | PDF | Тот же HTML → puppeteer |
 | В архив | `bakeSnapshot` dataSets → `generated_documents` |
 
+**Просмотр = фото как в PDF** (`TZ-NX-DOCSTUDIO-PREVIEW-UPLOADS-INLINE`, 2026-09-14): `srcdoc` iframe не резолвит path-absolute `/uploads/…` стабильно (origin `about:srcdoc`) — раньше это давало broken `<img>` в Просмотре на документах, где PDF уже показывал фото. `StudioOutputService.preview()` теперь прогоняет HTML через тот же `inlineLocalUploadsForPdf` (`document-render.utils.ts`), что и PDF-путь, до отдачи в `[srcdoc]` — оба режима на одном документе показывают одни и те же миниатюры (`data:` URI).
+
 ---
 
 ## 5. API (используется NX)

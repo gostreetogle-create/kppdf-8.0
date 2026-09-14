@@ -13,6 +13,7 @@ import {
 } from '../document-render/studio-render.adapter';
 import { GeneratedDocumentService } from '../generated-document/generated-document.service';
 import { QuotationOutputService } from '../generated-document/quotation-output.service';
+import { inlineLocalUploadsForPdf } from '../document-render/document-render.utils';
 import { DocumentTemplateService } from '../document-template/document-template.service';
 import { BLANK_A4_TEMPLATE_NAME } from '../document-template/blank-a4-template.constants';
 import { TemplateBlockService } from '../template-block/template-block.service';
@@ -53,7 +54,13 @@ export class StudioOutputService {
 
   async preview(id: string, user?: OutputUser): Promise<StudioPreviewResult> {
     const { html, doc } = await this.renderStudioDocument(id, user);
-    return { html, revision: doc.revision };
+    // TZ-NX-DOCSTUDIO-PREVIEW-UPLOADS-INLINE — the preview iframe renders via
+    // srcdoc, where a path-absolute /uploads/* <img src> does not reliably
+    // resolve to the backend origin (broken icon) even though the same HTML
+    // shows photos fine in the PDF, which already inlines uploads as data:
+    // URIs before handing off to Puppeteer.
+    const inlinedHtml = await inlineLocalUploadsForPdf(html);
+    return { html: inlinedHtml, revision: doc.revision };
   }
 
   async finalize(id: string, user?: OutputUser): Promise<StudioFinalizeResult> {
