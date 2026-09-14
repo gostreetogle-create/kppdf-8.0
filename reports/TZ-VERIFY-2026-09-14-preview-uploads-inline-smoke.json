@@ -1,0 +1,80 @@
+{
+  "task": "VERIFY-PREVIEW-UPLOADS-INLINE",
+  "docId": "6aa7c62c84798b21fe87ad9f",
+  "photoUrl": "/uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7c62c84798b21fe87ad9f",
+  "checks": [
+    {
+      "name": "backend_preview_html_contains_data_uri",
+      "pass": true,
+      "detail": {
+        "photoUrl": "/uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png",
+        "htmlLength": 92786
+      }
+    },
+    {
+      "name": "backend_preview_html_no_longer_has_raw_upload_path",
+      "pass": true,
+      "detail": {
+        "photoUrl": "/uploads/c3c9f84b-9a4c-4830-a56a-ef64fbc21bee.png"
+      }
+    },
+    {
+      "name": "preview_menu_item_found_and_clicked",
+      "pass": true,
+      "detail": {
+        "menuItems": [
+          "Редактор",
+          "Просмотр",
+          "Сохранить",
+          "Скачать PDF",
+          "В архив"
+        ],
+        "previewClick": {
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "preview_iframe_present",
+      "pass": true,
+      "detail": {
+        "hasFrame": true,
+        "hasImg": true,
+        "imgSrcStartsWithData": true,
+        "imgNaturalWidth": 1374
+      }
+    },
+    {
+      "name": "preview_iframe_has_img",
+      "pass": true,
+      "detail": {
+        "hasFrame": true,
+        "hasImg": true,
+        "imgSrcStartsWithData": true,
+        "imgNaturalWidth": 1374
+      }
+    },
+    {
+      "name": "preview_iframe_img_src_is_data_uri",
+      "pass": true,
+      "detail": {
+        "hasFrame": true,
+        "hasImg": true,
+        "imgSrcStartsWithData": true,
+        "imgNaturalWidth": 1374
+      }
+    },
+    {
+      "name": "preview_iframe_img_actually_loaded_not_broken",
+      "pass": true,
+      "detail": {
+        "hasFrame": true,
+        "hasImg": true,
+        "imgSrcStartsWithData": true,
+        "imgNaturalWidth": 1374
+      }
+    }
+  ],
+  "pass": true
+}

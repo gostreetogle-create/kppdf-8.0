@@ -1,0 +1,101 @@
+{
+  "task": "VERIFY-UNSCOPED-ORG-SCOPE",
+  "docId": "6aa7c67384798b21fe87ae6d",
+  "docOrgBefore": "6a81c3ef107c9fceaf1e5bf8",
+  "switchedTo": "6a81c3ef107c9fceaf1e5bff",
+  "checks": [
+    {
+      "name": "admin_jwt_is_genuinely_unscoped",
+      "pass": true,
+      "detail": {
+        "sub": "6a6a5aa8414225da04787ca0",
+        "username": "admin",
+        "role": "admin",
+        "version": 5,
+        "orgId": null,
+        "iat": 1789380211,
+        "exp": 1789381111
+      }
+    },
+    {
+      "name": "organizations_list_fetched",
+      "pass": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "doc_created",
+      "pass": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "found_a_different_org_to_switch_to",
+      "pass": true,
+      "detail": {
+        "docOrg": "6a81c3ef107c9fceaf1e5bf8",
+        "otherOrg": "6a81c3ef107c9fceaf1e5bff"
+      }
+    },
+    {
+      "name": "issuer_switch_patch_succeeds",
+      "pass": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "_id": "6aa7c67384798b21fe87ae6d",
+          "name": "Verify UNSCOPED-ORG-SCOPE mu12rz7y",
+          "organizationId": "6a81c3ef107c9fceaf1e5bff",
+          "pageSize": "A4",
+          "orientation": "portrait",
+          "backgroundImage": [],
+          "defaultBackgroundIndex": -1,
+          "backgroundPageIndices": [],
+          "backgroundOpacity": 0.3,
+          "pageMargins": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0,
+            "_id": "6aa7c67384798b21fe87ae6e"
+          },
+          "sheetLayout": {
+            "rowsFirstPage": 0,
+            "rowsNextPage": 0,
+            "_id": "6aa7c67384798b21fe87ae6f"
+          },
+          "pageNumbering": false,
+          "manualPageCount": 1,
+          "dataAnchors": [],
+          "dataSets": [],
+          "status": "draft",
+          "revision": 2,
+          "schemaVersion": 1,
+          "createdBy": "6a6a5aa8414225da04787ca0",
+          "updatedBy": "6a6a5aa8414225da04787ca0",
+          "deletedAt": null,
+          "createdAt": "2026-09-14T10:03:31.055Z",
+          "updatedAt": "2026-09-14T10:03:31.070Z",
+          "__v": 0
+        }
+      }
+    },
+    {
+      "name": "add_text_block_after_issuer_switch_returns_201_not_403",
+      "pass": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "get_document_after_issuer_switch_returns_200_not_404",
+      "pass": true,
+      "detail": {
+        "status": 200
+      }
+    }
+  ],
+  "pass": true
+}

@@ -1,8 +1,8 @@
 {
   "task": "TZ-NX-DOCSTUDIO-TEXT-LIBRARY-INSERT-ON-ADD",
-  "docId": "6aa7a3d760e89ca734742825",
-  "feUrl": "http://127.0.0.1:4201/studio/6aa7a3d760e89ca734742825",
-  "libraryTextName": "Смоук-текст-библиотека mu0xi2vx",
+  "docId": "6aa7c6d9721cd38a1847593d",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7c6d9721cd38a1847593d",
+  "libraryTextName": "Смоук-текст-библиотека mu12u6h1",
   "checks": [
     {
       "name": "elements_panel_opened",
@@ -54,7 +54,7 @@
       "detail": {
         "ok": true,
         "x": 790,
-        "y": 546.3125
+        "y": 545.875
       }
     },
     {

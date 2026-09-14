@@ -1,8 +1,8 @@
 {
   "task": "TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK",
-  "docId": "6aa7af788dd51ca5124decc0",
+  "docId": "6aa7c6e7721cd38a184759cb",
   "revisionAfterBlock": 1,
-  "feUrl": "http://127.0.0.1:4201/studio/6aa7af788dd51ca5124decc0",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7c6e7721cd38a184759cb",
   "checks": [
     {
       "name": "backend_preview_html_has_no_photo_empty_label",
