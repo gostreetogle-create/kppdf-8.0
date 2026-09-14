@@ -270,7 +270,39 @@ export function missingStandardColumnFields(block: {
 }
 
 export function createStandardStudioTableColumn(field: StudioStandardColumnField): StudioTableColumn {
-  return { key: field.key, label: field.label, type: field.type, width: 20, align: field.align };
+  return fitSingleColumnWidthByHeader({ key: field.key, label: field.label, type: field.type, width: 20, align: field.align });
+}
+
+/**
+ * TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER — column width weight from its
+ * header label length only, never live cell content (expensive/jittery to
+ * measure on canvas). Multipliers apply strictly by key-alias, matching the
+ * blank's own semantics: a name column reads wider than its label alone
+ * suggests, a description column a bit wider, a photo column stays narrow
+ * even behind a long label.
+ */
+const COLUMN_WIDTH_FIT_FLOOR = 2;
+const PHOTO_COLUMN_WIDTH_FIT_CAP = 4;
+const NAME_COLUMN_WIDTH_FIT_MULTIPLIER = 1.4;
+const DESCRIPTION_COLUMN_WIDTH_FIT_MULTIPLIER = 1.2;
+
+function columnHeaderWidthWeight(column: Pick<StudioTableColumn, 'key' | 'label'>): number {
+  const key = column.key.trim().toLowerCase();
+  const base = Math.max(COLUMN_WIDTH_FIT_FLOOR, [...column.label.trim()].length);
+  if (isStudioPhotoColumnKey(key)) return Math.max(COLUMN_WIDTH_FIT_FLOOR, Math.min(base, PHOTO_COLUMN_WIDTH_FIT_CAP));
+  if (STUDIO_STANDARD_COLUMN_ALIASES['name']!.includes(key)) return base * NAME_COLUMN_WIDTH_FIT_MULTIPLIER;
+  if (STUDIO_STANDARD_COLUMN_ALIASES['description']!.includes(key)) return base * DESCRIPTION_COLUMN_WIDTH_FIT_MULTIPLIER;
+  return base;
+}
+
+/** The "По заголовкам" button — recomputes every column's width from its header label. `columnWidthPercents` normalizes the result to 100%, so the returned weights need not sum to anything in particular. */
+export function fitColumnWidthsByHeader(columns: readonly StudioTableColumn[]): StudioTableColumn[] {
+  return columns.map((col) => ({ ...col, width: Math.max(1, Math.round(columnHeaderWidthWeight(col))) }));
+}
+
+/** Same weight, applied to one just-added column only — used by quick-add / generic "+ Колонка" so existing columns' manually-tuned widths are never silently rewritten by adding another column. */
+export function fitSingleColumnWidthByHeader(column: StudioTableColumn): StudioTableColumn {
+  return { ...column, width: Math.max(1, Math.round(columnHeaderWidthWeight(column))) };
 }
 
 /**
@@ -439,13 +471,13 @@ export function nextStudioTableColumnKey(columns: readonly StudioTableColumn[]):
 
 export function createStudioTableColumn(columns: readonly StudioTableColumn[]): StudioTableColumn {
   const n = columns.length + 1;
-  return {
+  return fitSingleColumnWidthByHeader({
     key: nextStudioTableColumnKey(columns),
     label: `Колонка ${n}`,
     type: 'text',
     width: 20,
     align: 'left',
-  };
+  });
 }
 
 export function buildTableTemplatePayloadFromBlock(

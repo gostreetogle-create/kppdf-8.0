@@ -1,0 +1,80 @@
+{
+  "task": "TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER",
+  "docId": "6aa7ac6d45bb539e90830d81",
+  "revisionAfterBlock": 1,
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7ac6d45bb539e90830d81",
+  "checks": [
+    {
+      "name": "open_without_click_keeps_original_widths_equal_split",
+      "pass": true,
+      "detail": [
+        "33%",
+        "33%",
+        "34%"
+      ]
+    },
+    {
+      "name": "table_selected_and_properties_opened_on_dblclick",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "properties_panel_open",
+      "pass": true
+    },
+    {
+      "name": "by_header_button_clicked",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "name_column_wider_than_photo_after_fit",
+      "pass": true,
+      "detail": {
+        "widthInputsAfterFit": [
+          7,
+          4,
+          17
+        ],
+        "thWidthsAfterFit": [
+          "25%",
+          "14%",
+          "61%"
+        ]
+      }
+    },
+    {
+      "name": "percents_sum_to_100_after_fit",
+      "pass": true,
+      "detail": {
+        "sumPct": 100,
+        "thWidthsAfterFit": [
+          "25%",
+          "14%",
+          "61%"
+        ]
+      }
+    },
+    {
+      "name": "manual_edit_after_fit_changes_canvas_width",
+      "pass": true,
+      "detail": {
+        "before": [
+          25,
+          14,
+          61
+        ],
+        "after": [
+          79,
+          4,
+          17
+        ]
+      }
+    }
+  ],
+  "pass": true
+}

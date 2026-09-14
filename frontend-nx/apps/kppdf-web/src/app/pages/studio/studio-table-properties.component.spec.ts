@@ -330,7 +330,8 @@ describe('StudioTablePropertiesComponent — column structure unlock', () => {
     expect(settingsSpy).toHaveBeenCalledTimes(1);
     const patch = settingsSpy.mock.calls[0]![0] as { tableTemplateColumns: { key: string; label: string }[] };
     const added = patch.tableTemplateColumns.at(-1)!;
-    expect(added).toEqual({ key: 'qty', label: 'Количество', type: 'number', width: 20, align: 'right' });
+    // TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER: quick-add now fits width to the label ("Количество".length = 10), not a flat 20.
+    expect(added).toEqual({ key: 'qty', label: 'Количество', type: 'number', width: 10, align: 'right' });
   });
 
   /**
@@ -340,6 +341,22 @@ describe('StudioTablePropertiesComponent — column structure unlock', () => {
    * out to have zero visible effect, which this TZ also fixes at the
    * render layer (canvas/PDF).
    */
+  /** TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER — «По заголовкам» recomputes every column's width from its label, without touching key/label/type/align. */
+  it('«По заголовкам» refits widths from labels: a short label ends up narrower than a long one', () => {
+    const component = create(TABLE_WITH_TEMPLATE);
+    const host: HTMLElement = fixture.nativeElement;
+    const settingsSpy = jest.fn();
+    component.settingsChange.subscribe(settingsSpy);
+
+    (host.querySelector<HTMLButtonElement>('[data-test="studio-table-widths-by-header"]')!).click();
+
+    expect(settingsSpy).toHaveBeenCalledTimes(1);
+    const patch = settingsSpy.mock.calls[0]![0] as { tableTemplateColumns: { key: string; width: number }[] };
+    const byKey = new Map(patch.tableTemplateColumns.map((c) => [c.key, c.width]));
+    // TABLE_WITH_TEMPLATE columns: photo/name/price.
+    expect(byKey.get('name')!).toBeGreaterThan(byKey.get('photo')!);
+  });
+
   it('the width input has an accessible label + a column-editor hint that it is a % share', () => {
     create(TABLE_WITH_TEMPLATE);
     const host: HTMLElement = fixture.nativeElement;
@@ -365,7 +382,8 @@ describe('StudioTablePropertiesComponent — column structure unlock', () => {
     expect(settingsSpy).toHaveBeenCalledTimes(1);
     const patch = settingsSpy.mock.calls[0]![0] as { tableTemplateColumns: { key: string; label: string; type: string }[] };
     const added = patch.tableTemplateColumns.at(-1)!;
-    expect(added).toEqual({ key: 'sum', label: 'Сумма', type: 'currency', width: 20, align: 'right' });
+    // TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER: quick-add now fits width to the label ("Сумма".length = 5), not a flat 20.
+    expect(added).toEqual({ key: 'sum', label: 'Сумма', type: 'currency', width: 5, align: 'right' });
   });
 
   it('does not offer «+ Сумма» once a sum-alias column already exists', () => {

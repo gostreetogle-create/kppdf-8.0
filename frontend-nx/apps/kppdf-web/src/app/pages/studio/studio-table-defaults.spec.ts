@@ -1,7 +1,9 @@
 import type { TableTemplate } from '@kppdf/data-access';
 import {
   buildTableSettingsFromTemplate,
+  columnWidthPercents,
   createStandardStudioTableColumn,
+  fitColumnWidthsByHeader,
   healStudioTableColumns,
   isKnownStudioColumnKey,
   isStudioQtyColumnKey,
@@ -203,9 +205,9 @@ describe('studio-table-defaults', () => {
     });
   });
 
-  it('createStandardStudioTableColumn builds a column at the canonical key with a default width', () => {
+  it('createStandardStudioTableColumn builds a column at the canonical key with a header-fit width (TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER)', () => {
     const col = createStandardStudioTableColumn({ key: 'qty', label: 'Количество', type: 'number', align: 'right' });
-    expect(col).toEqual({ key: 'qty', label: 'Количество', type: 'number', width: 20, align: 'right' });
+    expect(col).toEqual({ key: 'qty', label: 'Количество', type: 'number', width: 10, align: 'right' });
   });
 
   describe('live rows + qty overrides (TZ-NX-DOCSTUDIO-TABLE-LINE-QTY)', () => {
@@ -305,6 +307,47 @@ describe('studio-table-defaults', () => {
       const untouched = col('name', 'Наименование', 'text');
       const healed = healStudioTableColumns([untouched]);
       expect(healed[0]).toBe(untouched);
+    });
+  });
+
+  describe('fitColumnWidthsByHeader (TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER)', () => {
+    it('weighs by label length, name-column wider than a short label, percents sum to 100', () => {
+      const columns: StudioTableColumn[] = [
+        { key: 'sku', label: 'Артикул', type: 'text', width: 20, align: 'left' },
+        { key: 'photo', label: 'Фото', type: 'text', width: 20, align: 'left' },
+        { key: 'name', label: 'Наименование', type: 'text', width: 20, align: 'left' },
+      ];
+      const fitted = fitColumnWidthsByHeader(columns);
+      const nameCol = fitted.find((c) => c.key === 'name')!;
+      const photoCol = fitted.find((c) => c.key === 'photo')!;
+      expect(nameCol.width).toBeGreaterThan(photoCol.width);
+      expect(columnWidthPercents(fitted).reduce((a, b) => a + b, 0)).toBe(100);
+    });
+
+    it('does not change key/label/type/align, only width', () => {
+      const columns: StudioTableColumn[] = [{ key: 'sku', label: 'Артикул', type: 'text', width: 20, align: 'right' }];
+      const fitted = fitColumnWidthsByHeader(columns);
+      expect(fitted[0]).toMatchObject({ key: 'sku', label: 'Артикул', type: 'text', align: 'right' });
+    });
+
+    it('caps a photo column narrow even behind a long label', () => {
+      const columns: StudioTableColumn[] = [{ key: 'photo', label: 'Фотография изделия крупным планом', type: 'text', width: 20, align: 'left' }];
+      expect(fitColumnWidthsByHeader(columns)[0]!.width).toBeLessThanOrEqual(4);
+    });
+
+    it('floors a very short label so it does not collapse to near-0 after scaling', () => {
+      const columns: StudioTableColumn[] = [
+        { key: 'no', label: '№', type: 'text', width: 20, align: 'left' },
+        { key: 'name', label: 'Наименование', type: 'text', width: 20, align: 'left' },
+      ];
+      expect(fitColumnWidthsByHeader(columns)[0]!.width).toBeGreaterThanOrEqual(2);
+    });
+
+    it('createStandardStudioTableColumn applies the same header-based width', () => {
+      const photo = createStandardStudioTableColumn({ key: 'photo', label: 'Фото', type: 'text', align: 'left' });
+      expect(photo.width).toBeLessThanOrEqual(4);
+      const qty = createStandardStudioTableColumn({ key: 'qty', label: 'Количество', type: 'number', align: 'right' });
+      expect(qty.width).toBe(Math.max(2, 'Количество'.length));
     });
   });
 });

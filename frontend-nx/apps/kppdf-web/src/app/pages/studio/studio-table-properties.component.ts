@@ -45,6 +45,7 @@ import {
   filterHiddenColumnKeysForColumns,
   createStudioTableColumn,
   createStandardStudioTableColumn,
+  fitColumnWidthsByHeader,
   healStudioTableColumns,
   isKnownStudioColumnKey,
   missingStandardColumnFields,
@@ -137,13 +138,23 @@ import {
             variant="outline"
             size="sm"
             [disabled]="disabled || !columnsEditable()"
+            data-test="studio-table-widths-by-header"
+            (click)="fitColumnWidths()"
+          >
+            По заголовкам
+          </app-pi-button>
+          <app-pi-button
+            type="button"
+            variant="outline"
+            size="sm"
+            [disabled]="disabled || !columnsEditable()"
             data-test="studio-table-add-column"
             (click)="addColumn()"
           >
             + Колонка
           </app-pi-button>
         </div>
-        <p class="table-props__hint" data-test="studio-table-width-hint">Ширина колонок, % — сумма ≈ 100%</p>
+        <p class="table-props__hint" data-test="studio-table-width-hint">Веса → % на листе, сумма ≈ 100%. «По заголовкам» — пропорционально длине подписи; потом можно править вручную.</p>
         @if (missingStandardFields(block).length > 0) {
           <div class="table-props__quick-add" data-test="studio-table-quick-add">
             @for (field of missingStandardFields(block); track field.key) {
@@ -992,6 +1003,10 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   protected addColumn(): void {
     const next = [...studioTableColumns(this.block), createStudioTableColumn(studioTableColumns(this.block))];
     this.emitColumnStructure(next);
+  }
+
+  protected fitColumnWidths(): void {
+    this.emitColumnStructure(fitColumnWidthsByHeader(studioTableColumns(this.block)));
   }
 
   protected missingStandardFields(block: StudioBlock): readonly StudioStandardColumnField[] {
