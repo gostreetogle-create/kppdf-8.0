@@ -9,8 +9,13 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
 import { rememberStudioDocument } from '@kppdf/features/doc-studio';
-import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogData } from './studio-template-picker-dialog.component';
-import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData, type StudioCreateDoctypeResult } from './studio-create-doctype-dialog.component';
+import {
+  StudioTemplatePickerDialogComponent,
+  type StudioTemplatePickerDialogData,
+  StudioCreateDoctypeDialogComponent,
+  type StudioCreateDoctypeDialogData,
+  type StudioCreateDoctypeResult,
+} from '@kppdf/features/doc-studio';
 
 /** Row-caption labels for the values actually used by `statusFilter` below (draft/frozen/final). */
 const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {

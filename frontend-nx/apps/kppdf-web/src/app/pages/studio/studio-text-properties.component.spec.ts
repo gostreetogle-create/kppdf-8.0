@@ -13,7 +13,7 @@ import { StudioTextPropertiesComponent } from './studio-text-properties.componen
 import {
   StudioDataFieldPickerDialogComponent,
   type StudioDataFieldSelection,
-} from './studio-data-field-picker-dialog.component';
+} from '@kppdf/features/doc-studio';
 
 /**
  * TZ-NX-DOCSTUDIO-S37B — locks the «Поле ERP» → Просмотр path. S37 operator

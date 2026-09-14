@@ -38,15 +38,17 @@ import type {
 } from '@kppdf/data-access';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
 import { StudioEditorFacade } from './studio-editor.facade';
-import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
-import { StudioPagesPanelComponent } from './studio-pages-panel.component';
 import type { StudioShowcaseKind } from './studio-data-vitrina.component';
-import { StudioElementsPanelComponent } from './studio-elements-panel.component';
-import { StudioLayersPanelComponent } from './studio-layers-panel.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
-import { StudioTemplatePanelComponent } from './studio-template-panel.component';
-import { StudioWorkspaceShellComponent } from './studio-workspace-shell.component';
+import {
+  StudioBlocksCanvasComponent,
+  StudioPagesPanelComponent,
+  StudioElementsPanelComponent,
+  StudioLayersPanelComponent,
+  StudioTemplatePanelComponent,
+  StudioWorkspaceShellComponent,
+} from '@kppdf/features/doc-studio';
 import type { StudioTableRowSource } from '@kppdf/features/doc-studio';
 
 const STUDIO_TOOL_OWNER = 'studio-editor';

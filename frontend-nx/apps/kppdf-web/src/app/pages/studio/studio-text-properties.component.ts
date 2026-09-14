@@ -32,7 +32,7 @@ import { onDialogCloseOnce } from '../on-dialog-close-once';
 import {
   StudioDataFieldPickerDialogComponent,
   type StudioDataFieldSelection,
-} from './studio-data-field-picker-dialog.component';
+} from '@kppdf/features/doc-studio';
 import {
   AlignCenter,
   AlignJustify,

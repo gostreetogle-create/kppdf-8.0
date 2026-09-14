@@ -13,7 +13,7 @@ import {
   Wallpaper,
 } from 'lucide-angular';
 import { studioBlockIsPassportBackground, studioImageUrl, studioLayerTypeLabel } from '@kppdf/features/doc-studio';
-import { StudioTablePropertiesComponent } from './studio-table-properties.component';
+import { StudioTablePropertiesComponent } from '@kppdf/features/doc-studio';
 import { StudioTextPropertiesComponent } from './studio-text-properties.component';
 
 function layerDisplayName(block: StudioBlock): string {

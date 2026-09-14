@@ -12,7 +12,7 @@ import { PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import type { SilentResult } from '@kppdf/util-http';
 import { StudioListPage } from './studio-list.page';
-import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeResult } from './studio-create-doctype-dialog.component';
+import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeResult } from '@kppdf/features/doc-studio';
 
 describe('StudioListPage — create document CTAs', () => {
   let fixture: ComponentFixture<StudioListPage>;

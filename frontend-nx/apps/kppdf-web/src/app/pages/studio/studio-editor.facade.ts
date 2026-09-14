@@ -32,24 +32,18 @@ import { extractErrorMessage, type SilentResult } from '@kppdf/util-http';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
+import type { StudioDataCategory, StudioDataPanelCategoryJump } from './studio-data-panel.component';
+import type { StudioCatalogSelections, StudioShowcaseKind } from './studio-data-vitrina.component';
 import {
   StudioTextLibraryPickerDialogComponent,
   type StudioTextLibraryPickResult,
-} from './studio-text-library-picker-dialog.component';
-import type { StudioDataCategory, StudioDataPanelCategoryJump } from './studio-data-panel.component';
-import {
   StudioUnsavedChangesDialogComponent,
   type StudioUnsavedChangesChoice,
-} from './studio-unsaved-changes-dialog.component';
-import type { StudioCatalogSelections, StudioShowcaseKind } from './studio-data-vitrina.component';
-import {
   StudioRenameDocumentDialogComponent,
   type StudioRenameDocumentResult,
-} from './studio-rename-document-dialog.component';
-import {
   StudioSaveAsTemplateDialogComponent,
   type StudioSaveAsTemplateResult,
-} from './studio-save-as-template-dialog.component';
+} from '@kppdf/features/doc-studio';
 import {
   onStudioSectionClick,
   studioPanelIsTable,

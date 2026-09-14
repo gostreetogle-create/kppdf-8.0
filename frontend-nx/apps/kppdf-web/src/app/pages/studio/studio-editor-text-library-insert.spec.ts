@@ -19,7 +19,7 @@ import { PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { API_BASE_URL } from '@kppdf/util-http';
 import { StudioEditorPage } from './studio-editor.page';
-import { StudioTextLibraryPickerDialogComponent, type StudioTextLibraryPickResult } from './studio-text-library-picker-dialog.component';
+import { StudioTextLibraryPickerDialogComponent, type StudioTextLibraryPickResult } from '@kppdf/features/doc-studio';
 
 /**
  * TZ-NX-DOCSTUDIO-TEXT-LIBRARY-INSERT-ON-ADD — «+ Текст» in Элементы now

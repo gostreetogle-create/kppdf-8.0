@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { LucideAngularModule, Maximize2 } from 'lucide-angular';
-import type { StudioWsRailItem } from '@kppdf/features/doc-studio';
+import type { StudioWsRailItem } from '../util/studio-workspace-chrome';
 
 export type StudioWsOrientation = 'portrait' | 'landscape';
-export type { StudioWsLucideIcon, StudioWsRailItem } from '@kppdf/features/doc-studio';
 
 const RIGHT_PANEL_SECTIONS = new Set(['properties', 'table']);
 

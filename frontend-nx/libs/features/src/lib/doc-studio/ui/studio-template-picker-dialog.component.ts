@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { PiDocumentTemplatesService, type DocumentTemplate } from '@kppdf/data-access';
 import { PiDialogComponent, PI_DIALOG_DATA, PI_DIALOG_REF, PiDialogService, AlertDialogComponent, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { onDialogCloseOnce } from './on-dialog-close-once';
 
 export interface StudioTemplatePickerDialogData {
   readonly templates: readonly DocumentTemplate[];
