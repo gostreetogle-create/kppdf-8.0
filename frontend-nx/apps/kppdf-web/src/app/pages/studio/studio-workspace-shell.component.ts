@@ -1,15 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { FileText, LucideAngularModule, Maximize2 } from 'lucide-angular';
+import { LucideAngularModule, Maximize2 } from 'lucide-angular';
+import type { StudioWsRailItem } from '@kppdf/features/doc-studio';
 
 export type StudioWsOrientation = 'portrait' | 'landscape';
-export type StudioWsLucideIcon = typeof FileText;
-
-export interface StudioWsRailItem {
-  id: string;
-  title: string;
-  short?: string;
-  icon: StudioWsLucideIcon;
-}
+export type { StudioWsLucideIcon, StudioWsRailItem } from '@kppdf/features/doc-studio';
 
 const RIGHT_PANEL_SECTIONS = new Set(['properties', 'table']);
 

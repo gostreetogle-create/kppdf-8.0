@@ -47,7 +47,7 @@ import { StudioLayersPanelComponent } from './studio-layers-panel.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
 import { StudioTemplatePanelComponent } from './studio-template-panel.component';
 import { StudioWorkspaceShellComponent } from './studio-workspace-shell.component';
-import type { StudioTableRowSource } from './studio-table-defaults';
+import type { StudioTableRowSource } from '@kppdf/features/doc-studio';
 
 const STUDIO_TOOL_OWNER = 'studio-editor';
 

@@ -8,7 +8,7 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
-import { rememberStudioDocument } from './studio-session';
+import { rememberStudioDocument } from '@kppdf/features/doc-studio';
 import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogData } from './studio-template-picker-dialog.component';
 import { StudioCreateDoctypeDialogComponent, type StudioCreateDoctypeDialogData, type StudioCreateDoctypeResult } from './studio-create-doctype-dialog.component';
 

@@ -12,7 +12,7 @@ import {
   Undo2,
   Wallpaper,
 } from 'lucide-angular';
-import { studioBlockIsPassportBackground, studioImageUrl, studioLayerTypeLabel } from './studio-block-helpers';
+import { studioBlockIsPassportBackground, studioImageUrl, studioLayerTypeLabel } from '@kppdf/features/doc-studio';
 import { StudioTablePropertiesComponent } from './studio-table-properties.component';
 import { StudioTextPropertiesComponent } from './studio-text-properties.component';
 

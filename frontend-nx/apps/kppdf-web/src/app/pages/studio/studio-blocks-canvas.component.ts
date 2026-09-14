@@ -10,8 +10,6 @@ import {
   studioCanvasForegroundBlocks,
   studioImageUrl,
   studioTextDisplayHtml,
-} from './studio-block-helpers';
-import {
   columnWidthPercents,
   isStudioPhotoColumnKey,
   studioTableDisabledRowIndices,
@@ -21,14 +19,12 @@ import {
   studioVisibleColumnIndices,
   studioVisibleTableColumns,
   studioVisibleTableRows,
-} from './studio-table-defaults';
-import {
   clampStudioLayoutPosition,
   normalizeStudioBlockLayout,
   snapStudioLayoutToPageEdges,
   studioImageResizeAspectRatio,
   studioProportionalImageResize,
-} from './studio-layout';
+} from '@kppdf/features/doc-studio';
 
 @Component({
   selector: 'pi-studio-blocks-canvas',

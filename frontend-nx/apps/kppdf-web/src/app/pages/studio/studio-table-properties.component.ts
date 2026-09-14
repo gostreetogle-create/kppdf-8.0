@@ -51,7 +51,7 @@ import {
   missingStandardColumnFields,
   type StudioStandardColumnField,
   type StudioTableColumn,
-} from './studio-table-defaults';
+} from '@kppdf/features/doc-studio';
 
 @Component({
   selector: 'pi-studio-table-properties',

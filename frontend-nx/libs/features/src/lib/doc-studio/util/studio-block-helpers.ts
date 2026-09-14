@@ -1,5 +1,27 @@
 import type { StudioBlock } from '@kppdf/data-access';
-import { migratePlainTokensToNodes } from '@kppdf/ui/rich-text';
+
+/**
+ * TZ-NX-DOCSTUDIO-EDITOR-UTIL-MOVE (Phase 2) — inlined copy of
+ * `migratePlainTokensToNodes` (`libs/ui/paper-and-ink/.../substitution-token.extension.ts`,
+ * source of truth for the RTE dialog's own chip-wrapping). Importing it from
+ * `@kppdf/ui/rich-text` pulls in `pi-rich-text-editor.component.ts` (Angular
+ * component + TipTap), which `libs/features`'s plain `@nx/js:tsc` build
+ * cannot compile (it's not an Angular-aware builder, and the component's
+ * `@tiptap/extensions/placeholder` subpath type + cross-lib source import
+ * both fail `nx build kppdf-web`'s `features:build` step). This one function
+ * is pure string manipulation with zero Angular/TipTap dependency of its
+ * own — duplicated here rather than restructuring paper-and-ink's rich-text
+ * barrel, which is outside this TZ's conflict keys. Keep both copies in
+ * sync if the token-chip HTML shape ever changes.
+ */
+const TOKEN_RE = /\{\{[\w.]+\}\}/g;
+function migratePlainTokensToNodes(html: string): string {
+  if (!html || !html.includes('{{')) return html;
+  return html.replace(TOKEN_RE, (match) => {
+    if (html.includes(`data-token="${match}"`)) return match;
+    return `<span data-substitution-token="" data-token="${match}" class="substitution-token" contenteditable="false">${match}</span>`;
+  });
+}
 
 export function studioImageUrl(block: StudioBlock): string | null {
   const url = block.settings?.['imageUrl'];

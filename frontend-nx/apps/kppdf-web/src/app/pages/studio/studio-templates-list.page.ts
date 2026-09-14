@@ -12,7 +12,7 @@ import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { rememberStudioDocument } from './studio-session';
+import { rememberStudioDocument } from '@kppdf/features/doc-studio';
 import { STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from './studio-list.page';
 
 /**

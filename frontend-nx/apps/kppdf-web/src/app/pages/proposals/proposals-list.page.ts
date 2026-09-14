@@ -23,8 +23,7 @@ import { PiToastService } from '@kppdf/ui/toast';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { DEALS_TOC_CHIPS } from '../deals-group-chips';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { findKpDocType } from '../studio/studio-kp-doc-type';
-import { rememberStudioDocument } from '../studio/studio-session';
+import { findKpDocType, rememberStudioDocument } from '@kppdf/features/doc-studio';
 import {
   ProposalAttachOrgsDialogComponent,
   type AttachOrgsDialogData,

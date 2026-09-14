@@ -24,6 +24,9 @@
       "@kppdf/features": [
         "libs/features/src/index.ts"
       ],
+      "@kppdf/features/doc-studio": [
+        "libs/features/src/lib/doc-studio/index.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],

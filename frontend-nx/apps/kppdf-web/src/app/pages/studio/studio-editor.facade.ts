@@ -56,14 +56,10 @@ import {
   studioPanelSide,
   studioPanelTitle,
   type StudioWorkspaceSection,
-} from './studio-workspace-chrome';
-import {
   studioBlockIsPassportBackground,
   studioImageSettingsForUpdate,
   studioMergeBlockSettings,
   studioPreserveClientBlockSettings,
-} from './studio-block-helpers';
-import {
   coerceStudioBlockLayout,
   normalizeStudioBlockLayout,
   studioCenteredImageLayout,
@@ -74,10 +70,8 @@ import {
   studioReadImageNaturalSize,
   studioStaggerImageLayout,
   zIndexFromLayerOrder,
-} from './studio-layout';
-import { isKpDocType } from './studio-kp-doc-type';
-import { rememberStudioDocument } from './studio-session';
-import {
+  isKpDocType,
+  rememberStudioDocument,
   STUDIO_DEFAULT_TABLE_COLUMNS,
   STUDIO_DEFAULT_TABLE_ROWS,
   studioLiveRowsMismatchColumns,
@@ -86,8 +80,8 @@ import {
   buildTableTemplatePayloadFromBlock,
   buildTableSettingsFromTemplate,
   type StudioTableRowSource,
-} from './studio-table-defaults';
-import { studioTextBlockSlug } from './studio-text-helpers';
+  studioTextBlockSlug,
+} from '@kppdf/features/doc-studio';
 
 /** Mirrors backend LIVE_HYDRATABLE_SOURCE_TYPES (studio-document.service.ts). */
 const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([

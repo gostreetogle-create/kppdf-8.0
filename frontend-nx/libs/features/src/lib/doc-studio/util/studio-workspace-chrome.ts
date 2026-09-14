@@ -1,7 +1,24 @@
 import { Database, FileStack, FileText, Layers, LayoutTemplate, Settings2, ClipboardList } from 'lucide-angular';
-import type { StudioWsRailItem } from './studio-workspace-shell.component';
 
 export type StudioWorkspaceSection = 'elements' | 'layers' | 'pages' | 'data' | 'selected' | 'template' | 'properties';
+
+/**
+ * TZ-NX-DOCSTUDIO-EDITOR-UTIL-MOVE (Phase 2) — relocated here from
+ * `studio-workspace-shell.component.ts` (still in `apps/kppdf-web`, dumb UI,
+ * Phase 3 territory): a lib under `libs/features` cannot import an app file,
+ * so `STUDIO_RAIL_ITEMS` below now owns the type instead of borrowing it.
+ * `studio-workspace-shell.component.ts` imports both back from
+ * `@kppdf/features/doc-studio` — same shape, single definition, just
+ * relocated to break the app→lib import direction.
+ */
+export type StudioWsLucideIcon = typeof FileText;
+
+export interface StudioWsRailItem {
+  id: string;
+  title: string;
+  short?: string;
+  icon: StudioWsLucideIcon;
+}
 
 // studio-editor.page.ts renders its own rail (showDesktopRail=false, railItems=[]);
 // this list only backs studioPanelTitle() below for the panel header text.
