@@ -192,19 +192,35 @@ export class StudioDocumentService {
     });
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE — an unscoped/admin caller
+   * (organizationId null|undefined) sees every document; only a caller
+   * bound to a real org is filtered to it.
+   */
   async findAll(organizationId: string | null | undefined): Promise<StudioDocumentDocument[]> {
-    const orgId = await this.resolveOrganizationId(organizationId);
-    return this.model
-      .find({ organizationId: new Types.ObjectId(orgId) })
-      .sort({ updatedAt: -1 })
-      .exec();
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
+      return this.model
+        .find({ organizationId: new Types.ObjectId(organizationId) })
+        .sort({ updatedAt: -1 })
+        .exec();
+    }
+    return this.model.find().sort({ updatedAt: -1 }).exec();
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE — the scope check only applies to a
+   * caller bound to a real org (IDOR protection kept). An unscoped/admin
+   * caller (organizationId null|undefined) loads by id only: previously this
+   * resolved the caller's own tenant scope via resolveOrganizationId's
+   * alphabetical-first-org fallback and asserted the DOCUMENT against it, so
+   * an admin editing the issuer (TZ-NX-DOCSTUDIO-ISSUER-SELECT) away from
+   * that fallback org 403'd themselves out of the document on the very next
+   * request (self-lockout — GET/PATCH/addBlock all throw).
+   */
   async findById(
     id: string,
     organizationId: string | null | undefined,
   ): Promise<StudioDocumentDocument> {
-    const orgId = await this.resolveOrganizationId(organizationId);
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`StudioDocument ${id} not found`);
     }
@@ -212,7 +228,9 @@ export class StudioDocumentService {
     if (!doc) {
       throw new NotFoundException(`StudioDocument ${id} not found`);
     }
-    this.assertSameScope(doc, orgId);
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
+      this.assertSameScope(doc, organizationId);
+    }
     return doc;
   }
 
@@ -222,8 +240,7 @@ export class StudioDocumentService {
     organizationId: string | null | undefined,
     userId?: string,
   ): Promise<StudioDocumentDocument> {
-    const orgId = await this.resolveOrganizationId(organizationId);
-    const doc = await this.findById(id, orgId);
+    const doc = await this.findById(id, organizationId);
 
     this.assertRevision(doc, dto.expectedRevision);
 
@@ -284,8 +301,7 @@ export class StudioDocumentService {
     organizationId: string | null | undefined,
     userId?: string,
   ): Promise<StudioDocumentDocument> {
-    const orgId = await this.resolveOrganizationId(organizationId);
-    const doc = await this.findById(id, orgId);
+    const doc = await this.findById(id, organizationId);
 
     this.assertRevision(doc, dto.expectedRevision);
 
@@ -362,8 +378,7 @@ export class StudioDocumentService {
     organizationId: string | null | undefined,
     userId?: string,
   ): Promise<TemplateBlockDocument> {
-    const orgId = await this.resolveOrganizationId(organizationId);
-    const doc = await this.findById(id, orgId);
+    const doc = await this.findById(id, organizationId);
     this.assertRevision(doc, expectedRevision);
 
     const sourceTemplateId = doc.sourceTemplateId
@@ -388,8 +403,7 @@ export class StudioDocumentService {
     organizationId: string | null | undefined,
     userId?: string,
   ): Promise<TemplateBlockDocument[]> {
-    const orgId = await this.resolveOrganizationId(organizationId);
-    const doc = await this.findById(id, orgId);
+    const doc = await this.findById(id, organizationId);
     this.assertRevision(doc, expectedRevision);
 
     const blocks = await this.blockService.updateLayoutsForStudioDocument(id, dto);
@@ -407,8 +421,7 @@ export class StudioDocumentService {
     organizationId: string | null | undefined,
     userId?: string,
   ): Promise<TemplateBlockDocument[]> {
-    const orgId = await this.resolveOrganizationId(organizationId);
-    const doc = await this.findById(id, orgId);
+    const doc = await this.findById(id, organizationId);
     this.assertRevision(doc, expectedRevision);
 
     const blocks = await this.blockService.reorderForStudioDocument(id, blockIds);
@@ -420,8 +433,7 @@ export class StudioDocumentService {
     id: string,
     organizationId: string | null | undefined,
   ): Promise<void> {
-    const orgId = await this.resolveOrganizationId(organizationId);
-    const doc = await this.findById(id, orgId);
+    const doc = await this.findById(id, organizationId);
     const deletedBlocks = await this.blockService.deleteAllByStudioDocument(id);
     if (deletedBlocks > 0) {
       this.logger.log(
@@ -490,8 +502,7 @@ export class StudioDocumentService {
     organizationId: string | null | undefined,
     userId?: string,
   ): Promise<StudioDocumentDocument> {
-    const orgId = await this.resolveOrganizationId(organizationId);
-    const src = await this.findById(id, orgId);
+    const src = await this.findById(id, organizationId);
 
     const copy = await this.model.create({
       name: `${src.name} (копия)`,
@@ -536,7 +547,7 @@ export class StudioDocumentService {
     dto: SaveAsTemplateDto,
   ): Promise<DocumentTemplateDocument> {
     const orgId = await this.resolveOrganizationId(organizationId);
-    const doc = await this.findById(id, orgId);
+    const doc = await this.findById(id, organizationId);
 
     const name = dto.name.trim();
     if (!name) {

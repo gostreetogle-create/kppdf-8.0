@@ -179,6 +179,21 @@ function isRevisionConflict(result: SilentResult<unknown>): boolean {
 }
 
 /**
+ * TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE — a bound user's 403 for a document/
+ * template outside their own org (IDOR guard, kept on purpose) is a
+ * distinct, expected case — not a revision race (never 409, never opens the
+ * `conflict()` dialog) and not a generic failure. Message content is
+ * checked, not status alone: `RolesGuard` also throws a plain 403
+ * ("Forbidden resource") on this same route for a role mismatch, which must
+ * keep the generic toast, not this scope-specific one.
+ */
+function isOrgScopeForbidden(result: SilentResult<unknown>): boolean {
+  if (result.ok || result.error.status !== 403) return false;
+  const body = result.error.error as { message?: unknown } | null;
+  return typeof body?.message === 'string' && /organization scope/i.test(body.message);
+}
+
+/**
  * TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — «Изменить» on a «Выбрано» chip
  * jumps to the *same* place the value is already edited in «Данные», never
  * a second picker. `focusTestId` is optional — the catalog kinds land on
@@ -1497,6 +1512,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private reportWriteFailure(result: { ok: false; error: HttpErrorResponse }, fallback = 'Не удалось сохранить'): void {
     if (isRevisionConflict(result)) {
       this.conflict();
+      return;
+    }
+    if (isOrgScopeForbidden(result)) {
+      this.toast.error('Нет доступа к документу этой фирмы — выберите свою организацию.');
       return;
     }
     this.toast.error(extractErrorMessage(result.error) || fallback);

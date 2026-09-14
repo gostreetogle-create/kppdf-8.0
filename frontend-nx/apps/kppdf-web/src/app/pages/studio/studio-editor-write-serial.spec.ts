@@ -299,6 +299,61 @@ describe('StudioEditorPage — one document write queue (TZ-NX-DOCSTUDIO-ADD-PAG
   });
 
   /**
+   * TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE — a bound user's 403 for a document
+   * outside their own org (IDOR guard, kept on purpose) is a distinct,
+   * expected case: never the "another tab changed this document" dialog
+   * (it is not a 409), and never the raw backend English message either —
+   * a specific, honest Russian toast instead.
+   */
+  it('a 403 org-scope write failure toasts a Russian "no access" message — never the conflict dialog, never the raw English', async () => {
+    const update = jest.fn().mockReturnValue(
+      of({
+        ok: false,
+        error: { status: 403, error: { message: 'Studio document belongs to another organization scope' } },
+      }),
+    );
+    configure({ update });
+
+    fixture = TestBed.createComponent(StudioEditorPage);
+    await flush();
+
+    const component = fixture.componentInstance as unknown as { addPage: () => void };
+    component.addPage();
+    await flush();
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(dialogOpen).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    const message = toast.error.mock.calls[0]![0] as string;
+    expect(message).not.toMatch(/organization scope/i);
+    expect(message).toMatch(/фирм/i);
+  });
+
+  /**
+   * A plain RBAC 403 ("Forbidden resource" from RolesGuard, unrelated to
+   * org scope) must keep the generic toast — matching must key off the
+   * scope-specific message, not status 403 alone.
+   */
+  it('a plain RBAC 403 (role mismatch) keeps the generic toast, not the org-scope wording', async () => {
+    const update = jest.fn().mockReturnValue(
+      of({ ok: false, error: { status: 403, error: { message: 'Forbidden resource' } } }),
+    );
+    configure({ update });
+
+    fixture = TestBed.createComponent(StudioEditorPage);
+    await flush();
+
+    const component = fixture.componentInstance as unknown as { addPage: () => void };
+    component.addPage();
+    await flush();
+
+    expect(dialogOpen).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    const message = toast.error.mock.calls[0]![0] as string;
+    expect(message).not.toMatch(/фирм/i);
+  });
+
+  /**
    * TZ-NX-DOCSTUDIO-REVISION-RACE-UX — `saveLayouts` (drag commit) used to
    * be its own parallel serialization (`layoutSavePromise`), entirely
    * separate from `catalogWriteChain` — the audit's #1 self-race source.

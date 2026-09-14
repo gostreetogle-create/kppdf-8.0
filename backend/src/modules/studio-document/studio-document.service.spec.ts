@@ -178,6 +178,15 @@ describe('StudioDocumentService (TZ-DOC-STUDIO-201b)', () => {
         organizationId: new Types.ObjectId(ORG_A),
       });
     });
+
+    it('an unscoped/admin caller (organizationId=null) lists every document, not just the fallback org (TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE)', async () => {
+      const { service, model } = createService();
+      model.find.mockReturnValue(mockQuery([studioDoc(), studioDoc({ organizationId: new Types.ObjectId(ORG_B) })]));
+
+      await service.findAll(null);
+
+      expect(model.find).toHaveBeenCalledWith();
+    });
   });
 
   describe('findById', () => {
@@ -208,6 +217,15 @@ describe('StudioDocumentService (TZ-DOC-STUDIO-201b)', () => {
       await expect(service.findById(DOC_ID, ORG_A)).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+
+    it('an unscoped/admin caller (organizationId=null) loads any document by id, regardless of its org (TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE)', async () => {
+      const { service, model } = createService();
+      const doc = studioDoc({ organizationId: new Types.ObjectId(ORG_B) });
+      model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+
+      const result = await service.findById(DOC_ID, null);
+      expect(result).toBe(doc);
     });
   });
 
@@ -333,6 +351,36 @@ describe('StudioDocumentService (TZ-DOC-STUDIO-201b)', () => {
 
         expect(organizationService.findById).not.toHaveBeenCalled();
         expect(String(doc.organizationId)).toBe(ORG_A);
+      });
+
+      it('does not self-lockout: unscoped admin who switches the issuer away from the fallback org can still addBlock on the same doc (TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE regression)', async () => {
+        // Reproduces the ISSUER-SELECT evidence: doc starts in the
+        // alphabetical-first fallback org (ORG_A); an unscoped admin
+        // (organizationId=null) switches the issuer to ORG_B, then
+        // immediately does "+ Фото" on the same doc. Before this fix,
+        // findById re-resolved the caller's own scope to the ORG_A
+        // fallback and asserted the document (now ORG_B) against it —
+        // a 403 self-lockout on every request after the switch.
+        const { service, model, organizationService, blockService } = createService(
+          new Types.ObjectId(ORG_A),
+        );
+        const doc = studioDoc({ revision: 1, organizationId: new Types.ObjectId(ORG_A) });
+        model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+        organizationService.findById.mockResolvedValue({ _id: ORG_B });
+
+        await service.update(DOC_ID, { expectedRevision: 1, organizationId: ORG_B }, null);
+        expect(String(doc.organizationId)).toBe(ORG_B);
+
+        const created = { _id: new Types.ObjectId(), type: 'image', order: 0 };
+        blockService.createForStudioDocument.mockResolvedValue(created);
+
+        const block = await service.addBlock(
+          DOC_ID,
+          doc.revision,
+          { type: 'image', order: 0 } as never,
+          null,
+        );
+        expect(block).toBe(created);
       });
     });
   });
