@@ -106,12 +106,22 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
                 }
               </div>
               <div class="insert-suggest" data-test="studio-insert-suggest">
-                @if (insertTargets().length === 0) {
+                @if (insertTargets().length === 0 && selectedAnchors().length === 0) {
                   <button type="button" class="insert-btn" disabled data-test="studio-insert-disabled">
                     Вставить на лист
                   </button>
                   <p class="insert-hint" data-test="studio-insert-hint">Выберите товары, чтобы вставить таблицу</p>
                 } @else {
+                  @for (anchor of selectedAnchors(); track anchor.key) {
+                    <button
+                      type="button"
+                      class="insert-btn"
+                      [attr.data-test]="'studio-insert-party-' + anchor.key"
+                      (click)="insertPartyText.emit(anchor.key)"
+                    >
+                      Вставить «{{ anchor.label }}»
+                    </button>
+                  }
                   @for (target of insertTargets(); track target.kind) {
                     <button
                       type="button"
@@ -122,7 +132,9 @@ const INSERT_TARGET_LABELS: Record<StudioShowcaseKind, string> = {
                       Вставить таблицу «{{ target.label }}»
                     </button>
                   }
-                  <p class="insert-hint">На листе появятся строки из выбранных товаров</p>
+                  @if (insertTargets().length > 0) {
+                    <p class="insert-hint">На листе появятся строки из выбранных товаров</p>
+                  }
                 }
               </div>
             }
@@ -439,6 +451,8 @@ export class StudioDataPanelComponent {
   readonly catalogChange = output<{ kind: StudioShowcaseKind; ids: readonly string[] }>();
   /** TZ-NX-DOCSTUDIO-D52 — «Вставить на лист»: parent creates/focuses the matching table + wires putDataSet. */
   readonly insertTable = output<StudioShowcaseKind>();
+  /** TZ-NX-DOCSTUDIO-SELECTED-INSERT-PARTY-TEXT — anchor key ('client'|'payer'|'supplier'); parent creates a text layer preset with that party's tokens. */
+  readonly insertPartyText = output<string>();
   /** TZ-NX-DOCSTUDIO-VITRINA-EDIT — vitrina «Изменить» Save landed; parent re-hydrates this kind's A4 table(s). */
   readonly catalogEntitySaved = output<StudioShowcaseKind>();
   /** TZ-NX-DOCSTUDIO-SELECTED-REPLACE-JUMP — a chip's «Изменить» was clicked; host maps the key to a section+focus jump. */

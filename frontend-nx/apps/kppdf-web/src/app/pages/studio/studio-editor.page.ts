@@ -214,6 +214,33 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
   materials: { category: 'products' },
 };
 
+/**
+ * TZ-NX-DOCSTUDIO-SELECTED-INSERT-PARTY-TEXT — canon token set per party
+ * (already documented in document-studio.page.md's token table): `client`
+ * substitutes from the flat `{{counterparty.*}}` bag key (legacy alias,
+ * still the primary one for the customer), `payer`/`supplier` from
+ * `{{anchor.<role>.*}}` — the same paths `editorSubstitutionBag()` and the
+ * server's `DocumentRenderService` both already resolve, not a new token
+ * scheme. `missingLabel` is the genitive form for the "выберите X" toast.
+ */
+const STUDIO_PARTY_TEXT_PRESETS: Record<string, { content: string; title: string; missingLabel: string }> = {
+  client: {
+    content: '<p>{{counterparty.name}}</p><p>ИНН {{counterparty.inn}}</p>',
+    title: 'Клиент',
+    missingLabel: 'клиента',
+  },
+  supplier: {
+    content: '<p>{{anchor.supplier.name}}</p><p>ИНН {{anchor.supplier.inn}}</p>',
+    title: 'Поставщик',
+    missingLabel: 'поставщика',
+  },
+  payer: {
+    content: '<p>{{anchor.payer.name}}</p>',
+    title: 'Плательщик',
+    missingLabel: 'плательщика',
+  },
+};
+
 @Component({
   selector: 'pi-studio-editor-page',
   standalone: true,
@@ -344,6 +371,7 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
                 (catalogChange)="onCatalogSelectionChange($event)"
                 (catalogEntitySaved)="onCatalogEntitySaved($event)"
                 (insertTable)="insertCatalogTable($event)"
+                (insertPartyText)="insertPartyText($event)"
                 (quotationChange)="onQuotationChange($event)"
                 (quotationStatusChange)="onQuotationStatusChange($event)"
                 (orderChange)="onOrderChange($event)"
@@ -358,6 +386,7 @@ const STUDIO_SELECTED_JUMP_MAP: Record<string, { category: StudioDataCategory; f
                 [catalogWriteBusy]="catalogWriteBusy()"
                 (catalogRemove)="removeCatalogChip($event)"
                 (insertTable)="insertCatalogTable($event)"
+                (insertPartyText)="insertPartyText($event)"
                 (editSelection)="onEditSelection($event)"
               />
             }
@@ -1619,7 +1648,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
    * `catalogWriteChain` (self-race candidate); now queued with one soft
    * retry on a self-inflicted 409.
    */
-  private createTextLayer(content = 'Новый текст', title?: string): void {
+  private createTextLayer(content = 'Новый текст', title?: string, openProperties = false): void {
     this.enqueueDocumentWrite(async () => {
       const d = this.document();
       if (!d) return;
@@ -1645,6 +1674,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       this.blocks.update((b) => [...b, block]);
       await this.refreshDocumentRevisionAfterBlockWrite();
       this.activateLayer(block._id);
+      if (openProperties) {
+        this.activeSection.set('properties');
+        this.panelCollapsed.set(false);
+      }
     });
   }
 
@@ -1690,6 +1723,30 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       return;
     }
     this.createTextLayer(content, title);
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-SELECTED-INSERT-PARTY-TEXT — Выбрано's party chip
+   * («Клиент»/«Поставщик»/«Плательщик») gets a «Вставить «…»» CTA next to
+   * the catalog insert-table buttons: a new text layer preset with that
+   * party's tokens (canon table already in page.md), always a fresh layer
+   * (not the "fill active empty text" reuse `insertTextContent` does — the
+   * chip isn't a text-block context, there is no "active text layer" to
+   * consider), then opens Свойства so the operator can immediately tweak
+   * the wording around the tokens. `key` is the same anchor key
+   * `selectedAnchorLabels()` already produces ('client' | 'payer' |
+   * 'supplier'), not a new entity type.
+   */
+  protected insertPartyText(key: string): void {
+    const preset = STUDIO_PARTY_TEXT_PRESETS[key];
+    if (!preset) return;
+    const anchor = this.selectedAnchorLabels().find((item) => item.key === key);
+    if (!anchor) {
+      this.toast.error(`Сначала выберите ${preset.missingLabel} в «Данные»`);
+      return;
+    }
+    this.createTextLayer(preset.content, preset.title, true);
+    this.toast.success(`«${preset.title}» вставлен на лист`);
   }
 
   addImageToActiveLayer(file: File): void {

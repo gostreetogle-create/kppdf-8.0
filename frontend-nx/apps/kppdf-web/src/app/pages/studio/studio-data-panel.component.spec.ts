@@ -163,8 +163,49 @@ describe('StudioDataPanelComponent', () => {
     expect(emitted).toEqual(['products']);
   });
 
-  it('shows a disabled CTA + hint when the buffer has anchors but no catalog selections (TZ-NX-DOCSTUDIO-D52)', () => {
+  /**
+   * TZ-NX-DOCSTUDIO-SELECTED-INSERT-PARTY-TEXT — an anchor with no catalog
+   * selections used to fall through to the disabled "выберите товары" CTA
+   * (the audit's own finding: "не disabled «только товары»"). Now the party
+   * insert button offers the actual available action instead.
+   */
+  it('offers the party insert CTA (not the disabled catalog-only placeholder) when only an anchor is selected', () => {
     fixture.componentRef.setInput('selectedAnchors', [{ key: 'client', label: 'Клиент', name: 'ООО Альфа' }]);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('mode', 'selected');
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="studio-insert-disabled"]')).toBeFalsy();
+    const partyBtn = el.querySelector('[data-test="studio-insert-party-client"]') as HTMLButtonElement;
+    expect(partyBtn).toBeTruthy();
+    expect(partyBtn.textContent).toContain('Клиент');
+  });
+
+  it('emits insertPartyText with the anchor key when its CTA is clicked', () => {
+    const emitted: string[] = [];
+    fixture.componentInstance.insertPartyText.subscribe((key) => emitted.push(key));
+    fixture.componentRef.setInput('selectedAnchors', [
+      { key: 'client', label: 'Клиент', name: 'ООО Альфа' },
+      { key: 'supplier', label: 'Поставщик', name: 'ООО Бета' },
+    ]);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('mode', 'selected');
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    (el.querySelector('[data-test="studio-insert-party-supplier"]') as HTMLButtonElement).click();
+
+    expect(emitted).toEqual(['supplier']);
+  });
+
+  it('still shows the disabled catalog-only placeholder when nothing at all is selected', () => {
+    // Selected section itself is only reachable once something is picked
+    // (its own empty-state gate) — a catalog chip with an otherwise-empty
+    // catalogSelections snapshot is the one way to reach "anchors empty,
+    // catalog empty" inside the insert-suggest block without also
+    // satisfying the outer empty-state gate.
+    fixture.componentRef.setInput('catalogChips', [{ key: 'products', label: 'изделия', count: 0 }]);
     fixture.detectChanges();
     fixture.componentRef.setInput('mode', 'selected');
     fixture.detectChanges();
@@ -172,7 +213,7 @@ describe('StudioDataPanelComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     const disabledBtn = el.querySelector('[data-test="studio-insert-disabled"]') as HTMLButtonElement;
     expect(disabledBtn.disabled).toBe(true);
-    expect(el.querySelector('[data-test="studio-insert-hint"]')?.textContent).toContain('Выберите товары');
+    expect(el.querySelector('[data-test^="studio-insert-party-"]')).toBeFalsy();
   });
 
   it('«Плательщик» stays a disclosure by default and opens on click (TZ-NX-DOCSTUDIO-D53)', () => {

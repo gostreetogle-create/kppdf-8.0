@@ -1,0 +1,58 @@
+{
+  "task": "TZ-NX-DOCSTUDIO-SELECTED-INSERT-PARTY-TEXT",
+  "docId": "6aa7a78845bb539e908305bf",
+  "clientId": "6a81c3ef107c9fceaf1e5c8a",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7a78845bb539e908305bf",
+  "checks": [
+    {
+      "name": "selected_panel_opened",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "client_party_cta_shown_not_disabled_placeholder",
+      "pass": true,
+      "detail": {
+        "hasDisabledPlaceholder": false,
+        "hasClientBtn": true,
+        "clientLabel": "Вставить «Клиент»"
+      }
+    },
+    {
+      "name": "client_text_layer_created",
+      "pass": true,
+      "detail": {
+        "hasBlock": true,
+        "html": "<p>АО «Торговая сеть „Формат“»</p><p>ИНН 7700041020</p>",
+        "propertiesOpen": true
+      }
+    },
+    {
+      "name": "properties_panel_opened_after_insert",
+      "pass": true,
+      "detail": {
+        "hasBlock": true,
+        "html": "<p>АО «Торговая сеть „Формат“»</p><p>ИНН 7700041020</p>",
+        "propertiesOpen": true
+      }
+    },
+    {
+      "name": "values_mode_shows_real_client_name_by_default",
+      "pass": true,
+      "detail": {
+        "expectedName": "Торговая сеть „Формат“",
+        "html": "<p>АО «Торговая сеть „Формат“»</p><p>ИНН 7700041020</p>"
+      }
+    },
+    {
+      "name": "tokens_mode_shows_the_real_counterparty_token",
+      "pass": true,
+      "detail": {
+        "html": "<p><span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token\" contenteditable=\"false\">{{counterparty.name}}</span></p><p>ИНН <span data-substitution-token=\"\" data-token=\"{{counterparty.inn}}\" class=\"substitution-token\" contenteditable=\"false\">{{counterparty.inn}}</span></p>"
+      }
+    }
+  ],
+  "pass": true
+}
