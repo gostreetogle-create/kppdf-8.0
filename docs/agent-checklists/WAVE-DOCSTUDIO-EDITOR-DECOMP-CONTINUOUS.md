@@ -11,7 +11,7 @@ updated_at: 2026-09-14T21:50:00+03:00
 | # | TASK-ID | SIZE | State | commit | notes |
 |---|---------|------|-------|--------|-------|
 | 1 | TZ-NX-DOCSTUDIO-EDITOR-FACADE | L | DONE | 142d66e4 | in-place facade |
-| 2 | TZ-NX-DOCSTUDIO-EDITOR-UTIL-MOVE | S | PENDING | — | → features util |
+| 2 | TZ-NX-DOCSTUDIO-EDITOR-UTIL-MOVE | S | DONE | b4169eec | → features util |
 | 3 | TZ-NX-DOCSTUDIO-EDITOR-UI-MOVE | L | PENDING | — | → features ui |
 | 4 | TZ-NX-DOCSTUDIO-EDITOR-FACADE-TO-FEATURES | S | PENDING | — | facade → features |
 | 5 | TZ-NX-DOCSTUDIO-EDITOR-UI-SPLIT | — | PARK | — | не в этой сессии |
@@ -27,8 +27,8 @@ States: `PENDING` → `CLAIMED` → `DONE` | `BLOCKED` | `DEFERRED`
 
 ### Phase 2
 - checklist: `docs/agent-checklists/TZ-NX-DOCSTUDIO-EDITOR-UTIL-MOVE.md`
-- gates: _
-- archive: _
+- gates: tsc PASS / kppdf-web studio- 123/123 / features 8/8 (92/92) / nx build PASS
+- archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-EDITOR-UTIL-MOVE.done.md` · commit b4169eec
 
 ### Phase 3
 - checklist: `docs/agent-checklists/TZ-NX-DOCSTUDIO-EDITOR-UI-MOVE.md`

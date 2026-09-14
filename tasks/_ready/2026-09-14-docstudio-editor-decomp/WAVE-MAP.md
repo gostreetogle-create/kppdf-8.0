@@ -62,7 +62,7 @@ Import path: `@kppdf/features/doc-studio` (secondary path in `tsconfig.base.json
 | Phase | Status |
 |-------|--------|
 | 1 Facade in-place | DONE (142d66e4) |
-| 2 Util → features | READY |
+| 2 Util → features | DONE (b4169eec) |
 | 3 UI → features | READY |
 | 4 Facade → features | READY |
 | 5 UI split | PARK |
