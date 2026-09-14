@@ -1,9 +1,9 @@
 {
   "task": "TZ-NX-TEXT-BLOCK-CATEGORY-INLINE-CREATE",
-  "docId": "6aa79f2b60e89ca7347424d1",
-  "feUrl": "http://127.0.0.1:4201/studio/6aa79f2b60e89ca7347424d1",
-  "rootName": "Смоук-корень mu0wsfxf",
-  "subName": "Смоук-лист mu0wsfxf",
+  "docId": "6aa7d700721cd38a18475b0f",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7d700721cd38a18475b0f",
+  "rootName": "Смоук-корень mu15at72",
+  "subName": "Смоук-лист mu15at72",
   "checks": [
     {
       "name": "text_block_dblclick_dispatched",
@@ -55,8 +55,8 @@
       "name": "root_category_created_and_selected",
       "pass": true,
       "detail": {
-        "rootSelected": "Смоук-корень mu0wsfxf",
-        "rootSelectValue": "6aa79f3260e89ca73474255c",
+        "rootSelected": "Смоук-корень mu15at72",
+        "rootSelectValue": "6aa7d708721cd38a18475b9a",
         "subAddDisabled": false
       }
     },
@@ -69,7 +69,7 @@
       "name": "sub_category_created_and_selected",
       "pass": true,
       "detail": {
-        "subSelected": "Смоук-лист mu0wsfxf"
+        "subSelected": "Смоук-лист mu15at72"
       }
     },
     {

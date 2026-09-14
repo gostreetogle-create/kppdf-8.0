@@ -1,8 +1,8 @@
 {
   "task": "TZ-NX-DOCSTUDIO-SELECTED-INSERT-PARTY-TEXT",
-  "docId": "6aa7a78845bb539e908305bf",
+  "docId": "6aa7d710721cd38a18475bc6",
   "clientId": "6a81c3ef107c9fceaf1e5c8a",
-  "feUrl": "http://127.0.0.1:4201/studio/6aa7a78845bb539e908305bf",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7d710721cd38a18475bc6",
   "checks": [
     {
       "name": "selected_panel_opened",

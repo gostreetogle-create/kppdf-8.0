@@ -1,7 +1,7 @@
 {
   "task": "TZ-NX-SHELL-RAIL-MENU-CLOSE",
-  "docId": "6aa7b1528dd51ca5124df14c",
-  "feUrl": "http://127.0.0.1:4201/studio/6aa7b1528dd51ca5124df14c",
+  "docId": "6aa7d728721cd38a18475cfa",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7d728721cd38a18475cfa",
   "checks": [
     {
       "name": "document_menu_button_clicked",

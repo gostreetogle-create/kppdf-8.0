@@ -1,8 +1,8 @@
 {
   "task": "TZ-NX-DOCSTUDIO-TABLE-ROWS-SOURCE-CLEANUP",
-  "docAId": "6aa7c0ee8dd51ca5124df7de",
-  "docBId": "6aa7c0ee8dd51ca5124df7e9",
-  "feUrl": "http://127.0.0.1:4201/studio/6aa7c0ee8dd51ca5124df7de",
+  "docAId": "6aa7d731721cd38a18475d6f",
+  "docBId": "6aa7d731721cd38a18475d7a",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7d731721cd38a18475d6f",
   "checks": [
     {
       "name": "doc_a_elements_panel_opened",

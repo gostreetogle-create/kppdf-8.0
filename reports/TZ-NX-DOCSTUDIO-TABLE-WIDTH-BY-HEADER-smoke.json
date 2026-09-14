@@ -1,8 +1,8 @@
 {
   "task": "TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER",
-  "docId": "6aa7ac6d45bb539e90830d81",
+  "docId": "6aa7d71c721cd38a18475c5a",
   "revisionAfterBlock": 1,
-  "feUrl": "http://127.0.0.1:4201/studio/6aa7ac6d45bb539e90830d81",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7d71c721cd38a18475c5a",
   "checks": [
     {
       "name": "open_without_click_keeps_original_widths_equal_split",

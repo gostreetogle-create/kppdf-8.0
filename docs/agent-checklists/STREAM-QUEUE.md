@@ -1,11 +1,12 @@
 # STREAM QUEUE
 
-updated_at: 2026-09-14T13:15:00+03:00
+updated_at: 2026-09-14T14:45:00+03:00
 
 | Приоритет | TZ | Статус |
 |-----------|-----|--------|
-| — | VERIFY-2026-09-14-DOCSTUDIO-FOLLOWUPS | **DONE — VERIFY PASS** |
-| — | DocStudio follow-ups pack | DONE `45e93009`, independently verified |
+| — | VERIFY-SMOKE-B (остаток live + successors) | **DONE — VERIFY PASS** |
+| — | VERIFY-A follow-ups pack | DONE PASS `2eb4a4d9` |
+| PARK | SSH-REMAINDER VM52 | LAN only |
 
 ## Live
 

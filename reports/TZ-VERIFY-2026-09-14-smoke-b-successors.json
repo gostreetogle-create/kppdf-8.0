@@ -1,0 +1,192 @@
+{
+  "task": "VERIFY-SMOKE-B-SUCCESSORS",
+  "issuerDocId": "6aa7d924721cd38a1847642b",
+  "tokenDocId": "6aa7d92d721cd38a18476511",
+  "priceSumDetail": {
+    "rowFound": true,
+    "cellTexts": [
+      "021",
+      "1",
+      "300",
+      "300"
+    ],
+    "listPrice": 300
+  },
+  "checks": [
+    {
+      "name": "at_least_2_isOurCompany_orgs_seeded",
+      "pass": true,
+      "detail": {
+        "count": 3
+      }
+    },
+    {
+      "name": "found_seeded_product_with_listPrice",
+      "pass": true,
+      "detail": {
+        "product": {
+          "id": "6a94388aeefec33de256ac35",
+          "name": "021",
+          "listPrice": 300
+        }
+      }
+    },
+    {
+      "name": "put_dataset_for_catalog_table_succeeds",
+      "pass": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "price_row_found_for_seeded_product",
+      "pass": true,
+      "detail": {
+        "rowFound": true,
+        "cellTexts": [
+          "021",
+          "1",
+          "300",
+          "300"
+        ],
+        "listPrice": 300
+      }
+    },
+    {
+      "name": "price_cell_non_empty",
+      "pass": true,
+      "detail": {
+        "rowFound": true,
+        "cellTexts": [
+          "021",
+          "1",
+          "300",
+          "300"
+        ],
+        "listPrice": 300
+      }
+    },
+    {
+      "name": "sum_cell_non_empty",
+      "pass": true,
+      "detail": {
+        "rowFound": true,
+        "cellTexts": [
+          "021",
+          "1",
+          "300",
+          "300"
+        ],
+        "listPrice": 300
+      }
+    },
+    {
+      "name": "price_and_sum_are_not_duplicated_text",
+      "pass": true,
+      "detail": {
+        "rowFound": true,
+        "cellTexts": [
+          "021",
+          "1",
+          "300",
+          "300"
+        ],
+        "listPrice": 300
+      }
+    },
+    {
+      "name": "issuer_select_visible_before_switch",
+      "pass": true,
+      "detail": {
+        "beforeIssuerText": "Выберите значение ▾"
+      }
+    },
+    {
+      "name": "issuer_option_clicked",
+      "pass": true,
+      "detail": {
+        "openIssuer": {
+          "ok": true
+        },
+        "optionRect": {
+          "ok": true,
+          "x": 527.5,
+          "y": 360.6796875
+        },
+        "optionClick": {
+          "ok": true
+        },
+        "target": "F5 UI"
+      }
+    },
+    {
+      "name": "issuer_select_shows_new_org_after_full_reload",
+      "pass": true,
+      "detail": {
+        "afterReloadIssuerText": "F5 UI ▾",
+        "expected": "F5 UI"
+      }
+    },
+    {
+      "name": "backend_organizationId_actually_changed",
+      "pass": true,
+      "detail": {
+        "backendOrgId": "6a78c711642aaa544b98be1c",
+        "expected": "6a78c711642aaa544b98be1c"
+      }
+    },
+    {
+      "name": "default_mode_shows_unresolved_chip_not_plain_text",
+      "pass": true,
+      "detail": {
+        "html": "<p><span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token substitution-token--unresolved\" title=\"{{counterparty.name}}\" contenteditable=\"false\">{{counterparty.name}}</span></p>",
+        "hasUnresolvedClass": true
+      }
+    },
+    {
+      "name": "text_block_double_clicked_to_open_properties",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "tokens_toggle_clicked",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "tokens_mode_renders_a_substitution_token_chip",
+      "pass": true,
+      "detail": {
+        "html": "<p><span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token\" contenteditable=\"false\">{{counterparty.name}}</span></p>",
+        "hasChip": true,
+        "chipHasUnresolvedClass": false,
+        "chipText": "{{counterparty.name}}"
+      }
+    },
+    {
+      "name": "tokens_mode_chip_is_plain_not_unresolved_variant",
+      "pass": true,
+      "detail": {
+        "html": "<p><span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token\" contenteditable=\"false\">{{counterparty.name}}</span></p>",
+        "hasChip": true,
+        "chipHasUnresolvedClass": false,
+        "chipText": "{{counterparty.name}}"
+      }
+    },
+    {
+      "name": "tokens_mode_chip_text_is_the_raw_token",
+      "pass": true,
+      "detail": {
+        "html": "<p><span data-substitution-token=\"\" data-token=\"{{counterparty.name}}\" class=\"substitution-token\" contenteditable=\"false\">{{counterparty.name}}</span></p>",
+        "hasChip": true,
+        "chipHasUnresolvedClass": false,
+        "chipText": "{{counterparty.name}}"
+      }
+    }
+  ],
+  "pass": true
+}
