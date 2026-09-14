@@ -78,7 +78,6 @@ function layerDisplayName(block: StudioBlock): string {
               (rowsChange)="tableRowsChange.emit($event)"
               (disabledRowsChange)="tableDisabledRowsChange.emit($event)"
               (liveQtyChange)="tableLiveQtyChange.emit($event)"
-              (refreshCatalogRows)="tableRefreshCatalogRows.emit()"
             />
           </div>
         }
@@ -328,8 +327,6 @@ export class StudioPropertiesPanelComponent {
   @Output() readonly tableRowsChange = new EventEmitter<string[][]>();
   @Output() readonly tableDisabledRowsChange = new EventEmitter<number[]>();
   @Output() readonly tableLiveQtyChange = new EventEmitter<{ rowIndex: number; value: string }>();
-  /** TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап A) — «Обновить строки» on the catalog-source status view. */
-  @Output() readonly tableRefreshCatalogRows = new EventEmitter<void>();
   @Output() readonly applyLibraryText = new EventEmitter<TextBlock>();
   @Output() readonly saveTextBlock = new EventEmitter<void>();
   /** TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — session-level, owned by `studio-editor.page.ts`. */

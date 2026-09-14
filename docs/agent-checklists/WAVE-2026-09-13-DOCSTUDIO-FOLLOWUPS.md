@@ -1,9 +1,9 @@
 # WAVE — DocStudio follow-ups (2026-09-14)
 
-updated_at: 2026-09-14T09:17:00+03:00  
+updated_at: 2026-09-14T09:45:00+03:00  
 agent_slot: Freebuff (run on Claude — see note below)  
 current_wave: **Freebuff-1**  
-status: **STARTED**
+status: **FREEBUFF_WAVE_DONE**
 
 > **Routing note (2026-09-14):** this "Freebuff" queue prompt was dispatched into a Claude Code
 > session, not the separate Freebuff pipeline. Per `CLAUDE.md` ("Рутинные волны TZ — Freebuff,
@@ -36,9 +36,24 @@ status: **STARTED**
 | 5a | TABLE-WIDTH-BY-HEADER | DONE (`38ed2911`) |
 | 5b | TABLE-PHOTO-EMPTY-BLANK | DONE (`82bff3d6`) |
 | 5c | SHELL-RAIL-MENU-CLOSE | DONE (`83455fb1`) |
-| 5d | TABLE-ROWS-SOURCE-CLEANUP | PENDING |
+| 5d | TABLE-ROWS-SOURCE-CLEANUP | DONE (SHA pending push) |
 
 Claude WAVE_DONE — Freebuff может стартовать (TEXT-PROPS больше не в конфликте).
+
+## FREEBUFF_WAVE_DONE summary
+
+| # | TZ | SHA | Gates |
+|---|-----|-----|-------|
+| 1 | IMAGE-PASSPORT-FIT-WYSIWYG | `1dc0c7f2` | PASS (FE tests 948 + nx build + architecture:check; lint 0 new errors; live smoke 6/6 incl. regression-sanity-check) |
+| 2 | TEXT-BLOCK-CATEGORY-INLINE-CREATE | `91dcf7af` | PASS (FE tests 952 + nx build + architecture:check; lint 0 new errors; live smoke 11/11) |
+| 3 | TEXT-LIBRARY-INSERT-ON-ADD | `3267af8b` | PASS (FE tests 963 + nx build + architecture:check; lint 0 new errors; live smoke 8/8) |
+| 4 | SELECTED-INSERT-PARTY-TEXT | `8e83cf7d` | PASS (FE tests 969 + nx build + architecture:check; lint 0 new errors; live smoke 6/6) |
+| 5a | TABLE-WIDTH-BY-HEADER | `38ed2911` | PASS (FE tests 982 + nx build + architecture:check; lint 0 new errors; live smoke 7/7) |
+| 5b | TABLE-PHOTO-EMPTY-BLANK | `82bff3d6` | PASS (FE tests 982 + BE tests 1369 + nx build + architecture:check; FE/BE lint 0 new errors; live smoke 9/9) |
+| 5c | SHELL-RAIL-MENU-CLOSE | `83455fb1` | PASS (FE tests 985 + nx build + architecture:check; lint 0 new errors; live smoke 5/5 incl. regression-sanity-check) |
+| 5d | TABLE-ROWS-SOURCE-CLEANUP | SHA pending push | PASS (FE tests 981 + nx build + architecture:check; lint 0 new errors, 5 fewer warnings; live smoke 9/9) |
+
+`tasks/_active/` empty. Freebuff-labeled chain complete (run as Claude, honestly labeled per routing note above) — waiting on next TZ / PO screen feedback.
 
 ## WAVE_DONE summary
 
@@ -69,3 +84,4 @@ Claude WAVE_DONE — Freebuff может стартовать (TEXT-PROPS бол
 | 2026-09-14 | #5a TABLE-WIDTH-BY-HEADER DONE — `38ed2911`; FE tests(982, 975 passed/7 skipped)+nx build+architecture:check PASS, lint 0 new errors (38 pre-existing, git-stash -u verified); new `fitColumnWidthsByHeader`/`fitSingleColumnWidthByHeader` (label-length weight, photo capped ≤4, name ×1.4, description ×1.2) + «По заголовкам» button; quick-add/«+ Колонка» now fit only the new column, never rewriting existing manual widths; **live smoke** (`scripts/tz-nx-docstudio-table-width-by-header-smoke.mjs`, 7/7 PASS) confirmed open-without-click keeps the original equal split (AC #3), button changes canvas `<th>` widths (25/14/61, sum=100), and a manual edit afterwards still lands on canvas (AC #2); discovered mid-smoke that page.md's old "single click auto-opens Свойства" line is stale (superseded by `TZ-NX-PO-SWEEP-02` — table Свойства now needs a **double**-click), noted in the checklist for the next TZ's smoke author, not fixed (out of conflict keys); archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-WIDTH-BY-HEADER.done.md`; current = 5b (TABLE-PHOTO-EMPTY-BLANK). |
 | 2026-09-14 | #5b TABLE-PHOTO-EMPTY-BLANK DONE — `82bff3d6`; FE tests(982)+BE tests(1369)+nx build+architecture:check PASS, FE lint 0 new errors/warnings (git-stash -u verified), BE lint 0 errors; PO-reversal of S48's «Нет фото» placeholder — FE canvas empty photo cell now renders nothing (removed dead `.table-preview__photo-empty` CSS too), BE `renderPhotoCellHtml`/`table-template.service.ts formatCell/formatImageCell` all four `<span class="pi-photo-empty">` returns → `''`; **live smoke** (`scripts/tz-nx-docstudio-table-photo-empty-blank-smoke.mjs`, 9/9 PASS) proved via real backend `POST :id/preview` HTML (bare empty `<td>`, no label/class anywhere) AND live canvas (no label anywhere on the page; empty row never gets `<img>`; broken photo's `error` event leaves a bare-blank cell, not a broken-image icon); archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK.done.md`; current = 5c (SHELL-RAIL-MENU-CLOSE). |
 | 2026-09-14 | #5c SHELL-RAIL-MENU-CLOSE DONE — `83455fb1`; FE tests(985)+nx build+architecture:check PASS, lint 0 new errors/warnings (git-stash -u verified); one-line fix — `onShellToolClick` now calls `closeMenu()` before invoking a plain rail tool, since `onDocumentClickOutside`'s own outside-click guard was letting that click through unfiltered (any `.shell-rail-item`, not just the open menu's own trigger) without ever closing the previously-open «Документ» category menu; **regression-sanity-checked** (reverted fix, new test failed as expected, restored); **live smoke** (`scripts/tz-nx-shell-rail-menu-close-smoke.mjs`, 5/5 PASS) opened «Документ» menu, clicked «Элементы», confirmed the menu popover is gone AND the Элементы panel actually opened (click not swallowed); archived `tasks/_archive/2026-09/TZ-NX-SHELL-RAIL-MENU-CLOSE.done.md`; current = 5d (TABLE-ROWS-SOURCE-CLEANUP). |
+| 2026-09-14 | #5d TABLE-ROWS-SOURCE-CLEANUP DONE — SHA pending push; FE tests(981)+nx build+architecture:check PASS, lint 0 new errors, 5 fewer warnings (dead code removed, git-stash -u verified); deleted the necessity-cleanup A status+«Обновить строки»+«Сменить…» block entirely per PO's own audit verdict — a wired catalog table's Свойства now shows no source control at all (neither status nor bare select), manual/КП/заказ keep the plain select; removed the now-orphaned `refreshCatalogRows`/`tableRefreshCatalogRows` Outputs and `refreshActiveTableCatalogRows()` method (its collaborator `refreshCatalogTablesOfKind` stays — still used by Insert/D52 and VITRINA-EDIT); **live smoke** (`scripts/tz-nx-docstudio-table-rows-source-cleanup-smoke.mjs`, 9/9 PASS) — Doc A (fresh manual table via Elements «+ Таблица») still shows the source select; Doc B (pre-wired catalog table) shows zero source control anywhere, screenshots confirm the Свойства card jumps straight from column structure to «Действия»; archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-ROWS-SOURCE-CLEANUP.done.md`. **FREEBUFF_WAVE_DONE — all 8 items complete, `tasks/_active/` empty.** |

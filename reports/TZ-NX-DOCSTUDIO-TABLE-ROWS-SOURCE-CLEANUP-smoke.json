@@ -1,0 +1,122 @@
+{
+  "task": "TZ-NX-DOCSTUDIO-TABLE-ROWS-SOURCE-CLEANUP",
+  "docAId": "6aa7c0ee8dd51ca5124df7de",
+  "docBId": "6aa7c0ee8dd51ca5124df7e9",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7c0ee8dd51ca5124df7de",
+  "checks": [
+    {
+      "name": "doc_a_elements_panel_opened",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "doc_a_table_created",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "doc_a_manual_table_still_shows_source_select",
+      "pass": true,
+      "detail": {
+        "hasSourceSelect": true,
+        "hasSourceStatus": false
+      }
+    },
+    {
+      "name": "doc_b_catalog_table_has_no_source_select",
+      "pass": true,
+      "detail": {
+        "hasSourceSelect": false,
+        "hasSourceStatus": false,
+        "hasRefreshButton": false,
+        "hasChangeSourceButton": false,
+        "bodyHasIzVybrano": false,
+        "bodyHasObnovit": false,
+        "bodyHasSmenit": false
+      }
+    },
+    {
+      "name": "doc_b_catalog_table_has_no_source_status",
+      "pass": true,
+      "detail": {
+        "hasSourceSelect": false,
+        "hasSourceStatus": false,
+        "hasRefreshButton": false,
+        "hasChangeSourceButton": false,
+        "bodyHasIzVybrano": false,
+        "bodyHasObnovit": false,
+        "bodyHasSmenit": false
+      }
+    },
+    {
+      "name": "doc_b_catalog_table_has_no_refresh_button",
+      "pass": true,
+      "detail": {
+        "hasSourceSelect": false,
+        "hasSourceStatus": false,
+        "hasRefreshButton": false,
+        "hasChangeSourceButton": false,
+        "bodyHasIzVybrano": false,
+        "bodyHasObnovit": false,
+        "bodyHasSmenit": false
+      }
+    },
+    {
+      "name": "doc_b_catalog_table_has_no_change_source_button",
+      "pass": true,
+      "detail": {
+        "hasSourceSelect": false,
+        "hasSourceStatus": false,
+        "hasRefreshButton": false,
+        "hasChangeSourceButton": false,
+        "bodyHasIzVybrano": false,
+        "bodyHasObnovit": false,
+        "bodyHasSmenit": false
+      }
+    },
+    {
+      "name": "doc_b_no_iz_vybrano_text_anywhere",
+      "pass": true,
+      "detail": {
+        "hasSourceSelect": false,
+        "hasSourceStatus": false,
+        "hasRefreshButton": false,
+        "hasChangeSourceButton": false,
+        "bodyHasIzVybrano": false,
+        "bodyHasObnovit": false,
+        "bodyHasSmenit": false
+      }
+    },
+    {
+      "name": "doc_b_no_obnovit_stroki_text_anywhere",
+      "pass": true,
+      "detail": {
+        "hasSourceSelect": false,
+        "hasSourceStatus": false,
+        "hasRefreshButton": false,
+        "hasChangeSourceButton": false,
+        "bodyHasIzVybrano": false,
+        "bodyHasObnovit": false,
+        "bodyHasSmenit": false
+      }
+    },
+    {
+      "name": "doc_b_no_smenit_text_anywhere",
+      "pass": true,
+      "detail": {
+        "hasSourceSelect": false,
+        "hasSourceStatus": false,
+        "hasRefreshButton": false,
+        "hasChangeSourceButton": false,
+        "bodyHasIzVybrano": false,
+        "bodyHasObnovit": false,
+        "bodyHasSmenit": false
+      }
+    }
+  ],
+  "pass": true
+}

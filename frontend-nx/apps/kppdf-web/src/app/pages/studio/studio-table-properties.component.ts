@@ -382,34 +382,7 @@ import {
         <p class="table-props__hint" data-test="studio-table-rows-live-hint">Строки приходят из раздела «Данные» или КП — редактирование в источнике.</p>
       }
 
-      @if (isCatalogRowSource() && !sourceChangeOpen()) {
-        <div class="table-props__field" data-test="studio-table-source-status">
-          <span class="table-props__label">Строки</span>
-          <p class="table-props__source-status">Из Выбрано: {{ catalogSourceLabel() }} ({{ liveRowsAll(block).length }})</p>
-          <div class="table-props__source-actions">
-            <app-pi-button
-              type="button"
-              variant="outline"
-              size="sm"
-              [disabled]="disabled"
-              data-test="studio-table-refresh-rows"
-              (click)="refreshCatalogRows.emit()"
-            >
-              Обновить строки
-            </app-pi-button>
-            <app-pi-button
-              type="button"
-              variant="ghost"
-              size="sm"
-              [disabled]="disabled"
-              data-test="studio-table-change-source"
-              (click)="sourceChangeOpen.set(true)"
-            >
-              Сменить…
-            </app-pi-button>
-          </div>
-        </div>
-      } @else {
+      @if (!isCatalogRowSource()) {
         <label class="table-props__field" data-test="studio-table-source-field">
           <span class="table-props__label">Источник строк</span>
           <select
@@ -432,11 +405,6 @@ import {
           }
           @if (rowSource() === 'order-items' && !orderId) {
             <span class="table-props__hint">Выберите заказ в панели Данные</span>
-          }
-          @if (isCatalogRowSource()) {
-            <button type="button" class="table-props__cancel-link pi-focus-ring" data-test="studio-table-change-source-cancel" (click)="sourceChangeOpen.set(false)">
-              Отмена
-            </button>
           }
         </label>
       }
@@ -666,23 +634,6 @@ import {
     .table-props__hint--warn { color: var(--color-destructive); }
     .table-props__hint--warn a { color: inherit; }
 
-    .table-props__source-status {
-      margin: 0;
-      padding: 7px 9px;
-      border: 1px solid var(--color-rule);
-      border-radius: var(--radius-sm);
-      background: var(--color-paper-2);
-      font-size: 12px;
-      color: var(--color-ink);
-    }
-    .table-props__source-actions { display: flex; gap: 6px; }
-    .table-props__cancel-link {
-      align-self: flex-start;
-      border: 0; background: transparent; padding: 0;
-      font-size: 11px; color: var(--color-muted-foreground);
-      text-decoration: underline; cursor: pointer;
-    }
-
     .table-props__photo-hint {
       font-size: 10px;
       font-style: italic;
@@ -776,16 +727,12 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   @Output() readonly disabledRowsChange = new EventEmitter<number[]>();
   /** TZ-NX-DOCSTUDIO-TABLE-LINE-QTY: qty edit on a live (catalog/КП/заказ) row — stored as a per-row override on the block, not a rows[] rewrite. */
   @Output() readonly liveQtyChange = new EventEmitter<{ rowIndex: number; value: string }>();
-  /** TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап A) — «Обновить строки» on an Insert-sourced catalog table's status view. */
-  @Output() readonly refreshCatalogRows = new EventEmitter<void>();
 
   protected readonly templates = signal<readonly TableTemplate[]>([]);
   protected readonly loading = signal(false);
   protected readonly loadError = signal<string | null>(null);
   protected readonly selectedTemplateId = signal('');
   protected readonly columnsOpen = signal(false);
-  /** TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап A) — «Сменить…» reveals the full source select; an explicit two-step gesture instead of a modal confirm. */
-  protected readonly sourceChangeOpen = signal(false);
   protected readonly chevronDown = ChevronDown;
   protected readonly externalLinkIcon = ArrowUpRight;
 
@@ -808,33 +755,25 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   }
 
   /**
-   * TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP (этап A) — an already-wired
-   * catalog table (normally via Insert) shows a status + «Обновить»/«Сменить…»
-   * instead of the bare source enum, which used to read as a pointless
-   * duplicate of the Insert button the operator already clicked.
-   * КП/заказ/manual keep the plain select — those are genuinely the only
-   * way to reach that source (necessity-wave audit).
+   * TZ-NX-DOCSTUDIO-TABLE-ROWS-SOURCE-CLEANUP — an already-wired catalog
+   * table (normally via Выбрано → Insert) shows no source control at all
+   * here: the necessity-cleanup wave's own status+«Обновить»/«Сменить…» was
+   * itself a dup of the Insert button the operator already clicked
+   * (`onCatalogSelectionChange` already re-`putDataSet`s on every buffer
+   * change), and re-exposing the plain enum underneath it invited changing
+   * `kind` outside the Insert flow it's bound to. Changing kind on a wired
+   * catalog table means a fresh Insert (or deleting the layer), not this
+   * select. КП/заказ/manual keep the plain select below — those are
+   * genuinely the only way to reach that source.
    */
   protected isCatalogRowSource(): boolean {
     return this.rowSource().startsWith('catalog-');
-  }
-
-  private static readonly CATALOG_SOURCE_LABELS: Record<string, string> = {
-    'catalog-products': 'Изделия',
-    'catalog-modules': 'Модули',
-    'catalog-parts': 'Детали',
-    'catalog-materials': 'Материалы',
-  };
-
-  protected catalogSourceLabel(): string {
-    return StudioTablePropertiesComponent.CATALOG_SOURCE_LABELS[this.rowSource()] ?? this.rowSource();
   }
 
   protected onSourceSelectChange(
     source: 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials',
   ): void {
     this.sourceChange.emit(source);
-    this.sourceChangeOpen.set(false);
   }
 
   /** Full row matrix (incl. disabled rows) for the editor grid. */
@@ -926,7 +865,6 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
     if (changes['block'] && !changes['block'].firstChange) {
       this.syncSelectedId();
       this.columnsOpen.set(false);
-      this.sourceChangeOpen.set(false);
     }
   }
 
