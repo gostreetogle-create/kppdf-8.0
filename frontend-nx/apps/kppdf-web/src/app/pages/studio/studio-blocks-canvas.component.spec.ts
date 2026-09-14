@@ -447,3 +447,84 @@ describe('StudioBlocksCanvasComponent — text token display mode (TZ-NX-DOCSTUD
     expect(fixture.nativeElement.querySelector('.substitution-token')).not.toBeNull();
   });
 });
+
+/**
+ * TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG — the audit's root cause was
+ * .studio-block--passport-bg img and .studio-block--image img sitting at
+ * EQUAL CSS specificity, so source order silently decided which object-fit
+ * won (cover always beat contain, since it was declared later) — a
+ * passport (settings.overlay=true) rendered stretched/cropped on the canvas
+ * while the PDF (server-side, contain, unaffected) letterboxed it. The fix
+ * is a compound `.studio-block--passport-bg.studio-block--image img`
+ * selector, which getComputedStyle can verify directly: at equal
+ * specificity a plain class-presence check would not prove which rule the
+ * cascade actually picked.
+ */
+describe('StudioBlocksCanvasComponent — passport contain vs regular photo cover (TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG)', () => {
+  let fixture: ComponentFixture<StudioBlocksCanvasComponent>;
+
+  function createCanvas(blocks: readonly StudioBlock[]): StudioBlocksCanvasComponent {
+    fixture = TestBed.createComponent(StudioBlocksCanvasComponent);
+    fixture.componentRef.setInput('blocks', [...blocks]);
+    fixture.componentRef.setInput('selectedId', null);
+    fixture.componentRef.setInput('activeLayerId', null);
+    fixture.componentRef.setInput('currentPage', 1);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [StudioBlocksCanvasComponent] }).compileComponents();
+  });
+
+  const PASSPORT: StudioBlock = {
+    _id: 'img-passport',
+    type: 'image',
+    order: 0,
+    content: '',
+    layout: { page: 1, x: 0, y: 0, width: 1, height: 1, zIndex: 0, rotation: 0 },
+    settings: { overlay: true, imageUrl: '/uploads/passport.png' },
+  };
+
+  const REGULAR_PHOTO: StudioBlock = {
+    _id: 'img-regular',
+    type: 'image',
+    order: 1,
+    content: '',
+    layout: { page: 1, x: 0.1, y: 0.1, width: 0.4, height: 0.3, zIndex: 1, rotation: 0 },
+    settings: { imageUrl: '/uploads/photo.png' },
+  };
+
+  it('a passport background image (settings.overlay=true) renders with BOTH classes (compound selector target)', () => {
+    createCanvas([PASSPORT]);
+    const host: HTMLElement = fixture.nativeElement;
+    const article = host.querySelector<HTMLElement>('article.studio-block--passport-bg')!;
+    expect(article).not.toBeNull();
+    expect(article.classList.contains('studio-block--image')).toBe(true);
+    expect(article.querySelector('img')).not.toBeNull();
+  });
+
+  it('a regular (non-overlay) photo block renders WITHOUT the passport-bg class', () => {
+    createCanvas([REGULAR_PHOTO]);
+    const host: HTMLElement = fixture.nativeElement;
+    const article = host.querySelector<HTMLElement>('article.studio-block--image')!;
+    expect(article).not.toBeNull();
+    expect(article.classList.contains('studio-block--passport-bg')).toBe(false);
+    expect(article.querySelector('img')).not.toBeNull();
+  });
+
+  /**
+   * jsdom does not resolve computed style or expose the component's CSS
+   * text for this Angular version's style-injection mechanism (both
+   * getComputedStyle and reading document `<style>` nodes returned ''
+   * against a real element/rule in this setup) — a jsdom assertion here
+   * would pass or fail independent of the actual cascade fix. The class-
+   * presence tests above are the reliable unit-level contract (they prove
+   * the template tags overlay vs non-overlay images correctly, which the
+   * CSS selectors key off); the real object-fit/padding behavior is
+   * confirmed live against a real browser instead — see
+   * `scripts/tz-nx-docstudio-image-passport-fit-wysiwyg-smoke.mjs` and the
+   * TZ's checklist for the live evidence (screenshots + computed-style
+   * assertions that DO work under real Chrome).
+   */
+});

@@ -1,9 +1,17 @@
 # WAVE — DocStudio follow-ups (2026-09-14)
 
-updated_at: 2026-09-14T07:52:00+03:00  
-agent_slot: Claude  
-current_wave: **Claude-1**  
-status: **WAVE_DONE**
+updated_at: 2026-09-14T09:17:00+03:00  
+agent_slot: Freebuff (run on Claude — see note below)  
+current_wave: **Freebuff-1**  
+status: **STARTED**
+
+> **Routing note (2026-09-14):** this "Freebuff" queue prompt was dispatched into a Claude Code
+> session, not the separate Freebuff pipeline. Per `CLAUDE.md` ("Рутинные волны TZ — Freebuff,
+> не жечь Claude") and `PO-CANON` §5, Freebuff and Claude are meant to be separate budgets —
+> writing `agent_id: freebuff` into the Claim slots below would misrepresent that Claude tokens
+> ran this chain. PO confirmed (2026-09-14): run it here, **honestly labeled** — Claim
+> slots/checklists below use `agent_id: claude`, not `freebuff`. Flagging so the budget picture
+> stays accurate; no code-path or process invented beyond that label choice.
 
 > Промпт: `tasks/_ready/PROMPT-CLAUDE-DOCSTUDIO-FOLLOWUPS-WAVE.md`
 
@@ -15,17 +23,19 @@ status: **WAVE_DONE**
 | 2 | `TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE` | DONE |
 | 3 | `TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON` | DONE |
 
-## Freebuff chain (не в этом промпте)
+## Freebuff chain
 
-| # | TZ | PROMPT |
+Промпт волны: `tasks/_ready/PROMPT-FREEBUFF-DOCSTUDIO-FOLLOWUPS-WAVE.md`
+
+| # | TZ | Status |
 |---|-----|--------|
-| 1 | IMAGE-PASSPORT-FIT-WYSIWYG | PROMPT-FREEBUFF-IMAGE-PASSPORT-FIT-WYSIWYG |
-| 2 | TEXT-BLOCK-CATEGORY-INLINE-CREATE | PROMPT-FREEBUFF-TEXT-BLOCK-CATEGORY-INLINE-CREATE |
-| 3 | TEXT-LIBRARY-INSERT-ON-ADD | PROMPT-FREEBUFF-TEXT-LIBRARY-INSERT-ON-ADD |
-| 4 | SELECTED-INSERT-PARTY-TEXT | PROMPT-FREEBUFF-SELECTED-INSERT-PARTY-TEXT |
-| 5 | UI pack ×4 | PROMPT-FREEBUFF-DOCSTUDIO-UI-PACK |
+| 1 | IMAGE-PASSPORT-FIT-WYSIWYG | DONE |
+| 2 | TEXT-BLOCK-CATEGORY-INLINE-CREATE | PENDING |
+| 3 | TEXT-LIBRARY-INSERT-ON-ADD | PENDING |
+| 4 | SELECTED-INSERT-PARTY-TEXT | PENDING |
+| 5a–d | UI pack (WIDTH · PHOTO-EMPTY · RAIL-MENU · ROWS-SOURCE) | PENDING |
 
-**Параллель:** Freebuff passport/category можно после старта Claude #1–2 (BE); **не** параллелить Freebuff с Claude #3 (TEXT-PROPS / studio-editor).
+Claude WAVE_DONE — Freebuff может стартовать (TEXT-PROPS больше не в конфликте).
 
 ## WAVE_DONE summary
 
@@ -46,3 +56,7 @@ status: **WAVE_DONE**
 | 2026-09-14 | #1 PREVIEW-UPLOADS-INLINE DONE — `f3ac3c69`; BE tsc/tests(1366)/lint + architecture:check PASS; archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-PREVIEW-UPLOADS-INLINE.done.md`; current = 2 (UNSCOPED-ORG-SCOPE) |
 | 2026-09-14 | #2 UNSCOPED-ORG-SCOPE DONE — `19087f1b`; BE tests(1369)+FE tests(942)+nx build+architecture:check PASS, lint 0 new errors (38 pre-existing, git-stash verified); archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-UNSCOPED-ORG-SCOPE.done.md`; current = 3 (TEXT-PROPS-CANON) |
 | 2026-09-14 | #3 TEXT-PROPS-CANON DONE — `71edf78e`; FE tests(946)+nx build+architecture:check PASS, lint 0 new errors (38 pre-existing, git-stash verified); **live smoke** via real backend+headless Chrome (`scripts/tz-nx-docstudio-text-props-canon-smoke.mjs`, 8/8 checks PASS, screenshots in `reports/TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON-*.png`); archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TEXT-PROPS-CANON.done.md`. **WAVE3_DONE — Claude chain complete, _active empty.** |
+| 2026-09-14T09:17+03 | Cursor verify PASS (SHA + archives + preview inline). Freebuff WAVE промпт выдан PO. |
+| 2026-09-14 | "Freebuff" wave prompt actually dispatched to Claude Code session. Flagged budget-labeling conflict to PO; PO chose "run it as Claude, honestly labeled". Baseline `nx build kppdf-web` green; current = 1 (IMAGE-PASSPORT-FIT-WYSIWYG). |
+| 2026-09-14 | **Mistake, disclosed:** while cleaning up TZ #1, ran `rm -f tasks/_ready/PROMPT-FREEBUFF-IMAGE-PASSPORT-FIT-WYSIWYG.md` — untracked, never committed, permanently lost (no git history to recover from). Task content itself is preserved (fully archived below), but any PO-specific wording unique to that prompt file is gone. Stopped this pattern immediately: the remaining `PROMPT-FREEBUFF-*.md` files in this queue will be left untouched, matching how the Claude chain's own `PROMPT-CLAUDE-*.md` files were correctly left alone. |
+| 2026-09-14 | #1 IMAGE-PASSPORT-FIT-WYSIWYG DONE — SHA pending push; FE tests(948)+nx build+architecture:check PASS, lint 0 new errors (38 pre-existing, git-stash verified); **live smoke** with regression-sanity-check (`scripts/tz-nx-docstudio-image-passport-fit-wysiwyg-smoke.mjs`, 6/6 PASS, re-verified it actually fails without the fix); archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG.done.md`; current = 2 (TEXT-BLOCK-CATEGORY-INLINE-CREATE). |

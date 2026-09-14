@@ -189,7 +189,15 @@ import {
     .studio-block--passport-bg {
       pointer-events:none; cursor:default; padding:0; border:none; z-index:0;
     }
-    .studio-block--passport-bg img {
+    /* TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG — compound selector (not
+       just .studio-block--passport-bg img) so this always outranks
+       .studio-block--image img below regardless of source order: the
+       passport block carries BOTH classes, and two single-class selectors
+       at equal specificity previously let source order silently flip which
+       object-fit won (passport-bg's contain was defined first, so the
+       later .studio-block--image img's cover always overrode it — canvas
+       showed a stretched/cropped passport while the PDF letterboxed it). */
+    .studio-block--passport-bg.studio-block--image img {
       width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;
     }
     .studio-block {
@@ -249,6 +257,12 @@ import {
     }
     .studio-block--image {
       background: transparent;
+      /* TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG — padding parity with the
+         PDF's image box (no padding) and with the passport rule above
+         (already padding:0): without this, .studio-block's generic 4px
+         padding shrank a regular (non-passport) photo block's img on the
+         canvas relative to the PDF, which renders the image edge-to-edge. */
+      padding: 0;
     }
     .studio-block--table {
       background: #fff;

@@ -320,6 +320,7 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 ### 3.7 Свойства (изображение)
 
 - Фон паспорта (`settings.overlay`): full-page под блоками, z-order в canvas и preview (S7-6 DONE).
+- **Fit WYSIWYG** (`TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG`, 2026-09-14): паспорт-фон на холсте — `object-fit: contain` (как в PDF, `.doc-bg--block img` в `document-render.service.ts`, не менялся); обычное (не-фон) фото-блок — `cover`, без padding (parity с PDF image box). Причина бага: `.studio-block--passport-bg img` и `.studio-block--image img` — раньше два разных однокласс-селектора при равной специфичности, порядок объявления в файле решал победителя (`cover` был объявлен позже → всегда побеждал у паспорта, несмотря на `contain`). Теперь один составной селектор `.studio-block--passport-bg.studio-block--image img` — специфичность выше обоих, паспорт не зависит от порядка правил.
 
 ---
 

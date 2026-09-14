@@ -1,0 +1,61 @@
+{
+  "task": "TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG",
+  "docId": "6aa796fb2365ee9f5ac70ba1",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa796fb2365ee9f5ac70ba1",
+  "screenshot": "D:\\kppdf-8.0\\reports\\TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG-canvas.png",
+  "state": {
+    "hasPassport": true,
+    "hasRegular": true,
+    "passportImgObjectFit": "contain",
+    "regularImgObjectFit": "cover",
+    "regularArticlePadding": "0px",
+    "passportArticlePadding": "0px"
+  },
+  "checks": [
+    {
+      "name": "passport_block_rendered",
+      "pass": true,
+      "detail": {
+        "hasPassport": true,
+        "hasRegular": true,
+        "passportImgObjectFit": "contain",
+        "regularImgObjectFit": "cover",
+        "regularArticlePadding": "0px",
+        "passportArticlePadding": "0px"
+      }
+    },
+    {
+      "name": "regular_photo_block_rendered",
+      "pass": true,
+      "detail": {
+        "hasPassport": true,
+        "hasRegular": true,
+        "passportImgObjectFit": "contain",
+        "regularImgObjectFit": "cover",
+        "regularArticlePadding": "0px",
+        "passportArticlePadding": "0px"
+      }
+    },
+    {
+      "name": "passport_object_fit_is_contain",
+      "pass": true,
+      "detail": "contain"
+    },
+    {
+      "name": "regular_photo_object_fit_is_cover",
+      "pass": true,
+      "detail": "cover"
+    },
+    {
+      "name": "regular_photo_block_padding_is_zero",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "name": "passport_block_padding_is_zero",
+      "pass": true,
+      "detail": "0px"
+    }
+  ],
+  "pass": true
+}
