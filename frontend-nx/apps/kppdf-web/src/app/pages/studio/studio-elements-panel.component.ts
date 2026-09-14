@@ -15,7 +15,7 @@ import { ButtonComponent } from '@kppdf/ui/button';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="elements">
-      <p class="hint">Текст — в активный слой, если он текстовый, иначе новый. Фото и таблица — всегда новый слой.</p>
+      <p class="hint">Текст — из библиотеки или пустой, в активный слой, если он текстовый, иначе новый. Фото и таблица — всегда новый слой.</p>
       <app-pi-button
         variant="secondary"
         size="sm"

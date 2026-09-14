@@ -65,6 +65,10 @@ import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
+import {
+  StudioTextLibraryPickerDialogComponent,
+  type StudioTextLibraryPickResult,
+} from './studio-text-library-picker-dialog.component';
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
 import { StudioDataPanelComponent, type StudioDataCategory, type StudioDataPanelCategoryJump } from './studio-data-panel.component';
 import { StudioPagesPanelComponent } from './studio-pages-panel.component';
@@ -1615,7 +1619,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
    * `catalogWriteChain` (self-race candidate); now queued with one soft
    * retry on a self-inflicted 409.
    */
-  private createTextLayer(): void {
+  private createTextLayer(content = 'Новый текст', title?: string): void {
     this.enqueueDocumentWrite(async () => {
       const d = this.document();
       if (!d) return;
@@ -1626,8 +1630,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
           expectedRevision: current.revision ?? 1,
           type: 'text',
           order: this.blocks().length,
-          title: `Слой ${layerNo}`,
-          content: 'Новый текст',
+          title: title ?? `Слой ${layerNo}`,
+          content,
           layout: studioCenteredTextLayout(0.3, 0.12, zIndex, this.currentPage()),
         }),
       );
@@ -1644,19 +1648,48 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-TEXT-LIBRARY-INSERT-ON-ADD — «+ Текст» now opens a
+   * picker (category → subcategory → list, same contract as Свойства' own
+   * «Из библиотеки») instead of always creating a bare empty layer; audit's
+   * gap was discoverability, not a missing backend. «Пустой текст» is an
+   * explicit choice in that picker, wired to the exact same content/title
+   * this method always used, so it stays a no-regression path (AC #2).
+   */
   addTextToActiveLayer(): void {
+    const ref = this.dialog.open<StudioTextLibraryPickResult | undefined>(
+      StudioTextLibraryPickerDialogComponent,
+      { parentDestroyRef: this.destroyRef },
+    );
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      const content = result.kind === 'library' ? result.textBlock.content ?? '' : 'Новый текст';
+      const title = result.kind === 'library' ? result.textBlock.name?.trim() || undefined : undefined;
+      this.insertTextContent(content, title);
+    });
+  }
+
+  /**
+   * Shared create-or-fill: an already-selected EMPTY text layer gets the
+   * picked content applied in place (same anti-clobber guard the old
+   * addTextToActiveLayer always had — a non-empty active text layer is
+   * never silently overwritten, just focused); anything else creates a new
+   * layer with that content.
+   */
+  private insertTextContent(content: string, title?: string): void {
     const layerId = this.activeLayerId();
     const block = layerId ? this.blocks().find((b) => b._id === layerId) : null;
     if (block?.type === 'text') {
       if (!block.content?.trim()) {
-        this.patchBlockContent('Новый текст');
+        this.patchBlockContent(content);
+        if (title) this.patchBlockTitle(title);
       }
       this.selectedId.set(block._id);
       this.activeSection.set('properties');
       this.panelCollapsed.set(false);
       return;
     }
-    this.createTextLayer();
+    this.createTextLayer(content, title);
   }
 
   addImageToActiveLayer(file: File): void {

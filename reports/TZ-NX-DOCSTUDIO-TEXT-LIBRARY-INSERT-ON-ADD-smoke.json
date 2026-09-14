@@ -1,0 +1,77 @@
+{
+  "task": "TZ-NX-DOCSTUDIO-TEXT-LIBRARY-INSERT-ON-ADD",
+  "docId": "6aa7a3d760e89ca734742825",
+  "feUrl": "http://127.0.0.1:4201/studio/6aa7a3d760e89ca734742825",
+  "libraryTextName": "Смоук-текст-библиотека mu0xi2vx",
+  "checks": [
+    {
+      "name": "elements_panel_opened",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "plus_text_clicked",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "picker_dialog_opened",
+      "pass": true,
+      "detail": {
+        "dialogOpen": true,
+        "hasEmptyBtn": true,
+        "hasList": true,
+        "hasSeededOption": true
+      }
+    },
+    {
+      "name": "has_empty_text_option",
+      "pass": true,
+      "detail": {
+        "dialogOpen": true,
+        "hasEmptyBtn": true,
+        "hasList": true,
+        "hasSeededOption": true
+      }
+    },
+    {
+      "name": "shows_seeded_library_text",
+      "pass": true,
+      "detail": {
+        "dialogOpen": true,
+        "hasEmptyBtn": true,
+        "hasList": true,
+        "hasSeededOption": true
+      }
+    },
+    {
+      "name": "library_pick_closed_dialog",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "x": 790,
+        "y": 546.3125
+      }
+    },
+    {
+      "name": "library_content_inserted_on_canvas",
+      "pass": true,
+      "detail": {
+        "hasBlock": true,
+        "html": "<p>Контент из библиотеки</p>"
+      }
+    },
+    {
+      "name": "empty_pick_does_not_clobber_nonempty_active_layer",
+      "pass": true,
+      "detail": {
+        "count": 1
+      }
+    }
+  ],
+  "pass": true
+}

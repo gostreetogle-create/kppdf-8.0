@@ -228,11 +228,16 @@ describe('StudioEditorPage — one document write queue (TZ-NX-DOCSTUDIO-ADD-PAG
     const followUpDoc: StudioDocument = { ...BASE_DOC, revision: 9 };
     getById.mockReturnValue(of({ ok: true, data: followUpDoc }));
 
+    // TZ-NX-DOCSTUDIO-TEXT-LIBRARY-INSERT-ON-ADD — addTextToActiveLayer now
+    // opens a library picker dialog first; this test is about the create ->
+    // revision-confirmation path itself, so it drives the private
+    // insertTextContent it (and the picker's «Пустой текст» choice) both
+    // funnel into, bypassing the dialog UI.
     const component = fixture.componentInstance as unknown as {
-      addTextToActiveLayer: () => void;
+      insertTextContent: (content: string, title?: string) => void;
       document: () => StudioDocument | null;
     };
-    component.addTextToActiveLayer();
+    component.insertTextContent('Новый текст');
     await flush();
 
     expect(create).toHaveBeenCalledTimes(1);
