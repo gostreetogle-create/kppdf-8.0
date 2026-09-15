@@ -3,7 +3,7 @@ import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { SelectComponent, SelectOptionComponent } from '@kppdf/ui/select';
 import type { Counterparty, Order, Organization, Quotation, QuotationStatus } from '@kppdf/data-access';
 import { StudioDataVitrinaComponent, type StudioCatalogSelections, type StudioShowcaseKind } from './studio-data-vitrina.component';
-import type { StudioDataCategory, StudioDataPanelCategoryJump } from '@kppdf/features/doc-studio';
+import type { StudioDataCategory, StudioDataPanelCategoryJump } from '../studio-editor.facade';
 
 export type { StudioDataCategory, StudioDataPanelCategoryJump };
 

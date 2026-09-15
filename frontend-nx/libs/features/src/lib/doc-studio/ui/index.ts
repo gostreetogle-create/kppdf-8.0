@@ -1,5 +1,7 @@
 export * from './studio-workspace-shell.component';
 export * from './studio-blocks-canvas.component';
+export * from './studio-data-panel.component';
+export * from './studio-data-vitrina.component';
 export * from './studio-elements-panel.component';
 export * from './studio-pages-panel.component';
 export * from './studio-layers-panel.component';

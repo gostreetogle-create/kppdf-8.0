@@ -44,8 +44,6 @@ import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
-import { StudioDataPanelComponent } from './studio-data-panel.component';
-import type { StudioShowcaseKind } from './studio-data-vitrina.component';
 import {
   StudioEditorFacade,
   StudioBlocksCanvasComponent,
@@ -55,6 +53,8 @@ import {
   StudioTemplatePanelComponent,
   StudioWorkspaceShellComponent,
   StudioPropertiesPanelComponent,
+  StudioDataPanelComponent,
+  type StudioShowcaseKind,
   type StudioTableRowSource,
 } from '@kppdf/features/doc-studio';
 

@@ -17,10 +17,10 @@ import {
   type CatalogRegistryDialogHost,
   createMaterialRegistryDialogHost,
   type MaterialRegistryDialogHost,
+  type MaterialRegistryDialogConfig,
+  type RegistryActionContext,
 } from '@kppdf/features/registry-forms';
-import type { MaterialRegistryDialogConfig } from '../registries/data/material-registry-actions';
-import type { RegistryActionContext } from '../registries/model/registry.types';
-import type { StudioShowcaseKind, StudioCatalogSelections } from '@kppdf/features/doc-studio';
+import type { StudioShowcaseKind, StudioCatalogSelections } from '../studio-editor.facade';
 
 export type { StudioShowcaseKind, StudioCatalogSelections };
 
