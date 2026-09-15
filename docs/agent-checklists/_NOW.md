@@ -1,15 +1,14 @@
-﻿updated_at: 2026-09-15T18:20:00+03:00
+﻿updated_at: 2026-09-15T18:35:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff NEXT (срочно, PO):** `TZ-NX-HOME-BREADCRUMB-EDIT-CTA`
+- **Claude NEXT (после пустого `_active`):** Order Workspace WAVE — 6 TZ
+  - Prompt: `tasks/_ready/2026-09-15-order-workspace/PROMPT-CLAUDE-ORDER-WORKSPACE.md`
+  - Audit: `docs/audits/2026-09-15-order-workspace-mockup-audit.md`
+- **Freebuff (когда `_active` пуст, до или после слота):** `TZ-NX-HOME-BREADCRUMB-EDIT-CTA`
   - Prompt: `tasks/_ready/PROMPT-FREEBUFF-HOME-BREADCRUMB-EDIT-CTA.md`
-  - Старт только если `tasks/_active/` пуст
-- **B9 CLOSED** (Freebuff): registries `3aef071e`→`cc5560cf`
-- **Claude B10 remainder (1 TZ left):** editor-thin DONE (`0687a0ff`) → supply-residual DONE (`a41166c8`) → cockpit-residual
-  - Pack: `tasks/_ready/2026-09-15-decomp-b10-residual-thin/`
-  - Не параллелить с Freebuff выше (один `nx build kppdf-web`)
+- **B10 CLOSED** (Claude): editor-thin `0687a0ff` → supply `a41166c8` → cockpit `a3c77a66`. 5/5 DONE, `tasks/_active/` empty.
 
 ## PARK
 
-forms/foundations showcase · Deploy/Wipe/SSH · полный order workspace (ждём макет)
+forms/foundations · Deploy/Wipe/SSH · order-workspace PARK.md (audit/print/cells)
