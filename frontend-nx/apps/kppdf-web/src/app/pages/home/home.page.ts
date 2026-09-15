@@ -10,6 +10,14 @@ import { orderStatusLabel } from '../orders/order-status';
 
 const ACTIVE_ORDER_STATUSES = new Set(['confirmed', 'in_production', 'ready', 'shipped']);
 
+const WORKFLOW_CHIPS = [
+  { id: 'home', label: 'Главная', route: null, needsOrderId: false },
+  { id: 'quotation', label: 'КП', route: '/studio', needsOrderId: false },
+  { id: 'production', label: 'Гант', route: '/production', needsOrderId: true },
+  { id: 'supply', label: 'Снабжение', route: '/supply', needsOrderId: true },
+  { id: 'shipping', label: 'Отгрузка', route: '/shipping', needsOrderId: true },
+] as const;
+
 type QueueFilter = 'all' | 'active';
 
 /** NX Home — the post-login starting point for the operator's day. */
@@ -33,6 +41,23 @@ type QueueFilter = 'all' | 'active';
             Все заказы
           </a>
         </div>
+
+        <nav class="flex items-center gap-1.5 mb-4 overflow-x-auto" aria-label="Рабочие маршруты" data-test="home-workflow-chips">
+          @for (chip of workflowChips; track chip.id) {
+            @if (chip.route) {
+              <a
+                [routerLink]="chip.route"
+                [queryParams]="chip.needsOrderId ? orderQuery() : null"
+                class="px-2.5 py-1.5 rounded-sm text-xs font-medium no-underline pi-focus-ring transition-colors bg-ink text-paper hover:bg-ink-soft"
+                [attr.data-test]="'home-workflow-chip-' + chip.id"
+              >{{ chip.label }}</a>
+            } @else {
+              <span class="px-2.5 py-1.5 rounded-sm text-xs font-medium bg-sunrise-warm text-on-gold" aria-current="page" data-test="home-workflow-chip-home">
+                {{ chip.label }}
+              </span>
+            }
+          }
+        </nav>
 
         <div class="flex items-center gap-3 mb-4 flex-wrap">
           <label class="sr-only" for="home-search">Поиск заказов</label>
@@ -153,6 +178,11 @@ export class HomePage implements OnInit {
   });
 
   protected readonly statusLabel = orderStatusLabel;
+  protected readonly workflowChips = WORKFLOW_CHIPS;
+  protected readonly orderQuery = computed(() => {
+    const orderId = this.expandedId();
+    return orderId ? { orderId } : null;
+  });
 
   ngOnInit(): void {
     this.load();

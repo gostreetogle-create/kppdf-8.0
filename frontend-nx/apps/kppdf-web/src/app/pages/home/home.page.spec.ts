@@ -132,6 +132,30 @@ describe('HomePage (TZ-NX-HOME-HUB-QUEUE)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="home-row"]')?.textContent).toContain('ORD-001');
   });
 
+  it('renders only live workflow routes and omits dead Combine/Admin/Registries links', async () => {
+    await setup();
+    const chips = fixture.nativeElement.querySelectorAll('[data-test^="home-workflow-chip-"]');
+    expect(chips.length).toBe(5);
+    expect(fixture.nativeElement.querySelector('[data-test="home-workflow-chip-home"]')).toBeTruthy();
+    expect((fixture.nativeElement.querySelector('[data-test="home-workflow-chip-quotation"]') as HTMLAnchorElement).getAttribute('href')).toBe('/studio');
+    expect((fixture.nativeElement.querySelector('[data-test="home-workflow-chip-production"]') as HTMLAnchorElement).getAttribute('href')).toBe('/production');
+    expect(fixture.nativeElement.querySelector('[data-test="home-workflow-chip-combine"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="home-workflow-chip-admin"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="home-workflow-chip-registries"]')).toBeNull();
+  });
+
+  it('adds orderId only to operational chips while a row is expanded', async () => {
+    await setup();
+    const row = fixture.nativeElement.querySelector('[data-test="home-row"]') as HTMLElement;
+    row.click();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement.querySelector('[data-test="home-workflow-chip-production"]') as HTMLAnchorElement).getAttribute('href')).toBe('/production?orderId=order-1');
+    expect((fixture.nativeElement.querySelector('[data-test="home-workflow-chip-supply"]') as HTMLAnchorElement).getAttribute('href')).toBe('/supply?orderId=order-1');
+    expect((fixture.nativeElement.querySelector('[data-test="home-workflow-chip-shipping"]') as HTMLAnchorElement).getAttribute('href')).toBe('/shipping?orderId=order-1');
+    expect((fixture.nativeElement.querySelector('[data-test="home-workflow-chip-quotation"]') as HTMLAnchorElement).getAttribute('href')).toBe('/studio');
+  });
+
   it('provides full registry and order-card deep links', async () => {
     await setup();
     expect((fixture.nativeElement.querySelector('[data-test="home-orders-link"]') as HTMLAnchorElement).getAttribute('href')).toBe('/orders');
