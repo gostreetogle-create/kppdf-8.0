@@ -1,0 +1,8 @@
+task: TZ-NX-DOCSTUDIO-PRINT-CSS-BODY-LEAK
+status: DONE
+agent_id: freebuff
+closed_at: 2026-09-15
+workspace: D:\kppdf-8.0
+archive: tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-PRINT-CSS-BODY-LEAK.done.md
+verification: backend typecheck PASS; document-render tests 29/29 PASS; focused eslint PASS
+scope: backend document-render service and studio-canvas regression spec only

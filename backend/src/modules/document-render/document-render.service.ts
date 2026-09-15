@@ -274,7 +274,10 @@ export class DocumentRenderService {
         backgroundPageIndex: options?.backgroundPageIndices?.[index],
         studioCanvas,
       });
-      const match = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      // Extract only after </head>: studio CSS comments may contain markup-like
+      // text, so matching the whole document can mistake a comment for <body>.
+      const afterHead = html.split(/<\/head>/i)[1] ?? html;
+      const match = afterHead.match(/<body[^>]*>([\s\S]*)<\/body>/i);
       return match?.[1] ?? '';
     });
     const orientation = (template as { orientation?: string }).orientation === 'landscape';
@@ -308,10 +311,10 @@ export class DocumentRenderService {
            not the browser's ambient default font/wrap. Canvas is the SoT per
            PO ("как в редакторе, что он настроил"). Bare selectors on purpose
            (not scoped under .doc-body--studio): this whole block is already
-           only emitted when studioCanvas is true, and renderHtmlPages's own
-           <body> (multi-page/table-overflow path) never gets that class —
-           source order (last declaration wins) is what actually scopes this
-           to studio, in both the single-page and multi-page render paths. */
+           only emitted when studioCanvas is true, and the multi-page/table-overflow
+           path has no doc-body--studio class — source order (last declaration
+           wins) is what actually scopes this to studio in both the single-page
+           and multi-page render paths. */
         table { font-size: 9px; }
         th, td {
           padding: 2px 4px;

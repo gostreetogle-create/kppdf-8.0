@@ -2,13 +2,14 @@ import { DocumentRenderService } from './document-render.service';
 import type { DocumentTemplateDocument } from '../document-template/document-template.schema';
 import type { TemplateBlockDocument } from '../template-block/template-block.schema';
 
-function template(): DocumentTemplateDocument {
+function template(overrides: Partial<DocumentTemplateDocument> = {}): DocumentTemplateDocument {
   return {
     name: 'Studio doc',
     pageSize: 'A4',
     orientation: 'portrait',
     backgroundOpacity: 0.3,
     pageNumbering: false,
+    ...overrides,
   } as DocumentTemplateDocument;
 }
 
@@ -108,6 +109,28 @@ describe('DocumentRenderService studioCanvas (NX preview/PDF parity)', () => {
 
       expect(html).toMatch(/table\s*\{[^}]*font-size:\s*9px/);
       expect(html).toMatch(/th,\s*td\s*\{[^}]*white-space:\s*nowrap/);
+    });
+
+    it('keeps studio CSS comments in the head without HTML body markers', () => {
+      const html = renderService.renderHtml(template(), [], {}, { studioCanvas: true });
+      const head = html.split(/<\/head>/i)[0] ?? '';
+
+      expect(head).toContain('multi-page/table-overflow');
+      expect(head).not.toMatch(/<body/i);
+    });
+
+    it('does not leak the studio CSS comment into multi-page document bodies', () => {
+      const html = renderService.renderHtmlPages(
+        template({ pageNumbering: true }),
+        [[], []],
+        {},
+        { studioCanvas: true },
+      );
+      const afterHead = html.split(/<\/head>/i)[1] ?? '';
+
+      expect(afterHead).toContain('<section class="doc-page">');
+      expect(afterHead).not.toContain('multi-page/table-overflow');
+      expect(afterHead).not.toContain('bare table selectors');
     });
 
     it('does not leak the studio 9px table contract into non-studio (legacy/Create-КП) rendering', () => {
