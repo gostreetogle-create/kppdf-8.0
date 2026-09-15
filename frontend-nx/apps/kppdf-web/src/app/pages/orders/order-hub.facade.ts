@@ -27,12 +27,10 @@ import { onDialogCloseOnce } from '../on-dialog-close-once';
 import {
   KitReserveConfirmDialogComponent,
   type KitReserveConfirmDialogData,
-} from './kit-reserve-confirm-dialog.component';
-import {
   ShipConfirmDialogComponent,
   type ShipConfirmDialogData,
   type ShipConfirmResult,
-} from './ship-confirm-dialog.component';
+} from '@kppdf/features/order-hub';
 
 export type SupplyCounters = { readonly ordered: number; readonly received: number; readonly total: number };
 export type ReservationCounters = { readonly active: number; readonly total: number };

@@ -33,6 +33,9 @@
       "@kppdf/features/production/production-read.facade": [
         "libs/features/src/lib/production/production-read.facade.ts"
       ],
+      "@kppdf/features/order-hub": [
+        "libs/features/src/lib/order-hub/index.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],

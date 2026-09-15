@@ -18,8 +18,7 @@ import type { DialogRef } from '@kppdf/ui/dialog';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { OrderHubTrayComponent } from './order-hub-tray.component';
-import { KitReserveConfirmDialogComponent } from './kit-reserve-confirm-dialog.component';
-import { ShipConfirmDialogComponent } from './ship-confirm-dialog.component';
+import { KitReserveConfirmDialogComponent, ShipConfirmDialogComponent } from '@kppdf/features/order-hub';
 
 describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
   let fixture: ComponentFixture<OrderHubTrayComponent>;
