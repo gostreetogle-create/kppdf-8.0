@@ -1,29 +1,30 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { PiOrdersService, type Order } from '@kppdf/data-access';
-import { extractErrorMessage } from '@kppdf/util-http';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { PiToastService } from '@kppdf/ui/toast';
+import { OrderWorkspaceFacade } from '@kppdf/features/order-workspace';
 import { orderStatusLabel } from './order-status';
 
 /**
- * NX order card (TZ-NX-SALES-S35-ORDER-DETAIL). Read-only journal plus the
- * payment fact. Deliberately has NO stub-proposal surface: a direct order
- * renders «Без КП», and an order with a quotation gets only the studio link.
+ * NX order workspace (`TZ-NX-ORDER-WS-FACADE-SHELL`, wave
+ * `docs/agent-checklists/WAVE-NX-ORDER-WORKSPACE.md`). Thin glue: loading/
+ * routing lives on `OrderWorkspaceFacade` (page-scoped provider, not root);
+ * this page only lays out the five workspace sections (Шапка · Состав ·
+ * Исполнение · Логистика · Документы) — the latter three are empty hosts
+ * until the following chain TZs (HEADER/COMPOSITION already covered by
+ * Шапка/Состав below; EXECUTION/LOGISTICS/DOCS-CHIPS populate the rest).
  */
 @Component({
   selector: 'pi-order-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [OrderWorkspaceFacade],
   imports: [PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="order-detail">
       <div class="mb-6">
         <div class="eyebrow">Сделки</div>
         <h1 class="font-display text-2xl m-0" data-test="order-title">
-          @if (order(); as order) {
+          @if (facade.order(); as order) {
             Заказ №{{ order.number }}
           } @else {
             Заказ
@@ -31,37 +32,71 @@ import { orderStatusLabel } from './order-status';
         </h1>
       </div>
 
-      @if (status() === 'loading') {
+      @if (facade.status() === 'loading') {
         <div class="text-sm text-muted-foreground" data-test="order-loading">Загрузка…</div>
       }
 
-      @if (status() === 'error') {
+      @if (facade.status() === 'error') {
         <app-pi-status-banner
           tone="destructive"
-          [message]="error()"
+          [message]="facade.error()"
           actionLabel="Повторить"
-          (action)="load()"
+          (action)="facade.load()"
           data-test="order-error"
         />
       }
 
-      @if (status() === 'success' && order(); as order) {
+      @if (facade.status() === 'success' && facade.order(); as order) {
         <div class="space-y-6" data-test="order-body">
-          <app-pi-status-banner [tone]="bannerTone(order.status)" [message]="statusLabel(order.status)" />
+          <section data-test="order-ws-header">
+            <app-pi-status-banner [tone]="bannerTone(order.status)" [message]="statusLabel(order.status)" />
 
-          <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 text-sm">
-            <div>
-              <div class="text-xs text-muted-foreground">Заказчик</div>
-              <div class="font-medium">{{ counterpartyName() ?? '—' }}</div>
+            <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 text-sm mt-4">
+              <div>
+                <div class="text-xs text-muted-foreground">Заказчик</div>
+                <div class="font-medium">{{ facade.counterpartyName() ?? '—' }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted-foreground">Объект</div>
+                <div class="font-medium">{{ facade.siteName() ?? '—' }}</div>
+              </div>
             </div>
-            <div>
-              <div class="text-xs text-muted-foreground">Объект</div>
-              <div class="font-medium">{{ siteName() ?? '—' }}</div>
-            </div>
-          </div>
 
-          <section>
-            <h2 class="text-sm font-medium m-0 mb-2">Позиции</h2>
+            <div class="flex items-center justify-between gap-4 mt-4">
+              <div class="text-sm">
+                <span class="text-muted-foreground">КП: </span>
+                @if (facade.quotationId(); as quotationId) {
+                  <span class="font-medium" data-test="order-quotation">{{ facade.quotationNumber() ?? 'Есть КП' }}</span>
+                } @else {
+                  <span class="font-medium" data-test="order-no-quotation">Без КП</span>
+                }
+              </div>
+              @if (facade.quotationId()) {
+                <app-pi-button
+                  variant="secondary"
+                  type="button"
+                  data-test="order-open-studio"
+                  (click)="facade.openQuotationInStudio()"
+                >
+                  КП в студии
+                </app-pi-button>
+              }
+            </div>
+
+            <label class="flex items-center gap-3 text-sm cursor-pointer select-none mt-4">
+              <input
+                type="checkbox"
+                class="pi-checkbox"
+                data-test="order-paid-toggle"
+                [checked]="facade.paid()"
+                (change)="onPaidToggle($event)"
+              />
+              <span>Оплачен</span>
+            </label>
+          </section>
+
+          <section data-test="order-ws-composition">
+            <h2 class="text-sm font-medium m-0 mb-2">Состав</h2>
             @if (order.items && order.items.length > 0) {
               <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
                 @for (item of order.items; track item.lineId ?? item.productId) {
@@ -83,140 +118,37 @@ import { orderStatusLabel } from './order-status';
             }
           </section>
 
-          <section class="flex items-center justify-between gap-4">
-            <div class="text-sm">
-              <span class="text-muted-foreground">КП: </span>
-              @if (quotationId(); as quotationId) {
-                <span class="font-medium" data-test="order-quotation">{{ quotationNumber() ?? 'Есть КП' }}</span>
-              } @else {
-                <span class="font-medium" data-test="order-no-quotation">Без КП</span>
-              }
-            </div>
-            @if (quotationId()) {
-              <app-pi-button
-                variant="secondary"
-                type="button"
-                data-test="order-open-studio"
-                (click)="openQuotationInStudio()"
-              >
-                КП в студии
-              </app-pi-button>
-            }
+          <section data-test="order-ws-execution">
+            <h2 class="text-sm font-medium m-0 mb-2">Исполнение</h2>
           </section>
 
-          <label class="flex items-center gap-3 text-sm cursor-pointer select-none">
-            <input
-              type="checkbox"
-              class="pi-checkbox"
-              data-test="order-paid-toggle"
-              [checked]="paid()"
-              (change)="onPaidToggle($event)"
-            />
-            <span>Оплачен</span>
-          </label>
+          <section data-test="order-ws-logistics">
+            <h2 class="text-sm font-medium m-0 mb-2">Логистика</h2>
+          </section>
+
+          <section data-test="order-ws-documents">
+            <h2 class="text-sm font-medium m-0 mb-2">Документы</h2>
+          </section>
         </div>
       }
     </main>
   `,
 })
 export class OrderDetailPage implements OnInit {
-  private readonly ordersApi = inject(PiOrdersService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly toast = inject(PiToastService);
-
-  readonly order = signal<Order | null>(null);
-  /** Payment fact mirror: optimistically toggled, reverted on PATCH failure (isPaid не врёт). */
-  readonly paid = signal(false);
-  readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  readonly error = signal('Не удалось загрузить заказ.');
+  protected readonly facade = inject(OrderWorkspaceFacade);
 
   protected readonly statusLabel = orderStatusLabel;
 
   ngOnInit(): void {
-    this.load();
+    this.facade.load();
   }
 
-  load(): void {
-    this.status.set('loading');
-    void firstValueFrom(this.ordersApi.getById(this.id())).then((result) => {
-      if (!result.ok) {
-        this.error.set(extractErrorMessage(result.error));
-        this.status.set('error');
-        return;
-      }
-      this.order.set(result.data ?? null);
-      this.paid.set(result.data?.isPaid === true);
-      this.status.set('success');
-    });
-  }
-
-  bannerTone(status?: string): 'warning' | 'info' | 'destructive' | 'neutral' {
-    if (status === 'draft') return 'warning';
-    if (status === 'cancelled') return 'destructive';
-    return 'info';
-  }
-
-  counterpartyName(): string | null {
-    const c = this.order()?.counterpartyId;
-    if (!c) return null;
-    return typeof c === 'string' ? c : (c.name ?? null);
-  }
-
-  siteName(): string | null {
-    const s = this.order()?.siteId;
-    if (!s) return null;
-    if (typeof s === 'string') return s;
-    const parts = [s.name, s.address].filter((p): p is string => !!p);
-    return parts.length > 0 ? parts.join(' · ') : null;
-  }
-
-  quotationId(): string | null {
-    const q = this.order()?.quotationId;
-    if (!q) return null;
-    return typeof q === 'string' ? q : (q._id ?? null);
-  }
-
-  quotationNumber(): string | null {
-    const q = this.order()?.quotationId;
-    if (!q || typeof q === 'string') return null;
-    return q.number ?? null;
-  }
-
-  async setPaid(paid: boolean, control?: HTMLInputElement): Promise<void> {
-    const current = this.order();
-    if (!current) return;
-    const previous = this.paid();
-    this.paid.set(paid);
-    const result = await firstValueFrom(this.ordersApi.update(current._id, { isPaid: paid }));
-    if (!result.ok) {
-      this.toast.error('Не удалось сохранить отметку оплаты', {
-        description: extractErrorMessage(result.error),
-      });
-      this.paid.set(previous);
-      // Angular rewrites the checkbox only when the bound value changes; a failed
-      // PATCH leaves the native toggle flipped, so re-assert the control itself.
-      if (control) control.checked = previous;
-      return;
-    }
-    if (result.data) {
-      this.order.set(result.data);
-      this.paid.set(result.data.isPaid === true);
-    }
-  }
-
-  openQuotationInStudio(): void {
-    const quotationId = this.quotationId();
-    if (!quotationId) return;
-    void this.router.navigate(['/studio'], { queryParams: { quotationId } });
+  protected bannerTone(status?: string): 'warning' | 'info' | 'destructive' | 'neutral' {
+    return this.facade.bannerTone(status);
   }
 
   protected onPaidToggle(event: Event): void {
     const target = event.target as HTMLInputElement;
-    void this.setPaid(target.checked, target);
-  }
-
-  private id(): string {
-    return this.route.snapshot.paramMap.get('id') ?? '';
+    void this.facade.setPaid(target.checked, target);
   }
 }

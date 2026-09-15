@@ -27,9 +27,16 @@ Hub-only порт (без desk-write): confirm/ship/add-line/notebook/cancel-shi
 
 Новый read-only клиент: `PiReservationsService` (`libs/data-access/src/lib/sales/pi-reservations.service.ts`) — `GET /reservations?orderId=` фильтрует по строковому `Reservation.orderId`, который хранит **`Order.number`**, не `_id` (как в legacy).
 
-## NX order detail (S35)
+## NX order detail (S35 → Order Workspace WAVE)
 
-`/orders/:id` (`order-detail.page.ts`) is a thin card backed by `PiOrdersService.getById()` and `GET /api/orders/:id`. It shows the number, a Russian lifecycle status banner, Заказчик/Объект meta when populated, line items (name × qty), the quotation chip, and the payment fact.
+`/orders/:id` (`order-detail.page.ts`) — цель: **модульный editable workspace** одного заказа (`@kppdf/features/order-workspace`), не thin-карточка.  
+Audit/IA: `docs/audits/2026-09-15-order-workspace-mockup-audit.md` · pack `tasks/_ready/2026-09-15-order-workspace/` · tracker `docs/agent-checklists/WAVE-NX-ORDER-WORKSPACE.md`.
+
+Секции: Шапка · Состав (add/qty/delete/ready + tree) · Исполнение · Логистика · Документы + workflow chips. Стиль = Paper & Ink + блочная IA макета (без demo rails / fake audit / ячеек / цен).
+
+**TZ-NX-ORDER-WS-FACADE-SHELL DONE (2026-09-15):** `OrderWorkspaceFacade` (page-scoped provider) now owns load/reload, `paid` PATCH, КП/meta helpers — moved as-is from the page, same behavior. Page has five section hosts (`order-ws-header`/`-composition`/`-execution`/`-logistics`/`-documents`); Шапка+Состав render today's content (unchanged), Исполнение/Логистика/Документы are empty RU-titled hosts pending the next chain TZs.
+
+**S35 baseline (пока WAVE не закрыт):** thin card backed by `PiOrdersService.getById()` and `GET /api/orders/:id`. It shows the number, a Russian lifecycle status banner, Заказчик/Объект meta when populated, line items (name × qty), the quotation chip, and the payment fact.
 
 - **Оплата:** checkbox `Оплачен` → `PATCH /orders/:id { isPaid }` via `PiOrdersService.update()`. The toggle is optimistic with an explicit revert: on failure a toast appears and the checkbox is re-asserted to the old fact (`isPaid` не врёт). Payment never touches lifecycle status.
 - **КП:** with `quotationId` the card shows the quotation number + `КП в студии` button navigating to `/studio?quotationId=` (proposals pattern, no stub creation). Direct order → plain `Без КП` text, **no** `Создать черновик КП` CTA and no `stub-proposal` call anywhere in the NX page.

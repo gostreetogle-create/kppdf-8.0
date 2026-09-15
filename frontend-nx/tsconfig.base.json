@@ -36,6 +36,9 @@
       "@kppdf/features/order-hub": [
         "libs/features/src/lib/order-hub/index.ts"
       ],
+      "@kppdf/features/order-workspace": [
+        "libs/features/src/lib/order-workspace/index.ts"
+      ],
       "@kppdf/features/counterparties": [
         "libs/features/src/lib/counterparties/index.ts"
       ],
