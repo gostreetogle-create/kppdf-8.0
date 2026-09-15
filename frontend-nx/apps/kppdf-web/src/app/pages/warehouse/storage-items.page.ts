@@ -1,46 +1,28 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  Injector,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import {
-  PiMaterialsService,
-  PiStorageItemsService,
-  PiWarehousesService,
   storageItemMaterialId,
   storageItemName,
   storageItemSku,
   storageItemUnit,
   storageItemWarehouseName,
   type StorageItem,
-  type Warehouse,
 } from '@kppdf/data-access';
-import { extractErrorMessage } from '@kppdf/util-http';
-import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import {
-  StorageAdjustDialogComponent,
-  type StorageAdjustDialogData,
-} from './storage-adjust-dialog.component';
-import {
-  StoragePutOnStockDialogComponent,
-  type StoragePutOnStockDialogData,
-} from './storage-put-on-stock-dialog.component';
+import { StorageItemsFacade } from './storage-items.facade';
+
+/**
+ * TZ-NX-WAREHOUSE-PAGES-FACADE — filter/route-sync signals and every
+ * load/put-on-stock/adjust method moved to `StorageItemsFacade`; this page
+ * stays a thin host.
+ */
 @Component({
   selector: 'pi-storage-items-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [StorageItemsFacade],
   imports: [PiStatusBannerComponent, ButtonComponent, PiGroupWorkspaceComponent],
   template: `
     <app-pi-group-workspace [toc]="toc" tocActiveId="storage-items" [chips]="[]" activeId="">
@@ -244,73 +226,36 @@ import {
 })
 export class StorageItemsPage {
   protected readonly toc = WAREHOUSE_TOC_CHIPS;
+  protected readonly facade = inject(StorageItemsFacade);
 
-  private readonly storageApi = inject(PiStorageItemsService);
-  private readonly warehousesApi = inject(PiWarehousesService);
-  private readonly materialsApi = inject(PiMaterialsService);
-  private readonly dialog = inject(PiDialogService);
-  private readonly injector = inject(Injector);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-
-  readonly warehouseId = signal('');
-  readonly lowStock = signal(false);
-  readonly materialId = signal('');
-  readonly materialName = signal('');
-  readonly expandedId = signal<string | null>(null);
-
-  readonly warehouses = signal<readonly Warehouse[]>([]);
-  private readonly allRows = signal<readonly StorageItem[]>([]);
-  readonly rows = computed(() => {
-    const items = this.allRows();
-    return this.lowStock()
-      ? items.filter((item) => item.quantity <= item.minQuantity)
-      : items;
-  });
-  readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  readonly error = signal('');
-
-  private loadVersion = 0;
-  private materialLoadVersion = 0;
-
-  constructor() {
-    this.route.queryParamMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
-        const materialId = params.get('materialId') ?? '';
-        this.materialId.set(materialId);
-        this.warehouseId.set(params.get('warehouseId') ?? '');
-        void this.loadMaterialName(materialId);
-        void this.load();
-      });
-    void this.loadWarehouses();
-  }
+  protected readonly warehouseId = this.facade.warehouseId;
+  protected readonly lowStock = this.facade.lowStock;
+  protected readonly materialId = this.facade.materialId;
+  protected readonly materialName = this.facade.materialName;
+  protected readonly expandedId = this.facade.expandedId;
+  protected readonly warehouses = this.facade.warehouses;
+  protected readonly rows = this.facade.rows;
+  protected readonly status = this.facade.status;
+  protected readonly error = this.facade.error;
 
   onWarehouseChange(event: Event): void {
-    this.warehouseId.set((event.target as HTMLSelectElement).value);
-    void this.load();
+    this.facade.onWarehouseChange(event);
   }
 
   onLowStockChange(event: Event): void {
-    this.lowStock.set((event.target as HTMLInputElement).checked);
+    this.facade.onLowStockChange(event);
   }
 
   clearMaterialFilter(): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { materialId: null },
-      queryParamsHandling: 'merge',
-    });
+    this.facade.clearMaterialFilter();
   }
 
   toggleExpand(id: string): void {
-    this.expandedId.update((current) => (current === id ? null : id));
+    this.facade.toggleExpand(id);
   }
 
   onRowSpace(event: Event, id: string): void {
-    event.preventDefault();
-    this.toggleExpand(id);
+    this.facade.onRowSpace(event, id);
   }
 
   itemName(item: StorageItem): string {
@@ -334,88 +279,14 @@ export class StorageItemsPage {
   }
 
   openPutOnStock(): void {
-    const ref = this.dialog.open<
-      StorageItem | undefined,
-      StoragePutOnStockDialogData
-    >(StoragePutOnStockDialogComponent, {
-      data: {
-        warehouses: this.warehouses(),
-        materialId: this.materialId() || undefined,
-        materialName: this.materialName() || undefined,
-      },
-      width: 'sm',
-      ariaLabel: 'Поставить на склад',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (created) => {
-      if (created) void this.load();
-    });
+    this.facade.openPutOnStock();
   }
 
   openAdjust(row: StorageItem): void {
-    const ref = this.dialog.open<
-      StorageItem | undefined,
-      StorageAdjustDialogData
-    >(StorageAdjustDialogComponent, {
-      data: { item: row },
-      width: 'sm',
-      ariaLabel: 'Корректировка остатка',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (updated) => {
-      if (updated) this.applyUpdatedItem(updated);
-    });
+    this.facade.openAdjust(row);
   }
 
   async load(): Promise<void> {
-    const version = ++this.loadVersion;
-    this.status.set('loading');
-    this.error.set('');
-    this.expandedId.set(null);
-    const result = await firstValueFrom(
-      this.storageApi.list({
-        warehouseId: this.warehouseId() || undefined,
-        materialId: this.materialId() || undefined,
-      }),
-    );
-    if (version !== this.loadVersion) return;
-    if (!result.ok) {
-      this.error.set(extractErrorMessage(result.error));
-      this.status.set('error');
-      return;
-    }
-    this.allRows.set(result.data.items);
-    this.status.set('success');
-  }
-
-  private applyUpdatedItem(updated: StorageItem): void {
-    this.allRows.update((items) =>
-      items.map((item) =>
-        item._id === updated._id
-          ? {
-              ...item,
-              ...updated,
-              material: updated.material ?? item.material,
-              product: updated.product ?? item.product,
-              warehouse: updated.warehouse ?? item.warehouse,
-            }
-          : item,
-      ),
-    );
-  }
-
-  private async loadWarehouses(): Promise<void> {
-    const result = await firstValueFrom(this.warehousesApi.list());
-    if (!result?.ok) return;
-    this.warehouses.set(result.data ?? []);
-  }
-
-  private async loadMaterialName(id: string): Promise<void> {
-    const version = ++this.materialLoadVersion;
-    this.materialName.set('');
-    if (!id) return;
-    const result = await firstValueFrom(this.materialsApi.getById(id));
-    if (version !== this.materialLoadVersion) return;
-    if (result.ok) this.materialName.set(result.data.name);
+    await this.facade.load();
   }
 }

@@ -1,33 +1,23 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, OnInit, inject, signal, computed } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import {
-  PiStorageItemsService,
-  PiWarehousesService,
-  storageItemName,
-  type StorageItem,
-  type Warehouse,
-  type WarehouseWritePayload,
-} from '@kppdf/data-access';
-import { extractErrorMessage } from '@kppdf/util-http';
+import { storageItemName, type Warehouse } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiRowActionsComponent } from '@kppdf/ui/row-actions';
-import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
-import { PiToastService } from '@kppdf/ui/toast';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './warehouse-form-dialog.component';
+import { WarehousesFacade } from './warehouses.facade';
 
-/** Hub expand preview stays short — full balances live on `/storage-items`. */
-const EXPAND_ITEMS_LIMIT = 8;
-
+/**
+ * TZ-NX-WAREHOUSE-PAGES-FACADE — list/filter/expand signals and every
+ * load/create/update/delete/set-default method moved to `WarehousesFacade`;
+ * this page stays a thin host.
+ */
 @Component({
   selector: 'pi-warehouses-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [WarehousesFacade],
   imports: [PiStatusBannerComponent, ButtonComponent, PiRowActionsComponent, RouterLink, PiGroupWorkspaceComponent],
   template: `
     <app-pi-group-workspace [toc]="toc" tocActiveId="warehouses" [chips]="[]" activeId="">
@@ -193,165 +183,50 @@ const EXPAND_ITEMS_LIMIT = 8;
     </app-pi-group-workspace>
   `,
 })
-export class WarehousesPage implements OnInit {
+export class WarehousesPage {
   protected readonly toc = WAREHOUSE_TOC_CHIPS;
-  private readonly api = inject(PiWarehousesService);
-  private readonly storageItemsApi = inject(PiStorageItemsService);
-  private readonly dialog = inject(PiDialogService);
-  private readonly toast = inject(PiToastService);
-  private readonly injector = inject(Injector);
-  private readonly destroyRef = inject(DestroyRef);
+  protected readonly facade = inject(WarehousesFacade);
 
-  readonly rows = signal<readonly Warehouse[]>([]);
-  readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  readonly error = signal('Не удалось загрузить склады.');
-  readonly search = signal('');
-  readonly filteredRows = computed(() => {
-    const query = this.search().trim().toLowerCase();
-    return query ? this.rows().filter((row) => row.name.toLowerCase().includes(query)) : this.rows();
-  });
-
-  /** Single expand (HUB pattern) — mirrors counterparties/orders/supply. */
-  readonly expandedId = signal<string | null>(null);
-  readonly items = signal<readonly StorageItem[]>([]);
-  readonly itemsLoading = signal(false);
-  readonly itemsError = signal<string | null>(null);
+  protected readonly rows = this.facade.rows;
+  protected readonly status = this.facade.status;
+  protected readonly error = this.facade.error;
+  protected readonly search = this.facade.search;
+  protected readonly filteredRows = this.facade.filteredRows;
+  protected readonly expandedId = this.facade.expandedId;
+  protected readonly items = this.facade.items;
+  protected readonly itemsLoading = this.facade.itemsLoading;
+  protected readonly itemsError = this.facade.itemsError;
   protected readonly itemName = storageItemName;
 
-  ngOnInit(): void {
-    this.load();
-  }
-
   onSearch(event: Event): void {
-    this.search.set((event.target as HTMLInputElement).value);
+    this.facade.onSearch(event);
   }
 
   toggleExpand(warehouseId: string): void {
-    if (this.expandedId() === warehouseId) {
-      this.expandedId.set(null);
-      return;
-    }
-    this.expandedId.set(warehouseId);
-    this.loadItems(warehouseId);
+    this.facade.toggleExpand(warehouseId);
   }
 
   protected onRowSpace(event: Event, warehouseId: string): void {
-    event.preventDefault();
-    this.toggleExpand(warehouseId);
-  }
-
-  private loadItems(warehouseId: string): void {
-    this.itemsLoading.set(true);
-    this.itemsError.set(null);
-    this.items.set([]);
-    this.storageItemsApi
-      .list({ warehouseId })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        if (this.expandedId() !== warehouseId) return; // stale guard — collapsed/switched while loading
-        this.itemsLoading.set(false);
-        if (!res.ok) {
-          this.itemsError.set(extractErrorMessage(res.error) || 'Не удалось загрузить остатки');
-          return;
-        }
-        this.items.set((res.data?.items ?? []).slice(0, EXPAND_ITEMS_LIMIT));
-      });
+    this.facade.onRowSpace(event, warehouseId);
   }
 
   load(): void {
-    this.status.set('loading');
-    this.expandedId.set(null);
-    void firstValueFrom(this.api.list()).then((result) => {
-      if (!result.ok) {
-        this.error.set(extractErrorMessage(result.error));
-        this.status.set('error');
-        return;
-      }
-      this.rows.set(result.data ?? []);
-      this.status.set('success');
-    });
+    this.facade.load();
   }
 
   openCreate(): void {
-    const ref = this.dialog.open<WarehouseWritePayload | undefined>(WarehouseFormDialogComponent, {
-      data: {} satisfies WarehouseFormDialogData,
-      width: 'sm',
-      ariaLabel: 'Создать склад',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (payload) => {
-      if (payload) void this.create(payload);
-    });
+    this.facade.openCreate();
   }
 
   openEdit(row: Warehouse): void {
-    const ref = this.dialog.open<WarehouseWritePayload | undefined>(WarehouseFormDialogComponent, {
-      data: { warehouse: row } satisfies WarehouseFormDialogData,
-      width: 'sm',
-      ariaLabel: 'Изменить склад',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (payload) => {
-      if (payload) void this.update(row._id, payload);
-    });
+    this.facade.openEdit(row);
   }
 
   confirmDelete(row: Warehouse): void {
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-      data: {
-        title: 'Удалить склад?',
-        description: `«${row.name}» будет удалён.`,
-        confirmLabel: 'Удалить',
-        cancelLabel: 'Отмена',
-        variant: 'destructive',
-      },
-      width: 'sm',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (confirmed) => {
-      if (confirmed) void this.remove(row._id);
-    });
-  }
-
-  private async create(payload: WarehouseWritePayload): Promise<void> {
-    const result = await firstValueFrom(this.api.create(payload));
-    if (!result.ok) {
-      this.toast.error('Не удалось создать склад', { description: extractErrorMessage(result.error) });
-      return;
-    }
-    this.toast.success('Склад создан');
-    this.load();
-  }
-
-  private async update(id: string, payload: WarehouseWritePayload): Promise<void> {
-    const result = await firstValueFrom(this.api.update(id, payload));
-    if (!result.ok) {
-      this.toast.error('Не удалось сохранить склад', { description: extractErrorMessage(result.error) });
-      return;
-    }
-    this.toast.success('Склад сохранён');
-    this.load();
-  }
-
-  private async remove(id: string): Promise<void> {
-    const result = await firstValueFrom(this.api.remove(id));
-    if (!result.ok) {
-      this.toast.error('Не удалось удалить склад', { description: extractErrorMessage(result.error) });
-      return;
-    }
-    this.toast.success('Склад удалён');
-    this.load();
+    this.facade.confirmDelete(row);
   }
 
   async makeDefault(row: Warehouse): Promise<void> {
-    const result = await firstValueFrom(this.api.setDefault(row._id));
-    if (!result.ok) {
-      this.toast.error('Не удалось назначить склад по умолчанию', {
-        description: extractErrorMessage(result.error),
-      });
-      return;
-    }
-    this.toast.success(`«${row.name}» — склад по умолчанию`);
-    this.load();
+    await this.facade.makeDefault(row);
   }
 }

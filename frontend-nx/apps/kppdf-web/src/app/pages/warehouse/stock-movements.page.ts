@@ -1,52 +1,22 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  Injector,
-  inject,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import {
-  PiStockMovementsService,
-  PiWarehousesService,
-  stockMovementDocument,
-  stockMovementSku,
-  stockMovementTargetName,
-  stockMovementToWarehouseName,
-  stockMovementUnit,
-  stockMovementWarehouseName,
-  type MovementType,
-  type StockMovement,
-  type Warehouse,
-} from '@kppdf/data-access';
-import { extractErrorMessage } from '@kppdf/util-http';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import type { StockMovement } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
-import { TableComponent, type ColumnDef } from '@kppdf/ui/table';
+import { TableComponent } from '@kppdf/ui/table';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import {
-  StockMovementFormDialogComponent,
-  type StockMovementDialogData,
-} from './stock-movement-form-dialog.component';
+import { StockMovementsFacade } from './stock-movements.facade';
 
-const MOVEMENT_TYPES: readonly (MovementType | '')[] = [
-  '',
-  'in',
-  'out',
-  'adjust',
-  'transfer',
-];
-
+/**
+ * TZ-NX-WAREHOUSE-PAGES-FACADE — filter/route-sync signals, the table
+ * column defs, and every load/in/out method moved to
+ * `StockMovementsFacade`; this page stays a thin host.
+ */
 @Component({
   selector: 'pi-stock-movements-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [StockMovementsFacade],
   imports: [ButtonComponent, PiStatusBannerComponent, TableComponent, PiGroupWorkspaceComponent],
   template: `
     <app-pi-group-workspace [toc]="toc" tocActiveId="stock-movements" [chips]="[]" activeId="">
@@ -185,189 +155,50 @@ const MOVEMENT_TYPES: readonly (MovementType | '')[] = [
 })
 export class StockMovementsPage {
   protected readonly toc = WAREHOUSE_TOC_CHIPS;
-  private readonly movementsApi = inject(PiStockMovementsService);
-  private readonly warehousesApi = inject(PiWarehousesService);
-  private readonly dialog = inject(PiDialogService);
-  private readonly injector = inject(Injector);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  protected readonly facade = inject(StockMovementsFacade);
 
-  readonly selectedType = signal<MovementType | ''>('');
-  readonly selectedWarehouse = signal('');
-  readonly warehouses = signal<Warehouse[]>([]);
-  readonly items = signal<StockMovement[]>([]);
-  readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  readonly error = signal('');
-  private readonly expandedId = signal<string | null>(null);
-
-  private loadVersion = 0;
-
-  readonly columns: ColumnDef<StockMovement>[] = [
-    {
-      key: 'date',
-      label: 'Дата',
-      sortable: true,
-      width: '9rem',
-      accessor: (row) => row.date,
-      format: (row) => this.formatDate(row.date),
-    },
-    {
-      key: 'type',
-      label: 'Тип',
-      sortable: true,
-      width: '9rem',
-      accessor: (row) => this.typeLabel(row.type),
-    },
-    {
-      key: 'product',
-      label: 'Материал / продукт',
-      accessor: (row) => stockMovementTargetName(row),
-    },
-    {
-      key: 'warehouse',
-      label: 'Склад',
-      accessor: (row) => stockMovementWarehouseName(row),
-    },
-    {
-      key: 'qty',
-      label: 'Количество',
-      align: 'right',
-      numeric: true,
-      width: '8rem',
-    },
-    {
-      key: 'documentRef',
-      label: 'Документ / заказ',
-      width: '12rem',
-      accessor: (row) => stockMovementDocument(row),
-    },
-  ];
-
-  constructor() {
-    this.route.queryParamMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
-        const type = params.get('type') ?? '';
-        this.selectedType.set(
-          MOVEMENT_TYPES.includes(type as MovementType | '')
-            ? (type as MovementType | '')
-            : '',
-        );
-        this.selectedWarehouse.set(params.get('warehouseId') ?? '');
-        void this.load();
-      });
-    void this.loadWarehouses();
-  }
+  protected readonly selectedType = this.facade.selectedType;
+  protected readonly selectedWarehouse = this.facade.selectedWarehouse;
+  protected readonly warehouses = this.facade.warehouses;
+  protected readonly items = this.facade.items;
+  protected readonly status = this.facade.status;
+  protected readonly error = this.facade.error;
+  protected readonly columns = this.facade.columns;
+  protected readonly isRowExpanded = this.facade.isRowExpanded;
 
   onTypeChange(event: Event): void {
-    const type = (event.target as HTMLSelectElement).value as MovementType | '';
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        type: type || null,
-        warehouseId: this.selectedWarehouse() || null,
-      },
-    });
+    this.facade.onTypeChange(event);
   }
 
   onWarehouseChange(event: Event): void {
-    const warehouseId = (event.target as HTMLSelectElement).value;
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        type: this.selectedType() || null,
-        warehouseId: warehouseId || null,
-      },
-    });
+    this.facade.onWarehouseChange(event);
   }
 
   load(): void {
-    const version = ++this.loadVersion;
-    this.status.set('loading');
-    this.error.set('');
-    this.expandedId.set(null);
-    void firstValueFrom(
-      this.movementsApi.list({
-        type: this.selectedType() || undefined,
-        warehouseId: this.selectedWarehouse() || undefined,
-      }),
-    ).then((result) => {
-      if (version !== this.loadVersion) return;
-      if (!result.ok) {
-        this.error.set(extractErrorMessage(result.error));
-        this.status.set('error');
-        return;
-      }
-      this.items.set(result.data.items);
-      this.status.set('success');
-    });
+    this.facade.load();
   }
 
   openIn(): void {
-    this.openMovement('in');
+    this.facade.openIn();
   }
 
   openOut(): void {
-    this.openMovement('out');
+    this.facade.openOut();
   }
 
-  readonly isRowExpanded = (row: StockMovement): boolean =>
-    row._id === this.expandedId();
-
   toggleRow(row: StockMovement): void {
-    this.expandedId.update((id) => (id === row._id ? null : row._id));
+    this.facade.toggleRow(row);
   }
 
   itemUnit(row: StockMovement): string {
-    return stockMovementUnit(row);
+    return this.facade.itemUnit(row);
   }
 
   itemSku(row: StockMovement): string {
-    return stockMovementSku(row);
+    return this.facade.itemSku(row);
   }
 
   toWarehouseName(row: StockMovement): string | null {
-    return stockMovementToWarehouseName(row);
-  }
-
-  typeLabel(type: MovementType): string {
-    return {
-      in: 'Приход',
-      out: 'Расход',
-      adjust: 'Корректировка',
-      transfer: 'Перемещение',
-    }[type];
-  }
-
-  formatDate(value: string): string {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? '—'
-      : date.toLocaleDateString('ru-RU', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
-  }
-
-  private openMovement(mode: 'in' | 'out'): void {
-    const ref = this.dialog.open<
-      StockMovement | undefined,
-      StockMovementDialogData
-    >(StockMovementFormDialogComponent, {
-      data: { mode, warehouses: this.warehouses() },
-      width: 'md',
-      ariaLabel: mode === 'in' ? 'Приход на склад' : 'Расход со склада',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (created) => {
-      if (created) this.load();
-    });
-  }
-
-  private async loadWarehouses(): Promise<void> {
-    const result = await firstValueFrom(this.warehousesApi.list());
-    if (result.ok) this.warehouses.set(result.data ?? []);
+    return this.facade.toWarehouseName(row);
   }
 }
