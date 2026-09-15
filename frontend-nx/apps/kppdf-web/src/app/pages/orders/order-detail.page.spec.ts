@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
 import {
+  AuthService,
   PiCompositionService,
   PiOrdersService,
   PiOrganizationsService,
@@ -83,6 +84,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: AuthService, useValue: { user: () => null } },
       ],
     }).compileComponents();
 
@@ -141,6 +143,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: AuthService, useValue: { user: () => null } },
       ],
     }).compileComponents();
     await configureRouterSpy();
@@ -475,9 +478,20 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     expect(production?.getAttribute('href')).toContain('orderId=order-1');
     expect(supply?.getAttribute('href')).toContain('orderId=order-1');
     expect(shipping?.getAttribute('href')).toContain('orderId=order-1');
-    expect(current?.tagName).toBe('SPAN');
+    expect(current?.getAttribute('href')).toBe('/orders/order-1');
     expect(current?.getAttribute('aria-current')).toBe('page');
     expect(current?.textContent).toContain('Заказ');
+  });
+
+  it('renders the workflow chips inside the sticky group chrome (TZ-NX-ORDER-WS-CHROME-TOP)', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+
+    const chromeChips = fixture.nativeElement.querySelector(
+      '[data-test="group-chips"] [data-test="order-workflow-chip-order"]',
+    );
+    expect(chromeChips).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('h1 + [data-test="order-workflow-chip-order"]')).toBeNull();
   });
 
   it('renders an honest empty documents state (no fake list) with a working templates deep-link', async () => {
@@ -543,6 +557,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: AuthService, useValue: { user: () => null } },
       ],
     }).compileComponents();
     await configureRouterSpy();
@@ -633,6 +648,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiSupplyRequestsService, useValue: supplyApi },
         { provide: PiReservationsService, useValue: reservationsApi },
         { provide: PiShipmentsService, useValue: shipmentsApi },
+        { provide: AuthService, useValue: { user: () => null } },
       ],
     }).compileComponents();
     await configureRouterSpy();

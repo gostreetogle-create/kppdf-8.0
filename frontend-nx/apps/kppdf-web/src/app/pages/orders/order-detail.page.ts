@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { PiGroupWorkspaceComponent, type GroupChip } from '@kppdf/features';
 import {
   OrderWorkspaceFacade,
   OrderWsCompositionComponent,
@@ -7,7 +8,6 @@ import {
   OrderWsExecutionComponent,
   OrderWsHeaderComponent,
   OrderWsLogisticsComponent,
-  OrderWsWorkflowChipsComponent,
 } from '@kppdf/features/order-workspace';
 import { orderStatusLabel } from './order-status';
 
@@ -29,7 +29,7 @@ import { orderStatusLabel } from './order-status';
   providers: [OrderWorkspaceFacade],
   imports: [
     PiStatusBannerComponent,
-    OrderWsWorkflowChipsComponent,
+    PiGroupWorkspaceComponent,
     OrderWsHeaderComponent,
     OrderWsCompositionComponent,
     OrderWsExecutionComponent,
@@ -37,131 +37,159 @@ import { orderStatusLabel } from './order-status';
     OrderWsDocumentsComponent,
   ],
   template: `
-    <main class="px-panel-inset py-6" data-test="order-detail">
-      <div class="mb-6">
-        <div class="eyebrow">Сделки</div>
-        <h1 class="font-display text-2xl m-0" data-test="order-title">
-          @if (facade.order(); as order) {
-            Заказ №{{ order.number }}
-          } @else {
-            Заказ
-          }
-        </h1>
-      </div>
-
-      @if (facade.status() === 'loading') {
-        <div class="text-sm text-muted-foreground" data-test="order-loading">Загрузка…</div>
-      }
-
-      @if (facade.status() === 'error') {
-        <app-pi-status-banner
-          tone="destructive"
-          [message]="facade.error()"
-          actionLabel="Повторить"
-          (action)="facade.load()"
-          data-test="order-error"
-        />
-      }
-
-      @if (facade.status() === 'success' && facade.order(); as order) {
-        <pi-order-ws-workflow-chips [orderId]="order._id" />
-
-        <div class="space-y-6" data-test="order-body">
-          <section data-test="order-ws-header">
-            <pi-order-ws-header
-              [statusLabel]="statusLabel(order.status)"
-              [bannerTone]="bannerTone(order.status)"
-              [counterpartyName]="facade.counterpartyName()"
-              [siteName]="facade.siteName()"
-              [organizationName]="facade.organizationName()"
-              [quotationId]="facade.quotationId()"
-              [quotationNumber]="facade.quotationNumber()"
-              [paid]="facade.paid()"
-              [confirming]="facade.confirming()"
-              [cancelling]="facade.cancelling()"
-              [canConfirm]="facade.canConfirm()"
-              [canCancel]="facade.canCancel()"
-              [orderDateLabel]="facade.fmtDate(order.date)"
-              (paidToggle)="onPaidToggle($event)"
-              (openQuotation)="facade.openQuotationInStudio()"
-              (confirmOrder)="facade.confirmOrder()"
-              (cancelOrder)="facade.cancelOrder()"
-            />
-          </section>
-
-          <section data-test="order-ws-composition">
-            <h2 class="text-sm font-medium m-0 mb-2">Состав</h2>
-            <pi-order-ws-composition
-              [items]="order.items ?? []"
-              [editable]="facade.canEditComposition()"
-              [products]="facade.products()"
-              [expandedLineIndex]="facade.expandedLineIndex()"
-              [lineTrees]="facade.lineTrees()"
-              [lineTreeLoading]="facade.lineTreeLoading()"
-              [savingLineIndex]="facade.savingLineIndex()"
-              [removingLineIndex]="facade.removingLineIndex()"
-              [addingLine]="facade.addingLine()"
-              [newLineProductId]="facade.newLineProductId"
-              [newLineQty]="facade.newLineQty"
-              (toggleTree)="facade.toggleLineTree($event)"
-              (qtyChange)="facade.updateQty($event.index, $event.quantity)"
-              (readyChange)="facade.toggleReady($event.index, $event.ready)"
-              (removeLine)="facade.removeLine($event)"
-              (newLineProductIdChange)="facade.newLineProductId = $event"
-              (newLineQtyChange)="facade.newLineQty = $event"
-              (addLine)="facade.addLine()"
-            />
-          </section>
-
-          <section data-test="order-ws-execution">
-            <h2 class="text-sm font-medium m-0 mb-2">Исполнение</h2>
-            <pi-order-ws-execution
-              [supplyLoading]="facade.supplyLoading()"
-              [supplyError]="facade.supplyError()"
-              [supplyCounters]="facade.supplyCounters()"
-              [pendingSupplyRequests]="facade.pendingSupplyRequests()"
-              [orderId]="order._id"
-              [plannedDateLabel]="facade.fmtDate(order.plannedDate)"
-              [readyCount]="facade.readyLineCount()"
-              [totalCount]="facade.totalLineCount()"
-              (confirmMaterials)="facade.openKitReserveConfirm()"
-              (retrySupply)="facade.loadSupply()"
-            />
-          </section>
-
-          <section data-test="order-ws-logistics">
-            <h2 class="text-sm font-medium m-0 mb-2">Логистика</h2>
-            <pi-order-ws-logistics
-              [reservationLoading]="facade.reservationLoading()"
-              [reservationError]="facade.reservationError()"
-              [reservationCounters]="facade.reservationCounters()"
-              [shipmentsLoading]="facade.shipmentsLoading()"
-              [shipmentsError]="facade.shipmentsError()"
-              [hasShipment]="facade.hasShipment()"
-              [shipmentNumber]="facade.shipmentNumber()"
-              [shipmentDateLabel]="facade.shipmentDateLabel()"
-              [shipmentHasDocs]="facade.shipmentHasDocs()"
-              [shipmentCancellable]="facade.shipmentCancellable()"
-              [canMarkShipped]="facade.canMarkShipped()"
-              [orderId]="order._id"
-              (ship)="facade.openShipConfirm()"
-              (cancelShipment)="facade.cancelActiveShipment()"
-            />
-          </section>
-
-          <section data-test="order-ws-documents">
-            <h2 class="text-sm font-medium m-0 mb-2">Документы</h2>
-            <pi-order-ws-documents [orderId]="order._id" />
-          </section>
+    <app-pi-group-workspace
+      [toc]="[]"
+      tocActiveId=""
+      [chips]="chips()"
+      activeId="order"
+      dataTestPrefix="order-workflow-chip"
+    >
+      <main class="px-panel-inset py-6" data-test="order-detail">
+        <div class="mb-6">
+          <div class="eyebrow">Сделки</div>
+          <h1 class="font-display text-2xl m-0" data-test="order-title">
+            @if (facade.order(); as order) {
+              Заказ №{{ order.number }}
+            } @else {
+              Заказ
+            }
+          </h1>
         </div>
-      }
-    </main>
+
+        @if (facade.status() === 'loading') {
+          <div class="text-sm text-muted-foreground" data-test="order-loading">Загрузка…</div>
+        }
+
+        @if (facade.status() === 'error') {
+          <app-pi-status-banner
+            tone="destructive"
+            [message]="facade.error()"
+            actionLabel="Повторить"
+            (action)="facade.load()"
+            data-test="order-error"
+          />
+        }
+
+        @if (facade.status() === 'success' && facade.order(); as order) {
+          <div class="space-y-6" data-test="order-body">
+            <section data-test="order-ws-header">
+              <pi-order-ws-header
+                [statusLabel]="statusLabel(order.status)"
+                [bannerTone]="bannerTone(order.status)"
+                [counterpartyName]="facade.counterpartyName()"
+                [siteName]="facade.siteName()"
+                [organizationName]="facade.organizationName()"
+                [quotationId]="facade.quotationId()"
+                [quotationNumber]="facade.quotationNumber()"
+                [paid]="facade.paid()"
+                [confirming]="facade.confirming()"
+                [cancelling]="facade.cancelling()"
+                [canConfirm]="facade.canConfirm()"
+                [canCancel]="facade.canCancel()"
+                [orderDateLabel]="facade.fmtDate(order.date)"
+                (paidToggle)="onPaidToggle($event)"
+                (openQuotation)="facade.openQuotationInStudio()"
+                (confirmOrder)="facade.confirmOrder()"
+                (cancelOrder)="facade.cancelOrder()"
+              />
+            </section>
+
+            <section data-test="order-ws-composition">
+              <h2 class="text-sm font-medium m-0 mb-2">Состав</h2>
+              <pi-order-ws-composition
+                [items]="order.items ?? []"
+                [editable]="facade.canEditComposition()"
+                [products]="facade.products()"
+                [expandedLineIndex]="facade.expandedLineIndex()"
+                [lineTrees]="facade.lineTrees()"
+                [lineTreeLoading]="facade.lineTreeLoading()"
+                [savingLineIndex]="facade.savingLineIndex()"
+                [removingLineIndex]="facade.removingLineIndex()"
+                [addingLine]="facade.addingLine()"
+                [newLineProductId]="facade.newLineProductId"
+                [newLineQty]="facade.newLineQty"
+                (toggleTree)="facade.toggleLineTree($event)"
+                (qtyChange)="facade.updateQty($event.index, $event.quantity)"
+                (readyChange)="facade.toggleReady($event.index, $event.ready)"
+                (removeLine)="facade.removeLine($event)"
+                (newLineProductIdChange)="facade.newLineProductId = $event"
+                (newLineQtyChange)="facade.newLineQty = $event"
+                (addLine)="facade.addLine()"
+              />
+            </section>
+
+            <section data-test="order-ws-execution">
+              <h2 class="text-sm font-medium m-0 mb-2">Исполнение</h2>
+              <pi-order-ws-execution
+                [supplyLoading]="facade.supplyLoading()"
+                [supplyError]="facade.supplyError()"
+                [supplyCounters]="facade.supplyCounters()"
+                [pendingSupplyRequests]="facade.pendingSupplyRequests()"
+                [orderId]="order._id"
+                [plannedDateLabel]="facade.fmtDate(order.plannedDate)"
+                [readyCount]="facade.readyLineCount()"
+                [totalCount]="facade.totalLineCount()"
+                (confirmMaterials)="facade.openKitReserveConfirm()"
+                (retrySupply)="facade.loadSupply()"
+              />
+            </section>
+
+            <section data-test="order-ws-logistics">
+              <h2 class="text-sm font-medium m-0 mb-2">Логистика</h2>
+              <pi-order-ws-logistics
+                [reservationLoading]="facade.reservationLoading()"
+                [reservationError]="facade.reservationError()"
+                [reservationCounters]="facade.reservationCounters()"
+                [shipmentsLoading]="facade.shipmentsLoading()"
+                [shipmentsError]="facade.shipmentsError()"
+                [hasShipment]="facade.hasShipment()"
+                [shipmentNumber]="facade.shipmentNumber()"
+                [shipmentDateLabel]="facade.shipmentDateLabel()"
+                [shipmentHasDocs]="facade.shipmentHasDocs()"
+                [shipmentCancellable]="facade.shipmentCancellable()"
+                [canMarkShipped]="facade.canMarkShipped()"
+                [orderId]="order._id"
+                (ship)="facade.openShipConfirm()"
+                (cancelShipment)="facade.cancelActiveShipment()"
+              />
+            </section>
+
+            <section data-test="order-ws-documents">
+              <h2 class="text-sm font-medium m-0 mb-2">Документы</h2>
+              <pi-order-ws-documents [orderId]="order._id" />
+            </section>
+          </div>
+        }
+      </main>
+    </app-pi-group-workspace>
   `,
 })
 export class OrderDetailPage implements OnInit {
   protected readonly facade = inject(OrderWorkspaceFacade);
 
   protected readonly statusLabel = orderStatusLabel;
+
+  /**
+   * TZ-NX-ORDER-WS-CHROME-TOP — workflow strip fed into `PiGroupWorkspace`'s
+   * sticky `[chips]` row (was `OrderWsWorkflowChipsComponent`'s own
+   * body-level `<nav>` below the h1). Empty until the order loads — same
+   * gate the old component had (it only ever rendered inside the loaded
+   * branch). `order` self-links to its own detail route, same pattern as
+   * `home.page.ts`'s active "home" chip.
+   */
+  protected readonly chips = computed<readonly GroupChip[]>(() => {
+    const order = this.facade.order();
+    if (!order) return [];
+    const orderId = order._id;
+    return [
+      { id: 'home', label: 'Главная', route: '/home' },
+      { id: 'quotation', label: 'КП', route: '/studio' },
+      { id: 'production', label: 'Гант', route: '/production', queryParams: { orderId } },
+      { id: 'supply', label: 'Снабжение', route: '/supply', queryParams: { orderId } },
+      { id: 'shipping', label: 'Отгрузка', route: '/shipping', queryParams: { orderId } },
+      { id: 'order', label: 'Заказ', route: `/orders/${orderId}` },
+    ];
+  });
 
   ngOnInit(): void {
     this.facade.load();
