@@ -1,25 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { firstValueFrom, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import type { Observable } from 'rxjs';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiDialogComponent } from '@kppdf/ui/dialog';
-import { PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
-import type { DialogRef } from '@kppdf/ui/dialog';
-import { extractErrorMessage, type SilentResult } from '@kppdf/util-http';
-import {
-  PermissionsCatalogService,
-  type PermissionCatalogEntry,
-  type AdminPermissionSection as PermissionSection,
-} from '@kppdf/data-access/admin';
-import {
-  PAGE_GROUP_ORDER,
-  PAGE_GROUP_TITLE_RU,
-  PAGE_KEY_GROUP,
-  PERMISSION_ACTION_RU,
-  PERMISSION_GROUP_TITLE_RU,
-  ROLE_FORM_COPY,
-  pageLabelRu,
-  permissionLabelRu,
-} from './permission-labels.ru';
+import type { SilentResult } from '@kppdf/util-http';
+import type { AdminPermissionSection as PermissionSection } from '@kppdf/data-access/admin';
+import { ROLE_FORM_COPY } from './permission-labels.ru';
+import { RoleFormFacade, type PermissionDisplayGroup, type PageDisplayGroup } from './role-form.facade';
 
 export interface RoleFormData {
   mode: 'create' | 'edit' | 'view';
@@ -43,51 +29,7 @@ export interface RoleFormResult {
   pages: string[];
 }
 
-/** Display group for the checkbox matrix (merged API sections). */
-export interface PermissionDisplayGroup {
-  id: string;
-  title: string;
-  permissions: PermissionCatalogEntry[];
-}
-
-/** Display group for nav pageKey ACL. */
-export interface PageDisplayGroup {
-  id: string;
-  title: string;
-  keys: string[];
-}
-
-const ACTION_RU = PERMISSION_ACTION_RU;
-
-/** Preferred order of display groups in the role dialog. */
-const GROUP_ORDER = [
-  'admin',
-  'catalog',
-  'warehouse',
-  'sales',
-  'production',
-  'procurement',
-  'document',
-  'finance',
-  'system',
-  'desktop',
-] as const;
-
-const SECTION_TO_GROUP: Record<string, string> = {
-  user: 'admin',
-  role: 'admin',
-  product: 'catalog',
-  category: 'catalog',
-  material: 'catalog',
-  warehouse: 'warehouse',
-  sales: 'sales',
-  production: 'production',
-  procurement: 'procurement',
-  document: 'document',
-  finance: 'finance',
-  system: 'system',
-  desktop: 'desktop',
-};
+export type { PermissionDisplayGroup, PageDisplayGroup };
 
 /**
  * Role create/edit/view dialog — RU permission + pageKey matrix.
@@ -102,6 +44,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
   selector: 'pi-role-form-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [RoleFormFacade],
   imports: [ButtonComponent, PiDialogComponent],
   template: `
     <app-pi-dialog
@@ -612,313 +555,120 @@ const SECTION_TO_GROUP: Record<string, string> = {
   ],
 })
 export class RoleFormDialogComponent {
-  readonly data = inject<RoleFormData>(PI_DIALOG_DATA);
-  private readonly ref = inject<DialogRef<RoleFormResult>>(PI_DIALOG_REF);
-  private readonly catalogService = inject(PermissionsCatalogService);
+  protected readonly facade = inject(RoleFormFacade);
 
-  protected readonly name = signal<string>(this.data.role?.name ?? '');
-  protected readonly label = signal<string>(this.data.role?.label ?? '');
-  protected readonly description = signal<string>(this.data.role?.description ?? '');
-  protected readonly error = signal<string | null>(null);
-  protected readonly submitting = signal(false);
+  protected readonly data = this.facade.data;
   protected readonly copy = ROLE_FORM_COPY;
-  protected readonly readOnly = (): boolean => this.data.mode === 'view';
+  protected readonly readOnly = this.facade.readOnly;
+
+  protected readonly name = this.facade.name;
+  protected readonly label = this.facade.label;
+  protected readonly description = this.facade.description;
+  protected readonly error = this.facade.error;
+  protected readonly submitting = this.facade.submitting;
+  protected readonly sections = this.facade.sections;
+  protected readonly groups = this.facade.groups;
+  protected readonly pageGroups = this.facade.pageGroups;
+  protected readonly catalogLoading = this.facade.catalogLoading;
+  protected readonly catalogError = this.facade.catalogError;
+  protected readonly selected = this.facade.selected;
+  protected readonly selectedPages = this.facade.selectedPages;
+
+  protected readonly selectedCount = this.facade.selectedCount;
+  protected readonly selectedPagesCount = this.facade.selectedPagesCount;
+  protected readonly canSubmit = this.facade.canSubmit;
 
   protected dialogTitle(): string {
-    if (this.data.mode === 'create') return 'Новая роль';
-    if (this.data.mode === 'view') return 'Системная роль';
-    return 'Редактирование роли';
+    return this.facade.dialogTitle();
   }
 
   protected permissionLabel(key: string): string {
-    return permissionLabelRu(key);
+    return this.facade.permissionLabel(key);
   }
 
   protected pageLabel(key: string): string {
-    return pageLabelRu(key);
+    return this.facade.pageLabel(key);
   }
 
   protected onNameInput(event: Event): void {
-    this.name.set((event.target as HTMLInputElement).value);
+    this.facade.onNameInput(event);
   }
 
   protected onLabelInput(event: Event): void {
-    this.label.set((event.target as HTMLInputElement).value);
+    this.facade.onLabelInput(event);
   }
 
   protected onDescriptionInput(event: Event): void {
-    this.description.set((event.target as HTMLInputElement).value);
+    this.facade.onDescriptionInput(event);
   }
-
-  /** Raw API sections (kept for tests / debugging). */
-  protected readonly sections = signal<PermissionSection[]>([]);
-  /** Grouped RU categories for the checkbox matrix. */
-  protected readonly groups = signal<PermissionDisplayGroup[]>([]);
-  protected readonly pageGroups = signal<PageDisplayGroup[]>([]);
-  protected readonly catalogLoading = signal(true);
-  protected readonly catalogError = signal<string | null>(null);
-  protected readonly selected = signal<Set<string>>(new Set(this.data.role?.permissions ?? []));
-  protected readonly selectedPages = signal<Set<string>>(new Set(this.data.role?.pages ?? []));
-
-  constructor() {
-    void this.loadCatalog();
-  }
-
-  private async loadCatalog(): Promise<void> {
-    try {
-      const res = await firstValueFrom(this.catalogService.getCatalog());
-      if (res.ok) {
-        this.sections.set(res.data.sections);
-        this.groups.set(regroupPermissions(res.data.sections));
-        this.pageGroups.set(regroupPages(res.data.pages ?? []));
-        this.catalogError.set(null);
-        // System view: show effective full access (all ✓), not raw ['*']/sparse pages.
-        if (this.data.mode === 'view') {
-          this.applyFullAccessDisplay();
-        }
-      } else {
-        this.catalogError.set(this.describe(res.error));
-      }
-    } catch (err) {
-      this.catalogError.set(this.describe(err));
-    } finally {
-      this.catalogLoading.set(false);
-    }
-  }
-
-  /** Mark every catalog capability + pageKey selected (view/system only). */
-  private applyFullAccessDisplay(): void {
-    const caps = new Set<string>();
-    for (const g of this.groups()) {
-      for (const p of g.permissions) caps.add(p.key);
-    }
-    this.selected.set(caps);
-    const pages = new Set<string>();
-    for (const g of this.pageGroups()) {
-      for (const key of g.keys) pages.add(key);
-    }
-    this.selectedPages.set(pages);
-  }
-
-  protected readonly selectedCount = (): number => this.selected().size;
-  protected readonly selectedPagesCount = (): number => this.selectedPages().size;
 
   protected isSelected(key: string): boolean {
-    return this.selected().has(key);
+    return this.facade.isSelected(key);
   }
 
   protected isPageSelected(key: string): boolean {
-    return this.selectedPages().has(key);
+    return this.facade.isPageSelected(key);
   }
 
   protected toggleKey(key: string): void {
-    if (this.readOnly()) return;
-    const next = new Set(this.selected());
-    if (next.has(key)) {
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
-    this.selected.set(next);
+    this.facade.toggleKey(key);
   }
 
   protected togglePage(key: string): void {
-    if (this.readOnly()) return;
-    const next = new Set(this.selectedPages());
-    if (next.has(key)) {
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
-    this.selectedPages.set(next);
+    this.facade.togglePage(key);
   }
 
-  /** Select every permission across all groups. */
   protected selectAllPermissions(): void {
-    if (this.readOnly()) return;
-    const next = new Set<string>();
-    for (const g of this.groups()) {
-      for (const p of g.permissions) {
-        next.add(p.key);
-      }
-    }
-    this.selected.set(next);
+    this.facade.selectAllPermissions();
   }
 
-  /** Clear the entire selection. */
   protected clearAllPermissions(): void {
-    if (this.readOnly()) return;
-    this.selected.set(new Set());
+    this.facade.clearAllPermissions();
   }
 
   protected selectAllPages(): void {
-    if (this.readOnly()) return;
-    const next = new Set<string>();
-    for (const g of this.pageGroups()) {
-      for (const key of g.keys) next.add(key);
-    }
-    this.selectedPages.set(next);
+    this.facade.selectAllPages();
   }
 
   protected clearAllPages(): void {
-    if (this.readOnly()) return;
-    this.selectedPages.set(new Set());
+    this.facade.clearAllPages();
   }
 
   protected groupAllSelected(g: PermissionDisplayGroup): boolean {
-    return g.permissions.length > 0 && g.permissions.every((p) => this.selected().has(p.key));
+    return this.facade.groupAllSelected(g);
   }
 
   protected pageGroupAllSelected(g: PageDisplayGroup): boolean {
-    return g.keys.length > 0 && g.keys.every((k) => this.selectedPages().has(k));
+    return this.facade.pageGroupAllSelected(g);
   }
 
   protected toggleGroup(g: PermissionDisplayGroup, select: boolean): void {
-    if (this.readOnly()) return;
-    const next = new Set(this.selected());
-    for (const p of g.permissions) {
-      if (select) {
-        next.add(p.key);
-      } else {
-        next.delete(p.key);
-      }
-    }
-    this.selected.set(next);
+    this.facade.toggleGroup(g, select);
   }
 
   protected togglePageGroup(g: PageDisplayGroup, select: boolean): void {
-    if (this.readOnly()) return;
-    const next = new Set(this.selectedPages());
-    for (const key of g.keys) {
-      if (select) next.add(key);
-      else next.delete(key);
-    }
-    this.selectedPages.set(next);
+    this.facade.togglePageGroup(g, select);
   }
 
   /** @deprecated use groupAllSelected — kept for existing unit tests */
   protected sectionAllSelected(s: PermissionSection): boolean {
-    return s.permissions.length > 0 && s.permissions.every((p) => this.selected().has(p.key));
+    return this.facade.sectionAllSelected(s);
   }
 
   /** @deprecated use toggleGroup — kept for existing unit tests */
   protected toggleSection(s: PermissionSection, select: boolean): void {
-    const next = new Set(this.selected());
-    for (const p of s.permissions) {
-      if (select) {
-        next.add(p.key);
-      } else {
-        next.delete(p.key);
-      }
-    }
-    this.selected.set(next);
+    this.facade.toggleSection(s, select);
   }
 
   protected actionLabel(action: string): string {
-    return ACTION_RU[action] ?? action;
+    return this.facade.actionLabel(action);
   }
 
-  protected readonly canSubmit = (): boolean => {
-    if (this.readOnly()) return false;
-    const name = this.name().trim();
-    if (this.data.mode === 'create' && !/^[a-z][a-z0-9_-]{1,63}$/.test(name)) return false;
-    if (this.label().trim().length < 2) return false;
-    // Catalog must be ready. Empty permissions[] remains allowed (AC 2026-08-08
-    // admin audit): PO may later forbid 0-permission roles; until then FE matches
-    // BE create with permissions: []. Empty catalog shows RU empty-state but does
-    // not block submit on name/label alone.
-    if (this.catalogLoading() || this.catalogError()) return false;
-    return true;
-  };
-
   protected onSubmit(): void {
-    if (this.submitting() || this.readOnly()) return;
-    const result: RoleFormResult = {
-      name: this.data.mode === 'create' ? this.name().trim() : (this.data.role?.name ?? ''),
-      label: this.label().trim(),
-      description: this.description().trim() || undefined,
-      permissions: Array.from(this.selected()),
-      pages: Array.from(this.selectedPages()),
-    };
-    if (!this.data.submit) {
-      this.ref.close(result);
-      return;
-    }
-    this.submitting.set(true);
-    this.error.set(null);
-    this.data.submit(result).subscribe((res) => {
-      if (res.ok) {
-        this.submitting.set(false);
-        this.ref.close(result);
-      } else {
-        this.error.set(extractErrorMessage(res.error));
-        this.submitting.set(false);
-      }
-    });
+    this.facade.onSubmit();
   }
 
   protected onCancel(): void {
-    this.ref.close();
-  }
-
-  private describe(err: unknown): string {
-    if (err instanceof Error) return err.message;
-    return String(err);
+    this.facade.onCancel();
   }
 }
-
-/** Merge API sections into manager-facing RU categories. */
-export function regroupPermissions(sections: PermissionSection[]): PermissionDisplayGroup[] {
-  const buckets = new Map<string, PermissionDisplayGroup>();
-  for (const s of sections) {
-    const groupId = SECTION_TO_GROUP[s.section] ?? s.section;
-    const meta = {
-      id: groupId,
-      title: PERMISSION_GROUP_TITLE_RU[groupId] ?? groupId,
-    };
-    const bucket = buckets.get(meta.id) ?? {
-      id: meta.id,
-      title: meta.title,
-      permissions: [],
-    };
-    bucket.permissions.push(...s.permissions);
-    buckets.set(meta.id, bucket);
-  }
-  const ordered: PermissionDisplayGroup[] = [];
-  for (const id of GROUP_ORDER) {
-    const g = buckets.get(id);
-    if (g?.permissions.length) ordered.push(g);
-    buckets.delete(id);
-  }
-  for (const g of buckets.values()) {
-    if (g.permissions.length) ordered.push(g);
-  }
-  return ordered;
-}
-
-/** Group PAGE_KEYS into nav-facing RU categories. */
-export function regroupPages(pages: readonly string[]): PageDisplayGroup[] {
-  const buckets = new Map<string, PageDisplayGroup>();
-  for (const key of pages) {
-    const groupId = PAGE_KEY_GROUP[key] ?? 'other';
-    const bucket = buckets.get(groupId) ?? {
-      id: groupId,
-      title: PAGE_GROUP_TITLE_RU[groupId] ?? groupId,
-      keys: [],
-    };
-    bucket.keys.push(key);
-    buckets.set(groupId, bucket);
-  }
-  const ordered: PageDisplayGroup[] = [];
-  for (const id of PAGE_GROUP_ORDER) {
-    const g = buckets.get(id);
-    if (g?.keys.length) ordered.push(g);
-    buckets.delete(id);
-  }
-  for (const g of buckets.values()) {
-    if (g.keys.length) ordered.push(g);
-  }
-  return ordered;
-}
-
-export type { PermissionCatalogEntry };
