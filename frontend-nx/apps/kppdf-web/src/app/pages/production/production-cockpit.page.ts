@@ -16,24 +16,9 @@
  * the escape-key handler). `ProductionCockpitContext` stays the separate
  * selection/expand/filter SoT, untouched.
  */
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  HostListener,
-  effect,
-  inject,
-  untracked,
-} from '@angular/core';
-import {
-  CalendarDays,
-  Filter,
-  List,
-  LucideAngularModule,
-  RefreshCw,
-  SlidersHorizontal,
-} from 'lucide-angular';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, inject } from '@angular/core';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
+import { PRODUCTION_TOOL_OWNER, registerProductionShellTools } from './production-cockpit-shell-tools';
 import {
   GanttBarsComponent,
   OrdersRailComponent,
@@ -53,7 +38,7 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ProductionCockpitContext, ProductionCockpitFacade],
-  imports: [LucideAngularModule, OrdersRailComponent, GanttBarsComponent],
+  imports: [OrdersRailComponent, GanttBarsComponent],
   template: `
     <div class="production-cockpit" data-test="production-cockpit">
       @if (facade.state().error) {
@@ -251,10 +236,6 @@ import {
   ],
 })
 export class ProductionCockpitPage {
-  protected readonly ordersIcon = List;
-  protected readonly filtersIcon = SlidersHorizontal;
-  protected readonly refreshIcon = RefreshCw;
-  protected readonly todayIcon = CalendarDays;
   protected readonly ctx = inject(ProductionCockpitContext);
   protected readonly facade = inject(ProductionReadFacade);
   protected readonly cockpit = inject(ProductionCockpitFacade);
@@ -281,15 +262,15 @@ export class ProductionCockpitPage {
   protected readonly orderMetaView = this.cockpit.orderMetaView;
 
   constructor() {
-    effect(() => {
-      // Track active flyout state for shell tool .active / aria state.
-      void this.leftTool();
-      void this.ctx.filtersDirty();
-      // setTools reads+writes rail state — must not be effect-tracked (infinite loop).
-      untracked(() => this.syncShellTools());
+    registerProductionShellTools(this.shellTools, {
+      leftTool: this.leftTool,
+      filtersDirty: this.ctx.filtersDirty,
+      toggleLeftTool: (tool) => this.toggleLeftTool(tool),
+      onRefresh: () => void this.onRefresh(),
+      onToday: () => this.onToday(),
     });
     this.destroyRef.onDestroy(() => {
-      this.shellTools.clear('production');
+      this.shellTools.clear(PRODUCTION_TOOL_OWNER);
     });
   }
 
@@ -336,53 +317,6 @@ export class ProductionCockpitPage {
     if (this.leftTool()) {
       this.closeFlyouts();
     }
-  }
-
-  private syncShellTools(): void {
-    const left = this.leftTool();
-    const dirty = this.ctx.filtersDirty();
-    this.shellTools.setTools('production', {
-      left: [
-        {
-          id: 'orders',
-          side: 'left',
-          ariaLabel: dirty ? 'Фильтры изменены' : 'Заказы',
-          title: dirty ? 'Фильтры изменены' : 'Заказы',
-          icon: this.ordersIcon,
-          active: left === 'orders',
-          onClick: () => this.toggleLeftTool('orders'),
-        },
-        {
-          id: 'filters',
-          side: 'left',
-          ariaLabel: dirty ? 'Фильтры изменены' : 'Фильтры',
-          title: dirty ? 'Фильтры изменены' : 'Фильтры',
-          icon: this.filtersIcon,
-          active: left === 'filters' || dirty,
-          onClick: () => this.toggleLeftTool('filters'),
-        },
-        {
-          id: 'refresh',
-          side: 'left',
-          ariaLabel: 'Обновить',
-          title: 'Обновить',
-          icon: this.refreshIcon,
-          onClick: () => {
-            void this.onRefresh();
-          },
-        },
-      ],
-      right: [
-        {
-          id: 'today',
-          side: 'right',
-          ariaLabel: 'Прокрутить к сегодня',
-          title: 'Прокрутить к сегодня',
-          icon: this.todayIcon,
-          onClick: () => this.onToday(),
-        },
-      ],
-    });
   }
 
   protected async onFiltersChanged(): Promise<void> {
