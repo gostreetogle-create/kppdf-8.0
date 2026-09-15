@@ -1,68 +1,17 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  ElementRef,
-  Injector,
-  OnInit,
-  ViewChild,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  FormArray,
-  FormControl,
-  FormGroup,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
-import {
-  MATERIAL_KINDS,
-  PiCategoriesService,
-  PiMaterialsService,
-  PiPhotosService,
-  PiUnitsService,
-  type Category,
-  type CreateMaterialPayload,
-  type Material,
-  type MaterialDimensionType,
-  type MaterialKind,
-  type PhotoFrame,
-  type Unit,
-} from '@kppdf/data-access';
+import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { ReactiveFormsModule, type FormArray } from '@angular/forms';
+import type { PhotoFrame } from '@kppdf/data-access';
+import { type Material, type MaterialKind } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
-import {
-  PiPhotoDropzoneComponent,
-  normalizePhotoFrame,
-  photoFrameOf,
-  type PiPhotoItem,
-} from '@kppdf/ui/photo';
-import { PiDialogComponent, PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
-import type { DialogRef } from '@kppdf/ui/dialog';
+import { PiPhotoDropzoneComponent } from '@kppdf/ui/photo';
+import { PiDialogComponent } from '@kppdf/ui/dialog';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
 import { TextareaComponent } from '@kppdf/ui/textarea';
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
-import { extractErrorMessage } from '@kppdf/util-http';
-import { formatMaterialKind } from '../data/material-formatters';
 import { CompositionPanelComponent } from '../../composition/composition-panel.component';
-import { onDialogCloseOnce } from '../../on-dialog-close-once';
 import { RegistryCreateButtonComponent } from '../registry-create-button.component';
-import { CategoryFormDialogComponent, type CategoryFormDialogData } from './category-form-dialog.component';
-
-const DIMENSION_TYPES: { value: MaterialDimensionType; label: string }[] = [
-  { value: 'length', label: 'Длина' },
-  { value: 'width', label: 'Ширина' },
-  { value: 'height', label: 'Высота' },
-  { value: 'thickness', label: 'Толщина' },
-  { value: 'diameter', label: 'Диаметр' },
-  { value: 'depth', label: 'Глубина' },
-];
-
-const DETAIL_KINDS: MaterialKind[] = ['part', 'fastener', 'purchased', 'other'];
+import { MaterialFormFacade, type DimensionGroup } from './material-form.facade';
 
 export interface MaterialFormDialogData {
   readonly mode: 'create' | 'edit';
@@ -72,16 +21,11 @@ export interface MaterialFormDialogData {
   readonly entityLabel?: string;
 }
 
-type DimensionGroup = FormGroup<{
-  type: FormControl<MaterialDimensionType>;
-  value: FormControl<number>;
-  isImmutable: FormControl<boolean>;
-}>;
-
 @Component({
   selector: 'pi-material-form-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [MaterialFormFacade],
   imports: [
     ReactiveFormsModule,
     PiDialogComponent,
@@ -301,140 +245,89 @@ type DimensionGroup = FormGroup<{
     </app-pi-dialog>
   `,
 })
-export class MaterialFormDialogComponent implements OnInit {
+export class MaterialFormDialogComponent {
   @ViewChild('formEl') private formEl?: ElementRef<HTMLFormElement>;
-  protected readonly dimensionTypes = DIMENSION_TYPES;
-  protected readonly formatKind = formatMaterialKind;
+  private readonly facade = inject(MaterialFormFacade);
 
-  private readonly fb = inject(NonNullableFormBuilder);
-  private readonly materialsService = inject(PiMaterialsService);
-  private readonly photosService = inject(PiPhotosService);
-  private readonly unitsService = inject(PiUnitsService);
-  private readonly categoriesService = inject(PiCategoriesService);
-  private readonly data = inject<MaterialFormDialogData>(PI_DIALOG_DATA);
-  private readonly ref = inject<DialogRef<Material | null | undefined>>(PI_DIALOG_REF);
-  private readonly dialog = inject(PiDialogService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
+  protected readonly dimensionTypes = this.facade.dimensionTypes;
+  protected readonly formatKind = this.facade.formatKind;
 
-  protected readonly submitting = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
-  protected readonly units = signal<Unit[]>([]);
-  protected readonly categories = signal<Category[]>([]);
-  protected readonly savedId = signal<string | null>(null);
-  protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
-  private materialEntity = signal<Material | undefined>(undefined);
+  protected readonly submitting = this.facade.submitting;
+  protected readonly errorMessage = this.facade.errorMessage;
+  protected readonly units = this.facade.units;
+  protected readonly categories = this.facade.categories;
+  protected readonly savedId = this.facade.savedId;
+  protected readonly mode = this.facade.mode;
 
-  /** WAVE-NX-CATALOG-PHOTOS P1: локальное состояние фото; write — только на Save. */
-  protected readonly photoItems = signal<PiPhotoItem[]>([]);
-  protected readonly mainPhotoId = signal<string | null>(null);
-  protected readonly photosUploading = signal(false);
-  protected readonly photoError = signal<string | null>(null);
+  protected readonly photoItems = this.facade.photoItems;
+  protected readonly mainPhotoId = this.facade.mainPhotoId;
+  protected readonly photosUploading = this.facade.photosUploading;
+  protected readonly photoError = this.facade.photoError;
 
-  protected readonly isDetailForm = computed(
-    () => this.data.lockMaterialKind === 'part' || this.data.entityLabel === 'деталь',
-  );
+  protected readonly isDetailForm = this.facade.isDetailForm;
+  protected readonly categoryRequired = this.facade.categoryRequired;
+  protected readonly dialogTitle = this.facade.dialogTitle;
+  protected readonly showKindSelect = this.facade.showKindSelect;
+  protected readonly kindOptions = this.facade.kindOptions;
 
-  /**
-   * TZ-NX-REG-CATEGORY-WIRE-DETAILS — категория обязательна для «деталь»
-   * (метиз/покупное/прочее наследуют то же требование через тот же
-   * `isDetailForm`); для сырья (raw, materials registry) select виден, но
-   * необязателен (PO 2026-09-11).
-   */
-  protected readonly categoryRequired = this.isDetailForm;
+  protected readonly form = this.facade.form;
 
-  protected readonly dialogTitle = computed(() => {
-    const label = this.data.entityLabel ?? 'материал';
-    return this.data.mode === 'edit' ? `Редактировать ${label}` : `Создать ${label}`;
-  });
-
-  protected readonly showKindSelect = computed(
-    () => this.data.allowKindSelect === true && !this.data.lockMaterialKind,
-  );
-
-  protected readonly kindOptions = computed(() => {
-    if (this.data.lockMaterialKind) return [this.data.lockMaterialKind];
-    return DETAIL_KINDS;
-  });
-
-  protected readonly form = this.fb.group({
-    name: this.fb.control('', [Validators.required, Validators.maxLength(256)]),
-    article: this.fb.control('', [Validators.required, Validators.maxLength(64)]),
-    unit: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
-    sku: this.fb.control(''),
-    materialKind: this.fb.control<MaterialKind>('part'),
-    categoryId: this.fb.control('', this.isDetailForm() ? [Validators.required] : []),
-    pricePerUnit: this.fb.control<number | null>(null),
-    weightKg: this.fb.control<number | null>(null),
-    assortment: this.fb.control(''),
-    standardRef: this.fb.control(''),
-    materialGrade: this.fb.control(''),
-    colorsText: this.fb.control(''),
-    description: this.fb.control(''),
-    notes: this.fb.control(''),
-    dimensions: this.fb.array<DimensionGroup>([]),
-  });
-
-  get dimensionsArray(): FormArray<DimensionGroup> {
-    return this.form.controls.dimensions;
+  protected get dimensionsArray(): FormArray<DimensionGroup> {
+    return this.facade.dimensionsArray;
   }
 
-  ngOnInit(): void {
-    void this.loadUnits();
-    void this.loadCategories();
-    if (this.data.lockMaterialKind) {
-      this.form.controls.materialKind.setValue(this.data.lockMaterialKind);
-      this.form.controls.materialKind.disable();
-    }
-    if (this.data.material) {
-      this.savedId.set(this.data.material._id);
-      this.materialEntity.set(this.data.material);
-      this.patchMaterial(this.data.material);
-    } else if (this.data.lockMaterialKind) {
-      this.form.controls.materialKind.setValue(this.data.lockMaterialKind);
-    }
+  protected invalid(name: Parameters<MaterialFormFacade['invalid']>[0]): boolean {
+    return this.facade.invalid(name);
   }
 
-  protected invalid(name: keyof typeof this.form.controls): boolean {
-    const c = this.form.controls[name];
-    return c.invalid && (c.dirty || c.touched);
+  protected fieldError(name: Parameters<MaterialFormFacade['fieldError']>[0]): string {
+    return this.facade.fieldError(name);
   }
 
-  protected fieldError(name: keyof typeof this.form.controls): string {
-    const c = this.form.controls[name];
-    if (!c.invalid || (!c.dirty && !c.touched)) return '';
-    if (c.errors?.['required']) return 'Обязательное поле';
-    if (c.errors?.['maxlength']) return 'Слишком длинное значение';
-    return 'Некорректное значение';
+  protected openCreateCategory(): void {
+    this.facade.openCreateCategory();
   }
 
-  /** Order matches the form layout — first invalid one gets focus/scroll (same pattern as `product-form-dialog`). */
-  private static readonly REQUIRED_FIELDS: ReadonlyArray<{
-    key: 'name' | 'article' | 'unit' | 'categoryId';
-    label: string;
-    htmlId: string;
-  }> = [
-    { key: 'name', label: 'Название', htmlId: 'mat-name' },
-    { key: 'article', label: 'Артикул', htmlId: 'mat-article' },
-    { key: 'unit', label: 'Единица', htmlId: 'mat-unit' },
-    { key: 'categoryId', label: 'Категория', htmlId: 'mat-category' },
-  ];
+  protected addDimension(): void {
+    this.facade.addDimension();
+  }
 
-  private buildInvalidMessage(): string {
-    const missing = MaterialFormDialogComponent.REQUIRED_FIELDS.filter(
-      (f) => this.form.controls[f.key].invalid,
-    ).map((f) => f.label);
-    return missing.length
-      ? `Заполните обязательные поля: ${missing.join(', ')}`
-      : 'Проверьте поля формы — есть некорректные значения.';
+  protected removeDimension(index: number): void {
+    this.facade.removeDimension(index);
+  }
+
+  protected onCancel(): void {
+    this.facade.onCancel();
+  }
+
+  protected async onSubmit(): Promise<void> {
+    await this.facade.onSubmit(() => this.focusFirstInvalidField());
+  }
+
+  protected async onPhotosSelected(files: File[]): Promise<void> {
+    await this.facade.onPhotosSelected(files);
+  }
+
+  protected onPhotoRemove(id: string): void {
+    this.facade.onPhotoRemove(id);
+  }
+
+  protected onPhotoMainChanged(id: string | null): void {
+    this.facade.onPhotoMainChanged(id);
+  }
+
+  protected async onPhotoFrameSave(event: { id: string; frame: Partial<PhotoFrame> }): Promise<void> {
+    await this.facade.onPhotoFrameSave(event);
+  }
+
+  protected onPhotoInvalidType(): void {
+    this.facade.onPhotoInvalidType();
   }
 
   private focusFirstInvalidField(): void {
-    const target = MaterialFormDialogComponent.REQUIRED_FIELDS.find(
-      (f) => this.form.controls[f.key].invalid,
-    );
-    if (!target) return;
-    const host = this.formEl?.nativeElement.querySelector<HTMLElement>(`#${target.htmlId}`);
+    const htmlId = this.facade.firstInvalidFieldHtmlId();
+    if (!htmlId) return;
+    const host = this.formEl?.nativeElement.querySelector<HTMLElement>(`#${htmlId}`);
     if (!host) return;
     // `app-pi-input` puts `id` on its host tag, not the native `<input>` it wraps — reach inside.
     const el = host.matches('input, select, textarea')
@@ -445,290 +338,4 @@ export class MaterialFormDialogComponent implements OnInit {
       el.focus({ preventScroll: true });
     });
   }
-
-  /** ШАГ 2 — nested create; всегда lockType='material' (эта форма — только материалы/детали). */
-  protected openCreateCategory(): void {
-    const ref = this.dialog.open<Category | undefined>(CategoryFormDialogComponent, {
-      data: {
-        mode: 'create',
-        category: null,
-        categories: this.categories(),
-        lockType: 'material',
-      } satisfies CategoryFormDialogData,
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (category) => {
-      if (!category) return;
-      this.categories.update((list) => [...list, category]);
-      this.form.controls.categoryId.setValue(category._id);
-      this.form.markAsDirty();
-    });
-  }
-
-  protected addDimension(): void {
-    const used = new Set(this.dimensionsArray.controls.map((g) => g.controls.type.value));
-    const next = DIMENSION_TYPES.find((t) => !used.has(t.value))?.value ?? 'length';
-    this.dimensionsArray.push(this.createDimensionGroup(next, 0, false));
-  }
-
-  protected removeDimension(index: number): void {
-    this.dimensionsArray.removeAt(index);
-  }
-
-  protected onCancel(): void {
-    this.ref.close(undefined);
-  }
-
-  protected async onSubmit(): Promise<void> {
-    if (this.submitting()) return;
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.errorMessage.set(this.buildInvalidMessage());
-      this.focusFirstInvalidField();
-      return;
-    }
-
-    const payload = this.buildPayload();
-    this.submitting.set(true);
-    this.errorMessage.set(null);
-
-    const editId = this.materialEntity()?._id ?? this.data.material?._id;
-    const res =
-      this.mode() === 'edit' && editId
-        ? await firstValueFrom(this.materialsService.update(editId, payload))
-        : await firstValueFrom(this.materialsService.create(payload));
-
-    this.submitting.set(false);
-
-    if (!res.ok) {
-      this.errorMessage.set(extractErrorMessage(res.error));
-      return;
-    }
-
-    this.savedId.set(res.data._id);
-    this.materialEntity.set(res.data);
-    this.mode.set('edit');
-    this.form.markAsPristine();
-
-    if (this.data.mode === 'edit' || !this.isDetailForm()) {
-      this.ref.close(res.data);
-    }
-  }
-
-  /** P1 write-path: upload → append id, main = first when empty. */
-  protected async onPhotosSelected(files: File[]): Promise<void> {
-    if (files.length === 0 || this.photosUploading()) return;
-    this.photosUploading.set(true);
-    this.photoError.set(null);
-    const uploaded: PiPhotoItem[] = [];
-    for (const file of files) {
-      const res = await firstValueFrom(this.photosService.upload(file));
-      if (!res.ok) {
-        this.photoError.set(extractErrorMessage(res.error));
-        break;
-      }
-      uploaded.push(res.data);
-    }
-    if (uploaded.length > 0) {
-      this.photoItems.update((list) => [...list, ...uploaded]);
-      if (this.mainPhotoId() === null) {
-        this.mainPhotoId.set(uploaded[0]._id);
-      }
-      this.form.markAsDirty();
-    }
-    this.photosUploading.set(false);
-  }
-
-  protected onPhotoRemove(id: string): void {
-    this.photoItems.update((list) => list.filter((p) => p._id !== id));
-    if (this.mainPhotoId() === id) {
-      const rest = this.photoItems();
-      this.mainPhotoId.set(rest.length > 0 ? rest[0]._id : null);
-    }
-    void this.photosService.remove(id).subscribe({
-      error: () => {
-        /* silent: entity Save всё равно уберёт ссылку (B-PHOTO) */
-      },
-    });
-    this.form.markAsDirty();
-  }
-
-  protected onPhotoMainChanged(id: string | null): void {
-    this.mainPhotoId.set(id);
-    this.form.markAsDirty();
-  }
-
-  protected async onPhotoFrameSave(event: { id: string; frame: Partial<PhotoFrame> }): Promise<void> {
-    this.photoError.set(null);
-    const res = await firstValueFrom(this.photosService.updateFrame(event.id, event.frame));
-    if (!res.ok) {
-      this.photoError.set(extractErrorMessage(res.error));
-      return;
-    }
-    const savedFrame = res.data.frame ?? normalizePhotoFrame({
-      ...this.photoItems().find((photo) => photo._id === event.id)?.frame,
-      ...event.frame,
-    });
-    this.photoItems.update((list) =>
-      list.map((photo) => (photo._id === event.id ? { ...photo, frame: savedFrame } : photo)),
-    );
-  }
-
-  protected onPhotoInvalidType(): void {
-    this.photoError.set(PiPhotoDropzoneComponent.INVALID_FILE_TYPE_MESSAGE);
-  }
-
-  private async loadUnits(): Promise<void> {
-    const res = await firstValueFrom(this.unitsService.list({ limit: 100, isActive: true }));
-    if (res.ok) {
-      this.units.set(res.data.items.filter((u) => u.isActive));
-    }
-  }
-
-  private async loadCategories(): Promise<void> {
-    const res = await firstValueFrom(this.categoriesService.list({ type: 'material' }));
-    if (res.ok) {
-      this.categories.set(res.data.filter((c) => c.isActive));
-    }
-  }
-
-  private patchMaterial(m: Material): void {
-    const patch: {
-      name: string;
-      article: string;
-      unit: string;
-      sku: string;
-      materialKind?: MaterialKind;
-      categoryId: string;
-      pricePerUnit: number | null;
-      weightKg: number | null;
-      assortment: string;
-      standardRef: string;
-      materialGrade: string;
-      colorsText: string;
-      description: string;
-      notes: string;
-    } = {
-      name: m.name,
-      article: m.article ?? '',
-      unit: m.unit,
-      sku: m.sku ?? '',
-      categoryId: refId(m.categoryId) ?? '',
-      pricePerUnit: m.pricePerUnit ?? null,
-      weightKg: m.weightKg ?? null,
-      assortment: m.assortment ?? '',
-      standardRef: m.standardRef ?? '',
-      materialGrade: m.materialGrade ?? '',
-      colorsText: (m.colors ?? []).join(', '),
-      description: m.description ?? '',
-      notes: m.notes ?? '',
-    };
-    if (!this.data.lockMaterialKind) {
-      patch.materialKind =
-        m.materialKind && (MATERIAL_KINDS as readonly string[]).includes(m.materialKind)
-          ? m.materialKind
-          : 'part';
-    }
-    this.form.patchValue(patch);
-    if (this.data.lockMaterialKind) {
-      this.form.controls.materialKind.setValue(this.data.lockMaterialKind);
-      this.form.controls.materialKind.disable();
-    }
-    this.dimensionsArray.clear();
-    for (const d of m.dimensions ?? []) {
-      this.dimensionsArray.push(this.createDimensionGroup(d.type, d.value, !!d.isImmutable));
-    }
-    this.hydratePhotos(m.photoIds, m.mainPhotoId);
-  }
-
-  /** Edit-load: строка-ссылка = достаточно для превью; populated объект — напрямую. */
-  private hydratePhotos(refs: Material['photoIds'], main: Material['mainPhotoId']): void {
-    const items: PiPhotoItem[] = [];
-    for (const ref of refs ?? []) {
-      if (typeof ref === 'string') {
-        items.push({ _id: ref, storageUrl: `/api/photos/${ref}/raw` });
-      } else if (ref && typeof ref === 'object' && '_id' in ref) {
-        const doc = ref as Record<string, unknown> & { storageUrl?: string };
-        const frame = photoFrameOf(doc);
-        items.push({
-          _id: String(doc['_id']),
-          storageUrl: typeof doc.storageUrl === 'string' ? doc.storageUrl : `/api/photos/${String(doc['_id'])}/raw`,
-          ...(frame ? { frame } : {}),
-        });
-      }
-    }
-    this.photoItems.set(items);
-    const mainId =
-      main == null
-        ? null
-        : typeof main === 'string'
-          ? main
-          : typeof main === 'object' && '_id' in main
-            ? String((main as Record<string, unknown>)['_id'])
-            : null;
-    this.mainPhotoId.set(mainId ?? (items.length > 0 ? items[0]._id : null));
-  }
-
-  private createDimensionGroup(
-    type: MaterialDimensionType,
-    value: number,
-    isImmutable: boolean,
-  ): DimensionGroup {
-    return this.fb.group({
-      type: this.fb.control(type, Validators.required),
-      value: this.fb.control(value, [Validators.required, Validators.min(0)]),
-      isImmutable: this.fb.control(isImmutable),
-    });
-  }
-
-  private buildPayload(): CreateMaterialPayload {
-    const v = this.form.getRawValue();
-    const payload: CreateMaterialPayload = {
-      name: v.name.trim(),
-      article: v.article.trim(),
-      unit: v.unit,
-    };
-    if (v.sku?.trim()) payload.sku = v.sku.trim();
-    if (v.materialKind) payload.materialKind = v.materialKind;
-    if (v.categoryId?.trim()) payload.categoryId = v.categoryId.trim();
-    if (v.pricePerUnit != null && v.pricePerUnit !== ('' as unknown)) {
-      payload.pricePerUnit = Number(v.pricePerUnit);
-    }
-    if (v.weightKg != null && v.weightKg !== ('' as unknown)) payload.weightKg = Number(v.weightKg);
-    if (v.assortment?.trim()) payload.assortment = v.assortment.trim();
-    if (v.standardRef?.trim()) payload.standardRef = v.standardRef.trim();
-    if (v.materialGrade?.trim()) payload.materialGrade = v.materialGrade.trim();
-    const colors = v.colorsText
-      ?.split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (colors?.length) payload.colors = colors;
-    if (v.description?.trim()) payload.description = v.description.trim();
-    if (v.notes?.trim()) payload.notes = v.notes.trim();
-    const dimensions = v.dimensions.map((d) => ({
-      type: d.type,
-      value: Number(d.value),
-      isImmutable: d.isImmutable,
-    }));
-    if (dimensions.length) payload.dimensions = dimensions;
-    const photos = this.photoItems();
-    if (photos.length > 0) {
-      payload.photoIds = photos.map((p) => p._id);
-      const main = this.mainPhotoId();
-      if (main && photos.some((p) => p._id === main)) payload.mainPhotoId = main;
-    } else if (this.mode() === 'edit') {
-      payload.photoIds = [];
-      payload.mainPhotoId = null;
-    }
-    return payload;
-  }
-}
-
-function refId(value: unknown): string | null {
-  if (value == null || value === '') return null;
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object' && value !== null && '_id' in value) {
-    return refId((value as { _id: unknown })._id);
-  }
-  return null;
 }

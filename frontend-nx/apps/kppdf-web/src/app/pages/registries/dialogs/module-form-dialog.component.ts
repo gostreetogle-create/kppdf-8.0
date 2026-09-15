@@ -2,55 +2,22 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
-  Injector,
-  OnInit,
   ViewChild,
-  computed,
   inject,
-  signal,
 } from '@angular/core';
-import {
-  FormArray,
-  FormControl,
-  FormGroup,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
-import {
-  PiCategoriesService,
-  PiModulesService,
-  PiPhotosService,
-  PiWorkTypesService,
-  type Category,
-  type CreateProductModulePayload,
-  type ProductModule,
-  type ProductModuleWorkTypePayload,
-  type PhotoFrame,
-  type WorkType,
-} from '@kppdf/data-access';
+import { ReactiveFormsModule, type FormArray } from '@angular/forms';
+import type { PhotoFrame, ProductModule } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
-import {
-  PiPhotoDropzoneComponent,
-  normalizePhotoFrame,
-  photoFrameOf,
-  type PiPhotoItem,
-} from '@kppdf/ui/photo';
-import { PiDialogComponent, PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
-import type { DialogRef } from '@kppdf/ui/dialog';
+import { PiPhotoDropzoneComponent } from '@kppdf/ui/photo';
+import { PiDialogComponent } from '@kppdf/ui/dialog';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
-import { extractErrorMessage } from '@kppdf/util-http';
 import { CompositionPanelComponent } from '../../composition/composition-panel.component';
 import { scrollCompositionBlockIntoView } from '../../composition/composition-focus-scroll';
-import { confirmDirtyClose } from '../../composition/dirty-dialog.guard';
-import { onDialogCloseOnce } from '../../on-dialog-close-once';
 import { RegistryCreateButtonComponent } from '../registry-create-button.component';
-import { CategoryFormDialogComponent, type CategoryFormDialogData } from './category-form-dialog.component';
+import { ModuleFormFacade, type WorkTypeFormGroup } from './module-form.facade';
 
 export interface ModuleFormDialogData {
   mode: 'create' | 'edit';
@@ -62,6 +29,7 @@ export interface ModuleFormDialogData {
   selector: 'pi-module-form-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [ModuleFormFacade],
   imports: [
     ReactiveFormsModule,
     PiDialogComponent,
@@ -211,138 +179,89 @@ export interface ModuleFormDialogData {
     </app-pi-dialog>
   `,
 })
-export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
+export class ModuleFormDialogComponent implements AfterViewInit {
   @ViewChild('compositionBlock') private compositionBlock?: ElementRef<HTMLElement>;
   @ViewChild('formEl') private formEl?: ElementRef<HTMLFormElement>;
-  private readonly fb = inject(NonNullableFormBuilder);
-  private readonly modulesService = inject(PiModulesService);
-  private readonly photosService = inject(PiPhotosService);
-  private readonly workTypesService = inject(PiWorkTypesService);
-  private readonly categoriesService = inject(PiCategoriesService);
-  private readonly data = inject<ModuleFormDialogData>(PI_DIALOG_DATA);
-  private readonly ref = inject<DialogRef<ProductModule | null | undefined>>(PI_DIALOG_REF);
-  private readonly dialog = inject(PiDialogService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
+  private readonly facade = inject(ModuleFormFacade);
 
-  protected readonly submitting = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
-  protected readonly savedId = signal<string | null>(null);
-  protected readonly focusComposition = signal(!!this.data.focusComposition);
+  protected readonly submitting = this.facade.submitting;
+  protected readonly errorMessage = this.facade.errorMessage;
+  protected readonly savedId = this.facade.savedId;
+  protected readonly focusComposition = this.facade.focusComposition;
 
-  protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
-  protected readonly moduleEntity = signal<ProductModule | undefined>(this.data.module);
-  protected readonly workTypes = signal<WorkType[]>([]);
-  protected readonly categories = signal<Category[]>([]);
+  protected readonly workTypes = this.facade.workTypes;
+  protected readonly categories = this.facade.categories;
 
-  /** WAVE-NX-CATALOG-PHOTOS P1: локальное состояние фото; write — только на Save. */
-  protected readonly photoItems = signal<PiPhotoItem[]>([]);
-  protected readonly mainPhotoId = signal<string | null>(null);
-  protected readonly photosUploading = signal(false);
-  protected readonly photoError = signal<string | null>(null);
+  protected readonly photoItems = this.facade.photoItems;
+  protected readonly mainPhotoId = this.facade.mainPhotoId;
+  protected readonly photosUploading = this.facade.photosUploading;
+  protected readonly photoError = this.facade.photoError;
 
-  protected readonly dialogTitle = computed(() =>
-    this.mode() === 'edit' ? 'Редактировать модуль' : 'Создать модуль',
-  );
+  protected readonly dialogTitle = this.facade.dialogTitle;
+  protected readonly form = this.facade.form;
 
-  protected readonly form = this.fb.group({
-    name: this.fb.control('', [Validators.required, Validators.maxLength(200)]),
-    article: this.fb.control('', [Validators.required, Validators.maxLength(64)]),
-    categoryId: this.fb.control('', Validators.required),
-    width: this.fb.control<number | null>(null),
-    height: this.fb.control<number | null>(null),
-    depth: this.fb.control<number | null>(null),
-    dimUnit: this.fb.control('mm'),
-    weight: this.fb.control<number | null>(null),
-    sortOrder: this.fb.control<number | null>(null),
-    workTypes: this.fb.array<WorkTypeFormGroup>([]),
-  });
-
-  get workTypesArray(): FormArray<WorkTypeFormGroup> {
-    return this.form.controls.workTypes;
-  }
-
-  ngOnInit(): void {
-    void this.loadWorkTypes();
-    void this.loadCategories();
-    if (this.data.module) {
-      this.savedId.set(this.data.module._id);
-      this.patchModule(this.data.module);
-    }
+  protected get workTypesArray(): FormArray<WorkTypeFormGroup> {
+    return this.facade.workTypesArray;
   }
 
   ngAfterViewInit(): void {
-    if (this.data.focusComposition) {
+    if (this.facade.focusComposition()) {
       scrollCompositionBlockIntoView(this.compositionBlock?.nativeElement);
     }
   }
 
   protected onCancel(): void {
-    confirmDirtyClose(
-      this.dialog,
-      this.destroyRef,
-      this.injector,
-      () => this.form.dirty,
-      () => this.ref.close(this.moduleEntity() ?? undefined),
-    );
+    this.facade.onCancel();
   }
 
   protected async onSubmit(): Promise<void> {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.errorMessage.set(this.buildInvalidMessage());
-      this.focusFirstInvalidField();
-      return;
-    }
-    const payload = this.buildPayload();
-    this.submitting.set(true);
-    this.errorMessage.set(null);
-    const existing = this.moduleEntity();
-    const res =
-      this.mode() === 'edit' && existing
-        ? await firstValueFrom(this.modulesService.update(existing._id, payload))
-        : await firstValueFrom(this.modulesService.create(payload));
-    this.submitting.set(false);
-    if (!res.ok) {
-      this.errorMessage.set(extractErrorMessage(res.error));
-      return;
-    }
-    this.savedId.set(res.data._id);
-    this.moduleEntity.set(res.data);
-    this.mode.set('edit');
-    this.form.markAsPristine();
-    if (this.data.mode === 'edit') {
-      this.ref.close(res.data);
-    }
+    await this.facade.onSubmit(() => this.focusFirstInvalidField());
   }
 
-  /** Order matches the form layout — first invalid one gets focus/scroll. */
-  private static readonly REQUIRED_FIELDS: ReadonlyArray<{
-    key: 'name' | 'article' | 'categoryId';
-    label: string;
-    htmlId: string;
-  }> = [
-    { key: 'name', label: 'Название', htmlId: 'mod-name' },
-    { key: 'article', label: 'Артикул', htmlId: 'mod-article' },
-    { key: 'categoryId', label: 'Категория', htmlId: 'mod-category' },
-  ];
+  protected openCreateCategory(): void {
+    this.facade.openCreateCategory();
+  }
 
-  private buildInvalidMessage(): string {
-    const missing = ModuleFormDialogComponent.REQUIRED_FIELDS.filter(
-      (f) => this.form.controls[f.key].invalid,
-    ).map((f) => f.label);
-    if (this.workTypesArray.controls.some((g) => g.invalid)) missing.push('Виды работ');
-    return missing.length
-      ? `Заполните обязательные поля: ${missing.join(', ')}`
-      : 'Проверьте поля формы — есть некорректные значения.';
+  protected addWorkType(): void {
+    this.facade.addWorkType();
+  }
+
+  protected removeWorkType(index: number): void {
+    this.facade.removeWorkType(index);
+  }
+
+  protected moveWorkType(index: number, direction: -1 | 1): void {
+    this.facade.moveWorkType(index, direction);
+  }
+
+  protected seedDaysFromCatalog(index: number): void {
+    this.facade.seedDaysFromCatalog(index);
+  }
+
+  protected async onPhotosSelected(files: File[]): Promise<void> {
+    await this.facade.onPhotosSelected(files);
+  }
+
+  protected onPhotoRemove(id: string): void {
+    this.facade.onPhotoRemove(id);
+  }
+
+  protected onPhotoMainChanged(id: string | null): void {
+    this.facade.onPhotoMainChanged(id);
+  }
+
+  protected async onPhotoFrameSave(event: { id: string; frame: Partial<PhotoFrame> }): Promise<void> {
+    await this.facade.onPhotoFrameSave(event);
+  }
+
+  protected onPhotoInvalidType(): void {
+    this.facade.onPhotoInvalidType();
   }
 
   private focusFirstInvalidField(): void {
-    const target = ModuleFormDialogComponent.REQUIRED_FIELDS.find(
-      (f) => this.form.controls[f.key].invalid,
-    );
-    const host = target
-      ? this.formEl?.nativeElement.querySelector<HTMLElement>(`#${target.htmlId}`)
+    const htmlId = this.facade.firstInvalidRequiredFieldHtmlId();
+    const host = htmlId
+      ? this.formEl?.nativeElement.querySelector<HTMLElement>(`#${htmlId}`)
       : this.focusFirstInvalidWorkTypeRow();
     if (!host) return;
     // `app-pi-input` puts `id` on its host tag, not the native `<input>` it wraps — reach inside.
@@ -356,7 +275,7 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
   }
 
   private focusFirstInvalidWorkTypeRow(): HTMLElement | null {
-    const index = this.workTypesArray.controls.findIndex((g) => g.invalid);
+    const index = this.facade.firstInvalidWorkTypeIndex();
     if (index < 0) return null;
     return (
       this.formEl?.nativeElement.querySelector<HTMLElement>(
@@ -364,241 +283,4 @@ export class ModuleFormDialogComponent implements OnInit, AfterViewInit {
       ) ?? null
     );
   }
-
-  /** ШАГ 2 — nested create, same pattern as `supply-request-form-dialog.openCreateMaterial`. */
-  protected openCreateCategory(): void {
-    const ref = this.dialog.open<Category | undefined>(CategoryFormDialogComponent, {
-      data: {
-        mode: 'create',
-        category: null,
-        categories: this.categories(),
-        lockType: 'module',
-      } satisfies CategoryFormDialogData,
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (category) => {
-      if (!category) return;
-      this.categories.update((list) => [...list, category]);
-      this.form.controls.categoryId.setValue(category._id);
-      this.form.markAsDirty();
-    });
-  }
-
-  protected addWorkType(): void {
-    this.workTypesArray.push(this.createWorkTypeGroup());
-    this.form.markAsDirty();
-  }
-
-  protected removeWorkType(index: number): void {
-    this.workTypesArray.removeAt(index);
-    this.form.markAsDirty();
-  }
-
-  protected moveWorkType(index: number, direction: -1 | 1): void {
-    const target = index + direction;
-    if (target < 0 || target >= this.workTypesArray.length) return;
-    const current = this.workTypesArray.at(index);
-    this.workTypesArray.removeAt(index, { emitEvent: false });
-    this.workTypesArray.insert(target, current, { emitEvent: false });
-    this.form.markAsDirty();
-  }
-
-  private createWorkTypeGroup(row?: NonNullable<ProductModule['workTypes']>[number]): WorkTypeFormGroup {
-    return this.fb.group({
-      workTypeId: this.fb.control(resolveWorkTypeId(row), Validators.required),
-      estimatedHours: this.fb.control(row?.estimatedHours ?? null),
-      sortOrder: this.fb.control(row?.sortOrder ?? 0),
-      days: this.fb.control(row?.days ?? null),
-    });
-  }
-
-  /** Seeds an empty «Дней» field from the WorkType catalog default when a skill is picked (fallback, not a lock). */
-  protected seedDaysFromCatalog(index: number): void {
-    const group = this.workTypesArray.at(index);
-    if (group.controls.days.value != null) return;
-    const catalogDays = this.workTypes().find((wt) => wt._id === group.controls.workTypeId.value)?.days;
-    if (catalogDays != null) group.controls.days.setValue(catalogDays);
-  }
-
-  /** P1 write-path: upload → append id, main = first when empty. */
-  protected async onPhotosSelected(files: File[]): Promise<void> {
-    if (files.length === 0 || this.photosUploading()) return;
-    this.photosUploading.set(true);
-    this.photoError.set(null);
-    const uploaded: PiPhotoItem[] = [];
-    for (const file of files) {
-      const res = await firstValueFrom(this.photosService.upload(file));
-      if (!res.ok) {
-        this.photoError.set(extractErrorMessage(res.error));
-        break;
-      }
-      uploaded.push(res.data);
-    }
-    if (uploaded.length > 0) {
-      this.photoItems.update((list) => [...list, ...uploaded]);
-      if (this.mainPhotoId() === null) {
-        this.mainPhotoId.set(uploaded[0]._id);
-      }
-      this.form.markAsDirty();
-    }
-    this.photosUploading.set(false);
-  }
-
-  protected onPhotoRemove(id: string): void {
-    this.photoItems.update((list) => list.filter((p) => p._id !== id));
-    if (this.mainPhotoId() === id) {
-      const rest = this.photoItems();
-      this.mainPhotoId.set(rest.length > 0 ? rest[0]._id : null);
-    }
-    void this.photosService.remove(id).subscribe({
-      error: () => {
-        /* silent: entity Save всё равно уберёт ссылку (B-PHOTO) */
-      },
-    });
-    this.form.markAsDirty();
-  }
-
-  protected onPhotoMainChanged(id: string | null): void {
-    this.mainPhotoId.set(id);
-    this.form.markAsDirty();
-  }
-
-  protected async onPhotoFrameSave(event: { id: string; frame: Partial<PhotoFrame> }): Promise<void> {
-    this.photoError.set(null);
-    const res = await firstValueFrom(this.photosService.updateFrame(event.id, event.frame));
-    if (!res.ok) {
-      this.photoError.set(extractErrorMessage(res.error));
-      return;
-    }
-    const savedFrame = res.data.frame ?? normalizePhotoFrame({
-      ...this.photoItems().find((photo) => photo._id === event.id)?.frame,
-      ...event.frame,
-    });
-    this.photoItems.update((list) =>
-      list.map((photo) => (photo._id === event.id ? { ...photo, frame: savedFrame } : photo)),
-    );
-  }
-
-  protected onPhotoInvalidType(): void {
-    this.photoError.set(PiPhotoDropzoneComponent.INVALID_FILE_TYPE_MESSAGE);
-  }
-
-  private async loadWorkTypes(): Promise<void> {
-    const result = await firstValueFrom(this.workTypesService.list({ activeOnly: true }));
-    if (result.ok) this.workTypes.set(result.data.items);
-  }
-
-  private async loadCategories(): Promise<void> {
-    const result = await firstValueFrom(this.categoriesService.list({ type: 'module' }));
-    if (result.ok) this.categories.set(result.data.filter((c) => c.isActive));
-  }
-
-  private patchModule(m: ProductModule): void {
-    this.form.patchValue({
-      name: m.name,
-      article: m.article,
-      categoryId: refId(m.categoryId) ?? '',
-      width: m.dimensions?.width ?? null,
-      height: m.dimensions?.height ?? null,
-      depth: m.dimensions?.depth ?? null,
-      dimUnit: m.dimensions?.unit ?? 'mm',
-      weight: m.weight ?? null,
-      sortOrder: m.sortOrder ?? null,
-    });
-    this.workTypesArray.clear();
-    for (const row of m.workTypes ?? []) this.workTypesArray.push(this.createWorkTypeGroup(row));
-    this.hydratePhotos(m.photoIds, m.mainPhotoId);
-    this.form.markAsPristine();
-  }
-
-  /** Edit-load: строка-ссылка = достаточно для превью; populated объект — напрямую. */
-  private hydratePhotos(refs: ProductModule['photoIds'], main: ProductModule['mainPhotoId']): void {
-    const items: PiPhotoItem[] = [];
-    for (const ref of refs ?? []) {
-      if (typeof ref === 'string') {
-        items.push({ _id: ref, storageUrl: `/api/photos/${ref}/raw` });
-      } else if (ref && typeof ref === 'object' && '_id' in ref) {
-        const doc = ref as Record<string, unknown> & { storageUrl?: string };
-        const frame = photoFrameOf(doc);
-        items.push({
-          _id: String(doc['_id']),
-          storageUrl: typeof doc.storageUrl === 'string' ? doc.storageUrl : `/api/photos/${String(doc['_id'])}/raw`,
-          ...(frame ? { frame } : {}),
-        });
-      }
-    }
-    this.photoItems.set(items);
-    const mainId =
-      main == null
-        ? null
-        : typeof main === 'string'
-          ? main
-          : typeof main === 'object' && '_id' in main
-            ? String((main as Record<string, unknown>)['_id'])
-            : null;
-    this.mainPhotoId.set(mainId ?? (items.length > 0 ? items[0]._id : null));
-  }
-
-  private buildPayload(): CreateProductModulePayload {
-    const v = this.form.getRawValue();
-    const payload: CreateProductModulePayload = {
-      name: v.name.trim(),
-      article: v.article.trim(),
-      categoryId: v.categoryId,
-    };
-    if (v.weight != null) payload.weight = Number(v.weight);
-    if (v.sortOrder != null) payload.sortOrder = Number(v.sortOrder);
-    if (v.width != null || v.height != null || v.depth != null || v.dimUnit) {
-      payload.dimensions = {
-        width: v.width ?? undefined,
-        height: v.height ?? undefined,
-        depth: v.depth ?? undefined,
-        unit: v.dimUnit || undefined,
-      };
-    }
-    payload.workTypes = v.workTypes
-      .filter((row) => row.workTypeId.trim().length > 0)
-      .map((row): ProductModuleWorkTypePayload => ({
-        workTypeId: row.workTypeId,
-        ...(row.estimatedHours == null ? {} : { estimatedHours: Number(row.estimatedHours) }),
-        ...(row.sortOrder == null ? {} : { sortOrder: Number(row.sortOrder) }),
-        ...(row.days == null ? {} : { days: Number(row.days) }),
-      }));
-    const photos = this.photoItems();
-    if (photos.length > 0) {
-      payload.photoIds = photos.map((p) => p._id);
-      const main = this.mainPhotoId();
-      if (main && photos.some((p) => p._id === main)) payload.mainPhotoId = main;
-    } else if (this.mode() === 'edit') {
-      payload.photoIds = [];
-      payload.mainPhotoId = null;
-    }
-    return payload;
-  }
-}
-
-type WorkTypeFormGroup = FormGroup<{
-  workTypeId: FormControl<string>;
-  estimatedHours: FormControl<number | null>;
-  sortOrder: FormControl<number>;
-  days: FormControl<number | null>;
-}>;
-
-function resolveWorkTypeId(row: NonNullable<ProductModule['workTypes']>[number] | undefined): string {
-  if (!row) return '';
-  return typeof row.workTypeId === 'string' ? row.workTypeId : row.workTypeId._id;
-}
-
-/**
- * `categoryId` arrives populated on list/detail (BE `.populate('categoryId')`).
- * Same small helper as `material-form-dialog.component.ts`'s own `refId()`;
- * no shared util exists for it yet.
- */
-function refId(value: unknown): string | null {
-  if (value == null || value === '') return null;
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object' && value !== null && '_id' in value) {
-    return refId((value as { _id: unknown })._id);
-  }
-  return null;
 }
