@@ -4,7 +4,7 @@ updated_at: 2026-09-15T05:45:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Claude NEXT (сегодня):** DECOMP **B1** — Production Gantt+Cockpit → Order hub (2/6, A1 `0b05d437` + A2 done, continuing A3)
+- **Claude NEXT (сегодня):** DECOMP **B1** — Production Gantt+Cockpit → Order hub (3/6, A1+A2+A3 done, A3 `d8a4aeff`, continuing A4)
   - Handoff: `tasks/_ready/2026-09-14-decomp-b1-production-orderhub/CONTINUE-TOMORROW.md`
   - Pack: `.../decomp-b1-production-orderhub/` · WAVE-MAP + `PROMPT-CLAUDE-B1-CONTINUOUS.md`
   - Tracker: `docs/agent-checklists/WAVE-DECOMP-B1-PRODUCTION-ORDERHUB.md`
