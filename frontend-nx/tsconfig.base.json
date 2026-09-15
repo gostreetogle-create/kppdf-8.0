@@ -42,6 +42,9 @@
       "@kppdf/features/warehouse": [
         "libs/features/src/lib/warehouse/index.ts"
       ],
+      "@kppdf/features/proposals": [
+        "libs/features/src/lib/proposals/index.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],

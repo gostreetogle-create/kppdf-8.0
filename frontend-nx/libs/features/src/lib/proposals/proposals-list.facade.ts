@@ -25,14 +25,14 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
 import { findKpDocType, rememberStudioDocument } from '@kppdf/features/doc-studio';
 import {
   ProposalAttachOrgsDialogComponent,
   type AttachOrgsDialogData,
   type AttachOrgsItemPayload,
   type AttachOrgsResult,
-} from './proposal-attach-orgs.dialog';
+} from './ui/proposal-attach-orgs.dialog';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Черновик',

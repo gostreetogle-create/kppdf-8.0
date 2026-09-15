@@ -5,7 +5,7 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { DEALS_TOC_CHIPS } from '../deals-group-chips';
-import { ProposalsListFacade } from './proposals-list.facade';
+import { ProposalsListFacade } from '@kppdf/features/proposals';
 
 /**
  * TZ-NX-PROPOSALS-LIST-FACADE — list/family-expand/cache signals and every

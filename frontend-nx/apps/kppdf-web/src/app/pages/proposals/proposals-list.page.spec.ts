@@ -16,7 +16,7 @@ import {
 import { AlertDialogComponent, PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import type { SilentResult } from '@kppdf/util-http';
-import { ProposalAttachOrgsDialogComponent, type AttachOrgsResult } from './proposal-attach-orgs.dialog';
+import { ProposalAttachOrgsDialogComponent, type AttachOrgsResult } from '@kppdf/features/proposals';
 import { ProposalsListPage } from './proposals-list.page';
 
 describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
