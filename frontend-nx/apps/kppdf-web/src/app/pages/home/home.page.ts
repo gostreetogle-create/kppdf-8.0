@@ -38,9 +38,6 @@ type QueueFilter = 'all' | 'active';
         <div class="flex items-start justify-between gap-4 mb-6">
           <div>
             <h1 class="font-display text-2xl m-0">Главная</h1>
-            <p class="text-sm text-muted-foreground mt-2 mb-0">
-              Очередь заказов и связанные рабочие шаги — в одном месте.
-            </p>
           </div>
           <a routerLink="/orders" class="pi-outline-btn pi-focus-ring" data-test="home-orders-link">
             Все заказы
