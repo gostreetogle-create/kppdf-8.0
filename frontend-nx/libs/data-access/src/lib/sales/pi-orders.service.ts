@@ -16,6 +16,7 @@ import type {
   PatchEstimateDaysPayload,
   PatchEstimateStartPayload,
   PatchEstimateWorkerPayload,
+  ShipResult,
   UpdateOrderPayload,
 } from './order.types';
 
@@ -48,9 +49,11 @@ export class PiOrdersService {
    * creates a `Shipment` on the backend and moves the order (+ all lines)
    * to `shipped`. NOT a PATCH — the PATCH status graph does not include
    * `shipped`. Body is empty/optional — `warehouseId` is optional server-side.
+   * Backend returns `{ order, shipmentId }`, not the bare `Order` — see
+   * `ShipResult` doc comment (TZ-VERIFY-FIX-2026-09-15-ORDER-WORKSPACE).
    */
-  ship(id: string, body: Record<string, unknown> = {}): Observable<SilentResult<Order>> {
-    return silentPost<Order>(this.http, `${this.baseUrl}/orders/${id}/ship`, body);
+  ship(id: string, body: Record<string, unknown> = {}): Observable<SilentResult<ShipResult>> {
+    return silentPost<ShipResult>(this.http, `${this.baseUrl}/orders/${id}/ship`, body);
   }
 
   /**

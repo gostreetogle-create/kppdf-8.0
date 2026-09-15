@@ -162,4 +162,20 @@ describe('PiOrdersService (TZ-NX-SALES-S33-PI-ORDERS-CRUD)', () => {
     expect(request.request.body).toEqual({});
     request.flush({ reserved: [], supplyRequestIds: ['507f1f77bcf86cd799439032'], warnings: ['short'] });
   });
+
+  it('cancel() POSTs /orders/:id/cancel with an empty body (TZ-NX-ORDER-WS-HEADER)', () => {
+    service.cancel(orderId).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/cancel`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
+    request.flush({ _id: orderId, number: 'ORD-001', status: 'cancelled' });
+  });
+
+  it('setLineReady() PATCHes /orders/:id/items/:lineIndex/ready (TZ-NX-ORDER-WS-COMPOSITION)', () => {
+    service.setLineReady(orderId, 1, true).subscribe();
+    const request = httpMock.expectOne(`${baseUrl}/orders/${orderId}/items/1/ready`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({ readyForWork: true });
+    request.flush({ _id: orderId, number: 'ORD-001' });
+  });
 });

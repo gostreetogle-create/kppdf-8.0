@@ -12,6 +12,7 @@ import {
   PiShipmentsService,
   PiSupplyRequestsService,
   type Order,
+  type ShipResult,
 } from '@kppdf/data-access';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiDialogService } from '@kppdf/ui/dialog';
@@ -397,7 +398,9 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   it('marks the order shipped via ShipConfirmDialog — whole-order POST ship — reload', async () => {
     await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     await settle();
-    ordersApi.ship.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    ordersApi.ship.mockReturnValue(
+      of({ ok: true, data: { order: { ...quotationOrder, status: 'shipped' }, shipmentId: 'ship-1' } } satisfies SilentResult<ShipResult>),
+    );
     shipmentsApi.list.mockClear();
     const closed = signal<{ recipient?: string } | undefined>(undefined);
     dialog.open.mockReturnValue({ closed, close: (v?: unknown) => closed.set(v as { recipient?: string } | undefined) });

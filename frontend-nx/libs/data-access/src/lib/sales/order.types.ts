@@ -149,6 +149,21 @@ export interface KitAvailability {
   readonly summary: { readonly canReserveAll: boolean };
 }
 
+/**
+ * Response of POST /orders/:id/ship (`OrderService.ship()`) — **not** the
+ * bare `Order`. Found during TZ-VERIFY-FIX-2026-09-15-ORDER-WORKSPACE's
+ * live smoke: `PiOrdersService.ship()` was typed as
+ * `Observable<SilentResult<Order>>`, but the backend actually returns
+ * `{ order, shipmentId }`. No caller read `.data` as an `Order` on success
+ * (all three just check `.ok` and reload separately), so this was a latent
+ * type-only gap, not an active runtime bug — fixed here before it bites a
+ * future caller.
+ */
+export interface ShipResult {
+  readonly order: Order;
+  readonly shipmentId: string;
+}
+
 /** Response of POST /orders/:id/items/:itemIndex/kit-reserve. */
 export interface KitReserveResult {
   readonly reserved: readonly {
