@@ -1,16 +1,21 @@
-﻿updated_at: 2026-09-15T21:10:00+03:00
+﻿updated_at: 2026-09-15T22:20:00+03:00
 
 ## ACTIVE / LIVE
 
-- **DONE (Claude, just now):** `TZ-NX-HOME-CHROME-TOP` — dup eyebrow removed,
-  workflow chips moved into `PiGroupWorkspace` sticky `[chips]`. Archived
-  `tasks/_archive/2026-09/TZ-NX-HOME-CHROME-TOP.done.md`; `_ready` copy
-  removed (consumed); chain prompt below updated to skip this step.
-- **Claude NOW (P0):** DocStudio drag jump — `PROMPT-CLAUDE-DOCSTUDIO-DRAG-COORD.md`
-- **Freebuff PARALLEL OK (backend only):** print CSS body-leak — `PROMPT-FREEBUFF-DOCSTUDIO-PRINT-CSS-LEAK.md`
-- **Freebuff AFTER (kppdf-web):** Order chrome + tree toggle (Home step already done) — `PROMPT-FREEBUFF-HOME-ORDER-CHROME-TREE.md`
-- Ops START-DIAGNOSTICS — после UI волн
+- **DONE (Claude, just now):** drag-coord — `TZ-NX-DOCSTUDIO-DRAG-COORD-ROOT`.
+  Coordinate root moved from `parentElement`/`.closest(...)?.parentElement`
+  (presenter wrapper, wrong post-UI-SPLIT) to the canvas `ElementRef`
+  itself. Archived `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-DRAG-COORD-ROOT.done.md`;
+  `_ready` copy + its prompt removed (consumed). `_active` now has only
+  Freebuff's print-CSS claim.
+- **Freebuff CLAIMED (still running):** print CSS body-leak — `TZ-NX-DOCSTUDIO-PRINT-CSS-BODY-LEAK`
+  - `agent_id: freebuff`, `claimed_at: 2026-09-15T20:54:12+03:00`
+  - `tasks/_ready/PROMPT-FREEBUFF-DOCSTUDIO-PRINT-CSS-LEAK.md`
+  - Backend-only; drag-coord conflict keys were untouched by it, now moot (drag-coord done)
+  - After its archive: remainder is unblocked (drag-coord's half is done)
+- **Next up:** remainder `2026-09-15-po-hotfix-wave/PROMPT-CONTINUOUS-PO-HOTFIX-REMAINDER.md` — once Freebuff's print-CSS TZ is archived
+- HOME-CHROME-TOP DONE (`98667afa`)
 
 ## PARK
 
-forms/foundations · Deploy/Wipe/SSH · order-workspace PARK.md
+forms · Deploy/Wipe · order PARK.md

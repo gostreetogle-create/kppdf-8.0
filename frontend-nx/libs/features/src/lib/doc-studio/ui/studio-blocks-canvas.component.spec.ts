@@ -1,6 +1,6 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
-import type { StudioBlock } from '@kppdf/data-access';
+import type { StudioBlock, StudioBlockLayout } from '@kppdf/data-access';
 
 /**
  * TZ-NX-DOCSTUDIO-S45 — the canvas is print-like: a manual table never shows an
@@ -528,4 +528,132 @@ describe('StudioBlocksCanvasComponent — passport contain vs regular photo cove
    * TZ's checklist for the live evidence (screenshots + computed-style
    * assertions that DO work under real Chrome).
    */
+});
+
+/**
+ * TZ-NX-DOCSTUDIO-DRAG-COORD-ROOT — regression for the post-UI-SPLIT drag
+ * jump. Before the Phase 5 presenter split, `article.studio-block` was a
+ * direct child of the canvas host, so `event.currentTarget.parentElement`
+ * (drag) / `handle.closest('.studio-block')?.parentElement` (resize)
+ * happened to equal the A4 sheet. The presenters now sit between host and
+ * block, so those lookups resolved to the presenter's own non-inset
+ * wrapper instead — a differently-sized rect meant dx/dy were computed in
+ * the wrong coordinate system. The fix measures the canvas `ElementRef`
+ * itself, never a DOM ancestor of the event target. These tests use a
+ * `currentTarget` stand-in with NO `getBoundingClientRect` at all (just
+ * the pointer-capture methods the handlers still need) — if the coordinate
+ * root regresses to reading rect off the event's ancestor again, the
+ * layout math silently uses `undefined` sizes and these assertions fail.
+ */
+describe('StudioBlocksCanvasComponent — drag/resize measure the canvas host (TZ-NX-DOCSTUDIO-DRAG-COORD-ROOT)', () => {
+  const DRAG_BLOCK: StudioBlock = {
+    _id: 'txt-drag',
+    type: 'text',
+    order: 0,
+    title: 'Текст',
+    content: 'Drag me',
+    layout: { page: 1, x: 0.2, y: 0.2, width: 0.3, height: 0.12, zIndex: 1, rotation: 0 },
+  };
+
+  let fixture: ComponentFixture<StudioBlocksCanvasComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [StudioBlocksCanvasComponent] }).compileComponents();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  function createCanvas(blocks: readonly StudioBlock[]): StudioBlocksCanvasComponent {
+    fixture = TestBed.createComponent(StudioBlocksCanvasComponent);
+    fixture.componentRef.setInput('blocks', [...blocks]);
+    fixture.componentRef.setInput('selectedId', blocks[0]?._id ?? null);
+    fixture.componentRef.setInput('activeLayerId', null);
+    fixture.componentRef.setInput('currentPage', 1);
+    fixture.componentRef.setInput('sheetWidth', 800);
+    fixture.componentRef.setInput('sheetHeight', 900);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  /** No `getBoundingClientRect` on purpose — see describe-block comment. */
+  function fakePointerTarget() {
+    return { setPointerCapture: jest.fn(), releasePointerCapture: jest.fn(), closest: () => null };
+  }
+
+  function mockHostRect(fixtureRef: ComponentFixture<StudioBlocksCanvasComponent>): void {
+    jest.spyOn(fixtureRef.nativeElement, 'getBoundingClientRect').mockReturnValue({
+      left: 0, top: 0, right: 1000, bottom: 1000, width: 1000, height: 1000, x: 0, y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+  }
+
+  it('startDrag moves the layout toward the cursor using the host rect, not an undefined/mismatched ancestor rect', () => {
+    const component = createCanvas([DRAG_BLOCK]);
+    mockHostRect(fixture);
+    const emitted: { id: string; layout: StudioBlockLayout }[] = [];
+    component.layoutChanged.subscribe((e) => emitted.push(e));
+
+    const fakeTarget = fakePointerTarget();
+    component.startDrag(
+      {
+        button: 0,
+        target: fakeTarget,
+        currentTarget: fakeTarget,
+        clientX: 100,
+        clientY: 100,
+        pointerId: 1,
+        stopPropagation: jest.fn(),
+        preventDefault: jest.fn(),
+      } as unknown as PointerEvent,
+      DRAG_BLOCK,
+    );
+    // jsdom in this lib's jest env has no global PointerEvent constructor —
+    // MouseEvent dispatches to the same 'pointermove'/'pointerup' listeners
+    // (addEventListener matches by type string, not subclass) and carries
+    // the same clientX/clientY the handlers read.
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 200, clientY: 150 }));
+    window.dispatchEvent(new MouseEvent('pointerup'));
+
+    expect(emitted.length).toBeGreaterThan(0);
+    const last = emitted[emitted.length - 1]!;
+    // dx = (200-100)/1000 = 0.1, dy = (150-100)/1000 = 0.05 — 1:1 toward the
+    // cursor, using the 1000x1000 host rect. A stale/undefined ancestor rect
+    // would either throw (dividing by undefined) or move the block the wrong
+    // amount/direction.
+    expect(last.layout.x).toBeCloseTo(0.3, 5);
+    expect(last.layout.y).toBeCloseTo(0.25, 5);
+  });
+
+  it('startResize grows the layout using the host rect, not an undefined/mismatched ancestor rect', () => {
+    const component = createCanvas([DRAG_BLOCK]);
+    mockHostRect(fixture);
+    const emitted: { id: string; layout: StudioBlockLayout }[] = [];
+    component.layoutChanged.subscribe((e) => emitted.push(e));
+
+    const fakeHandle = fakePointerTarget();
+    component.startResize(
+      {
+        button: 0,
+        currentTarget: fakeHandle,
+        clientX: 100,
+        clientY: 100,
+        pointerId: 1,
+        stopPropagation: jest.fn(),
+        preventDefault: jest.fn(),
+      } as unknown as PointerEvent,
+      DRAG_BLOCK,
+    );
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 300, clientY: 150 }));
+    window.dispatchEvent(new MouseEvent('pointerup'));
+
+    expect(emitted.length).toBeGreaterThan(0);
+    const last = emitted[emitted.length - 1]!;
+    // dw = (300-100)/1000 = 0.2 → width 0.3 + 0.2 = 0.5; dh = (150-100)/1000
+    // = 0.05 → height 0.12 + 0.05 = 0.17 — grows toward the SE handle at the
+    // rate the cursor actually moved, per the 1000x1000 host rect.
+    expect(last.layout.width).toBeCloseTo(0.5, 5);
+    expect(last.layout.height).toBeCloseTo(0.17, 5);
+  });
 });

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import type { StudioBlock, StudioBlockLayout } from '@kppdf/data-access';
 import { normalizePhotoFrame, photoFrameStyle, type PiPhotoFrame } from '@kppdf/ui/photo';
@@ -168,6 +168,17 @@ import { StudioTableBlockPresenterComponent, type StudioTableColumnMeta } from '
 })
 export class StudioBlocksCanvasComponent {
   private readonly sanitizer = inject(DomSanitizer);
+  /**
+   * TZ-NX-DOCSTUDIO-DRAG-COORD-ROOT — coordinate root for drag/resize.
+   * `:host` is the A4 sheet (`position:absolute; inset:0`); before the
+   * Phase 5 presenter split, `article.studio-block` was a direct child of
+   * this host, so `parentElement` happened to equal the sheet. Presenters
+   * now sit between host and block, so `parentElement`/`.closest('.studio-block')
+   * ?.parentElement` resolve to the presenter's own (non-inset) wrapper —
+   * wrong-sized rect → dx/dy computed in the wrong coordinate system →
+   * jump. Always measure the host itself, never the block's DOM ancestor.
+   */
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   @Input() blocks: readonly StudioBlock[] = [];
   @Input() selectedId: string | null = null;
@@ -400,9 +411,7 @@ export class StudioBlocksCanvasComponent {
     event.preventDefault();
     const dragTarget = event.currentTarget as HTMLElement;
     dragTarget.setPointerCapture(event.pointerId);
-    const parent = dragTarget.parentElement;
-    if (!parent) return;
-    const rect = parent.getBoundingClientRect();
+    const rect = this.host.nativeElement.getBoundingClientRect();
     const height = block.layout.height ?? (block.type === 'image' ? 0.28 : block.type === 'table' ? 0.25 : 0.12);
     const start = { x: event.clientX, y: event.clientY, layout: block.layout };
     let moved = false;
@@ -455,9 +464,7 @@ export class StudioBlocksCanvasComponent {
     event.preventDefault();
     const handle = event.currentTarget as HTMLElement;
     handle.setPointerCapture(event.pointerId);
-    const parent = handle.closest('.studio-block')?.parentElement;
-    if (!parent) return;
-    const rect = parent.getBoundingClientRect();
+    const rect = this.host.nativeElement.getBoundingClientRect();
     const defaultHeight = block.type === 'image' ? 0.28 : block.type === 'table' ? 0.25 : 0.12;
     const startHeight = block.layout.height ?? defaultHeight;
     const start = { x: event.clientX, y: event.clientY, layout: block.layout };
