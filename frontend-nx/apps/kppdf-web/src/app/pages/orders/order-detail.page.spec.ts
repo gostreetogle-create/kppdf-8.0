@@ -8,6 +8,7 @@ import {
   PiOrdersService,
   PiOrganizationsService,
   PiProductsService,
+  PiSupplyRequestsService,
   type Order,
 } from '@kppdf/data-access';
 import { PiToastService } from '@kppdf/ui/toast';
@@ -24,6 +25,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   let dialog: { open: jest.Mock };
   let productsApi: { list: jest.Mock };
   let compositionApi: { getProductTree: jest.Mock };
+  let supplyApi: { list: jest.Mock };
 
   const quotationOrder: Order = {
     _id: 'order-1',
@@ -59,6 +61,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
+    supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
@@ -70,6 +73,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiDialogService, useValue: dialog },
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
+        { provide: PiSupplyRequestsService, useValue: supplyApi },
       ],
     }).compileComponents();
 
@@ -107,6 +111,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
+    supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     ordersApi.getById
       .mockReturnValueOnce(of(failure))
       .mockReturnValueOnce(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
@@ -122,6 +127,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiDialogService, useValue: dialog },
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
+        { provide: PiSupplyRequestsService, useValue: supplyApi },
       ],
     }).compileComponents();
     await configureRouterSpy();
@@ -288,6 +294,76 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     );
   });
 
+  it('renders live supply counters and a deficit short-list only when pending requests exist', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    supplyApi.list.mockReturnValue(
+      of({
+        ok: true,
+        data: [
+          { _id: 'sr-1', title: 'Петля', qty: 4, unit: 'шт', status: 'requested', priority: 'normal' },
+          { _id: 'sr-2', title: 'Труба', qty: 2, unit: 'м', status: 'ordered', priority: 'normal' },
+          { _id: 'sr-3', title: 'Лист', qty: 1, unit: 'шт', status: 'received', priority: 'normal' },
+        ],
+      }),
+    );
+    (fixture.componentInstance as unknown as { facade: { loadSupply: () => void } }).facade.loadSupply();
+    await settle();
+
+    expect(supplyApi.list).toHaveBeenCalledWith({ orderId: 'order-1' });
+    expect(fixture.nativeElement.textContent).toContain('Заказано: 1');
+    expect(fixture.nativeElement.textContent).toContain('Получено: 1');
+    expect(fixture.nativeElement.textContent).toContain('Всего: 3');
+    const deficit = fixture.nativeElement.querySelector('[data-test="execution-deficit"]');
+    expect(deficit).toBeTruthy();
+    expect(deficit?.textContent).toContain('Петля');
+    expect(deficit?.textContent).not.toContain('Труба');
+  });
+
+  it('shows the honest empty state (no fake deficit) when there are no supply requests', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+
+    expect(fixture.nativeElement.querySelector('[data-test="execution-supply-empty"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="execution-deficit"]')).toBeNull();
+  });
+
+  it('opens the shared kit-reserve confirm dialog and reloads supply counters on a truthy result', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    const closed = signal<{ reserved: number } | undefined>(undefined);
+    dialog.open.mockReturnValue({ closed, close: (v?: unknown) => closed.set(v as { reserved: number } | undefined) });
+    supplyApi.list.mockClear();
+
+    (fixture.nativeElement.querySelector('[data-test="execution-confirm-materials"] button') as HTMLButtonElement).click();
+    closed.set({ reserved: 1 });
+    await settle();
+
+    expect(dialog.open).toHaveBeenCalled();
+    expect(supplyApi.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows plannedDate + готовность X/Y and correct _id deep-links for supply/production', async () => {
+    const [line0, line1] = quotationOrder.items ?? [];
+    await setup(
+      of({
+        ok: true,
+        data: {
+          ...quotationOrder,
+          plannedDate: '2026-09-20T00:00:00Z',
+          items: [{ ...line0, readyForWork: true }, line1],
+        },
+      } satisfies SilentResult<Order>),
+    );
+    await settle();
+
+    expect(fixture.nativeElement.querySelector('[data-test="execution-readiness"]').textContent).toContain('1 из 2');
+    const supplyLink = fixture.nativeElement.querySelector('[data-test="execution-supply-link"]');
+    const productionLink = fixture.nativeElement.querySelector('[data-test="execution-production-link"]');
+    expect(supplyLink.getAttribute('href')).toContain('orderId=order-1');
+    expect(productionLink.getAttribute('href')).toContain('orderId=order-1');
+  });
+
   it('renders «Без КП» without any stub-proposal CTA for a direct order', async () => {
     await setup(of({ ok: true, data: directOrder } satisfies SilentResult<Order>));
     await settle();
@@ -317,6 +393,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
+    supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     ordersApi.getById.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     ordersApi.update.mockReturnValue(
       of({ ok: true, data: { ...quotationOrder, isPaid: false } } satisfies SilentResult<Order>),
@@ -333,6 +410,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiDialogService, useValue: dialog },
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
+        { provide: PiSupplyRequestsService, useValue: supplyApi },
       ],
     }).compileComponents();
     await configureRouterSpy();
@@ -401,6 +479,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
+    supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
     ordersApi.getById.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     ordersApi.update.mockReturnValue(
       of({ ok: false, error: new HttpErrorResponse({ status: 500 }) } satisfies SilentResult<Order>),
@@ -417,6 +496,7 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiDialogService, useValue: dialog },
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
+        { provide: PiSupplyRequestsService, useValue: supplyApi },
       ],
     }).compileComponents();
     await configureRouterSpy();

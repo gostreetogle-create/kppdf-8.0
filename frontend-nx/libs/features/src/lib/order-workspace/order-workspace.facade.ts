@@ -19,6 +19,13 @@
  * `confirmed` (`PLAN_EDITABLE_FROZEN`/`HARD_FROZEN` block the rest) —
  * `canEditComposition()` is the honest gate. Ready toggle uses the
  * dedicated `PATCH .../ready` endpoint, not the general items PATCH.
+ *
+ * TZ-NX-ORDER-WS-EXECUTION adds: supply counters (`PiSupplyRequestsService.list({orderId})`,
+ * same shape as `order-hub.facade.ts`'s `loadSupply()`), «Подтвердить материалы»
+ * reusing the same `KitReserveConfirmDialogComponent`, and a deficit
+ * short-list derived from the *already-loaded* supply-requests response
+ * (pending — not yet ordered/received/cancelled) — no extra
+ * `getKitAvailability` calls per line, so no fake "всё ОК"/invented short.
  */
 import { ActivatedRoute, Router } from '@angular/router';
 import { DestroyRef, Injectable, Injector, inject, signal } from '@angular/core';
@@ -29,19 +36,29 @@ import {
   PiOrdersService,
   PiOrganizationsService,
   PiProductsService,
+  PiSupplyRequestsService,
   type CompositionTreeNode,
+  type KitReserveResult,
   type Order,
   type OrderItem,
   type OrderItemPayload,
   type Product,
+  type SupplyRequest,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiToastService } from '@kppdf/ui/toast';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
+import {
+  KitReserveConfirmDialogComponent,
+  type KitReserveConfirmDialogData,
+} from '../order-hub/ui/kit-reserve-confirm-dialog.component';
 import { onDialogCloseOnce } from './ui/on-dialog-close-once';
 
 const CANCELLABLE_STATUSES = new Set(['draft', 'confirmed', 'in_production', 'ready']);
 const COMPOSITION_EDITABLE_STATUSES = new Set(['draft', 'confirmed']);
+const PENDING_SUPPLY_STATUSES = new Set(['requested', 'in_progress']);
+export type SupplyCounters = { readonly total: number; readonly ordered: number; readonly received: number };
+export const EMPTY_SUPPLY_COUNTERS: SupplyCounters = { total: 0, ordered: 0, received: 0 };
 
 /**
  * `orderStatusLabel`/`bannerTone` stay on the page (shared `order-status.ts`
@@ -55,6 +72,7 @@ export class OrderWorkspaceFacade {
   private readonly organizationsApi = inject(PiOrganizationsService);
   private readonly productsApi = inject(PiProductsService);
   private readonly compositionApi = inject(PiCompositionService);
+  private readonly supplyApi = inject(PiSupplyRequestsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(PiToastService);
@@ -83,6 +101,12 @@ export class OrderWorkspaceFacade {
   newLineProductId = '';
   newLineQty = 1;
 
+  readonly supplyLoading = signal(false);
+  readonly supplyError = signal<string | null>(null);
+  readonly supplyCounters = signal<SupplyCounters>(EMPTY_SUPPLY_COUNTERS);
+  /** Deficit short-list — pending (not yet ordered/received/cancelled) supply requests, shown only if non-empty. */
+  readonly pendingSupplyRequests = signal<readonly SupplyRequest[]>([]);
+
   load(): void {
     this.status.set('loading');
     this.organizationName.set(null);
@@ -99,6 +123,7 @@ export class OrderWorkspaceFacade {
       this.status.set('success');
       this.loadOrganizationName(result.data?.organizationId);
       this.loadProducts();
+      this.loadSupply();
     });
   }
 
@@ -111,6 +136,56 @@ export class OrderWorkspaceFacade {
       .subscribe((result) => {
         if (result.ok) this.products.set(result.data?.items ?? []);
       });
+  }
+
+  loadSupply(): void {
+    const order = this.order();
+    if (!order) return;
+    this.supplyLoading.set(true);
+    this.supplyError.set(null);
+    this.supplyApi
+      .list({ orderId: order._id })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.supplyLoading.set(false);
+        if (!result.ok) {
+          this.supplyError.set(extractErrorMessage(result.error) || 'Не удалось загрузить задачи снабжения');
+          return;
+        }
+        const requests = result.data ?? [];
+        this.supplyCounters.set({
+          total: requests.length,
+          ordered: requests.filter((r) => r.status === 'ordered').length,
+          received: requests.filter((r) => r.status === 'received').length,
+        });
+        this.pendingSupplyRequests.set(requests.filter((r) => PENDING_SUPPLY_STATUSES.has(r.status)));
+      });
+  }
+
+  openKitReserveConfirm(): void {
+    const order = this.order();
+    if (!order) return;
+    const ref = this.dialog.open<KitReserveResult | undefined, KitReserveConfirmDialogData>(
+      KitReserveConfirmDialogComponent,
+      {
+        data: { order },
+        width: 'md',
+        ariaLabel: 'Подтверждение материалов',
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (result) this.loadSupply();
+    });
+  }
+
+  /** Same formula as the orders-list "Готовность X/Y" — `items[].readyForWork`, never `OrderItem.status`. */
+  readyLineCount(): number {
+    return (this.order()?.items ?? []).filter((it) => it.readyForWork === true).length;
+  }
+
+  totalLineCount(): number {
+    return (this.order()?.items ?? []).length;
   }
 
   private loadOrganizationName(organizationId: string | undefined): void {

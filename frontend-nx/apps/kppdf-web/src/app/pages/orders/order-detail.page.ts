@@ -3,6 +3,7 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import {
   OrderWorkspaceFacade,
   OrderWsCompositionComponent,
+  OrderWsExecutionComponent,
   OrderWsHeaderComponent,
 } from '@kppdf/features/order-workspace';
 import { orderStatusLabel } from './order-status';
@@ -21,7 +22,7 @@ import { orderStatusLabel } from './order-status';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [OrderWorkspaceFacade],
-  imports: [PiStatusBannerComponent, OrderWsHeaderComponent, OrderWsCompositionComponent],
+  imports: [PiStatusBannerComponent, OrderWsHeaderComponent, OrderWsCompositionComponent, OrderWsExecutionComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="order-detail">
       <div class="mb-6">
@@ -99,6 +100,18 @@ import { orderStatusLabel } from './order-status';
 
           <section data-test="order-ws-execution">
             <h2 class="text-sm font-medium m-0 mb-2">Исполнение</h2>
+            <pi-order-ws-execution
+              [supplyLoading]="facade.supplyLoading()"
+              [supplyError]="facade.supplyError()"
+              [supplyCounters]="facade.supplyCounters()"
+              [pendingSupplyRequests]="facade.pendingSupplyRequests()"
+              [orderId]="order._id"
+              [plannedDateLabel]="facade.fmtDate(order.plannedDate)"
+              [readyCount]="facade.readyLineCount()"
+              [totalCount]="facade.totalLineCount()"
+              (confirmMaterials)="facade.openKitReserveConfirm()"
+              (retrySupply)="facade.loadSupply()"
+            />
           </section>
 
           <section data-test="order-ws-logistics">
