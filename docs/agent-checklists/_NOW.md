@@ -1,12 +1,12 @@
-﻿updated_at: 2026-09-15T18:50:00+03:00
+﻿updated_at: 2026-09-15T19:15:00+03:00
 
 ## ACTIVE / LIVE
 
-- **B10 COMPLETE** (`0687a0ff`→`a41166c8`→`a3c77a66`)
-- **Claude Order Workspace WAVE (2/6):** FACADE-SHELL DONE (`d07a2112`) → HEADER DONE (`11f10ce6`) → next COMPOSITION
-  - Prompt: `tasks/_ready/2026-09-15-order-workspace/PROMPT-CLAUDE-ORDER-WORKSPACE.md`
-  - Tracker: `docs/agent-checklists/WAVE-NX-ORDER-WORKSPACE.md`
-- **DONE:** `TZ-NX-HOME-BREADCRUMB-EDIT-CTA` — archive `tasks/_archive/2026-09/TZ-NX-HOME-BREADCRUMB-EDIT-CTA.done.md`; commit follows in this executor run
+- **Claude IN WORK:** Order Workspace 3/6 DONE (facade+header+composition, last `1e6524bb`)
+  - Continue: EXECUTION → LOGISTICS → DOCS-CHIPS → STOP
+  - Pack: `tasks/_ready/2026-09-15-order-workspace/`
+- **Freebuff IDLE:** HOME-BREADCRUMB-EDIT-CTA already DONE (`6f0eeb79`) — не перезапускать
+- **B9/B10:** CLOSED
 
 ## PARK
 
