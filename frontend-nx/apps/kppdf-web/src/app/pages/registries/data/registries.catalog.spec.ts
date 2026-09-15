@@ -6,8 +6,7 @@ import {
   PiTextBlockCategoriesService, PiTableTemplatesService, PiRegistryDataSourcesService,
 } from '@kppdf/data-access';
 import { buildRegistriesCatalogDefault } from './registries.catalog';
-import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
-import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { MaterialRegistryDialogHost, CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 import type { CategoryRegistryDialogHost } from './category-registry-dialog-host';
 
 const host = (): MaterialRegistryDialogHost => ({ openCreate: jest.fn(), openEdit: jest.fn() });

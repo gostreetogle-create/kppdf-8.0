@@ -7,7 +7,7 @@ import {
   buildModuleRowActions,
 } from './module-registry-actions';
 import type { PiModulesService } from '@kppdf/data-access';
-import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 
 export interface ModuleRegistryDeps {
   readonly modulesService: PiModulesService;

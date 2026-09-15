@@ -1,13 +1,24 @@
 import type { DestroyRef, Injector } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { Material } from '@kppdf/data-access';
+import type { Material, MaterialKind } from '@kppdf/data-access';
 import { PiMaterialsService } from '@kppdf/data-access';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { extractErrorMessage } from '@kppdf/util-http';
-import { onDialogCloseOnce } from '../../on-dialog-close-once';
-import { MaterialFormDialogComponent, type MaterialFormDialogData } from '@kppdf/features/registry-forms';
-import type { RegistryActionContext } from '../model/registry.types';
-import type { MaterialRegistryDialogConfig } from './material-registry-actions';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { MaterialFormDialogComponent, type MaterialFormDialogData } from './ui/material-form-dialog.component';
+import type { RegistryActionContext } from './registry-action-context';
+
+/**
+ * Local copy of `registries/data/material-registry-actions.ts`'s
+ * `MaterialRegistryDialogConfig` — same duplication rationale as
+ * `registry-action-context.ts` above (tiny, pure, framework-agnostic).
+ */
+export interface MaterialRegistryDialogConfig {
+  readonly lockMaterialKind?: MaterialKind;
+  readonly allowKindSelect: boolean;
+  readonly createLabel: string;
+  readonly entityLabel: string;
+}
 
 export interface MaterialRegistryDialogHost {
   openCreate(ctx: RegistryActionContext, config: MaterialRegistryDialogConfig): void;

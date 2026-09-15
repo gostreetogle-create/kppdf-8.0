@@ -3,7 +3,7 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import type { PiModulesService, ProductModule } from '@kppdf/data-access';
 import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
 import type { ModuleRow } from './modules-http-data-source';
-import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 import { createRegistryCrudActions, copyName } from './registry-crud-actions';
 
 export interface ModuleRegistryActionDeps { readonly modulesService: PiModulesService; readonly dialogHost: CatalogRegistryDialogHost; }

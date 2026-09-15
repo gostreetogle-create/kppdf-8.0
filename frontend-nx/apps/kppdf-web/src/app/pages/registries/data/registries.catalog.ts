@@ -18,12 +18,11 @@ import {
 } from '@kppdf/data-access';
 import { collectPageRoutePaths } from '../../../layout/route-paths';
 import type { RegistryDefinition, RegistryRow } from '../model/registry.types';
-import { createCatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import { createCatalogRegistryDialogHost, createMaterialRegistryDialogHost } from '@kppdf/features/registry-forms';
 import { createCategoriesRegistry } from './categories.registry';
 import type { CategoryRegistryDeps } from './category-registry-actions';
 import { createCategoryRegistryDialogHost } from './category-registry-dialog-host';
 import { createDetailsRegistry } from './details.registry';
-import { createMaterialRegistryDialogHost } from './material-registry-dialog-host';
 import { createMaterialsRegistry, type MaterialRegistryDeps } from './materials.registry';
 import { createModulesRegistry, type ModuleRegistryDeps } from './modules.registry';
 import { createProductsRegistry, type ProductRegistryDeps } from './products.registry';

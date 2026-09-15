@@ -8,7 +8,7 @@ import {
   createMaterialsHttpDataSource,
   type MaterialRow,
 } from './materials-http-data-source';
-import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
+import type { MaterialRegistryDialogHost } from '@kppdf/features/registry-forms';
 import {
   buildMaterialCreateAction,
   buildMaterialRowActions,

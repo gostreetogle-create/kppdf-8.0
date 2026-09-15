@@ -3,7 +3,7 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import type { MaterialKind, PiMaterialsService } from '@kppdf/data-access';
 import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
 import type { MaterialRow } from './materials-http-data-source';
-import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
+import type { MaterialRegistryDialogHost } from '@kppdf/features/registry-forms';
 
 export interface MaterialRegistryDialogConfig {
   readonly lockMaterialKind?: MaterialKind;

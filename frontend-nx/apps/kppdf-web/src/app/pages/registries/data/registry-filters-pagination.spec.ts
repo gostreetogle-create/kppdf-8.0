@@ -1,6 +1,5 @@
 import { buildRegistriesCatalogDefault } from './registries.catalog';
-import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
-import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { MaterialRegistryDialogHost, CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 import { PiMaterialsService, PiModulesService, PiOrganizationsService, PiProductPassportsService, PiProductsService, PiUnitsService } from '@kppdf/data-access';
 import { of } from 'rxjs';
 import type { Router } from '@angular/router';

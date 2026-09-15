@@ -15,11 +15,9 @@ import { PiToastService } from '@kppdf/ui/toast';
 import {
   createCatalogRegistryDialogHost,
   type CatalogRegistryDialogHost,
-} from '../registries/data/catalog-registry-dialog-host';
-import {
   createMaterialRegistryDialogHost,
   type MaterialRegistryDialogHost,
-} from '../registries/data/material-registry-dialog-host';
+} from '@kppdf/features/registry-forms';
 import type { MaterialRegistryDialogConfig } from '../registries/data/material-registry-actions';
 import type { RegistryActionContext } from '../registries/model/registry.types';
 import type { StudioShowcaseKind, StudioCatalogSelections } from '@kppdf/features/doc-studio';

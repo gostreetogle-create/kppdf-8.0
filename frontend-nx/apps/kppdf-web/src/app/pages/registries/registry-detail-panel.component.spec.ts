@@ -8,8 +8,7 @@ import {
   mockOrganizationsService,
   mockProductPassportsService,
 } from './data/registries-catalog-test-mocks';
-import type { MaterialRegistryDialogHost } from './data/material-registry-dialog-host';
-import type { CatalogRegistryDialogHost } from './data/catalog-registry-dialog-host';
+import type { MaterialRegistryDialogHost, CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 import {
   defineRegistry,
   type RegistryDefinition,

@@ -8,14 +8,16 @@ import {
 } from '@kppdf/data-access';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { extractErrorMessage } from '@kppdf/util-http';
-import { onDialogCloseOnce } from '../../on-dialog-close-once';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
 import {
   ModuleFormDialogComponent,
   type ModuleFormDialogData,
+} from './ui/module-form-dialog.component';
+import {
   ProductFormDialogComponent,
   type ProductFormDialogData,
-} from '@kppdf/features/registry-forms';
-import type { RegistryActionContext } from '../model/registry.types';
+} from './ui/product-form-dialog.component';
+import type { RegistryActionContext } from './registry-action-context';
 
 export interface CatalogRegistryDialogHost {
   openModuleCreate(ctx: RegistryActionContext): void;

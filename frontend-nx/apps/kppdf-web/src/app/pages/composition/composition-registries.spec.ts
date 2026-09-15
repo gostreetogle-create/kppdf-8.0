@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import { PiModulesService, PiProductsService } from '@kppdf/data-access';
 import { buildModuleRowActions } from '../registries/data/module-registry-actions';
 import { buildProductRowActions } from '../registries/data/product-registry-actions';
-import type { CatalogRegistryDialogHost } from '../registries/data/catalog-registry-dialog-host';
+import type { CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 
 const SAMPLE_MODULE = { _id: 'mod-1', name: 'Каркас', article: 'MOD-1' };
 const SAMPLE_PRODUCT = {

@@ -18,8 +18,7 @@ import {
   mockOrganizationsService,
   mockProductPassportsService,
 } from './registries-catalog-test-mocks';
-import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
-import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { MaterialRegistryDialogHost, CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 
 const UNITS: Unit[] = [
   { key: 'pcs', label: 'Штука', symbol: 'шт', isActive: true, isSystem: true, sortOrder: 0 },

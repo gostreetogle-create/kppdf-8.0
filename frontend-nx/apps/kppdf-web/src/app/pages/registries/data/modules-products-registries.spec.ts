@@ -60,7 +60,7 @@ function mockProductsService(overrides: Partial<PiProductsService> = {}): PiProd
   } as unknown as PiProductsService;
 }
 
-import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 
 function mockCatalogDialogHost(): CatalogRegistryDialogHost {
   return {

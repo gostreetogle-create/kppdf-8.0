@@ -13,7 +13,7 @@ import {
   buildProductRowActions,
 } from './product-registry-actions';
 import type { PiProductsService } from '@kppdf/data-access';
-import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 
 export interface ProductRegistryDeps {
   readonly productsService: PiProductsService;

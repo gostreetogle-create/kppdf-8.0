@@ -9,7 +9,7 @@ import {
 } from './materials-http-data-source';
 import { createMaterialsRegistryDefinition } from './materials.registry';
 import { createDetailsRegistryDefinition } from './details.registry';
-import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
+import type { MaterialRegistryDialogHost } from '@kppdf/features/registry-forms';
 
 const SAMPLE_MATERIAL: Material = {
   _id: '507f1f77bcf86cd799439011',

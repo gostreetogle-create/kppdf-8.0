@@ -3,8 +3,7 @@ import { PiMaterialsService, type Material } from '@kppdf/data-access';
 import { createDetailsRegistryDefinition } from './details.registry';
 import { createMaterialsRegistryDefinition } from './materials.registry';
 import { buildMaterialRowActions } from './material-registry-actions';
-import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
-import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
+import type { MaterialRegistryDialogHost, CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 
 const SAMPLE: Material = {
   _id: '507f1f77bcf86cd799439011',
