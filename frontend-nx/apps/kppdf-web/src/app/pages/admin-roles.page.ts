@@ -12,7 +12,7 @@ import { ADMIN_ENTITY_SECTION_CHIPS, ADMIN_TOC_CHIPS } from './admin-group-chips
 import { ButtonComponent } from '@kppdf/ui/button';
 import { TableComponent, PiRowActionsComponent } from '@kppdf/ui/table';
 import type { AdminRole } from '@kppdf/data-access/admin';
-import { AdminRolesPageFacade } from './admin-roles.facade';
+import { AdminRolesPageFacade } from '@kppdf/features/admin-roles';
 import { ROLE_FORM_COPY } from './permission-labels.ru';
 
 type ClientRole = AdminRole;

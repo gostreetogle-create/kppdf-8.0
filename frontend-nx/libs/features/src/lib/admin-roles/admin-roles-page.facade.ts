@@ -1,10 +1,13 @@
 /**
  * TZ-NX-ADMIN-ROLES-PAGE-FACADE — domain facade for `RolesAdminPage`.
+ * TZ-NX-ADMIN-ROLES-TO-FEATURES — moved into `@kppdf/features/admin-roles`
+ * (lib root), reusing the `RoleFormDialogComponent` already here (B4) as a
+ * normal lib-local sibling import (not the public barrel — self-referential
+ * otherwise) and the `permission-labels.ru.ts` duplicate already in `ui/`.
  *
  * Owns: list load/search/paginate, CRUD (create/edit/view/delete) via
- * `RoleFormDialogComponent` (already in `@kppdf/features/admin-roles`),
- * table column defs — moved as-is from the page. No role/permission rule
- * change.
+ * `RoleFormDialogComponent`, table column defs — moved as-is from the page.
+ * No role/permission rule change.
  *
  * A plain route page with no `input.required<T>()`/`@Input()`, so the
  * facade's own constructor safely calls `refresh()` directly — same shape
@@ -17,13 +20,9 @@ import { PiToastService } from '@kppdf/ui/toast';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import type { ColumnDef } from '@kppdf/ui/table';
 import { PiRolesService, type AdminRole } from '@kppdf/data-access/admin';
-import { onDialogCloseOnce } from './on-dialog-close-once';
-import {
-  RoleFormDialogComponent,
-  type RoleFormData,
-  type RoleFormResult,
-} from '@kppdf/features/admin-roles';
-import { ROLE_FORM_COPY, permissionsSummary, roleLabelRu } from './permission-labels.ru';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { RoleFormDialogComponent, type RoleFormData, type RoleFormResult } from './ui/role-form-dialog.component';
+import { ROLE_FORM_COPY, permissionsSummary, roleLabelRu } from './ui/permission-labels.ru';
 
 type ClientRole = AdminRole;
 const PAGE_SIZE = 10;
