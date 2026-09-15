@@ -1,6 +1,4 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
-import { NgStyle } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import type { StudioBlock, StudioBlockLayout } from '@kppdf/data-access';
 import { normalizePhotoFrame, photoFrameStyle, type PiPhotoFrame } from '@kppdf/ui/photo';
@@ -25,11 +23,14 @@ import {
   studioImageResizeAspectRatio,
   studioProportionalImageResize,
 } from '@kppdf/features/doc-studio';
+import { StudioTextBlockPresenterComponent } from './studio-text-block-presenter.component';
+import { StudioImageBlockPresenterComponent } from './studio-image-block-presenter.component';
+import { StudioTableBlockPresenterComponent, type StudioTableColumnMeta } from './studio-table-block-presenter.component';
 
 @Component({
   selector: 'pi-studio-blocks-canvas',
   standalone: true,
-  imports: [FormsModule, NgStyle],
+  imports: [StudioTextBlockPresenterComponent, StudioImageBlockPresenterComponent, StudioTableBlockPresenterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'studio-blocks-canvas',
@@ -57,123 +58,52 @@ import {
     </div>
     @for (block of foregroundBlocks(); track block._id) {
       @if (block.layout; as layout) {
-          @if (block.type === 'text') {
-            <article
-              class="studio-block studio-block--text"
-              [class.selected]="selectedId === block._id"
-              [class.studio-block--editable]="selectedId === block._id && !block.locked"
-              [class.studio-block--passive]="selectedId !== block._id || block.locked"
-              [class.locked]="block.locked"
-              [class.snapping]="snappingId === block._id"
-              [style.left.%]="layout.x * 100"
-              [style.top.%]="layout.y * 100"
-              [style.width.%]="layout.width * 100"
-              [style.height.%]="(layout.height ?? 0.12) * 100"
-              [style.z-index]="layout.zIndex"
-              [style.font-size.pt]="block.style?.fontSizePt ?? 14"
-              [style.color]="block.style?.color ?? '#000'"
-              [style.text-align]="block.style?.align ?? 'left'"
-              [style.font-family]="block.style?.fontFamily ?? 'Times New Roman'"
-              [style.line-height]="textLineHeight(block)"
-              (click)="selectBlock($event, block)"
-              (dblclick)="openTextBlock($event, block)"
-              (pointerdown)="startDrag($event, block)"
-            >
-              <div class="studio-block__text-body" [innerHTML]="textHtml(block)"></div>
-              @if (selectedId === block._id && !block.locked && !readOnly) {
-                <span class="selection-frame" aria-hidden="true"></span>
-                <button class="resize-handle" type="button" aria-label="Изменить размер" (pointerdown)="startResize($event, block)"></button>
-              }
-            </article>
-          } @else if (block.type === 'image') {
-            <article
-              class="studio-block studio-block--image"
-              [class.selected]="selectedId === block._id"
-              [class.studio-block--editable]="selectedId === block._id && !block.locked"
-              [class.studio-block--passive]="selectedId !== block._id || block.locked"
-              [class.locked]="block.locked"
-              [class.snapping]="snappingId === block._id"
-              [style.left.%]="layout.x * 100"
-              [style.top.%]="layout.y * 100"
-              [style.width.%]="layout.width * 100"
-              [style.height.%]="(layout.height ?? 0.28) * 100"
-              [style.z-index]="layout.zIndex"
-              (click)="selectBlock($event, block)"
-              (pointerdown)="startDrag($event, block)"
-            >
-              @if (imageUrl(block); as url) {
-                <img [src]="url" alt="" draggable="false" />
-              } @else {
-                <span class="image-placeholder">Фото</span>
-              }
-              @if (selectedId === block._id && !block.locked && !readOnly) {
-                <span class="selection-frame" aria-hidden="true"></span>
-                <button class="resize-handle" type="button" aria-label="Изменить размер" (pointerdown)="startResize($event, block)"></button>
-              }
-            </article>
-          } @else if (block.type === 'table') {
-            <article
-              class="studio-block studio-block--table"
-              [class.studio-block--table-transparent]="tableTransparent(block)"
-              [class.selected]="selectedId === block._id"
-              [class.studio-block--editable]="selectedId === block._id && !block.locked"
-              [class.studio-block--passive]="selectedId !== block._id || block.locked"
-              [class.locked]="block.locked"
-              [class.snapping]="snappingId === block._id"
-              [style.left.%]="layout.x * 100"
-              [style.top.%]="layout.y * 100"
-              [style.width.%]="layout.width * 100"
-              [style.height.%]="(layout.height ?? 0.25) * 100"
-              [style.z-index]="layout.zIndex"
-              (click)="selectBlock($event, block)"
-              (dblclick)="openTableBlock($event, block)"
-              (pointerdown)="startDrag($event, block)"
-            >
-              <div class="table-preview">
-                  <table>
-                    <thead>
-                      <tr>
-                        @for (col of tableColumns(block); track col.key; let ci = $index) {
-                          <th [style.text-align]="col.align" [style.width.%]="colWidthPct(block, ci)">{{ col.label }}</th>
-                        }
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (row of tableRows(block); track $index) {
-                        <tr>
-                          @for (cell of row; track $index; let ci = $index) {
-                            @if (isPhotoColumnAt(block, ci)) {
-                              <td class="table-preview__photo-cell" [style.width.%]="colWidthPct(block, ci)">
-                                <!-- TZ-NX-DOCSTUDIO-TABLE-PHOTO-EMPTY-BLANK: no photo / broken load = blank cell,
-                                     no "Нет фото" text and no browser broken-image icon. Row height comes from
-                                     the shared td padding (line 304), not from this cell's own content. -->
-                                @if (cell && !isPhotoLoadFailed(cell)) {
-                                  <img [src]="cell" alt="" class="table-preview__photo" [ngStyle]="photoCellStyle(block, cell)" (error)="onPhotoLoadError(cell)" />
-                                }
-                              </td>
-                            } @else {
-                              <td [style.width.%]="colWidthPct(block, ci)">{{ cell || ' ' }}</td>
-                            }
-                          }
-                        </tr>
-                      } @empty {
-                        <!-- TZ-NX-DOCSTUDIO-S45: empty table = placeholder row, not a bare thead.
-                             TZ-NX-DOCSTUDIO-TABLE-UNWIRED-EMPTY-STATE: text differs for a table with
-                             no live source (points at Properties/Insert) vs. a wired one with no rows
-                             yet (points at Selected/КП/order — Properties can't manually add live rows). -->
-                        <tr class="table-preview__empty">
-                          <td [attr.colspan]="tableColumns(block).length || 1">{{ tableEmptyStateLabel(block) }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              @if (selectedId === block._id && !block.locked && !readOnly) {
-                <span class="selection-frame" aria-hidden="true"></span>
-                <button class="resize-handle" type="button" aria-label="Изменить размер" (pointerdown)="startResize($event, block)"></button>
-              }
-            </article>
-          }
+        @if (block.type === 'text') {
+          <pi-studio-text-block-presenter
+            [block]="block"
+            [layout]="layout"
+            [selected]="selectedId === block._id"
+            [snapping]="snappingId === block._id"
+            [readOnly]="readOnly"
+            [textHtml]="textHtml(block)"
+            [lineHeight]="textLineHeight(block)"
+            (select)="selectBlock($event, block)"
+            (openText)="openTextBlock($event, block)"
+            (dragStart)="startDrag($event, block)"
+            (resizeStart)="startResize($event, block)"
+          />
+        } @else if (block.type === 'image') {
+          <pi-studio-image-block-presenter
+            [block]="block"
+            [layout]="layout"
+            [selected]="selectedId === block._id"
+            [snapping]="snappingId === block._id"
+            [readOnly]="readOnly"
+            [imageUrl]="imageUrl(block)"
+            (select)="selectBlock($event, block)"
+            (dragStart)="startDrag($event, block)"
+            (resizeStart)="startResize($event, block)"
+          />
+        } @else if (block.type === 'table') {
+          <pi-studio-table-block-presenter
+            [block]="block"
+            [layout]="layout"
+            [selected]="selectedId === block._id"
+            [snapping]="snappingId === block._id"
+            [readOnly]="readOnly"
+            [transparent]="tableTransparent(block)"
+            [columnMeta]="columnMetaFor(block)"
+            [rows]="tableRows(block)"
+            [emptyStateLabel]="tableEmptyStateLabel(block)"
+            [photoCellStyles]="photoCellStylesFor(block)"
+            [isPhotoLoadFailed]="isPhotoLoadFailed"
+            (select)="selectBlock($event, block)"
+            (openTable)="openTableBlock($event, block)"
+            (dragStart)="startDrag($event, block)"
+            (resizeStart)="startResize($event, block)"
+            (photoLoadError)="onPhotoLoadError($event)"
+          />
+        }
       }
     }
   `,
@@ -193,31 +123,12 @@ import {
        at equal specificity previously let source order silently flip which
        object-fit won (passport-bg's contain was defined first, so the
        later .studio-block--image img's cover always overrode it — canvas
-       showed a stretched/cropped passport while the PDF letterboxed it). */
+       showed a stretched/cropped passport while the PDF letterboxed it).
+       This rule only ever matches the background compositing loop above
+       (kept inline on the host, never extracted into a presenter), so it
+       stays here unscoped-safe. */
     .studio-block--passport-bg.studio-block--image img {
       width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;
-    }
-    .studio-block {
-      position:absolute; box-sizing:border-box; min-width:4%; min-height:3%;
-      padding:4px; border:1px solid transparent; overflow:hidden;
-      pointer-events:auto; cursor:move; user-select:none;
-    }
-    .studio-block--text {
-      white-space: normal;
-      background: transparent;
-      display: flex;
-      flex-direction: column;
-    }
-    .studio-block__text-body {
-      flex: 1;
-      width: 100%;
-      min-height: 0;
-      overflow: hidden;
-      pointer-events: none;
-      line-height: 1.35;
-    }
-    .studio-block__text-body :where(p) {
-      margin: 0;
     }
     /* TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP — matches the RTE dialog's own
        .substitution-token chip (pi-rich-text-editor.component.ts) so a
@@ -225,7 +136,11 @@ import {
        the canvas. Editor-only: this component is never used for
        Просмотр/PDF (those render fully server-side, see
        studio-output.service.ts), so this styling can't leak into the
-       printed form. */
+       printed form. ::ng-deep deliberately un-scopes past :host so this
+       still reaches .studio-block__text-body inside
+       StudioTextBlockPresenterComponent's own template (Phase 5 split) —
+       verified: :host ::ng-deep scopes only the :host anchor, not what
+       follows it. */
     :host ::ng-deep .studio-block__text-body .substitution-token {
       display: inline-block;
       padding: 1px 6px;
@@ -248,107 +163,6 @@ import {
       background: transparent;
       border-style: dashed;
       font-weight: 500;
-    }
-    .studio-block--text.studio-block--editable.selected {
-      background: transparent;
-    }
-    .studio-block--image {
-      background: transparent;
-      /* TZ-NX-DOCSTUDIO-IMAGE-PASSPORT-FIT-WYSIWYG — padding parity with the
-         PDF's image box (no padding) and with the passport rule above
-         (already padding:0): without this, .studio-block's generic 4px
-         padding shrank a regular (non-passport) photo block's img on the
-         canvas relative to the PDF, which renders the image edge-to-edge. */
-      padding: 0;
-    }
-    .studio-block--table {
-      background: #fff;
-      border: 1px solid var(--color-rule);
-      padding: 0;
-    }
-    .studio-block--table.studio-block--table-transparent {
-      background: transparent;
-      border-color: transparent;
-    }
-    .studio-block--table-transparent .table-preview th,
-    .studio-block--table-transparent .table-preview td {
-      background: transparent;
-    }
-    .table-preview {
-      width: 100%; height: 100%; overflow: auto; pointer-events: none;
-    }
-    .studio-block--table-editing {
-      cursor: default;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .table-preview__empty td {
-      text-align: center;
-      color: var(--color-muted-foreground);
-      font-style: italic;
-      background: var(--color-paper-2);
-    }
-    .studio-block--table { container-type: inline-size; }
-    .table-preview table {
-      /* TZ-NX-DOCSTUDIO-TABLE-COL-WIDTH-APPLY — fixed layout so th/td [style.width.%]
-         actually determines column share instead of being overridden by content
-         auto-sizing; matches renderStudioTableHtml's own inline table-layout:fixed. */
-      width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px;
-    }
-    .table-preview th, .table-preview td {
-      border: 1px solid var(--color-rule);
-      padding: 2px 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .table-preview td {
-      background: #fff;
-    }
-    .table-preview th {
-      background: var(--color-paper-2);
-      font-weight: 600;
-      color: var(--color-muted-foreground);
-    }
-    .table-preview__photo-cell {
-      text-align: center;
-      white-space: normal;
-    }
-    .table-preview__photo {
-      /* TZ-NX-PO-SWEEP-05 — object-fit/object-position/max-height come from
-         [ngStyle]="photoCellStyle(...)" (per-photo РАМКА + block override),
-         not a hardcoded contain/28px. */
-      display: block;
-      max-width: 100%;
-      margin: 0 auto;
-    }
-    .studio-block--image img {
-      width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;
-    }
-    .image-placeholder {
-      display:flex; align-items:center; justify-content:center;
-      width:100%; height:100%; font-size:12px; color:#666;
-    }
-    .studio-block.selected { border-color:#1c7c54; }
-    .studio-block--passive {
-      cursor: pointer;
-      border-color: transparent;
-    }
-    .studio-block--passive:hover {
-      outline: 1px dashed color-mix(in oklch, var(--color-gold) 55%, transparent);
-      outline-offset: 1px;
-    }
-    .studio-block.snapping .selection-frame { border-color:#c9a227; }
-    .studio-block.locked { cursor:not-allowed; opacity:.65; }
-    .selection-frame {
-      position:absolute; inset:-3px; pointer-events:none;
-      border:2px solid #1c7c54; box-shadow:0 0 0 1px rgba(28,124,84,.25);
-    }
-    .resize-handle {
-      position:absolute; right:-5px; bottom:-5px; width:12px; height:12px;
-      padding:0; border:2px solid #1c7c54; background:#fff; cursor:nwse-resize;
-      pointer-events:auto; z-index:1;
     }
   `],
 })
@@ -399,6 +213,13 @@ export class StudioBlocksCanvasComponent {
     return studioBlockIsEditable(block, this.activeLayerId);
   }
 
+  /**
+   * TZ-NX-DOCSTUDIO-EDITOR-UI-SPLIT (Phase 5) — kept as a directly-callable
+   * host method (not folded into the table presenter) because
+   * `studio-blocks-canvas.component.spec.ts` calls `component.tableColumns(...)`
+   * directly. The host's own template no longer calls this for rendering
+   * (see `columnMetaFor`), but external callers (tests) still can.
+   */
   tableColumns(block: StudioBlock) {
     return studioVisibleTableColumns(block);
   }
@@ -420,6 +241,20 @@ export class StudioBlocksCanvasComponent {
   }
 
   /**
+   * TZ-NX-DOCSTUDIO-EDITOR-UI-SPLIT (Phase 5) — precomputed per-column
+   * metadata for `StudioTableBlockPresenterComponent`, combining
+   * `tableColumns`/`colWidthPct`/`isPhotoColumnAt` (all unchanged) into one
+   * array so the presenter needs no function-typed Inputs for column data.
+   */
+  columnMetaFor(block: StudioBlock): StudioTableColumnMeta[] {
+    return this.tableColumns(block).map((col, i) => ({
+      col,
+      widthPct: this.colWidthPct(block, i),
+      isPhoto: this.isPhotoColumnAt(block, i),
+    }));
+  }
+
+  /**
    * TZ-NX-DOCSTUDIO-TABLE-PHOTO-BROKEN-IMG — last-resort client fallback:
    * the backend already drops a verified-missing file to `''` (S48/S-SMOKE),
    * but a URL that was valid when resolved can still fail to load (upload
@@ -429,9 +264,14 @@ export class StudioBlocksCanvasComponent {
    */
   private readonly failedPhotoUrls = signal<ReadonlySet<string>>(new Set());
 
-  isPhotoLoadFailed(url: string): boolean {
-    return this.failedPhotoUrls().has(url);
-  }
+  /**
+   * TZ-NX-DOCSTUDIO-EDITOR-UI-SPLIT (Phase 5) — arrow-function field (not a
+   * regular method) so it stays correctly `this`-bound when passed as a
+   * plain function reference into `StudioTableBlockPresenterComponent`'s
+   * `[isPhotoLoadFailed]` Input; every table block shares this same
+   * canvas-wide `failedPhotoUrls` set, same as before the split.
+   */
+  readonly isPhotoLoadFailed = (url: string): boolean => this.failedPhotoUrls().has(url);
 
   onPhotoLoadError(url: string): void {
     if (this.failedPhotoUrls().has(url)) return;
@@ -456,6 +296,25 @@ export class StudioBlocksCanvasComponent {
       ...photoFrameStyle({ ...frame, fit }),
       'max-height': `${display.maxHeightPx}px`,
     };
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-EDITOR-UI-SPLIT (Phase 5) — every distinct photo URL
+   * across this table's rows, pre-resolved to its style via the unchanged
+   * `photoCellStyle`, so the presenter needs no function-typed Input for
+   * per-cell styling.
+   */
+  photoCellStylesFor(block: StudioBlock): ReadonlyMap<string, Record<string, string>> {
+    const urls = new Set<string>();
+    const rows = this.tableRows(block);
+    for (const row of rows) {
+      for (let ci = 0; ci < row.length; ci++) {
+        if (row[ci] && this.isPhotoColumnAt(block, ci)) urls.add(row[ci]!);
+      }
+    }
+    const map = new Map<string, Record<string, string>>();
+    for (const url of urls) map.set(url, this.photoCellStyle(block, url));
+    return map;
   }
 
   tableRows(block: StudioBlock): string[][] {
