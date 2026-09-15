@@ -6,6 +6,7 @@ import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
+import { CheckboxComponent } from '@kppdf/ui/checkbox';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
 import { rememberStudioDocument } from '@kppdf/features/doc-studio';
@@ -34,11 +35,21 @@ const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {
 export const STUDIO_NO_SAVED_TEMPLATES_MESSAGE =
   'Нет сохранённых шаблонов — сохраните из студии (Шаблон → Сохранить как шаблон)';
 
+/** RU pluralization for «документ/документа/документов» (mirrors `pluralizeRecords` in registries-page.ts). */
+function pluralizeDocuments(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 14) return `${n} документов`;
+  if (mod10 === 1) return `${n} документ`;
+  if (mod10 >= 2 && mod10 <= 4) return `${n} документа`;
+  return `${n} документов`;
+}
+
 @Component({
   selector: 'pi-studio-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiStatusBannerComponent, PiPageChromeComponent, RouterLink, ButtonComponent],
+  imports: [PiStatusBannerComponent, PiPageChromeComponent, RouterLink, ButtonComponent, CheckboxComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="studio-list">
       <app-pi-page-chrome [crumbs]="[{ label: 'Документы' }]" />
@@ -59,16 +70,42 @@ export const STUDIO_NO_SAVED_TEMPLATES_MESSAGE =
             <option value="all">Все статусы</option><option value="draft">Черновики</option><option value="frozen">Замороженные</option><option value="final">В архиве</option>
           </select>
         </div>
+        @if (selectedIds().size > 0) {
+          <div class="flex items-center gap-3 mb-3 px-4 py-2 hairline rounded-sm bg-paper-2" data-test="studio-bulk-bar">
+            <span class="text-sm text-muted-foreground">Выбрано: {{ selectedIds().size }}</span>
+            <app-pi-button variant="destructive" type="button" data-test="studio-bulk-delete" (click)="removeSelected()">Удалить выбранное ({{ selectedIds().size }})</app-pi-button>
+          </div>
+        }
       }
       @if (status() === 'success' && filteredDocuments().length === 0) { <div class="pi-dashed-panel p-8 text-center">Документов не найдено.</div> }
       @if (status() === 'success' && filteredDocuments().length > 0) {
         <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+          <div class="flex items-center gap-4 px-4 py-2 hairline-bottom bg-paper-2">
+            <app-pi-checkbox
+              size="sm"
+              ariaLabel="Выбрать все документы"
+              data-test="studio-select-all"
+              [checked]="allVisibleSelected()"
+              [indeterminate]="someVisibleSelected()"
+              (checkedChange)="toggleSelectAllVisible($event)"
+            />
+            <span class="text-xs text-muted-foreground uppercase tracking-wider">Выбрать все</span>
+          </div>
           @for (document of filteredDocuments(); track document._id) {
             <div class="flex items-center justify-between gap-4 px-4 py-3 hairline-bottom" data-test="studio-row">
-              <button class="text-left pi-focus-ring" type="button" (click)="open(document)">
-                <div class="font-medium">{{ document.name }}</div>
-                <div class="text-xs text-muted-foreground">{{ documentStatusLabel(document.status) }} · {{ formatUpdatedAt(document.updatedAt) }}</div>
-              </button>
+              <div class="flex items-center gap-4 min-w-0">
+                <app-pi-checkbox
+                  size="sm"
+                  [ariaLabel]="'Выбрать ' + document.name"
+                  data-test="studio-row-select"
+                  [checked]="selectedIds().has(document._id)"
+                  (checkedChange)="toggleRow(document._id, $event)"
+                />
+                <button class="text-left pi-focus-ring" type="button" (click)="open(document)">
+                  <div class="font-medium">{{ document.name }}</div>
+                  <div class="text-xs text-muted-foreground">{{ documentStatusLabel(document.status) }} · {{ formatUpdatedAt(document.updatedAt) }}</div>
+                </button>
+              </div>
               <div class="flex items-center gap-2">
                 <app-pi-button variant="ghost" type="button" data-test="studio-duplicate" (click)="duplicate(document)">Дублировать</app-pi-button>
                 <button class="pi-icon-btn pi-icon-btn-danger pi-focus-ring" type="button" aria-label="Удалить" title="Удалить" data-test="studio-delete" (click)="remove(document)">×</button>
@@ -102,9 +139,21 @@ export class StudioListPage implements OnInit {
     );
   });
 
+  readonly selectedIds = signal<ReadonlySet<string>>(new Set());
+  readonly allVisibleSelected = computed(() => {
+    const docs = this.filteredDocuments();
+    return docs.length > 0 && docs.every((d) => this.selectedIds().has(d._id));
+  });
+  readonly someVisibleSelected = computed(() => {
+    if (this.allVisibleSelected()) return false;
+    const ids = this.selectedIds();
+    return this.filteredDocuments().some((d) => ids.has(d._id));
+  });
+
   ngOnInit(): void { this.load(); }
   load(): void {
     this.status.set('loading');
+    this.selectedIds.set(new Set());
     void firstValueFrom(this.service.list()).then((result) => {
       if (!result.ok) { this.error.set(String(result.error)); this.status.set('error'); return; }
       const rows = result.data;
@@ -113,6 +162,35 @@ export class StudioListPage implements OnInit {
       // The module landing is always the documents list. Resume behavior is
       // reserved for explicit editor/create flows, never the nav entry.
       this.status.set('success');
+    });
+  }
+  toggleRow(id: string, checked: boolean): void {
+    const next = new Set(this.selectedIds());
+    if (checked) next.add(id); else next.delete(id);
+    this.selectedIds.set(next);
+  }
+  toggleSelectAllVisible(checked: boolean): void {
+    const next = new Set(this.selectedIds());
+    for (const d of this.filteredDocuments()) {
+      if (checked) next.add(d._id); else next.delete(d._id);
+    }
+    this.selectedIds.set(next);
+  }
+  /** Same destructive-confirm pattern as single-row `remove()`; deletes go through the existing per-id DELETE endpoint in parallel — no backend bulk-endpoint. */
+  removeSelected(): void {
+    const ids = [...this.selectedIds()];
+    if (ids.length === 0) return;
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: { title: `Удалить ${pluralizeDocuments(ids.length)}?`, confirmLabel: 'Удалить', cancelLabel: 'Отмена', variant: 'destructive' },
+      width: 'sm',
+    });
+    onDialogCloseOnce(ref, this.injector, (ok) => {
+      if (ok !== true) return;
+      void Promise.all(ids.map((id) => firstValueFrom(this.service.remove(id)))).then((results) => {
+        const failed = results.filter((result) => !result.ok).length;
+        if (failed > 0) this.toast.error(`Не удалось удалить ${pluralizeDocuments(failed)} из ${ids.length}`);
+        this.load();
+      });
     });
   }
   createFromTemplate(): void {
