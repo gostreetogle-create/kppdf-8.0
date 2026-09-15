@@ -12,8 +12,8 @@ import {
   Undo2,
   Wallpaper,
 } from 'lucide-angular';
-import { studioBlockIsPassportBackground, studioImageUrl, studioLayerTypeLabel } from '@kppdf/features/doc-studio';
-import { StudioTablePropertiesComponent } from '@kppdf/features/doc-studio';
+import { studioBlockIsPassportBackground, studioImageUrl, studioLayerTypeLabel } from '../util/studio-block-helpers';
+import { StudioTablePropertiesComponent } from './studio-table-properties.component';
 import { StudioTextPropertiesComponent } from './studio-text-properties.component';
 
 function layerDisplayName(block: StudioBlock): string {

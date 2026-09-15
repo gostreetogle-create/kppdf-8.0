@@ -4,6 +4,8 @@ export * from './studio-elements-panel.component';
 export * from './studio-pages-panel.component';
 export * from './studio-layers-panel.component';
 export * from './studio-table-properties.component';
+export * from './studio-text-properties.component';
+export * from './studio-properties-panel.component';
 export * from './studio-template-panel.component';
 export * from './studio-unsaved-changes-dialog.component';
 export * from './studio-rename-document-dialog.component';

@@ -28,11 +28,11 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { PiRichTextEditorComponent } from '@kppdf/ui/rich-text';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { onDialogCloseOnce } from './on-dialog-close-once';
 import {
   StudioDataFieldPickerDialogComponent,
   type StudioDataFieldSelection,
-} from '@kppdf/features/doc-studio';
+} from './studio-data-field-picker-dialog.component';
 import {
   AlignCenter,
   AlignJustify,

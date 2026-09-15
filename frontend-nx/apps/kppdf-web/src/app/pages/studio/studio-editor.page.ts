@@ -46,7 +46,6 @@ import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
 import type { StudioShowcaseKind } from './studio-data-vitrina.component';
-import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
 import {
   StudioEditorFacade,
   StudioBlocksCanvasComponent,
@@ -55,6 +54,7 @@ import {
   StudioLayersPanelComponent,
   StudioTemplatePanelComponent,
   StudioWorkspaceShellComponent,
+  StudioPropertiesPanelComponent,
   type StudioTableRowSource,
 } from '@kppdf/features/doc-studio';
 
