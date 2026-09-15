@@ -57,6 +57,32 @@ describe('CompositionTreeComponent (Phase 2)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="composition-tree-nest"]')).toBeTruthy();
   });
 
+  it('toggles the same row closed when selectedId is null', () => {
+    const row = fixture.nativeElement.querySelector('[data-test="composition-tree-row"]') as HTMLElement;
+    row.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="composition-tree-nest"]')).toBeTruthy();
+
+    row.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="composition-tree-nest"]')).toBeNull();
+  });
+
+  it('keeps the row hit target large enough and toggles from the kind/name area', () => {
+    const row = fixture.nativeElement.querySelector('[data-test="composition-tree-row"]') as HTMLElement;
+    const toggle = fixture.nativeElement.querySelector('[data-test="composition-tree-toggle"]') as HTMLElement;
+    expect(row.classList.contains('min-h-11')).toBe(true);
+    expect(toggle.classList.contains('w-9')).toBe(true);
+
+    const name = row.querySelector('.flex-1') as HTMLElement;
+    name.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="composition-tree-nest"]')).toBeTruthy();
+    name.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="composition-tree-nest"]')).toBeNull();
+  });
+
   it('shows qty on child rows', () => {
     const rootRow = fixture.nativeElement.querySelector('[data-test="composition-tree-row"]') as HTMLElement;
     rootRow.click();

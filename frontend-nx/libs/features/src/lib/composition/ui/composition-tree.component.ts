@@ -65,7 +65,7 @@ export type CompositionTreeSelectEvent = {
         >
           @if (node.kind !== 'material' && node.children.length > 0) {
             <span
-              class="w-7 h-7 shrink-0 inline-flex items-center justify-center rounded-sm text-base font-semibold leading-none"
+              class="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded-sm text-base font-semibold leading-none"
               [class.bg-gold]="isExpanded(node)"
               [class.text-ink]="isExpanded(node)"
               [class.text-muted-foreground]="!isExpanded(node)"
@@ -140,14 +140,8 @@ export class CompositionTreeComponent {
   ): void {
     const hasChildren = node.kind !== 'material' && node.children.length > 0;
     const expanded = this.isExpanded(node);
-    const selected = this.selectedId() === node._id;
-
     if (hasChildren) {
-      if (selected && expanded) {
-        this.setExpanded(node._id, false);
-      } else {
-        this.setExpanded(node._id, true);
-      }
+      this.setExpanded(node._id, !expanded);
     }
 
     this.selectedChange.emit({ node, parent, depth });

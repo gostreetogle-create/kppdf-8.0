@@ -46,24 +46,26 @@ import { ButtonComponent } from '@kppdf/ui/button';
         <div data-test="composition-list">
           @for (item of items(); track item.lineId ?? $index; let i = $index) {
             <div
-              class="grid grid-cols-[1.5rem_minmax(0,1fr)_4rem_2.5rem_auto_auto] gap-3 items-center px-4 py-3 hairline-bottom last:border-b-0 text-sm"
+              class="grid grid-cols-[minmax(0,1fr)_4rem_2.5rem_auto_auto] gap-3 items-center px-4 py-3 hairline-bottom last:border-b-0 text-sm"
               data-test="composition-line"
             >
               <button
                 type="button"
-                class="text-muted-foreground"
+                class="col-span-1 min-w-0 flex min-h-11 items-center gap-2 text-left text-muted-foreground pi-focus-ring rounded-sm"
                 data-test="composition-line-expand"
                 [attr.aria-expanded]="expandedLineIndex() === i"
                 (click)="toggleTree.emit(i)"
               >
-                {{ expandedLineIndex() === i ? '▾' : '▸' }}
+                <span class="w-9 h-9 shrink-0 inline-flex items-center justify-center text-base" aria-hidden="true">
+                  {{ expandedLineIndex() === i ? '▾' : '▸' }}
+                </span>
+                <span class="min-w-0">
+                  <span class="block font-medium truncate text-ink">{{ item.productName ?? item.productId }}</span>
+                  @if (item.productSku) {
+                    <span class="block text-xs text-muted-foreground">{{ item.productSku }}</span>
+                  }
+                </span>
               </button>
-              <div class="min-w-0">
-                <div class="font-medium truncate">{{ item.productName ?? item.productId }}</div>
-                @if (item.productSku) {
-                  <div class="text-xs text-muted-foreground">{{ item.productSku }}</div>
-                }
-              </div>
               <input
                 type="number"
                 min="1"
