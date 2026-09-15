@@ -8,6 +8,8 @@ import {
   PiOrdersService,
   PiOrganizationsService,
   PiProductsService,
+  PiReservationsService,
+  PiShipmentsService,
   PiSupplyRequestsService,
   type Order,
 } from '@kppdf/data-access';
@@ -18,14 +20,16 @@ import { OrderDetailPage } from './order-detail.page';
 
 describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   let fixture: ComponentFixture<OrderDetailPage>;
-  let ordersApi: { getById: jest.Mock; update: jest.Mock; cancel: jest.Mock; setLineReady: jest.Mock };
-  let toast: { error: jest.Mock };
+  let ordersApi: { getById: jest.Mock; update: jest.Mock; cancel: jest.Mock; setLineReady: jest.Mock; ship: jest.Mock };
+  let toast: { error: jest.Mock; success: jest.Mock };
   let router: { navigate: jest.Mock };
   let organizationsApi: { getById: jest.Mock };
   let dialog: { open: jest.Mock };
   let productsApi: { list: jest.Mock };
   let compositionApi: { getProductTree: jest.Mock };
   let supplyApi: { list: jest.Mock };
+  let reservationsApi: { list: jest.Mock };
+  let shipmentsApi: { list: jest.Mock; cancelShipment: jest.Mock };
 
   const quotationOrder: Order = {
     _id: 'order-1',
@@ -55,13 +59,15 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   }
 
   async function setup(result: ReturnType<typeof of> | Subject<SilentResult<Order>>): Promise<void> {
-    ordersApi = { getById: jest.fn().mockReturnValue(result), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn() };
-    toast = { error: jest.fn() };
+    ordersApi = { getById: jest.fn().mockReturnValue(result), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn(), ship: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), cancelShipment: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
@@ -74,6 +80,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
+        { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
       ],
     }).compileComponents();
 
@@ -106,16 +114,18 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
       ok: false,
       error: new HttpErrorResponse({ status: 404, error: { message: 'Order not found' } }),
     };
-    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn(), ship: jest.fn() };
     organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), cancelShipment: jest.fn() };
     ordersApi.getById
       .mockReturnValueOnce(of(failure))
       .mockReturnValueOnce(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
@@ -128,6 +138,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
+        { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
       ],
     }).compileComponents();
     await configureRouterSpy();
@@ -364,6 +376,86 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     expect(productionLink.getAttribute('href')).toContain('orderId=order-1');
   });
 
+  it('shows reservation counters keyed by order.number (not _id) and an honest empty warehouse state', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+
+    expect(reservationsApi.list).toHaveBeenCalledWith({ orderId: 'ORD-001' });
+    expect(fixture.nativeElement.querySelector('[data-test="logistics-warehouse-empty"]')).toBeTruthy();
+
+    reservationsApi.list.mockReturnValue(
+      of({ ok: true, data: [{ _id: 'r-1', status: 'active' }, { _id: 'r-2', status: 'released' }] }),
+    );
+    (fixture.componentInstance as unknown as { facade: { loadReservations: () => void } }).facade.loadReservations();
+    await settle();
+
+    expect(fixture.nativeElement.querySelector('[data-test="logistics-warehouse-counters"]')?.textContent).toContain(
+      'Активных 1',
+    );
+  });
+
+  it('marks the order shipped via ShipConfirmDialog — whole-order POST ship — reload', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    ordersApi.ship.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    shipmentsApi.list.mockClear();
+    const closed = signal<{ recipient?: string } | undefined>(undefined);
+    dialog.open.mockReturnValue({ closed, close: (v?: unknown) => closed.set(v as { recipient?: string } | undefined) });
+
+    expect(fixture.nativeElement.querySelector('[data-test="logistics-shipment-none"]')).toBeFalsy();
+    (fixture.nativeElement.querySelector('[data-test="logistics-ship-button"]') as HTMLButtonElement).click();
+    closed.set({ recipient: 'Иванов' });
+    await settle();
+
+    expect(ordersApi.ship).toHaveBeenCalledWith('order-1', { recipient: 'Иванов' });
+    expect(shipmentsApi.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels an active pre-dispatch shipment via the destructive confirm dialog', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    shipmentsApi.list.mockReturnValue(
+      of({
+        ok: true,
+        data: [{ _id: 'ship-1', number: 'SHP-1', status: 'draft', date: '2026-09-10T00:00:00Z', docs: [] }],
+      }),
+    );
+    shipmentsApi.cancelShipment.mockReturnValue(of({ ok: true, data: {} }));
+    (fixture.componentInstance as unknown as { facade: { loadShipments: () => void } }).facade.loadShipments();
+    await settle();
+
+    expect(fixture.nativeElement.querySelector('[data-test="logistics-shipment-summary"]')?.textContent).toContain(
+      'SHP-1',
+    );
+    expect(fixture.nativeElement.querySelector('[data-test="logistics-shipment-no-docs"]')).toBeTruthy();
+    const closed = signal<boolean | undefined>(undefined);
+    dialog.open.mockReturnValue({ closed, close: (v?: boolean) => closed.set(v) });
+
+    (fixture.nativeElement.querySelector('[data-test="logistics-cancel-shipment"]') as HTMLButtonElement).click();
+    closed.set(true);
+    await settle();
+
+    expect(shipmentsApi.cancelShipment).toHaveBeenCalledWith('ship-1');
+  });
+
+  it('hides the cancel button once a shipment is dispatched (honest disabled state, not a free toggle)', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    shipmentsApi.list.mockReturnValue(
+      of({
+        ok: true,
+        data: [{ _id: 'ship-2', number: 'SHP-2', status: 'in_transit', date: '2026-09-10T00:00:00Z', docs: [] }],
+      }),
+    );
+    (fixture.componentInstance as unknown as { facade: { loadShipments: () => void } }).facade.loadShipments();
+    await settle();
+
+    expect(fixture.nativeElement.querySelector('[data-test="logistics-shipment-summary"]')?.textContent).toContain(
+      'SHP-2',
+    );
+    expect(fixture.nativeElement.querySelector('[data-test="logistics-cancel-shipment"]')).toBeNull();
+  });
+
   it('renders «Без КП» without any stub-proposal CTA for a direct order', async () => {
     await setup(of({ ok: true, data: directOrder } satisfies SilentResult<Order>));
     await settle();
@@ -388,17 +480,19 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   });
 
   it('sends PATCH { isPaid } from the paid toggle and reflects the server answer', async () => {
-    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn(), ship: jest.fn() };
     organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), cancelShipment: jest.fn() };
     ordersApi.getById.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     ordersApi.update.mockReturnValue(
       of({ ok: true, data: { ...quotationOrder, isPaid: false } } satisfies SilentResult<Order>),
     );
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
@@ -411,6 +505,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
+        { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
       ],
     }).compileComponents();
     await configureRouterSpy();
@@ -474,17 +570,19 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   });
 
   it('does not lie about payment when the PATCH fails: toast + checkbox keeps the old fact', async () => {
-    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn(), ship: jest.fn() };
     organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
     supplyApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    reservationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    shipmentsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })), cancelShipment: jest.fn() };
     ordersApi.getById.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     ordersApi.update.mockReturnValue(
       of({ ok: false, error: new HttpErrorResponse({ status: 500 }) } satisfies SilentResult<Order>),
     );
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
@@ -497,6 +595,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
         { provide: PiSupplyRequestsService, useValue: supplyApi },
+        { provide: PiReservationsService, useValue: reservationsApi },
+        { provide: PiShipmentsService, useValue: shipmentsApi },
       ],
     }).compileComponents();
     await configureRouterSpy();

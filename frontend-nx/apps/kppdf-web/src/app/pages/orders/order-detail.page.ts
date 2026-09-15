@@ -5,6 +5,7 @@ import {
   OrderWsCompositionComponent,
   OrderWsExecutionComponent,
   OrderWsHeaderComponent,
+  OrderWsLogisticsComponent,
 } from '@kppdf/features/order-workspace';
 import { orderStatusLabel } from './order-status';
 
@@ -22,7 +23,13 @@ import { orderStatusLabel } from './order-status';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [OrderWorkspaceFacade],
-  imports: [PiStatusBannerComponent, OrderWsHeaderComponent, OrderWsCompositionComponent, OrderWsExecutionComponent],
+  imports: [
+    PiStatusBannerComponent,
+    OrderWsHeaderComponent,
+    OrderWsCompositionComponent,
+    OrderWsExecutionComponent,
+    OrderWsLogisticsComponent,
+  ],
   template: `
     <main class="px-panel-inset py-6" data-test="order-detail">
       <div class="mb-6">
@@ -116,6 +123,22 @@ import { orderStatusLabel } from './order-status';
 
           <section data-test="order-ws-logistics">
             <h2 class="text-sm font-medium m-0 mb-2">Логистика</h2>
+            <pi-order-ws-logistics
+              [reservationLoading]="facade.reservationLoading()"
+              [reservationError]="facade.reservationError()"
+              [reservationCounters]="facade.reservationCounters()"
+              [shipmentsLoading]="facade.shipmentsLoading()"
+              [shipmentsError]="facade.shipmentsError()"
+              [hasShipment]="facade.hasShipment()"
+              [shipmentNumber]="facade.shipmentNumber()"
+              [shipmentDateLabel]="facade.shipmentDateLabel()"
+              [shipmentHasDocs]="facade.shipmentHasDocs()"
+              [shipmentCancellable]="facade.shipmentCancellable()"
+              [canMarkShipped]="facade.canMarkShipped()"
+              [orderId]="order._id"
+              (ship)="facade.openShipConfirm()"
+              (cancelShipment)="facade.cancelActiveShipment()"
+            />
           </section>
 
           <section data-test="order-ws-documents">

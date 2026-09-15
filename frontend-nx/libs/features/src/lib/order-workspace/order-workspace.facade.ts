@@ -26,6 +26,13 @@
  * short-list derived from the *already-loaded* supply-requests response
  * (pending — not yet ordered/received/cancelled) — no extra
  * `getKitAvailability` calls per line, so no fake "всё ОК"/invented short.
+ *
+ * TZ-NX-ORDER-WS-LOGISTICS ports `order-hub.facade.ts`'s reservations +
+ * shipment logic verbatim (same APIs/gates/formulas, no second write-path):
+ * reservations key by `order.number` (not `_id` — documented gotcha),
+ * shipments key by `order._id`; `activeShipment()` = first non-cancelled;
+ * ship/cancel-shipment reuse `ShipConfirmDialogComponent`/`PiOrdersService.ship()`/
+ * `PiShipmentsService.cancelShipment()` exactly as the hub tray does.
  */
 import { ActivatedRoute, Router } from '@angular/router';
 import { DestroyRef, Injectable, Injector, inject, signal } from '@angular/core';
@@ -36,6 +43,8 @@ import {
   PiOrdersService,
   PiOrganizationsService,
   PiProductsService,
+  PiReservationsService,
+  PiShipmentsService,
   PiSupplyRequestsService,
   type CompositionTreeNode,
   type KitReserveResult,
@@ -43,6 +52,7 @@ import {
   type OrderItem,
   type OrderItemPayload,
   type Product,
+  type Shipment,
   type SupplyRequest,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
@@ -52,6 +62,11 @@ import {
   KitReserveConfirmDialogComponent,
   type KitReserveConfirmDialogData,
 } from '../order-hub/ui/kit-reserve-confirm-dialog.component';
+import {
+  ShipConfirmDialogComponent,
+  type ShipConfirmDialogData,
+  type ShipConfirmResult,
+} from '../order-hub/ui/ship-confirm-dialog.component';
 import { onDialogCloseOnce } from './ui/on-dialog-close-once';
 
 const CANCELLABLE_STATUSES = new Set(['draft', 'confirmed', 'in_production', 'ready']);
@@ -59,6 +74,8 @@ const COMPOSITION_EDITABLE_STATUSES = new Set(['draft', 'confirmed']);
 const PENDING_SUPPLY_STATUSES = new Set(['requested', 'in_progress']);
 export type SupplyCounters = { readonly total: number; readonly ordered: number; readonly received: number };
 export const EMPTY_SUPPLY_COUNTERS: SupplyCounters = { total: 0, ordered: 0, received: 0 };
+export type ReservationCounters = { readonly active: number; readonly total: number };
+export const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
 
 /**
  * `orderStatusLabel`/`bannerTone` stay on the page (shared `order-status.ts`
@@ -73,6 +90,8 @@ export class OrderWorkspaceFacade {
   private readonly productsApi = inject(PiProductsService);
   private readonly compositionApi = inject(PiCompositionService);
   private readonly supplyApi = inject(PiSupplyRequestsService);
+  private readonly reservationsApi = inject(PiReservationsService);
+  private readonly shipmentsApi = inject(PiShipmentsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(PiToastService);
@@ -107,6 +126,14 @@ export class OrderWorkspaceFacade {
   /** Deficit short-list — pending (not yet ordered/received/cancelled) supply requests, shown only if non-empty. */
   readonly pendingSupplyRequests = signal<readonly SupplyRequest[]>([]);
 
+  readonly reservationLoading = signal(false);
+  readonly reservationError = signal<string | null>(null);
+  readonly reservationCounters = signal<ReservationCounters>(EMPTY_RESERVATION_COUNTERS);
+
+  readonly shipmentsLoading = signal(false);
+  readonly shipmentsError = signal<string | null>(null);
+  readonly shipments = signal<readonly Shipment[]>([]);
+
   load(): void {
     this.status.set('loading');
     this.organizationName.set(null);
@@ -124,6 +151,8 @@ export class OrderWorkspaceFacade {
       this.loadOrganizationName(result.data?.organizationId);
       this.loadProducts();
       this.loadSupply();
+      this.loadReservations();
+      this.loadShipments();
     });
   }
 
@@ -176,6 +205,143 @@ export class OrderWorkspaceFacade {
     );
     onDialogCloseOnce(ref, this.injector, (result) => {
       if (result) this.loadSupply();
+    });
+  }
+
+  /** Reservations key by `order.number` — `Reservation.orderId` stores the number, not `_id` (same gotcha as the hub tray). */
+  loadReservations(): void {
+    const order = this.order();
+    if (!order) return;
+    this.reservationLoading.set(true);
+    this.reservationError.set(null);
+    this.reservationsApi
+      .list({ orderId: order.number })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.reservationLoading.set(false);
+        if (!result.ok) {
+          this.reservationError.set(extractErrorMessage(result.error) || 'Не удалось загрузить брони');
+          return;
+        }
+        const rows = result.data ?? [];
+        this.reservationCounters.set({
+          active: rows.filter((row) => row.status === 'active').length,
+          total: rows.length,
+        });
+      });
+  }
+
+  loadShipments(): void {
+    const order = this.order();
+    if (!order) return;
+    this.shipmentsLoading.set(true);
+    this.shipmentsError.set(null);
+    this.shipmentsApi
+      .list({ orderId: order._id })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.shipmentsLoading.set(false);
+        if (!result.ok) {
+          this.shipmentsError.set(extractErrorMessage(result.error) || 'Не удалось загрузить отгрузку');
+          this.shipments.set([]);
+          return;
+        }
+        this.shipments.set(result.data ?? []);
+      });
+  }
+
+  /** TZ-SHIP-433 canon — «активная» отгрузка = не отменённая. */
+  activeShipment(): Shipment | null {
+    return this.shipments().find((shipment) => shipment.status !== 'cancelled') ?? null;
+  }
+
+  hasShipment(): boolean {
+    const status = this.order()?.status;
+    return this.activeShipment() !== null || status === 'shipped' || status === 'delivered';
+  }
+
+  shipmentNumber(): string {
+    return this.activeShipment()?.number ?? '—';
+  }
+
+  shipmentDateLabel(): string {
+    const raw = this.activeShipment()?.date ?? this.activeShipment()?.createdAt;
+    if (!raw) return '—';
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('ru-RU');
+  }
+
+  shipmentHasDocs(): boolean {
+    return (this.activeShipment()?.docs?.length ?? 0) > 0;
+  }
+
+  /** TZ-SHIP-433 canon — cancel only before dispatch (draft/scheduled, no dispatchedAt). */
+  shipmentCancellable(): boolean {
+    const shipment = this.activeShipment();
+    if (!shipment) return false;
+    return (shipment.status === 'draft' || shipment.status === 'scheduled') && !shipment.dispatchedAt;
+  }
+
+  cancelActiveShipment(): void {
+    const shipment = this.activeShipment();
+    if (!shipment) return;
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Отменить отгрузку?',
+        description: `Отменить отгрузку «${shipment.number}»? Заказ вернётся в «Готов».`,
+        confirmLabel: 'Отменить',
+        cancelLabel: 'Не отменять',
+        variant: 'destructive',
+      },
+      width: 'sm',
+      ariaLabel: 'Отменить отгрузку',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed) => {
+      if (!confirmed) return;
+      this.shipmentsApi
+        .cancelShipment(shipment._id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((result) => {
+          if (!result.ok) {
+            this.toast.error(extractErrorMessage(result.error) || 'Не удалось отменить отгрузку');
+            return;
+          }
+          this.toast.success('Отгрузка отменена — заказ вернулся в «Готов»');
+          this.loadShipments();
+        });
+    });
+  }
+
+  /** Mirrors legacy `canMarkShipped()` gate (TZ-DESK-430 / order-hub TZ-NX-SHIP-S3). */
+  canMarkShipped(): boolean {
+    const status = this.order()?.status;
+    return status !== 'shipped' && status !== 'delivered' && status !== 'cancelled';
+  }
+
+  /** «Отгружено» без документа: confirm dialog → whole-order POST ship → reload. */
+  openShipConfirm(): void {
+    const order = this.order();
+    if (!order) return;
+    const ref = this.dialog.open<ShipConfirmResult | undefined, ShipConfirmDialogData>(ShipConfirmDialogComponent, {
+      data: { order },
+      width: 'sm',
+      ariaLabel: 'Отгрузка без документа',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      this.ordersApi
+        .ship(order._id, { ...result })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error) || 'Не удалось отметить заказ отгруженным');
+            return;
+          }
+          this.toast.success('Заказ отмечен отгруженным');
+          this.loadShipments();
+        });
     });
   }
 
