@@ -19,7 +19,7 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
 
 export const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
   draft: 'Черновик',

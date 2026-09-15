@@ -30,7 +30,7 @@ import {
 import {
   SupplyRequestReceiveDialogComponent,
   type SupplyRequestReceiveDialogData,
-} from './supply-request-receive-dialog.component';
+} from '@kppdf/features/supply';
 
 const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progress', 'requested', 'ordered']);
 

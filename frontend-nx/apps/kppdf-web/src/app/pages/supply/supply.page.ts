@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import type { SupplyTask } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { SupplyFacade } from './supply.facade';
+import { SupplyFacade } from '@kppdf/features/supply';
 
 const GRID_COLS =
   'grid-cols-[1.5rem_minmax(0,1.5fr)_minmax(7rem,0.8fr)_minmax(4.5rem,0.45fr)_minmax(7rem,0.6fr)_minmax(6rem,0.55fr)_minmax(8rem,0.7fr)]';

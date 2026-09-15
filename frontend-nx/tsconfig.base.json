@@ -36,6 +36,9 @@
       "@kppdf/features/order-hub": [
         "libs/features/src/lib/order-hub/index.ts"
       ],
+      "@kppdf/features/supply": [
+        "libs/features/src/lib/supply/index.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],
