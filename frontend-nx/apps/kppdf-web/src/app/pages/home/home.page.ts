@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { PiOrdersService, type Order } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
-import { PiGroupWorkspaceComponent } from '@kppdf/features';
+import { PiGroupWorkspaceComponent, type GroupChip } from '@kppdf/features';
 import { OrderHubTrayComponent } from '@kppdf/features/order-hub';
 import { orderStatusLabel } from '../orders/order-status';
 
@@ -27,11 +27,16 @@ type QueueFilter = 'all' | 'active';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiGroupWorkspaceComponent, RouterLink, PiStatusBannerComponent, OrderHubTrayComponent],
   template: `
-    <app-pi-group-workspace [toc]="[]" tocActiveId="" [chips]="[]" activeId="">
+    <app-pi-group-workspace
+      [toc]="[]"
+      tocActiveId=""
+      [chips]="workflowChips()"
+      activeId="home"
+      dataTestPrefix="home-workflow-chip"
+    >
       <main class="py-6" data-test="home-page">
         <div class="flex items-start justify-between gap-4 mb-6">
           <div>
-            <div class="eyebrow">Главная</div>
             <h1 class="font-display text-2xl m-0">Главная</h1>
             <p class="text-sm text-muted-foreground mt-2 mb-0">
               Очередь заказов и связанные рабочие шаги — в одном месте.
@@ -41,23 +46,6 @@ type QueueFilter = 'all' | 'active';
             Все заказы
           </a>
         </div>
-
-        <nav class="flex items-center gap-1.5 mb-4 overflow-x-auto" aria-label="Рабочие маршруты" data-test="home-workflow-chips">
-          @for (chip of workflowChips; track chip.id) {
-            @if (chip.route) {
-              <a
-                [routerLink]="chip.route"
-                [queryParams]="chip.needsOrderId ? orderQuery() : null"
-                class="px-2.5 py-1.5 rounded-sm text-xs font-medium no-underline pi-focus-ring transition-colors bg-ink text-paper hover:bg-ink-soft"
-                [attr.data-test]="'home-workflow-chip-' + chip.id"
-              >{{ chip.label }}</a>
-            } @else {
-              <span class="px-2.5 py-1.5 rounded-sm text-xs font-medium bg-sunrise-warm text-on-gold" aria-current="page" data-test="home-workflow-chip-home">
-                {{ chip.label }}
-              </span>
-            }
-          }
-        </nav>
 
         <div class="flex items-center gap-3 mb-4 flex-wrap">
           <label class="sr-only" for="home-search">Поиск заказов</label>
@@ -178,10 +166,20 @@ export class HomePage implements OnInit {
   });
 
   protected readonly statusLabel = orderStatusLabel;
-  protected readonly workflowChips = WORKFLOW_CHIPS;
   protected readonly orderQuery = computed(() => {
     const orderId = this.expandedId();
     return orderId ? { orderId } : null;
+  });
+
+  /** TZ-NX-HOME-CHROME-TOP — workflow strip fed into `PiGroupWorkspace`'s sticky `[chips]` row (was a body-level `<nav>`). */
+  protected readonly workflowChips = computed<readonly GroupChip[]>(() => {
+    const query = this.orderQuery();
+    return WORKFLOW_CHIPS.map((chip) => ({
+      id: chip.id,
+      label: chip.label,
+      route: chip.route ?? '/home',
+      queryParams: chip.needsOrderId ? (query ?? undefined) : undefined,
+    }));
   });
 
   ngOnInit(): void {

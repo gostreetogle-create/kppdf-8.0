@@ -58,7 +58,8 @@ describe('HomePage (TZ-NX-HOME-HUB-QUEUE)', () => {
     expect(rows[0].textContent).toContain('ORD-001');
     expect(rows[0].textContent).toContain('Подтверждён');
     expect(rows[1].textContent).toContain('Черновик');
-    expect(fixture.nativeElement.querySelector('.eyebrow')?.textContent.trim()).toBe('Главная');
+    expect(fixture.nativeElement.querySelector('.eyebrow')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('h1').length).toBe(1);
     expect(fixture.nativeElement.querySelector('[data-test="home-queue-placeholder"]')).toBeNull();
   });
 
@@ -145,6 +146,14 @@ describe('HomePage (TZ-NX-HOME-HUB-QUEUE)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="home-workflow-chip-combine"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="home-workflow-chip-admin"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="home-workflow-chip-registries"]')).toBeNull();
+  });
+
+  it('renders the workflow chips inside the sticky group chrome, not a body-level nav (TZ-NX-HOME-CHROME-TOP)', async () => {
+    await setup();
+    const chromeChips = fixture.nativeElement.querySelector('[data-test="group-chips"] [data-test="home-workflow-chip-home"]');
+    expect(chromeChips).toBeTruthy();
+    expect(chromeChips.getAttribute('aria-current')).toBe('page');
+    expect(fixture.nativeElement.querySelector('[data-test="home-workflow-chips"]')).toBeNull();
   });
 
   it('adds orderId only to operational chips while a row is expanded', async () => {
