@@ -9,9 +9,14 @@
 | TZ-NX-ORDER-WS-LOGISTICS | DONE | `0af6d942` |
 | TZ-NX-ORDER-WS-DOCS-CHIPS | DONE | `d8fa10d6` |
 
-## WAVE — COMPLETE
-
-All 6 TZs closed. Chain STOP reached per prompt.
-
-Pack: `tasks/_ready/2026-09-15-order-workspace/`  
+**WAVE COMPLETE.** Pack: `tasks/_ready/2026-09-15-order-workspace/`  
 Audit: `docs/audits/2026-09-15-order-workspace-mockup-audit.md`
+
+## VERIFY+FIX pass (2026-09-15)
+
+TZ-VERIFY-FIX-2026-09-15-ORDER-WORKSPACE — **VERIFY PASS**. Все gates
+green + live API-smoke 17/17 PASS против реального backend/MongoDB.
+2 реальных фикса: `PiOrdersService.ship()` возвращаемый тип
+(`Order` → `ShipResult`), добавлено HTTP-покрытие `cancel()`/
+`setLineReady()`. Полный отчёт + найденные-но-вне-scope проблемы:
+`docs/audits/2026-09-15-order-workspace-verify.md`.
