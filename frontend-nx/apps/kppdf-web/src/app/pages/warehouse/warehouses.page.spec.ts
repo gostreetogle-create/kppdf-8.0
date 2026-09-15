@@ -5,7 +5,7 @@ import { AuthService, PiStorageItemsService, PiWarehousesService, type Warehouse
 import { AlertDialogComponent, PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { WarehousesPage } from './warehouses.page';
-import { WarehouseFormDialogComponent } from './warehouse-form-dialog.component';
+import { WarehouseFormDialogComponent } from '@kppdf/features/warehouse';
 
 describe('WarehousesPage (W1)', () => {
   let fixture: ComponentFixture<WarehousesPage>;

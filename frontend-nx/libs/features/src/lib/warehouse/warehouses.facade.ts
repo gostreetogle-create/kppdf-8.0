@@ -18,8 +18,8 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './warehouse-form-dialog.component';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { WarehouseFormDialogComponent, type WarehouseFormDialogData } from './ui/warehouse-form-dialog.component';
 
 /** Hub expand preview stays short — full balances live on `/storage-items`. */
 const EXPAND_ITEMS_LIMIT = 8;

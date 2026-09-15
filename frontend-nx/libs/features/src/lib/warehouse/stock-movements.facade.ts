@@ -25,11 +25,11 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { type ColumnDef } from '@kppdf/ui/table';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
 import {
   StockMovementFormDialogComponent,
   type StockMovementDialogData,
-} from './stock-movement-form-dialog.component';
+} from './ui/stock-movement-form-dialog.component';
 
 const MOVEMENT_TYPES: readonly (MovementType | '')[] = ['', 'in', 'out', 'adjust', 'transfer'];
 

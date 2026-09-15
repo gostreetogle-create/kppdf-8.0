@@ -6,7 +6,7 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { PiRowActionsComponent } from '@kppdf/ui/row-actions';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
-import { WarehousesFacade } from './warehouses.facade';
+import { WarehousesFacade } from '@kppdf/features/warehouse';
 
 /**
  * TZ-NX-WAREHOUSE-PAGES-FACADE — list/filter/expand signals and every

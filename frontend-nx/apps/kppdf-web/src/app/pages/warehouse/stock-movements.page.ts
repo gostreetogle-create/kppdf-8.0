@@ -5,7 +5,7 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { TableComponent } from '@kppdf/ui/table';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
-import { StockMovementsFacade } from './stock-movements.facade';
+import { StockMovementsFacade } from '@kppdf/features/warehouse';
 
 /**
  * TZ-NX-WAREHOUSE-PAGES-FACADE — filter/route-sync signals, the table

@@ -10,7 +10,7 @@ import {
   type Warehouse,
 } from '@kppdf/data-access';
 import { PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
-import { StockMovementFormDialogComponent } from './stock-movement-form-dialog.component';
+import { StockMovementFormDialogComponent } from '@kppdf/features/warehouse';
 import { StockMovementsPage } from './stock-movements.page';
 
 describe('StockMovementsPage (NX W3)', () => {
