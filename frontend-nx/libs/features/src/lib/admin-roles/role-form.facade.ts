@@ -26,8 +26,8 @@ import {
   PERMISSION_GROUP_TITLE_RU,
   pageLabelRu,
   permissionLabelRu,
-} from './permission-labels.ru';
-import type { RoleFormData, RoleFormResult } from './role-form-dialog.component';
+} from './ui/permission-labels.ru';
+import type { RoleFormData, RoleFormResult } from './ui/role-form-dialog.component';
 
 /** Display group for the checkbox matrix (merged API sections). */
 export interface PermissionDisplayGroup {

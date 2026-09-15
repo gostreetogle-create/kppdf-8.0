@@ -45,6 +45,9 @@
       "@kppdf/features/proposals": [
         "libs/features/src/lib/proposals/index.ts"
       ],
+      "@kppdf/features/admin-roles": [
+        "libs/features/src/lib/admin-roles/index.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],

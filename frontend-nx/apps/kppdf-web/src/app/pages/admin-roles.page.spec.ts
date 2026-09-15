@@ -8,7 +8,7 @@ import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import type { SilentResult } from '@kppdf/util-http';
 import { RolesAdminPage } from './admin-roles.page';
-import { RoleFormDialogComponent, type RoleFormData } from './role-form-dialog.component';
+import { RoleFormDialogComponent, type RoleFormData } from '@kppdf/features/admin-roles';
 
 describe('RolesAdminPage (TZ-NX-UX-17-admin-roles-FIX)', () => {
   let fixture: ComponentFixture<RolesAdminPage>;

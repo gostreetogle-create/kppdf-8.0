@@ -5,7 +5,7 @@ import { PiDialogComponent } from '@kppdf/ui/dialog';
 import type { SilentResult } from '@kppdf/util-http';
 import type { AdminPermissionSection as PermissionSection } from '@kppdf/data-access/admin';
 import { ROLE_FORM_COPY } from './permission-labels.ru';
-import { RoleFormFacade, type PermissionDisplayGroup, type PageDisplayGroup } from './role-form.facade';
+import { RoleFormFacade, type PermissionDisplayGroup, type PageDisplayGroup } from '../role-form.facade';
 
 export interface RoleFormData {
   mode: 'create' | 'edit' | 'view';

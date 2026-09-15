@@ -25,7 +25,7 @@ import {
   RoleFormDialogComponent,
   type RoleFormData,
   type RoleFormResult,
-} from './role-form-dialog.component';
+} from '@kppdf/features/admin-roles';
 import { ROLE_FORM_COPY, permissionsSummary, roleLabelRu } from './permission-labels.ru';
 
 /**
