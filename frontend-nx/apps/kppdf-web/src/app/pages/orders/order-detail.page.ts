@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
-import { ButtonComponent } from '@kppdf/ui/button';
-import { OrderWorkspaceFacade } from '@kppdf/features/order-workspace';
+import { OrderWorkspaceFacade, OrderWsHeaderComponent } from '@kppdf/features/order-workspace';
 import { orderStatusLabel } from './order-status';
 
 /**
@@ -18,7 +17,7 @@ import { orderStatusLabel } from './order-status';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [OrderWorkspaceFacade],
-  imports: [PiStatusBannerComponent, ButtonComponent],
+  imports: [PiStatusBannerComponent, OrderWsHeaderComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="order-detail">
       <div class="mb-6">
@@ -49,50 +48,25 @@ import { orderStatusLabel } from './order-status';
       @if (facade.status() === 'success' && facade.order(); as order) {
         <div class="space-y-6" data-test="order-body">
           <section data-test="order-ws-header">
-            <app-pi-status-banner [tone]="bannerTone(order.status)" [message]="statusLabel(order.status)" />
-
-            <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 text-sm mt-4">
-              <div>
-                <div class="text-xs text-muted-foreground">Заказчик</div>
-                <div class="font-medium">{{ facade.counterpartyName() ?? '—' }}</div>
-              </div>
-              <div>
-                <div class="text-xs text-muted-foreground">Объект</div>
-                <div class="font-medium">{{ facade.siteName() ?? '—' }}</div>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between gap-4 mt-4">
-              <div class="text-sm">
-                <span class="text-muted-foreground">КП: </span>
-                @if (facade.quotationId(); as quotationId) {
-                  <span class="font-medium" data-test="order-quotation">{{ facade.quotationNumber() ?? 'Есть КП' }}</span>
-                } @else {
-                  <span class="font-medium" data-test="order-no-quotation">Без КП</span>
-                }
-              </div>
-              @if (facade.quotationId()) {
-                <app-pi-button
-                  variant="secondary"
-                  type="button"
-                  data-test="order-open-studio"
-                  (click)="facade.openQuotationInStudio()"
-                >
-                  КП в студии
-                </app-pi-button>
-              }
-            </div>
-
-            <label class="flex items-center gap-3 text-sm cursor-pointer select-none mt-4">
-              <input
-                type="checkbox"
-                class="pi-checkbox"
-                data-test="order-paid-toggle"
-                [checked]="facade.paid()"
-                (change)="onPaidToggle($event)"
-              />
-              <span>Оплачен</span>
-            </label>
+            <pi-order-ws-header
+              [statusLabel]="statusLabel(order.status)"
+              [bannerTone]="bannerTone(order.status)"
+              [counterpartyName]="facade.counterpartyName()"
+              [siteName]="facade.siteName()"
+              [organizationName]="facade.organizationName()"
+              [quotationId]="facade.quotationId()"
+              [quotationNumber]="facade.quotationNumber()"
+              [paid]="facade.paid()"
+              [confirming]="facade.confirming()"
+              [cancelling]="facade.cancelling()"
+              [canConfirm]="facade.canConfirm()"
+              [canCancel]="facade.canCancel()"
+              [orderDateLabel]="facade.fmtDate(order.date)"
+              (paidToggle)="onPaidToggle($event)"
+              (openQuotation)="facade.openQuotationInStudio()"
+              (confirmOrder)="facade.confirmOrder()"
+              (cancelOrder)="facade.cancelOrder()"
+            />
           </section>
 
           <section data-test="order-ws-composition">

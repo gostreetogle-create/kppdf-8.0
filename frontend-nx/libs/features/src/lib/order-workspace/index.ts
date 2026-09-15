@@ -8,3 +8,4 @@
  * `docs/agent-checklists/WAVE-NX-ORDER-WORKSPACE.md`.
  */
 export * from './order-workspace.facade';
+export * from './ui';

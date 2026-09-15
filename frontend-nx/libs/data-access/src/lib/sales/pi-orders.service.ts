@@ -54,6 +54,17 @@ export class PiOrdersService {
   }
 
   /**
+   * TZ-NX-ORDER-WS-HEADER — mirrors backend `POST /orders/:id/cancel`
+   * (releases reservations, sets status `cancelled`). Distinct from the
+   * PATCH status graph (which excludes `cancelled`) and from `DELETE
+   * /orders/:id` (soft-delete removes the order from lists entirely —
+   * a different, more destructive action, not exposed here).
+   */
+  cancel(id: string): Observable<SilentResult<Order>> {
+    return silentPost<Order>(this.http, `${this.baseUrl}/orders/${id}/cancel`, {});
+  }
+
+  /**
    * TZ-NX-GANTT-G2 — order-level estimate days override (never the WorkType
    * catalog). Mirrors legacy OrdersService.patchEstimateDays (TZ-PRODUCTION-309).
    */

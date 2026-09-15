@@ -1,17 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
-import { PiOrdersService, type Order } from '@kppdf/data-access';
+import { PiOrdersService, PiOrganizationsService, type Order } from '@kppdf/data-access';
 import { PiToastService } from '@kppdf/ui/toast';
+import { PiDialogService } from '@kppdf/ui/dialog';
 import type { SilentResult } from '@kppdf/util-http';
 import { OrderDetailPage } from './order-detail.page';
 
 describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   let fixture: ComponentFixture<OrderDetailPage>;
-  let ordersApi: { getById: jest.Mock; update: jest.Mock };
+  let ordersApi: { getById: jest.Mock; update: jest.Mock; cancel: jest.Mock };
   let toast: { error: jest.Mock };
   let router: { navigate: jest.Mock };
+  let organizationsApi: { getById: jest.Mock };
+  let dialog: { open: jest.Mock };
 
   const quotationOrder: Order = {
     _id: 'order-1',
@@ -35,20 +39,29 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     isPaid: false,
   };
 
+  /** `RouterLink` (back-to-list/home/counterparty links in the header) needs a real `Router` to compute hrefs — `provideRouter([])` + spy, not a plain `{navigate}` stub (same pattern as `order-create.page.spec.ts`). */
+  async function configureRouterSpy(): Promise<void> {
+    router = { navigate: jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true) as jest.Mock };
+  }
+
   async function setup(result: ReturnType<typeof of> | Subject<SilentResult<Order>>): Promise<void> {
-    ordersApi = { getById: jest.fn().mockReturnValue(result), update: jest.fn() };
+    ordersApi = { getById: jest.fn().mockReturnValue(result), update: jest.fn(), cancel: jest.fn() };
     toast = { error: jest.fn() };
-    router = { navigate: jest.fn().mockResolvedValue(true) };
+    organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
+    dialog = { open: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
+        provideRouter([]),
         { provide: PiOrdersService, useValue: ordersApi },
         { provide: PiToastService, useValue: toast },
-        { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
 
+    await configureRouterSpy();
     fixture = TestBed.createComponent(OrderDetailPage);
     fixture.detectChanges();
   }
@@ -77,21 +90,25 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
       ok: false,
       error: new HttpErrorResponse({ status: 404, error: { message: 'Order not found' } }),
     };
-    ordersApi = { getById: jest.fn(), update: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn() };
+    organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
+    dialog = { open: jest.fn() };
     ordersApi.getById
       .mockReturnValueOnce(of(failure))
       .mockReturnValueOnce(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     toast = { error: jest.fn() };
-    router = { navigate: jest.fn().mockResolvedValue(true) };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
+        provideRouter([]),
         { provide: PiOrdersService, useValue: ordersApi },
         { provide: PiToastService, useValue: toast },
-        { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
+    await configureRouterSpy();
     fixture = TestBed.createComponent(OrderDetailPage);
     fixture.detectChanges();
     await settle();
@@ -154,22 +171,26 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   });
 
   it('sends PATCH { isPaid } from the paid toggle and reflects the server answer', async () => {
-    ordersApi = { getById: jest.fn(), update: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn() };
+    organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
+    dialog = { open: jest.fn() };
     ordersApi.getById.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     ordersApi.update.mockReturnValue(
       of({ ok: true, data: { ...quotationOrder, isPaid: false } } satisfies SilentResult<Order>),
     );
     toast = { error: jest.fn() };
-    router = { navigate: jest.fn().mockResolvedValue(true) };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
+        provideRouter([]),
         { provide: PiOrdersService, useValue: ordersApi },
         { provide: PiToastService, useValue: toast },
-        { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
+    await configureRouterSpy();
     fixture = TestBed.createComponent(OrderDetailPage);
     fixture.detectChanges();
     await settle();
@@ -185,23 +206,71 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
+  it('shows the org name resolved from organizationId and confirms a draft order via the confirm dialog', async () => {
+    await setup(of({ ok: true, data: { ...directOrder, organizationId: 'org-1' } } satisfies SilentResult<Order>));
+    await settle();
+
+    expect(organizationsApi.getById).toHaveBeenCalledWith('org-1');
+    await settle();
+    expect(fixture.nativeElement.textContent).toContain('Наша фирма');
+
+    ordersApi.update.mockReturnValue(
+      of({ ok: true, data: { ...directOrder, status: 'confirmed' } } satisfies SilentResult<Order>),
+    );
+    const closed = signal<boolean | undefined>(undefined);
+    dialog.open.mockReturnValue({ closed, close: (v?: boolean) => closed.set(v) });
+
+    const confirmBtn = fixture.nativeElement.querySelector('[data-test="order-confirm"] button') as HTMLButtonElement;
+    expect(confirmBtn).toBeTruthy();
+    confirmBtn.click();
+    closed.set(true);
+    await settle();
+
+    expect(ordersApi.update).toHaveBeenCalledWith('order-2', { status: 'confirmed' });
+    expect(fixture.nativeElement.textContent).toContain('Подтверждён');
+  });
+
+  it('cancels an order via the destructive confirm dialog: POST /orders/:id/cancel, reflects server answer', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+
+    ordersApi.cancel.mockReturnValue(
+      of({ ok: true, data: { ...quotationOrder, status: 'cancelled' } } satisfies SilentResult<Order>),
+    );
+    const closed = signal<boolean | undefined>(undefined);
+    dialog.open.mockReturnValue({ closed, close: (v?: boolean) => closed.set(v) });
+
+    const cancelBtn = fixture.nativeElement.querySelector('[data-test="order-cancel"] button') as HTMLButtonElement;
+    expect(cancelBtn).toBeTruthy();
+    cancelBtn.click();
+    closed.set(true);
+    await settle();
+
+    expect(ordersApi.cancel).toHaveBeenCalledWith('order-1');
+    expect(fixture.nativeElement.textContent).toContain('Отменён');
+  });
+
   it('does not lie about payment when the PATCH fails: toast + checkbox keeps the old fact', async () => {
-    ordersApi = { getById: jest.fn(), update: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn() };
+    organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
+    dialog = { open: jest.fn() };
     ordersApi.getById.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     ordersApi.update.mockReturnValue(
       of({ ok: false, error: new HttpErrorResponse({ status: 500 }) } satisfies SilentResult<Order>),
     );
     toast = { error: jest.fn() };
-    router = { navigate: jest.fn().mockResolvedValue(true) };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
+        provideRouter([]),
         { provide: PiOrdersService, useValue: ordersApi },
         { provide: PiToastService, useValue: toast },
-        { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
+    await configureRouterSpy();
     fixture = TestBed.createComponent(OrderDetailPage);
     fixture.detectChanges();
     await settle();
