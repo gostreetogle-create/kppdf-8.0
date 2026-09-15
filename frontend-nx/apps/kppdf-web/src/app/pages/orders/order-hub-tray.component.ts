@@ -1,45 +1,9 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  Injector,
-  OnInit,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
-import {
-  PiCompositionService,
-  PiOrdersService,
-  PiReservationsService,
-  PiShipmentsService,
-  PiSupplyRequestsService,
-  type CompositionTreeNode,
-  type KitReserveResult,
-  type Order,
-  type OrderItem,
-  type Shipment,
-} from '@kppdf/data-access';
-import { extractErrorMessage } from '@kppdf/util-http';
-import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
-import { PiToastService } from '@kppdf/ui/toast';
+import { type Order, type OrderItem } from '@kppdf/data-access';
 import { CompositionTreeComponent, type CompositionTreeSelectEvent } from '../composition/composition-tree.component';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import {
-  KitReserveConfirmDialogComponent,
-  type KitReserveConfirmDialogData,
-} from './kit-reserve-confirm-dialog.component';
-import { ShipConfirmDialogComponent, type ShipConfirmDialogData, type ShipConfirmResult } from './ship-confirm-dialog.component';
 import { orderStatusLabel } from './order-status';
-
-type SupplyCounters = { readonly ordered: number; readonly received: number; readonly total: number };
-type ReservationCounters = { readonly active: number; readonly total: number };
-
-const EMPTY_SUPPLY_COUNTERS: SupplyCounters = { ordered: 0, received: 0, total: 0 };
-const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
+import { OrderHubFacade } from './order-hub.facade';
 
 /**
  * Order hub expand — hub-only (TZ-NX-DEALS-D2). Most desk-write controls (confirm,
@@ -56,11 +20,16 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
  * the registry's TZ-SHIP-433 gate (draft/scheduled, no `dispatchedAt`) via
  * `PiShipmentsService.cancelShipment`; registry cancel (S1, `/shipping`) is
  * unchanged — this is the same API, just reachable without leaving `/orders`.
+ *
+ * TZ-NX-ORDER-HUB-FACADE — domain signals + load/ship/reserve/cancel/
+ * composition methods moved to `OrderHubFacade`; this component stays a
+ * thin host (template + input wiring).
  */
 @Component({
   selector: 'app-order-hub-tray',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [OrderHubFacade],
   imports: [RouterLink, CompositionTreeComponent],
   template: `
     <div
@@ -343,42 +312,35 @@ const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, total: 0 };
 export class OrderHubTrayComponent implements OnInit {
   readonly order = input.required<Order>();
 
-  private readonly compositionApi = inject(PiCompositionService);
-  private readonly supplyApi = inject(PiSupplyRequestsService);
-  private readonly reservationsApi = inject(PiReservationsService);
-  private readonly shipmentsApi = inject(PiShipmentsService);
-  private readonly ordersApi = inject(PiOrdersService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly dialog = inject(PiDialogService);
-  private readonly toast = inject(PiToastService);
-  private readonly injector = inject(Injector);
+  protected readonly facade = inject(OrderHubFacade);
 
-  protected readonly compositionExpanded = signal(false);
-  protected readonly compositionLoading = signal(false);
-  protected readonly compositionRoots = signal<readonly (CompositionTreeNode | null)[]>([]);
-  protected readonly compositionSelectedId = signal<string | null>(null);
-  private compositionLoaded = false;
+  protected readonly compositionExpanded = this.facade.compositionExpanded;
+  protected readonly compositionLoading = this.facade.compositionLoading;
+  protected readonly compositionRoots = this.facade.compositionRoots;
+  protected readonly compositionSelectedId = this.facade.compositionSelectedId;
 
-  protected readonly supplyLoading = signal(false);
-  protected readonly supplyError = signal<string | null>(null);
-  protected readonly supplyCounters = signal<SupplyCounters>(EMPTY_SUPPLY_COUNTERS);
+  protected readonly supplyLoading = this.facade.supplyLoading;
+  protected readonly supplyError = this.facade.supplyError;
+  protected readonly supplyCounters = this.facade.supplyCounters;
 
-  protected readonly reservationLoading = signal(false);
-  protected readonly reservationError = signal<string | null>(null);
-  protected readonly reservationCounters = signal<ReservationCounters>(EMPTY_RESERVATION_COUNTERS);
+  protected readonly reservationLoading = this.facade.reservationLoading;
+  protected readonly reservationError = this.facade.reservationError;
+  protected readonly reservationCounters = this.facade.reservationCounters;
 
-  protected readonly shipmentsLoading = signal(false);
-  protected readonly shipmentsError = signal<string | null>(null);
-  protected readonly shipments = signal<readonly Shipment[]>([]);
+  protected readonly shipmentsLoading = this.facade.shipmentsLoading;
+  protected readonly shipmentsError = this.facade.shipmentsError;
+  protected readonly shipments = this.facade.shipments;
 
   protected readonly statusLabel = orderStatusLabel;
+
+  constructor() {
+    this.facade.bind({ order: this.order });
+  }
 
   ngOnInit(): void {
     // Row-expand-lazy (HUB-303 budget: supply=1 + reservations=1 + shipments=1).
     // Composition stays behind its own disclosure — loaded only on first toggle.
-    this.loadSupply();
-    this.loadReservations();
-    this.loadShipments();
+    this.facade.init();
   }
 
   protected trackItem(index: number, item: OrderItem): string {
@@ -397,202 +359,46 @@ export class OrderHubTrayComponent implements OnInit {
   }
 
   protected onCompositionSelect(ev: CompositionTreeSelectEvent): void {
-    this.compositionSelectedId.set(ev.node._id);
+    this.facade.onCompositionSelect(ev);
   }
 
   protected toggleComposition(): void {
-    this.compositionExpanded.update((open) => !open);
-    if (this.compositionExpanded() && !this.compositionLoaded) {
-      this.loadComposition();
-    }
+    this.facade.toggleComposition();
   }
 
   protected openKitReserveConfirm(event: Event): void {
-    event.stopPropagation();
-    const ref = this.dialog.open<KitReserveResult | undefined, KitReserveConfirmDialogData>(
-      KitReserveConfirmDialogComponent,
-      {
-        data: { order: this.order() },
-        width: 'md',
-        ariaLabel: 'Подтверждение материалов',
-        parentDestroyRef: this.destroyRef,
-      },
-    );
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (result) {
-        this.loadSupply();
-        this.loadReservations();
-      }
-    });
-  }
-
-  private loadComposition(): void {
-    const items = this.order().items ?? [];
-    if (items.length === 0) return;
-    this.compositionLoaded = true;
-    this.compositionLoading.set(true);
-    forkJoin(items.map((item) => this.compositionApi.getProductTree(item.productId)))
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((results) => {
-        this.compositionLoading.set(false);
-        this.compositionRoots.set(results.map((res) => (res.ok ? res.data : null)));
-      });
-  }
-
-  private loadSupply(): void {
-    this.supplyLoading.set(true);
-    this.supplyError.set(null);
-    this.supplyApi
-      .list({ orderId: this.order()._id })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.supplyLoading.set(false);
-        if (!res.ok) {
-          this.supplyError.set(extractErrorMessage(res.error) || 'Не удалось загрузить задачи снабжения');
-          return;
-        }
-        const tasks = res.data ?? [];
-        this.supplyCounters.set({
-          ordered: tasks.filter((task) => task.status === 'ordered').length,
-          received: tasks.filter((task) => task.status === 'received').length,
-          total: tasks.length,
-        });
-      });
-  }
-
-  /** TZ-NX-SHIP-S2 — real shipment summary for the hub tray (replaces order-status stub). */
-  private loadShipments(): void {
-    this.shipmentsLoading.set(true);
-    this.shipmentsError.set(null);
-    this.shipmentsApi
-      .list({ orderId: this.order()._id })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.shipmentsLoading.set(false);
-        if (!res.ok) {
-          this.shipmentsError.set(extractErrorMessage(res.error) || 'Не удалось загрузить отгрузку');
-          this.shipments.set([]);
-          return;
-        }
-        this.shipments.set(res.data ?? []);
-      });
-  }
-
-  /** TZ-SHIP-433 canon — «активная» отгрузка = не отменённая; cancelled не держит блок «Отгружен». */
-  protected activeShipment(): Shipment | null {
-    return this.shipments().find((shipment) => shipment.status !== 'cancelled') ?? null;
+    this.facade.openKitReserveConfirm(event);
   }
 
   protected hasShipment(): boolean {
-    return (
-      this.activeShipment() !== null || this.order().status === 'shipped' || this.order().status === 'delivered'
-    );
+    return this.facade.hasShipment();
   }
 
   protected shipmentNumber(): string {
-    return this.activeShipment()?.number ?? '—';
+    return this.facade.shipmentNumber();
   }
 
   protected shipmentDateLabel(): string {
-    const raw = this.activeShipment()?.date ?? this.activeShipment()?.createdAt;
-    if (!raw) return '—';
-    const date = new Date(raw);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('ru-RU');
+    return this.facade.shipmentDateLabel();
   }
 
   protected shipmentHasDocs(): boolean {
-    return (this.activeShipment()?.docs?.length ?? 0) > 0;
+    return this.facade.shipmentHasDocs();
   }
 
-  /** TZ-NX-SHIP-S4 / TZ-SHIP-433 canon — cancel only before dispatch (draft/scheduled, no dispatchedAt). */
   protected shipmentCancellable(): boolean {
-    const shipment = this.activeShipment();
-    if (!shipment) return false;
-    return (shipment.status === 'draft' || shipment.status === 'scheduled') && !shipment.dispatchedAt;
+    return this.facade.shipmentCancellable();
   }
 
-  /** TZ-NX-SHIP-S4 — undo a mistaken ship from the hub, before dispatch, without opening /shipping. */
   protected cancelActiveShipment(event: Event): void {
-    event.stopPropagation();
-    const shipment = this.activeShipment();
-    if (!shipment) return;
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-      data: {
-        title: 'Отменить отгрузку?',
-        description: `Отменить отгрузку «${shipment.number}»? Заказ вернётся в «Готов».`,
-        confirmLabel: 'Отменить',
-        cancelLabel: 'Не отменять',
-        variant: 'destructive',
-      },
-      width: 'sm',
-      ariaLabel: 'Отменить отгрузку',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (confirmed) => {
-      if (!confirmed) return;
-      this.shipmentsApi
-        .cancelShipment(shipment._id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((res) => {
-          if (!res.ok) {
-            this.toast.error(extractErrorMessage(res.error) || 'Не удалось отменить отгрузку');
-            return;
-          }
-          this.toast.success('Отгрузка отменена — заказ вернулся в «Готов»');
-          this.loadShipments();
-        });
-    });
+    this.facade.cancelActiveShipment(event);
   }
 
-  /** TZ-NX-SHIP-S3 — mirrors legacy `canMarkShipped()` gate (TZ-DESK-430). */
   protected canMarkShipped(): boolean {
-    const status = this.order().status;
-    return status !== 'shipped' && status !== 'delivered' && status !== 'cancelled';
+    return this.facade.canMarkShipped();
   }
 
-  /** TZ-NX-SHIP-S3 — «Отгружено» без документа: confirm dialog → whole-order POST ship → reload. */
   protected openShipConfirm(event: Event): void {
-    event.stopPropagation();
-    const order = this.order();
-    const ref = this.dialog.open<ShipConfirmResult | undefined, ShipConfirmDialogData>(ShipConfirmDialogComponent, {
-      data: { order },
-      width: 'sm',
-      ariaLabel: 'Отгрузка без документа',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (!result) return;
-      this.ordersApi
-        .ship(order._id, { ...result })
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((res) => {
-          if (!res.ok) {
-            this.toast.error(extractErrorMessage(res.error) || 'Не удалось отметить заказ отгруженным');
-            return;
-          }
-          this.toast.success('Заказ отмечен отгруженным');
-          this.loadShipments();
-        });
-    });
-  }
-
-  private loadReservations(): void {
-    this.reservationLoading.set(true);
-    this.reservationError.set(null);
-    this.reservationsApi
-      .list({ orderId: this.order().number })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.reservationLoading.set(false);
-        if (!res.ok) {
-          this.reservationError.set(extractErrorMessage(res.error) || 'Не удалось загрузить брони');
-          return;
-        }
-        const rows = res.data ?? [];
-        this.reservationCounters.set({
-          active: rows.filter((row) => row.status === 'active').length,
-          total: rows.length,
-        });
-      });
+    this.facade.openShipConfirm(event);
   }
 }
