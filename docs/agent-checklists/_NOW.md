@@ -1,11 +1,11 @@
-updated_at: 2026-09-15T15:25:00+03:00
+﻿updated_at: 2026-09-15T16:05:00+03:00
 
 ## ACTIVE / LIVE
 
-- **VERIFY PASS:** DECOMP **B5+B6+B7+B8 COMPLETE** (tip wave `cffd70a0`)
-  - B8: TZ1 `0b2d0e81`, TZ2 investigated/no-move (`registry.types.ts` blocker), TZ3 `3ca5721b`, TZ4 `8e9c2c5b`, TZ5 `d6ba08ce`, TZ6 `cffd70a0`
-- **Claude:** awaiting next wave pack under `tasks/_ready/`
+- **CLAIMED:** TZ-NX-HOME-WORKFLOW-CHIPS — agent_id: claude — claimed_at: 2026-09-15T16:00:00+03:00 (TZ-1 `33e06c08`, TZ-2 `f5fb1f3a`)
+- **VERIFY PASS:** B5→B8 DONE (B5 `b84f95d2` · B8 `cffd70a0`/`b74bb665`)
+- **Claude (this session) — DECOMP B9 in progress:** TZ1 `TZ-NX-REGISTRY-TYPES-TO-FEATURES` DONE — code landed inside `f5fb1f3a` (a concurrent agent's commit swept it up; content verified, disclosed in checklist). Next: `TZ-NX-REGISTRY-DETAIL-TO-FEATURES`. Conflict keys: `apps/.../pages/registries/**`, `libs/features/.../registry-forms|registries-platform/**` — no overlap with the home-route/workflow-chips claim above.
 
 ## PARK
 
-forms showcase · Deploy/Wipe · SSH
+Deploy/Wipe · SSH · forms showcase

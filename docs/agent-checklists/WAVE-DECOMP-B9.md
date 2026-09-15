@@ -1,0 +1,12 @@
+# WAVE-DECOMP-B9
+
+| TZ | State | commit |
+|----|-------|--------|
+| TZ-NX-REGISTRY-TYPES-TO-FEATURES | DONE (commit landed inside concurrent agent's `f5fb1f3a` — see checklist disclosure) | `f5fb1f3a` |
+| TZ-NX-REGISTRY-DETAIL-TO-FEATURES | PENDING | — |
+| TZ-NX-COUNTERPARTY-HUB-FACADE | PENDING | — |
+| TZ-NX-COUNTERPARTY-HUB-TO-FEATURES | PENDING | — |
+| TZ-NX-STUDIO-LIST-FACADE | PENDING | — |
+| TZ-NX-STUDIO-LIST-TO-FEATURES | PENDING | — |
+| TZ-NX-REGISTRIES-PAGE-FACADE | PENDING | — |
+| TZ-NX-REGISTRIES-PAGE-TO-FEATURES | PENDING | — |

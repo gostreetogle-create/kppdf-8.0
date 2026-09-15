@@ -151,3 +151,22 @@ Known limits: 2 предсуществующих теста в `app-shell.compon
 - [x] archive + lock + progress + удалить `_active`
 - [x] Status = DONE
 - closed_at: 2026-09-15
+
+## Post-hoc disclosure — cross-agent commit contamination
+
+The code + this checklist + the `tasks/_active/` marker for this TZ were
+**not** committed by me directly — they landed inside a concurrent agent's
+commit `f5fb1f3a` ("feat(nx-home): add live order queue and shared hub
+reuse", authored by a different autonomous tool — "Codebuff", same
+`agent_id: claude` convention in its own claim markers — which is
+independently committing to `main` in this same working directory).
+That agent's own `git add` was evidently broad enough to sweep up my
+then-uncommitted, unstaged `registries-platform` move alongside its
+unrelated home-page work. Content verified identical to what gates
+validated in this checklist — nothing lost or altered, just misattributed
+in history. No rewrite attempted (shared branch, another agent actively
+committing — rewriting history here would be destructive and was avoided
+per standing policy). Disclosed here and to the PO directly. From this
+point forward in this session: committing immediately after each TZ's
+edits (not batching), and re-checking `git log -1`/`tasks/_active/` state
+before every `git add`/commit to catch further interleaving early.
