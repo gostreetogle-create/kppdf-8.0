@@ -3,7 +3,6 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  computed,
   DestroyRef,
   effect,
   ElementRef,
@@ -12,260 +11,48 @@ import {
   input,
   Injector,
   output,
-  signal,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
-  buildGanttTreeBars,
-  buildWorkerTreeBars,
   ESTIMATE_OVERRIDE_HINT_RU,
   formatDateOnly,
-  ganttModuleSummaryId,
-  ganttProductSummaryId,
-  ganttWorkerModuleSummaryId,
-  GANTT_UNASSIGNED_BAR_FILL,
   GANTT_UNASSIGNED_CHIP_FILL,
-  GANTT_UNASSIGNED_WASH,
   isModuleSummaryBar,
   isOrderSummaryBar,
   isProductSummaryBar,
-  isSummaryBar,
-  isUnassignedWorkerSummaryBar,
-  isWorkerSummaryBar,
-  ORDER_STATUS_LABELS,
-  summarizeUnassignedGanttWork,
-  workerGroupKeyOf,
-  workTypeOklch,
-  workTypeWash,
   type GanttBar,
 } from '../gantt-bar.model';
-import { personDisplayName, type OrderPriority, type OrderStatus, type Person } from '@kppdf/data-access';
+import { personDisplayName, type OrderStatus, type Person } from '@kppdf/data-access';
 import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
 import { ProductionScaleControlsComponent } from './production-scale-controls.component';
 
-/** Pixels per calendar day — day zoom is denser, month packs the same span. */
-export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
-  day: 36,
-  month: 12,
-};
-
-/** Month density never falls below this readable minimum when the range is wide. */
-export const GANTT_MONTH_MIN_PX_PER_DAY = GANTT_PX_PER_DAY.month;
-
-export const GANTT_MONTH_NAMES_RU = [
-  'январь',
-  'февраль',
-  'март',
-  'апрель',
-  'май',
-  'июнь',
-  'июль',
-  'август',
-  'сентябрь',
-  'октябрь',
-  'ноябрь',
-  'декабрь',
-] as const;
-
 /**
- * Fit month density to the visible timeline pane. Day mode stays readable and
- * intentionally does not shrink when the pane is narrow.
+ * TZ-NX-GANTT-BARS-FACADE — pure constants/types/helpers relocated to
+ * `gantt-bars.constants.ts` (shared with `gantt-bars.facade.ts` without a
+ * circular value-import between this file and the facade). Re-exported here
+ * unchanged so existing external imports (`GANTT_PX_PER_DAY` from the spec,
+ * the `Gantt*Commit`/`GanttOrderMetaView` types from `production-cockpit.page.ts`)
+ * keep resolving from `./gantt-bars.component` exactly as before.
  */
-export function calculateGanttPxPerDay(
-  zoom: GanttZoom,
-  totalDays: number,
-  timelineWidthPx: number,
-): number {
-  if (zoom === 'day') return GANTT_PX_PER_DAY.day;
-  if (!Number.isFinite(totalDays) || totalDays <= 0 || timelineWidthPx <= 0) {
-    return GANTT_MONTH_MIN_PX_PER_DAY;
-  }
-  return Math.max(GANTT_MONTH_MIN_PX_PER_DAY, Math.floor(timelineWidthPx / totalDays));
-}
-
-export function ganttMonthTickLabel(dateOnly: string): string {
-  const month = Number(dateOnly.slice(5, 7));
-  return GANTT_MONTH_NAMES_RU[month - 1] ?? dateOnly;
-}
-
-/** Days remaining in the UTC month starting at dateOnly, capped by remaining range days. */
-export function ganttDaysLeftInMonth(dateOnly: string, remaining: number): number {
-  const [y, m, d] = dateOnly.split('-').map(Number);
-  const lastDay = new Date(Date.UTC(y!, m!, 0)).getUTCDate();
-  const leftInMonth = lastDay - (d ?? 1) + 1;
-  return Math.max(1, Math.min(leftInMonth, remaining));
-}
-
-/** UTC weekday short RU: getUTCDay 0→ВС … 1→ПН … 6→СБ. */
-export const GANTT_WEEKDAY_SHORT_RU = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'] as const;
-
-export function ganttWeekdayShortRu(dateOnly: string): string {
-  const [y, m, d] = dateOnly.split('-').map(Number);
-  const dow = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
-  return GANTT_WEEKDAY_SHORT_RU[dow] ?? '';
-}
-
-/** Always recenter the marker in the scrollport (Сегодня is never a silent no-op). */
-export function calculateCenteredMarkerScrollLeft(opts: {
-  scrollLeft: number;
-  scrollWidth: number;
-  clientWidth: number;
-  scrollLeftEdge: number;
-  markerLeft: number;
-  markerWidth: number;
-}): number {
-  const markerCenter =
-    opts.scrollLeft + (opts.markerLeft - opts.scrollLeftEdge) + opts.markerWidth / 2;
-  const target = markerCenter - opts.clientWidth / 2;
-  const maxScroll = Math.max(0, opts.scrollWidth - opts.clientWidth);
-  return Math.max(0, Math.min(maxScroll, target));
-}
-
-/** Fixed row height (px) — label column and timeline rows must match (no multi-line drift). */
-export const GANTT_ROW_PX = 44;
-
-/** Dense inline work-type detail (people / days / hint) — one horizontal row. */
-export const GANTT_DETAIL_ROW_PX = 56;
-
-/** Dense order-meta strip under summary (status / priority / plannedDate) — one horizontal row. */
-export const GANTT_META_ROW_PX = 56;
-
-/** Label column width (Tailwind `w-52` = 13rem @ 16px). */
-export const GANTT_LABEL_COL_PX = 208;
-
-/**
- * Nest indent step for label column only (~14–16px).
- * Depth: order|worker=0, product=1, module=2, work=3 → padding-left = depth × step.
- */
-export const GANTT_NEST_INDENT_PX = 15;
-
-/**
- * TZ-PRODUCTION-350 — mono milk summary bar fills (order / product / module).
- * One warm paper hue family (~82–90); denser L/C than row wash; WT = accentHue.
- */
-export const GANTT_SUMMARY_BAR_FILL = {
-  order: 'oklch(0.90 0.028 86)',
-  product: 'oklch(0.925 0.022 84)',
-  module: 'oklch(0.945 0.016 82)',
-} as const;
-
-export type GanttRowKind = 'order' | 'worker' | 'product' | 'module' | 'work';
-
-/** Nest depth for cascade indent (labels only; timeline bars stay flush). */
-export function ganttNestDepth(kind: GanttRowKind): number {
-  switch (kind) {
-    case 'order':
-    case 'worker':
-      return 0;
-    case 'product':
-      return 1;
-    case 'module':
-      return 2;
-    case 'work':
-      return 3;
-  }
-}
-
-export function ganttRowKind(opts: {
-  isOrderSummary: boolean;
-  isWorkerSummary: boolean;
-  isProductSummary: boolean;
-  isModuleSummary: boolean;
-}): GanttRowKind {
-  if (opts.isWorkerSummary) return 'worker';
-  if (opts.isOrderSummary) return 'order';
-  if (opts.isProductSummary) return 'product';
-  if (opts.isModuleSummary) return 'module';
-  return 'work';
-}
-
-const ORDER_META_PRIORITIES: { value: OrderPriority; label: string }[] = [
-  { value: 'low', label: 'Низкий' },
-  { value: 'normal', label: 'Обычный' },
-  { value: 'high', label: 'Высокий' },
-  { value: 'urgent', label: 'Срочный' },
-];
-
-/** Order-meta strip payload (parent supplies live Order fields). */
-export interface GanttOrderMetaView {
-  orderId: string;
-  number: string;
-  status: OrderStatus;
-  priority: OrderPriority;
-  /** YYYY-MM-DD; empty if unset. */
-  plannedDate: string;
-}
-
-/** Save order-meta → parent PATCHes orders/:id. */
-export interface GanttOrderMetaCommit {
-  orderId: string;
-  priority: OrderPriority;
-  plannedDate: string;
-}
-
-/** Payload for order-level estimate days PATCH (never WorkType catalog). */
-export interface GanttEstimateDaysCommit {
-  orderId: string;
-  orderItemIndex: number;
-  moduleId: string;
-  workTypeId: string;
-  days: number;
-}
-
-/** Payload for body-drag → order plannedDate shift (whole chain). */
-export interface GanttPlannedDateMoveCommit {
-  orderId: string;
-  deltaDays: number;
-}
-
-/** Payload for child body-drag → per-bar start offset (TZ-PRODUCTION-316). */
-export interface GanttStartOffsetCommit {
-  orderId: string;
-  orderItemIndex: number;
-  moduleId: string;
-  workTypeId: string;
-  /** Bar startDate before drag (YYYY-MM-DD). */
-  startDate: string;
-  deltaDays: number;
-}
-
-/** Explicit order-scoped worker assignment from work-detail. */
-export interface GanttWorkerAssignmentCommit {
-  orderId: string;
-  orderItemIndex: number;
-  moduleId: string;
-  workTypeId: string;
-  workerIds: readonly string[];
-}
-
-/**
- * Snap right-edge resize delta to calendar days (≥1).
- * Pure helper — unit-tested independently of DOM.
- */
-export function snapEstimateDaysFromDelta(
-  baseDays: number,
-  deltaPx: number,
-  pxPerDay: number,
-): number {
-  const base = Number.isFinite(baseDays) ? Math.floor(baseDays) : 1;
-  if (!Number.isFinite(pxPerDay) || pxPerDay <= 0) return Math.max(1, base);
-  const deltaDays = Math.round(deltaPx / pxPerDay);
-  return Math.max(1, base + deltaDays);
-}
-
-/**
- * Snap body-drag px delta to calendar days (may be negative / zero).
- */
-export function snapMoveDeltaDays(deltaPx: number, pxPerDay: number): number {
-  if (!Number.isFinite(pxPerDay) || pxPerDay <= 0) return 0;
-  if (!Number.isFinite(deltaPx)) return 0;
-  return Math.round(deltaPx / pxPerDay);
-}
-
-function isBarEstimateReadOnly(status: OrderStatus): boolean {
-  return status === 'shipped' || status === 'delivered' || status === 'cancelled';
-}
+export * from './gantt-bars.constants';
+import {
+  calculateCenteredMarkerScrollLeft,
+  GANTT_DETAIL_ROW_PX,
+  GANTT_LABEL_COL_PX,
+  GANTT_META_ROW_PX,
+  GANTT_NEST_INDENT_PX,
+  GANTT_ROW_PX,
+  GANTT_SUMMARY_BAR_FILL,
+  type GanttEstimateDaysCommit,
+  type GanttOrderMetaCommit,
+  type GanttOrderMetaView,
+  type GanttPlannedDateMoveCommit,
+  type GanttRowKind,
+  type GanttStartOffsetCommit,
+  type GanttWorkerAssignmentCommit,
+} from './gantt-bars.constants';
+import { GanttBarsFacade, type GanttBarsFacadeHost } from './gantt-bars.facade';
 
 @Component({
   selector: 'app-gantt-bars',
@@ -1328,8 +1115,10 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       touch-action: none;
     }
   `,
+  providers: [GanttBarsFacade],
 })
 export class GanttBarsComponent implements AfterViewInit {
+  protected readonly facade = inject(GanttBarsFacade);
   protected readonly personDisplayName = personDisplayName;
   /** Work-type bars from buildGanttBars (not pre-built summaries). */
   readonly bars = input.required<GanttBar[]>();
@@ -1403,20 +1192,56 @@ export class GanttBarsComponent implements AfterViewInit {
   private readonly ganttScroll = viewChild<ElementRef<HTMLElement>>('ganttScroll');
   private readonly todayMarker = viewChild<ElementRef<HTMLElement>>('todayMarker');
   protected readonly overrideHint = ESTIMATE_OVERRIDE_HINT_RU;
-  protected readonly metaPriorities = ORDER_META_PRIORITIES;
-  protected readonly priorityDraft = signal<OrderPriority>('normal');
-  protected readonly plannedDraft = signal('');
+
+  // ─── delegated state (same field names/shape as before extraction — zero template rewrite) ───
+  protected readonly metaPriorities = this.facade.metaPriorities;
+  protected readonly priorityDraft = this.facade.priorityDraft;
+  protected readonly plannedDraft = this.facade.plannedDraft;
   /** QA-445E — flash red today line so «Сегодня» is never a silent no-op. */
-  protected readonly todayPulse = signal(false);
-  private todayPulseTimer: ReturnType<typeof setTimeout> | null = null;
+  protected readonly todayPulse = this.facade.todayPulse;
+  protected readonly totalDays = this.facade.totalDays;
+  protected readonly pxPerDay = this.facade.pxPerDay;
+  protected readonly timelineMinWidth = this.facade.timelineMinWidth;
+  protected readonly dayGrid = this.facade.dayGrid;
+  protected readonly treeBars = this.facade.treeBars;
+  protected readonly unassignedSummary = this.facade.unassignedSummary;
+  protected readonly legendItems = this.facade.legendItems;
+  protected readonly scaleTicks = this.facade.scaleTicks;
+  protected readonly rows = this.facade.rows;
+  protected readonly todayLeftPx = this.facade.todayLeftPx;
 
   constructor() {
-    effect(() => {
-      const m = this.orderMeta();
-      if (!m) return;
-      this.priorityDraft.set(m.priority);
-      this.plannedDraft.set(m.plannedDate);
-    });
+    const host: GanttBarsFacadeHost = {
+      bars: this.bars,
+      rangeStart: this.rangeStart,
+      rangeEnd: this.rangeEnd,
+      zoom: this.zoom,
+      readOnly: this.readOnly,
+      canEdit: this.canEdit,
+      today: this.today,
+      expandedOrderIds: this.expandedOrderIds,
+      expandedProductIds: this.expandedProductIds,
+      expandedModuleIds: this.expandedModuleIds,
+      expandedWorkerIds: this.expandedWorkerIds,
+      expandedWorkerModuleIds: this.expandedWorkerModuleIds,
+      expandedWorkBarId: this.expandedWorkBarId,
+      workerCandidates: this.workerCandidates,
+      workerAssignmentSaving: this.workerAssignmentSaving,
+      highlightOrderId: this.highlightOrderId,
+      orderMeta: this.orderMeta,
+      canEditOrder: this.canEditOrder,
+      groupByWorkers: this.groupByWorkers,
+      orderLabelClick: this.orderLabelClick,
+      dismissCanvas: this.dismissCanvas,
+      toggleExpand: this.toggleExpand,
+      toggleWorkDetail: this.toggleWorkDetail,
+      estimateDaysCommit: this.estimateDaysCommit,
+      workerAssignmentCommit: this.workerAssignmentCommit,
+      plannedDateMoveCommit: this.plannedDateMoveCommit,
+      startOffsetCommit: this.startOffsetCommit,
+      orderMetaCommit: this.orderMetaCommit,
+    };
+    this.facade.bind(host);
     effect(() => {
       const request = this.scrollRequest();
       if (!request) return;
@@ -1429,275 +1254,18 @@ export class GanttBarsComponent implements AfterViewInit {
         { injector: this.injector },
       );
     });
-    this.destroyRef.onDestroy(() => {
-      this.clearLabelOverlayLeaveTimer();
-      this.clearTodayPulseTimer();
-    });
   }
 
-  /** Live right-edge resize preview (null = idle). */
-  private readonly resizeSession = signal<{
-    barId: string;
-    bar: GanttBar;
-    baseDays: number;
-    startClientX: number;
-    previewDays: number;
-    pointerId: number;
-  } | null>(null);
-
-  /** Live body-drag preview (null = idle). */
-  private readonly moveSession = signal<{
-    mode: 'plannedDate' | 'startOffset';
-    orderId: string;
-    barId: string;
-    bar: GanttBar;
-    startClientX: number;
-    previewDeltaDays: number;
-    pointerId: number;
-  } | null>(null);
-
-  protected readonly totalDays = computed(() =>
-    Math.max(1, dayDiff(this.rangeStart(), this.rangeEnd())),
-  );
-
-  private readonly timelineViewportWidth = signal(0);
-  /** Open floating label peek (`bar.id`) — hover or cascade expand when truncated. */
-  private readonly labelOverlayKey = signal<string | null>(null);
-  private labelOverlayLeaveTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly workerDrafts = signal<Map<string, string[]>>(new Map());
-
-  protected readonly pxPerDay = computed(() =>
-    calculateGanttPxPerDay(this.zoom(), this.totalDays(), this.timelineViewportWidth()),
-  );
-
-  protected readonly timelineMinWidth = computed(
-    () => this.totalDays() * this.pxPerDay() + GANTT_LABEL_COL_PX,
-  );
-
-  protected readonly dayGrid = computed(() => {
-    const total = this.totalDays();
-    const px = this.pxPerDay();
-    const out: Array<{ key: string; leftPx: number }> = [];
-    for (let i = 0; i < total; i++) {
-      out.push({ key: `g${i}`, leftPx: i * px });
-    }
-    return out;
-  });
-
-  protected readonly treeBars = computed(() =>
-    this.groupByWorkers()
-      ? buildWorkerTreeBars(this.bars(), this.expandedWorkerIds(), this.expandedWorkerModuleIds())
-      : buildGanttTreeBars(
-          this.bars(),
-          this.expandedOrderIds(),
-          this.expandedProductIds(),
-          this.expandedModuleIds(),
-        ),
-  );
-
-  protected readonly unassignedSummary = computed(() => summarizeUnassignedGanttWork(this.bars()));
-
   protected readonly GANTT_UNASSIGNED_CHIP_FILL = GANTT_UNASSIGNED_CHIP_FILL;
-
-  protected readonly legendItems = computed(() => {
-    const seen = new Map<string, { id: string; name: string; color: string }>();
-    for (const b of this.bars()) {
-      if (isSummaryBar(b) || b.workTypeId === '__summary__') continue;
-      if (seen.has(b.workTypeId)) continue;
-      seen.set(b.workTypeId, {
-        id: b.workTypeId,
-        name: b.workTypeName,
-        color: workTypeOklch(b.workTypeId, 0.12, 0.72, b.accentHue),
-      });
-    }
-    return [...seen.values()];
-  });
-
-  protected readonly scaleTicks = computed(() => {
-    const start = this.rangeStart();
-    const total = this.totalDays();
-    const px = this.pxPerDay();
-    const monthMode = this.zoom() === 'month';
-    const ticks: Array<{
-      key: string;
-      label: string;
-      dateLabel: string;
-      weekdayLabel: string;
-      leftPx: number;
-      widthPx: number;
-    }> = [];
-    for (let i = 0; i < total; i++) {
-      const date = addDays(start, i);
-      const isMonthStart = date.slice(8, 10) === '01';
-      if (monthMode && !isMonthStart && i !== 0) continue;
-      const span = monthMode ? ganttDaysLeftInMonth(date, total - i) : 1;
-      ticks.push({
-        key: date,
-        label: monthMode ? ganttMonthTickLabel(date) : shortDay(date),
-        dateLabel: monthMode ? ganttMonthTickLabel(date) : shortDay(date),
-        weekdayLabel: monthMode ? '' : ganttWeekdayShortRu(date),
-        leftPx: i * px,
-        widthPx: span * px,
-      });
-    }
-    return ticks;
-  });
-
-  protected readonly rows = computed(() => {
-    const start = this.rangeStart();
-    const total = this.totalDays();
-    const px = this.pxPerDay();
-    const expandedOrders = this.expandedOrderIds();
-    const expandedProducts = this.expandedProductIds();
-    const expandedModules = this.expandedModuleIds();
-    const expandedWorkers = this.expandedWorkerIds();
-    const expandedWorkerModules = this.expandedWorkerModuleIds();
-    const sorted = this.treeBars();
-    const byWorkers = this.groupByWorkers();
-    /** Last tree index per expanded order/worker — for group-end frame. */
-    const lastIdxByGroup = new Map<string, number>();
-    /** Last tree index per expanded product / module branch (nested frames). */
-    const lastIdxByProduct = new Map<string, number>();
-    const lastIdxByModule = new Map<string, number>();
-    for (let i = 0; i < sorted.length; i++) {
-      const bar = sorted[i]!;
-      const key = byWorkers ? workerGroupKeyOf(bar) : bar.orderId;
-      const expanded = byWorkers ? expandedWorkers.has(key) : expandedOrders.has(key);
-      if (expanded) lastIdxByGroup.set(key, i);
-
-      if (byWorkers) {
-        if (isModuleSummaryBar(bar) && expandedWorkerModules.has(bar.id)) {
-          lastIdxByModule.set(bar.id, i);
-        } else if (!isSummaryBar(bar)) {
-          const modId = ganttWorkerModuleSummaryId(
-            workerGroupKeyOf(bar),
-            bar.orderId,
-            bar.orderItemIndex,
-            bar.moduleId,
-          );
-          if (expandedWorkerModules.has(modId)) lastIdxByModule.set(modId, i);
-        }
-      } else {
-        if (!isOrderSummaryBar(bar) && !isWorkerSummaryBar(bar)) {
-          const productId = ganttProductSummaryId(bar.orderId, bar.orderItemIndex);
-          if (expandedProducts.has(productId)) lastIdxByProduct.set(productId, i);
-          if (!isProductSummaryBar(bar)) {
-            const moduleId = ganttModuleSummaryId(bar.orderId, bar.orderItemIndex, bar.moduleId);
-            if (expandedModules.has(moduleId)) lastIdxByModule.set(moduleId, i);
-          }
-        }
-      }
-    }
-    return sorted.map((bar, idx) => {
-      const left = dayDiff(start, bar.startDate);
-      const span = bar.noTerm
-        ? Math.max(1, Math.round(total * 0.04))
-        : Math.max(1, dayDiff(bar.startDate, bar.endDate) + 1);
-      const prev = idx > 0 ? sorted[idx - 1] : null;
-      const isSummary = isSummaryBar(bar);
-      const orderSummary = isOrderSummaryBar(bar);
-      const productSummary = isProductSummaryBar(bar);
-      const moduleSummary = isModuleSummaryBar(bar);
-      const workerSummary = isWorkerSummaryBar(bar);
-      const groupKey = byWorkers ? workerGroupKeyOf(bar) : bar.orderId;
-      const treeExpanded = byWorkers
-        ? expandedWorkers.has(groupKey)
-        : expandedOrders.has(bar.orderId);
-      const branchExpanded = byWorkers
-        ? workerSummary
-          ? expandedWorkers.has(groupKey)
-          : moduleSummary
-            ? expandedWorkerModules.has(bar.id)
-            : false
-        : orderSummary
-          ? expandedOrders.has(bar.orderId)
-          : productSummary
-            ? expandedProducts.has(bar.id)
-            : moduleSummary
-              ? expandedModules.has(bar.id)
-              : false;
-
-      let productId = '';
-      let moduleId = '';
-      let inProductGroup = false;
-      let inModuleGroup = false;
-      if (byWorkers) {
-        if (moduleSummary && expandedWorkerModules.has(bar.id)) {
-          moduleId = bar.id;
-          inModuleGroup = true;
-        } else if (!isSummary) {
-          moduleId = ganttWorkerModuleSummaryId(
-            workerGroupKeyOf(bar),
-            bar.orderId,
-            bar.orderItemIndex,
-            bar.moduleId,
-          );
-          inModuleGroup = expandedWorkerModules.has(moduleId);
-        }
-      } else if (!orderSummary && !workerSummary) {
-        productId = ganttProductSummaryId(bar.orderId, bar.orderItemIndex);
-        inProductGroup = expandedProducts.has(productId);
-        if (!productSummary) {
-          moduleId = ganttModuleSummaryId(bar.orderId, bar.orderItemIndex, bar.moduleId);
-          inModuleGroup = expandedModules.has(moduleId);
-        }
-      }
-
-      const productGroupStart = inProductGroup && productSummary;
-      const productGroupEnd =
-        inProductGroup && !!productId && lastIdxByProduct.get(productId) === idx;
-      const productGroupMid = inProductGroup && !productGroupStart && !productGroupEnd;
-      const moduleGroupStart = inModuleGroup && moduleSummary;
-      const moduleGroupEnd = inModuleGroup && !!moduleId && lastIdxByModule.get(moduleId) === idx;
-      const moduleGroupMid = inModuleGroup && !moduleGroupStart && !moduleGroupEnd;
-      const rowKind = ganttRowKind({
-        isOrderSummary: orderSummary,
-        isWorkerSummary: workerSummary,
-        isProductSummary: productSummary,
-        isModuleSummary: moduleSummary,
-      });
-      const nestDepth = ganttNestDepth(rowKind);
-
-      return {
-        bar,
-        alt: idx % 2 === 1,
-        orderBoundary: !!prev && this.rowGroupKey(prev) !== this.rowGroupKey(bar),
-        leftPx: left * px,
-        widthPx: Math.max(px * 0.5, span * px),
-        baseSpanDays: span,
-        isSummary,
-        isOrderSummary: orderSummary,
-        isProductSummary: productSummary,
-        isModuleSummary: moduleSummary,
-        isWorkerSummary: workerSummary,
-        rowKind,
-        nestDepth,
-        expanded: branchExpanded,
-        orderGroupStart: treeExpanded && (byWorkers ? workerSummary : orderSummary),
-        orderGroupEnd: treeExpanded && lastIdxByGroup.get(groupKey) === idx,
-        productGroupStart,
-        productGroupEnd,
-        productGroupMid,
-        moduleGroupStart,
-        moduleGroupEnd,
-        moduleGroupMid,
-      };
-    });
-  });
-
-  protected readonly todayLeftPx = computed(() => {
-    const t = dayDiff(this.rangeStart(), this.today());
-    return Math.max(0, Math.min(this.totalDays(), t)) * this.pxPerDay();
-  });
 
   ngAfterViewInit(): void {
     const scroll = this.ganttScroll()?.nativeElement;
     if (!scroll) return;
-    const onScroll = (): void => this.closeLabelOverlay();
+    const onScroll = (): void => this.facade.closeLabelOverlay();
     scroll.addEventListener('scroll', onScroll, { passive: true });
     this.destroyRef.onDestroy(() => scroll.removeEventListener('scroll', onScroll));
     const updateViewportWidth = (): void => {
-      this.timelineViewportWidth.set(Math.max(0, scroll.clientWidth - GANTT_LABEL_COL_PX));
+      this.facade.timelineViewportWidth.set(Math.max(0, scroll.clientWidth - GANTT_LABEL_COL_PX));
     };
     if (typeof ResizeObserver === 'undefined') {
       updateViewportWidth();
@@ -1712,7 +1280,7 @@ export class GanttBarsComponent implements AfterViewInit {
   /** Scroll the marker into the visible timeline viewport (Сегодня) + pulse ack. */
   scrollToToday(): void {
     this.scrollToMarker(this.todayMarker()?.nativeElement ?? null);
-    this.pulseTodayMarker();
+    this.facade.pulseTodayMarker();
   }
 
   /** G4 — public re-anchor used by the page after optimistic shift commits. */
@@ -1726,35 +1294,6 @@ export class GanttBarsComponent implements AfterViewInit {
     if (!scroll) return;
     if (typeof scroll.scrollTo === 'function') scroll.scrollTo({ left: 0, behavior: 'auto' });
     else scroll.scrollLeft = 0;
-  }
-
-  private pulseTodayMarker(): void {
-    this.clearTodayPulseTimer();
-    // Force class off→on so CSS animation retriggers on repeated clicks.
-    if (this.todayPulse()) {
-      this.todayPulse.set(false);
-      queueMicrotask(() => {
-        this.todayPulse.set(true);
-        this.scheduleTodayPulseClear();
-      });
-      return;
-    }
-    this.todayPulse.set(true);
-    this.scheduleTodayPulseClear();
-  }
-
-  private scheduleTodayPulseClear(): void {
-    this.todayPulseTimer = setTimeout(() => {
-      this.todayPulse.set(false);
-      this.todayPulseTimer = null;
-    }, 700);
-  }
-
-  private clearTodayPulseTimer(): void {
-    if (this.todayPulseTimer != null) {
-      clearTimeout(this.todayPulseTimer);
-      this.todayPulseTimer = null;
-    }
   }
 
   /**
@@ -1798,320 +1337,25 @@ export class GanttBarsComponent implements AfterViewInit {
     else scroll.scrollLeft = left;
   }
 
-  /** Child work bars only — summary has no right-resize (duration derived). */
-  protected canResizeBar(bar: GanttBar): boolean {
-    if (this.groupByWorkers()) return false;
-    if (isSummaryBar(bar)) return false;
-    if (!this.canEdit() || this.readOnly()) return false;
-    if (bar.noTerm || bar.days == null || bar.days < 1) return false;
-    if (isBarEstimateReadOnly(bar.orderStatus)) return false;
-    return true;
-  }
-
-  /**
-   * Order summary → plannedDate; work bar → start offset (316).
-   * Product/module summaries are derived spans — not movable.
-   */
-  protected canMoveBar(bar: GanttBar): boolean {
-    if (this.groupByWorkers()) return false;
-    if (isProductSummaryBar(bar) || isModuleSummaryBar(bar)) return false;
-    const mayMove = isOrderSummaryBar(bar) ? this.canEditOrder() : this.canEdit();
-    if (!mayMove || this.readOnly()) return false;
-    if (isBarEstimateReadOnly(bar.orderStatus)) return false;
-    return true;
-  }
-
-  protected isResizingBar(barId: string): boolean {
-    return this.resizeSession()?.barId === barId;
-  }
-
-  protected isMovingOrder(orderId: string): boolean {
-    const s = this.moveSession();
-    return !!s && s.mode === 'plannedDate' && s.orderId === orderId;
-  }
-
-  protected isMovingBar(barId: string): boolean {
-    const s = this.moveSession();
-    return !!s && s.mode === 'startOffset' && s.barId === barId;
-  }
-
-  protected displayDays(row: { bar: GanttBar; baseSpanDays: number }): number {
-    const session = this.resizeSession();
-    if (session && session.barId === row.bar.id) return session.previewDays;
-    return row.bar.days ?? row.baseSpanDays;
-  }
-
-  protected displayWidthPx(row: { bar: GanttBar; widthPx: number; baseSpanDays: number }): number {
-    const session = this.resizeSession();
-    if (session && session.barId === row.bar.id) {
-      return Math.max(this.pxPerDay() * 0.5, session.previewDays * this.pxPerDay());
-    }
-    return row.widthPx;
-  }
-
-  protected displayLeftPx(row: { bar: GanttBar; leftPx: number }): number {
-    const session = this.moveSession();
-    if (!session) return row.leftPx;
-    if (session.mode === 'plannedDate' && session.orderId === row.bar.orderId) {
-      return row.leftPx + session.previewDeltaDays * this.pxPerDay();
-    }
-    if (session.mode === 'startOffset' && session.barId === row.bar.id) {
-      return row.leftPx + session.previewDeltaDays * this.pxPerDay();
-    }
-    return row.leftPx;
-  }
-
-  protected barFill(row: { bar: GanttBar; isSummary: boolean; rowKind: GanttRowKind }): string {
-    if (row.bar.noTerm) return 'transparent';
-    if (row.isSummary) {
-      switch (row.rowKind) {
-        case 'product':
-          return GANTT_SUMMARY_BAR_FILL.product;
-        case 'module':
-          return GANTT_SUMMARY_BAR_FILL.module;
-        case 'worker':
-          if (isUnassignedWorkerSummaryBar(row.bar)) {
-            return GANTT_UNASSIGNED_BAR_FILL;
-          }
-          if (row.bar.accentHue != null) {
-            return this.fill('worker-tint', row.bar.accentHue);
-          }
-          return GANTT_SUMMARY_BAR_FILL.order;
-        case 'order':
-        default:
-          return GANTT_SUMMARY_BAR_FILL.order;
-      }
-    }
-    return this.fill(row.bar.workTypeId, row.bar.accentHue);
-  }
-
-  /** TZ-PRODUCTION-351 — soft WT wash on worker FIO label when dominant hue known. */
-  protected workerLabelWash(row: { isWorkerSummary: boolean; bar: GanttBar }): string | null {
-    if (!row.isWorkerSummary) return null;
-    if (isUnassignedWorkerSummaryBar(row.bar)) return GANTT_UNASSIGNED_WASH;
-    if (row.bar.accentHue == null) return null;
-    return workTypeWash('worker-tint', row.bar.accentHue);
-  }
-
-  protected isUnassignedWorkerSummary(bar: GanttBar): boolean {
-    return isUnassignedWorkerSummaryBar(bar);
-  }
-
-  protected unassignedWorkTypeNamesPreview(): string {
-    const names = this.unassignedSummary().workTypeNames;
-    if (names.length <= 4) return names.join(', ');
-    return `${names.slice(0, 4).join(', ')}…`;
-  }
-
-  protected onToggleExpand(event: Event, expandId: string, bar: GanttBar): void {
-    event.stopPropagation();
-    event.preventDefault();
-    const expanding = !this.isExpandIdOpen(expandId, bar);
-    this.closeLabelOverlay();
-    this.toggleExpand.emit(expandId);
-    if (!expanding) return;
-    if (isProductSummaryBar(bar) || isModuleSummaryBar(bar)) {
-      this.scheduleTruncatedLabelPeek(bar.id);
-      return;
-    }
-    if (isOrderSummaryBar(bar)) {
-      this.scheduleFirstTruncatedChildPeek(bar.orderId);
-    }
-  }
-
-  /** Expand emit key: orderId | product:… | module:… | worker:… | worker-module:… */
-  protected expandKey(bar: GanttBar): string {
-    if (isWorkerSummaryBar(bar)) return `worker:${bar.orderNumber}`;
-    if (isProductSummaryBar(bar) || isModuleSummaryBar(bar)) return bar.id;
-    return bar.orderId;
-  }
-
-  protected treeLabel(bar: GanttBar): string {
-    if (isWorkerSummaryBar(bar)) return bar.orderNumber;
-    if (isProductSummaryBar(bar)) return bar.productName;
-    if (isModuleSummaryBar(bar)) return bar.moduleName;
-    return bar.orderNumber;
-  }
-
-  protected onChildWorkToggle(event: Event, bar: GanttBar): void {
-    event.stopPropagation();
-    event.preventDefault();
-    this.closeLabelOverlay();
-    if (!this.isWorkDetailOpen(bar.id)) {
-      this.workerDrafts.update((drafts) => {
-        const next = new Map(drafts);
-        next.set(bar.id, [...(bar.workerIds ?? [])]);
-        return next;
-      });
-    }
-    this.toggleWorkDetail.emit(bar.id);
-  }
-
-  protected workerCandidatesFor(bar: GanttBar): readonly Person[] {
-    return this.workerCandidates().get(bar.workTypeId) ?? [];
-  }
-
-  protected workerDraftFor(bar: GanttBar): readonly string[] {
-    return this.workerDrafts().get(bar.id) ?? bar.workerIds ?? [];
-  }
-
-  protected onWorkerToggle(bar: GanttBar, workerId: string, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.workerDrafts.update((drafts) => {
-      const next = new Map(drafts);
-      const ids = new Set(this.workerDraftFor(bar));
-      if (checked) ids.add(workerId);
-      else ids.delete(workerId);
-      next.set(bar.id, [...ids]);
-      return next;
-    });
-  }
-
-  protected onWorkerSave(bar: GanttBar, event: Event): void {
-    event.stopPropagation();
-    if (!this.canEdit() || this.readOnly() || this.groupByWorkers() || this.workerAssignmentSaving()) return;
-    this.workerAssignmentCommit.emit({
-      orderId: bar.orderId,
-      orderItemIndex: bar.orderItemIndex,
-      moduleId: bar.moduleId,
-      workTypeId: bar.workTypeId,
-      workerIds: [...this.workerDraftFor(bar)],
-    });
-  }
-
-  protected isWorkDetailOpen(barId: string): boolean {
-    return this.expandedWorkBarId() === barId;
-  }
-
-  protected isOrderMetaOpen(orderId: string): boolean {
-    return this.orderMeta()?.orderId === orderId;
-  }
-
-  protected orderMetaFor(orderId: string): GanttOrderMetaView | null {
-    const m = this.orderMeta();
-    return m && m.orderId === orderId ? m : null;
-  }
-
-  protected isHighlightedOrder(orderId: string): boolean {
-    const id = this.highlightOrderId();
-    return Boolean(id && id === orderId);
-  }
-
-  protected isTreeExpandedOrder(orderId: string): boolean {
-    return this.expandedOrderIds().has(orderId);
-  }
-
-  /** Order or worker group currently expanded (frames / tint). */
-  protected isTreeExpandedGroup(bar: GanttBar): boolean {
-    if (this.groupByWorkers()) return this.expandedWorkerIds().has(workerGroupKeyOf(bar));
-    return this.expandedOrderIds().has(bar.orderId);
-  }
-
-  /** Row group key for boundary borders: worker label in worker view, else orderId. */
-  private rowGroupKey(bar: GanttBar): string {
-    return this.groupByWorkers() ? workerGroupKeyOf(bar) : bar.orderId;
-  }
-
-  protected isOrderEmphasized(orderId: string): boolean {
-    return this.isHighlightedOrder(orderId) || this.isTreeExpandedOrder(orderId);
-  }
-
-  /**
-   * Empty Gantt chrome/grid (not labels, bars, handles) → dismiss expand trees.
-   * stopPropagation so studio main does not double-handle inconsistently.
-   */
-  protected onRootClick(event: MouseEvent): void {
-    event.stopPropagation();
-    const t = event.target;
-    if (!(t instanceof Element)) return;
-    if (
-      t.closest(
-        [
-          '[data-test^="gantt-label-"]',
-          '[data-test^="gantt-expand-"]',
-          '[data-test^="gantt-work-expand-"]',
-          '[data-test^="gantt-work-detail"]',
-          '[data-test^="gantt-order-meta"]',
-          '[data-test^="gantt-bar"]',
-          '[data-test^="gantt-row-"]',
-          '[data-test^="gantt-resize"]',
-          'button',
-          'a',
-          'input',
-          'select',
-          'textarea',
-        ].join(','),
-      )
-    ) {
-      if (!t.closest('button.gantt-label-btn')) {
-        this.closeLabelOverlay();
-      }
-      return;
-    }
-    this.closeLabelOverlay();
-    this.dismissCanvas.emit();
-  }
-
-  /** Product/module rows — truncated-label-peek (hover + cascade expand). */
-  protected supportsLabelOverlay(row: {
-    isProductSummary: boolean;
-    isModuleSummary: boolean;
-  }): boolean {
-    return row.isProductSummary || row.isModuleSummary;
-  }
-
-  protected isLabelOverlayOpen(row: { bar: GanttBar }): boolean {
-    return this.labelOverlayKey() === row.bar.id;
-  }
-
-  protected closeLabelOverlay(): void {
-    this.clearLabelOverlayLeaveTimer();
-    this.labelOverlayKey.set(null);
-  }
-
-  protected openLabelPeek(barId: string): void {
-    this.clearLabelOverlayLeaveTimer();
-    this.labelOverlayKey.set(barId);
-  }
-
+  // ─── DOM-bound label-peek (needs hostRef / event.currentTarget — stays component-side) ───
   protected onLabelPeekEnter(
     event: MouseEvent,
     row: { isProductSummary: boolean; isModuleSummary: boolean; bar: GanttBar },
   ): void {
-    if (!this.supportsLabelOverlay(row)) return;
+    if (!this.facade.supportsLabelOverlay(row)) return;
     const wrap = event.currentTarget;
     if (!(wrap instanceof HTMLElement)) return;
     const textEl = wrap.querySelector('.gantt-label-text');
     if (!(textEl instanceof HTMLElement) || !this.isTextTruncated(textEl)) return;
-    this.openLabelPeek(row.bar.id);
+    this.facade.openLabelPeek(row.bar.id);
   }
 
   protected onLabelPeekLeave(): void {
-    this.clearLabelOverlayLeaveTimer();
-    this.labelOverlayLeaveTimer = setTimeout(() => this.closeLabelOverlay(), 120);
-  }
-
-  private clearLabelOverlayLeaveTimer(): void {
-    if (this.labelOverlayLeaveTimer == null) return;
-    clearTimeout(this.labelOverlayLeaveTimer);
-    this.labelOverlayLeaveTimer = null;
+    this.facade.onLabelPeekLeave();
   }
 
   private isTextTruncated(el: HTMLElement): boolean {
     return el.scrollWidth > el.clientWidth + 1;
-  }
-
-  private isExpandIdOpen(expandId: string, bar: GanttBar): boolean {
-    if (isWorkerSummaryBar(bar)) {
-      return this.expandedWorkerIds().has(workerGroupKeyOf(bar));
-    }
-    if (isProductSummaryBar(bar)) {
-      return this.expandedProductIds().has(expandId);
-    }
-    if (isModuleSummaryBar(bar)) {
-      return this.expandedModuleIds().has(expandId);
-    }
-    return this.expandedOrderIds().has(expandId);
   }
 
   private tryOpenTruncatedLabelPeek(barId: string): void {
@@ -2119,7 +1363,7 @@ export class GanttBarsComponent implements AfterViewInit {
       `[data-test="gantt-label-${barId}"] .gantt-label-text`,
     );
     if (textEl instanceof HTMLElement && this.isTextTruncated(textEl)) {
-      this.openLabelPeek(barId);
+      this.facade.openLabelPeek(barId);
     }
   }
 
@@ -2141,398 +1385,236 @@ export class GanttBarsComponent implements AfterViewInit {
     );
   }
 
+  // ─── template-referenced delegates (thin wrappers to facade — zero template rewrite) ───
+  protected canResizeBar(bar: GanttBar): boolean {
+    return this.facade.canResizeBar(bar);
+  }
+
+  protected canMoveBar(bar: GanttBar): boolean {
+    return this.facade.canMoveBar(bar);
+  }
+
+  protected isResizingBar(barId: string): boolean {
+    return this.facade.isResizingBar(barId);
+  }
+
+  protected isMovingOrder(orderId: string): boolean {
+    return this.facade.isMovingOrder(orderId);
+  }
+
+  protected isMovingBar(barId: string): boolean {
+    return this.facade.isMovingBar(barId);
+  }
+
+  protected displayDays(row: { bar: GanttBar; baseSpanDays: number }): number {
+    return this.facade.displayDays(row);
+  }
+
+  protected displayWidthPx(row: { bar: GanttBar; widthPx: number; baseSpanDays: number }): number {
+    return this.facade.displayWidthPx(row);
+  }
+
+  protected displayLeftPx(row: { bar: GanttBar; leftPx: number }): number {
+    return this.facade.displayLeftPx(row);
+  }
+
+  protected barFill(row: { bar: GanttBar; isSummary: boolean; rowKind: GanttRowKind }): string {
+    return this.facade.barFill(row);
+  }
+
+  protected workerLabelWash(row: { isWorkerSummary: boolean; bar: GanttBar }): string | null {
+    return this.facade.workerLabelWash(row);
+  }
+
+  protected isUnassignedWorkerSummary(bar: GanttBar): boolean {
+    return this.facade.isUnassignedWorkerSummary(bar);
+  }
+
+  protected unassignedWorkTypeNamesPreview(): string {
+    return this.facade.unassignedWorkTypeNamesPreview();
+  }
+
+  protected onToggleExpand(event: Event, expandId: string, bar: GanttBar): void {
+    const { expanding } = this.facade.onToggleExpand(event, expandId, bar);
+    if (!expanding) return;
+    if (isProductSummaryBar(bar) || isModuleSummaryBar(bar)) {
+      this.scheduleTruncatedLabelPeek(bar.id);
+      return;
+    }
+    if (isOrderSummaryBar(bar)) {
+      this.scheduleFirstTruncatedChildPeek(bar.orderId);
+    }
+  }
+
+  protected expandKey(bar: GanttBar): string {
+    return this.facade.expandKey(bar);
+  }
+
+  protected treeLabel(bar: GanttBar): string {
+    return this.facade.treeLabel(bar);
+  }
+
+  protected onChildWorkToggle(event: Event, bar: GanttBar): void {
+    this.facade.onChildWorkToggle(event, bar);
+  }
+
+  protected workerCandidatesFor(bar: GanttBar): readonly Person[] {
+    return this.facade.workerCandidatesFor(bar);
+  }
+
+  protected workerDraftFor(bar: GanttBar): readonly string[] {
+    return this.facade.workerDraftFor(bar);
+  }
+
+  protected onWorkerToggle(bar: GanttBar, workerId: string, event: Event): void {
+    this.facade.onWorkerToggle(bar, workerId, event);
+  }
+
+  protected onWorkerSave(bar: GanttBar, event: Event): void {
+    this.facade.onWorkerSave(bar, event);
+  }
+
+  protected isWorkDetailOpen(barId: string): boolean {
+    return this.facade.isWorkDetailOpen(barId);
+  }
+
+  protected isOrderMetaOpen(orderId: string): boolean {
+    return this.facade.isOrderMetaOpen(orderId);
+  }
+
+  protected orderMetaFor(orderId: string): GanttOrderMetaView | null {
+    return this.facade.orderMetaFor(orderId);
+  }
+
+  protected isHighlightedOrder(orderId: string): boolean {
+    return this.facade.isHighlightedOrder(orderId);
+  }
+
+  protected isTreeExpandedOrder(orderId: string): boolean {
+    return this.facade.isTreeExpandedOrder(orderId);
+  }
+
+  protected isTreeExpandedGroup(bar: GanttBar): boolean {
+    return this.facade.isTreeExpandedGroup(bar);
+  }
+
+  protected isOrderEmphasized(orderId: string): boolean {
+    return this.facade.isOrderEmphasized(orderId);
+  }
+
+  protected onRootClick(event: MouseEvent): void {
+    this.facade.onRootClick(event);
+  }
+
+  protected supportsLabelOverlay(row: { isProductSummary: boolean; isModuleSummary: boolean }): boolean {
+    return this.facade.supportsLabelOverlay(row);
+  }
+
+  protected isLabelOverlayOpen(row: { bar: GanttBar }): boolean {
+    return this.facade.isLabelOverlayOpen(row);
+  }
+
   protected labelOverlayText(row: {
     isProductSummary: boolean;
     isModuleSummary: boolean;
     bar: GanttBar;
   }): string {
-    const b = row.bar;
-    if (row.isProductSummary) {
-      return [b.productName, b.quantityLabel].filter(Boolean).join(' ');
-    }
-    if (row.isModuleSummary) {
-      return b.moduleName ?? '';
-    }
-    return '';
+    return this.facade.labelOverlayText(row);
   }
 
   protected labelOverlayLevelClass(row: { rowKind: string }): string {
-    if (row.rowKind === 'product') return 'gantt-label-overlay--product';
-    if (row.rowKind === 'module') return 'gantt-label-overlay--module';
-    return '';
+    return this.facade.labelOverlayLevelClass(row);
   }
 
   @HostListener('document:click', ['$event'])
   protected onDocumentClick(event: MouseEvent): void {
-    if (!this.labelOverlayKey()) return;
-    const t = event.target;
-    if (!(t instanceof Element)) return;
-    if (t.closest('.gantt-label-wrap')) return;
-    this.closeLabelOverlay();
+    this.facade.onDocumentClick(event);
   }
 
-  /**
-   * Order summary → order-meta; worker → expand; product/module → peek via hover/▸ only; work → detail.
-   */
   protected onLabelClick(
     event: Event,
     row: { isSummary: boolean; bar: GanttBar; isProductSummary: boolean; isModuleSummary: boolean },
   ): void {
-    event.stopPropagation();
-    event.preventDefault();
-    if (isOrderSummaryBar(row.bar)) {
-      this.closeLabelOverlay();
-      if (!this.groupByWorkers()) this.orderLabelClick.emit(row.bar.orderId);
-      return;
-    }
-    if (isProductSummaryBar(row.bar) || isModuleSummaryBar(row.bar)) {
-      return;
-    }
-    if (isWorkerSummaryBar(row.bar)) {
-      this.closeLabelOverlay();
-      this.toggleExpand.emit(this.expandKey(row.bar));
-      return;
-    }
-    this.closeLabelOverlay();
-    this.toggleWorkDetail.emit(row.bar.id);
+    this.facade.onLabelClick(event, row);
   }
 
   protected workDetailTitle(bar: GanttBar, open: boolean): string {
-    return open
-      ? `Скрыть дни и людей · ${bar.workTypeName}`
-      : `Показать дни и людей · ${bar.workTypeName}`;
+    return this.facade.workDetailTitle(bar, open);
   }
 
   protected workDetailWash(bar: GanttBar): string {
-    return workTypeWash(bar.workTypeId, bar.accentHue);
+    return this.facade.workDetailWash(bar);
   }
 
   protected onWorkDaysChange(bar: GanttBar, ev: Event): void {
-    if (!this.canEdit() || this.readOnly() || this.groupByWorkers()) return;
-    const inputEl = ev.target as HTMLInputElement;
-    const days = Math.floor(Number(inputEl.value));
-    if (!Number.isFinite(days) || days < 1) {
-      inputEl.value = String(bar.days ?? 1);
-      return;
-    }
-    if (days === bar.days) return;
-    this.estimateDaysCommit.emit({
-      orderId: bar.orderId,
-      orderItemIndex: bar.orderItemIndex,
-      moduleId: bar.moduleId,
-      workTypeId: bar.workTypeId,
-      days,
-    });
+    this.facade.onWorkDaysChange(bar, ev);
   }
 
   protected onMetaPriority(ev: Event): void {
-    ev.stopPropagation();
-    const value = (ev.target as HTMLSelectElement).value as OrderPriority;
-    this.priorityDraft.set(value);
-    this.emitMetaIfChanged({ priority: value, plannedDate: this.plannedDraft() });
+    this.facade.onMetaPriority(ev);
   }
 
   protected onMetaPlanned(ev: Event): void {
-    ev.stopPropagation();
-    const value = (ev.target as HTMLInputElement).value;
-    this.plannedDraft.set(value);
-    this.emitMetaIfChanged({ priority: this.priorityDraft(), plannedDate: value });
-  }
-
-  private emitMetaIfChanged(next: { priority: OrderPriority; plannedDate: string }): void {
-    const m = this.orderMeta();
-    if (!m || !this.canEditOrder()) return;
-    if (next.priority === m.priority && next.plannedDate === m.plannedDate) return;
-    this.orderMetaCommit.emit({
-      orderId: m.orderId,
-      priority: next.priority,
-      plannedDate: next.plannedDate,
-    });
+    this.facade.onMetaPlanned(ev);
   }
 
   protected onMovePointerDown(event: PointerEvent, bar: GanttBar): void {
-    if (!this.canMoveBar(bar)) return;
-    // Resize handle owns its pointerdown (stopPropagation); body starts move.
-    if (this.resizeSession()) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const target = event.currentTarget as HTMLElement;
-    target.setPointerCapture?.(event.pointerId);
-    this.moveSession.set({
-      mode: isOrderSummaryBar(bar) ? 'plannedDate' : 'startOffset',
-      orderId: bar.orderId,
-      barId: bar.id,
-      bar,
-      startClientX: event.clientX,
-      previewDeltaDays: 0,
-      pointerId: event.pointerId,
-    });
+    this.facade.onMovePointerDown(event, bar);
   }
 
-  protected onResizePointerDown(
-    event: PointerEvent,
-    row: { bar: GanttBar; baseSpanDays: number },
-  ): void {
-    if (!this.canResizeBar(row.bar)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    this.moveSession.set(null);
-    const baseDays = Math.max(1, row.bar.days ?? row.baseSpanDays);
-    const target = event.currentTarget as HTMLElement;
-    target.setPointerCapture(event.pointerId);
-    this.resizeSession.set({
-      barId: row.bar.id,
-      bar: row.bar,
-      baseDays,
-      startClientX: event.clientX,
-      previewDays: baseDays,
-      pointerId: event.pointerId,
-    });
+  protected onResizePointerDown(event: PointerEvent, row: { bar: GanttBar; baseSpanDays: number }): void {
+    this.facade.onResizePointerDown(event, row);
   }
 
   @HostListener('document:pointermove', ['$event'])
   protected onDocumentPointerMove(event: PointerEvent): void {
-    const move = this.moveSession();
-    if (move && event.pointerId === move.pointerId) {
-      const previewDeltaDays = snapMoveDeltaDays(
-        event.clientX - move.startClientX,
-        this.pxPerDay(),
-      );
-      if (previewDeltaDays === move.previewDeltaDays) return;
-      this.moveSession.set({ ...move, previewDeltaDays });
-      return;
-    }
-    const session = this.resizeSession();
-    if (!session || event.pointerId !== session.pointerId) return;
-    const deltaPx = event.clientX - session.startClientX;
-    const previewDays = snapEstimateDaysFromDelta(session.baseDays, deltaPx, this.pxPerDay());
-    if (previewDays === session.previewDays) return;
-    this.resizeSession.set({ ...session, previewDays });
+    this.facade.onDocumentPointerMove(event);
   }
 
   @HostListener('document:pointerup', ['$event'])
   @HostListener('document:pointercancel', ['$event'])
   protected onDocumentPointerUp(event: PointerEvent): void {
-    const move = this.moveSession();
-    if (move && event.pointerId === move.pointerId) {
-      this.finishMove(move, /*commit*/ true);
-      return;
-    }
-    const session = this.resizeSession();
-    if (!session || event.pointerId !== session.pointerId) return;
-    this.finishResize(session, /*commit*/ true);
+    this.facade.onDocumentPointerUp(event);
   }
 
   @HostListener('document:keydown.escape')
   protected onEscapeCancel(): void {
-    if (this.labelOverlayKey()) {
-      this.closeLabelOverlay();
-      return;
-    }
-    const move = this.moveSession();
-    if (move) {
-      this.finishMove(move, /*commit*/ false);
-      return;
-    }
-    const session = this.resizeSession();
-    if (!session) return;
-    this.finishResize(session, /*commit*/ false);
-  }
-
-  private finishMove(
-    session: {
-      mode: 'plannedDate' | 'startOffset';
-      orderId: string;
-      barId: string;
-      bar: GanttBar;
-      previewDeltaDays: number;
-      pointerId: number;
-    },
-    commit: boolean,
-  ): void {
-    this.moveSession.set(null);
-    if (!commit) return;
-    const deltaDays = session.previewDeltaDays;
-    if (deltaDays === 0) return;
-    if (session.mode === 'plannedDate') {
-      this.plannedDateMoveCommit.emit({
-        orderId: session.orderId,
-        deltaDays,
-      });
-      return;
-    }
-    this.startOffsetCommit.emit({
-      orderId: session.bar.orderId,
-      orderItemIndex: session.bar.orderItemIndex,
-      moduleId: session.bar.moduleId,
-      workTypeId: session.bar.workTypeId,
-      startDate: session.bar.startDate,
-      deltaDays,
-    });
-  }
-
-  private finishResize(
-    session: {
-      barId: string;
-      bar: GanttBar;
-      baseDays: number;
-      previewDays: number;
-      pointerId: number;
-    },
-    commit: boolean,
-  ): void {
-    this.resizeSession.set(null);
-    if (!commit) return;
-    const days = Math.max(1, session.previewDays);
-    if (days === session.baseDays) return;
-    this.estimateDaysCommit.emit({
-      orderId: session.bar.orderId,
-      orderItemIndex: session.bar.orderItemIndex,
-      moduleId: session.bar.moduleId,
-      workTypeId: session.bar.workTypeId,
-      days,
-    });
+    this.facade.onEscapeCancel();
   }
 
   protected fill(workTypeId: string, hue?: number | null): string {
-    return workTypeOklch(workTypeId, 0.12, 0.72, hue);
+    return this.facade.fill(workTypeId, hue);
   }
 
-  /** Denser WT chip on worker FIO row (TZ-PRODUCTION-351). */
   protected workerChipFill(hue: number | null | undefined): string {
-    return workTypeOklch('worker-tint', 0.14, 0.76, hue);
+    return this.facade.workerChipFill(hue);
   }
 
   protected statusLabel(s: OrderStatus): string {
-    return ORDER_STATUS_LABELS[s] ?? s;
+    return this.facade.statusLabel(s);
   }
 
   protected statusPip(s: OrderStatus): string {
-    switch (s) {
-      case 'draft':
-        return 'oklch(0.65 0.02 250)';
-      case 'confirmed':
-        return 'oklch(0.62 0.14 230)';
-      case 'in_production':
-        return 'oklch(0.65 0.16 85)';
-      case 'ready':
-        return 'oklch(0.62 0.15 145)';
-      case 'shipped':
-        return 'oklch(0.55 0.08 280)';
-      case 'delivered':
-        return 'oklch(0.5 0.05 150)';
-      case 'cancelled':
-        return 'oklch(0.55 0.14 25)';
-      default:
-        return 'oklch(0.6 0.02 250)';
-    }
+    return this.facade.statusPip(s);
   }
 
-  /** Full detail for tooltip / a11y — visible label stays one line. */
   protected labelTitle(b: GanttBar): string {
-    if (isUnassignedWorkerSummaryBar(b)) {
-      return [
-        `Рабочий: ${b.orderNumber}`,
-        'нет исполнителя на видах работ',
-        `${b.startDate}→${b.endDate}`,
-      ].join(' · ');
-    }
-    if (isWorkerSummaryBar(b)) {
-      return [`Рабочий: ${b.orderNumber}`, `${b.startDate}→${b.endDate}`].join(' · ');
-    }
-    if (isOrderSummaryBar(b)) {
-      return [b.orderNumber, this.statusLabel(b.orderStatus), `${b.startDate}→${b.endDate}`]
-        .filter(Boolean)
-        .join(' · ');
-    }
-    if (isProductSummaryBar(b)) {
-      return [b.orderNumber, b.productName, b.quantityLabel, `${b.startDate}→${b.endDate}`]
-        .filter(Boolean)
-        .join(' · ');
-    }
-    if (isModuleSummaryBar(b)) {
-      return [b.orderNumber, b.productName, b.moduleName, `${b.startDate}→${b.endDate}`]
-        .filter(Boolean)
-        .join(' · ');
-    }
-    const parts = [
-      b.orderNumber,
-      this.statusLabel(b.orderStatus),
-      b.productName,
-      b.moduleName,
-      b.workTypeName,
-      b.quantityLabel,
-      b.workerLabel && b.workerLabel !== '—' ? `исполн.: ${b.workerLabel}` : null,
-    ].filter(Boolean);
-    return parts.join(' · ');
+    return this.facade.labelTitle(b);
   }
 
-  /** TZ-PRODUCTION-320/343: chevron zone — kind-aware Gantt tree expand. */
   protected expandTitle(bar: GanttBar, expanded: boolean): string {
-    const label = this.treeLabel(bar);
-    if (isProductSummaryBar(bar)) {
-      return expanded
-        ? `Свернуть модули изделия · ${label}`
-        : `Развернуть модули изделия · ${label}`;
-    }
-    if (isModuleSummaryBar(bar)) {
-      return expanded ? `Свернуть виды работ · ${label}` : `Развернуть виды работ · ${label}`;
-    }
-    if (isWorkerSummaryBar(bar)) {
-      return expanded
-        ? `Свернуть модули рабочего · ${label}`
-        : `Развернуть модули рабочего · ${label}`;
-    }
-    return expanded
-      ? `Свернуть состав на Ганте · ${label}`
-      : `Развернуть состав на Ганте · ${label}`;
+    return this.facade.expandTitle(bar, expanded);
   }
 
-  /** TZ-PRODUCTION-322: order-number zone — order-meta strip only. */
   protected summaryCardTitle(b: GanttBar): string {
-    if (isUnassignedWorkerSummaryBar(b)) {
-      return `Нет исполнителя: ${b.orderNumber} — назначьте виды работ в Люди`;
-    }
-    if (isWorkerSummaryBar(b)) return `Группа рабочего: ${b.orderNumber}`;
-    if (isProductSummaryBar(b)) return `Изделие · ${b.productName}`;
-    if (isModuleSummaryBar(b)) return `Модуль · ${b.moduleName}`;
-    return `Статус и даты заказа ${b.orderNumber}`;
+    return this.facade.summaryCardTitle(b);
   }
 
   protected barTitle(b: GanttBar): string {
-    const head = this.labelTitle(b);
-    if (b.noTerm) return `${head} — без срока`;
-    if (isSummaryBar(b)) return `${head} · сводно ${b.days}д`.trim();
-    return `${head} · ${b.startDate}→${b.endDate} · ${b.days}д`.trim();
+    return this.facade.barTitle(b);
   }
 
   protected barAriaLabel(b: GanttBar): string {
-    const base = this.barTitle(b);
-    if (!this.canMoveBar(b)) return base;
-    if (isOrderSummaryBar(b)) return `${base} · Сдвинуть начало заказа`;
-    return `${base} · Сдвинуть вид работ`;
+    return this.facade.barAriaLabel(b);
   }
-}
-
-function dayDiff(a: string, b: string): number {
-  const pa = a.split('-').map(Number);
-  const pb = b.split('-').map(Number);
-  const da = Date.UTC(pa[0]!, pa[1]! - 1, pa[2]!);
-  const db = Date.UTC(pb[0]!, pb[1]! - 1, pb[2]!);
-  return Math.round((db - da) / 86400000);
-}
-
-function addDays(dateOnly: string, days: number): string {
-  const [y, m, d] = dateOnly.split('-').map(Number);
-  const dt = new Date(Date.UTC(y!, m! - 1, d!));
-  dt.setUTCDate(dt.getUTCDate() + days);
-  const yy = dt.getUTCFullYear();
-  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getUTCDate()).padStart(2, '0');
-  return `${yy}-${mm}-${dd}`;
-}
-
-function shortDay(dateOnly: string): string {
-  const [, m, d] = dateOnly.split('-');
-  return `${d}.${m}`;
 }
