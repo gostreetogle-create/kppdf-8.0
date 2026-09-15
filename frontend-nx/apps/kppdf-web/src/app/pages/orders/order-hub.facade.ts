@@ -22,7 +22,7 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import type { CompositionTreeSelectEvent } from '../composition/composition-tree.component';
+import type { CompositionTreeSelectEvent } from '@kppdf/features/composition';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import {
   KitReserveConfirmDialogComponent,

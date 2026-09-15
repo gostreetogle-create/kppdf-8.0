@@ -15,8 +15,7 @@ import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
 import { TextareaComponent } from '@kppdf/ui/textarea';
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
-import { CompositionPanelComponent } from '../../composition/composition-panel.component';
-import { scrollCompositionBlockIntoView } from '../../composition/composition-focus-scroll';
+import { CompositionPanelComponent, scrollCompositionBlockIntoView } from '@kppdf/features/composition';
 import { RegistryCreateButtonComponent } from '../registry-create-button.component';
 import { ProductFormFacade } from './product-form.facade';
 

@@ -48,6 +48,12 @@
       "@kppdf/features/admin-roles": [
         "libs/features/src/lib/admin-roles/index.ts"
       ],
+      "@kppdf/features/composition": [
+        "libs/features/src/lib/composition/index.ts"
+      ],
+      "@kppdf/features/composition/composition-focus-scroll": [
+        "libs/features/src/lib/composition/ui/composition-focus-scroll.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],

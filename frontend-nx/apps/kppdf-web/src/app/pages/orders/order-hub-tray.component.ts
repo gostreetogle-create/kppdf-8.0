@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { type Order, type OrderItem } from '@kppdf/data-access';
-import { CompositionTreeComponent, type CompositionTreeSelectEvent } from '../composition/composition-tree.component';
+import { CompositionTreeComponent, type CompositionTreeSelectEvent } from '@kppdf/features/composition';
 import { orderStatusLabel } from './order-status';
 import { OrderHubFacade } from './order-hub.facade';
 

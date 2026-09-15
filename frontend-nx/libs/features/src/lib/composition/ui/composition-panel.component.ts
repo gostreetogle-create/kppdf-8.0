@@ -23,7 +23,7 @@ import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
 import { extractErrorMessage, type SilentResult } from '@kppdf/util-http';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { onDialogCloseOnce } from './on-dialog-close-once';
 import { findCompositionLine } from './composition-line-resolve';
 import {
   CompositionTreeComponent,

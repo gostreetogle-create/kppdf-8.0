@@ -9,7 +9,7 @@ import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
 import { TextareaComponent } from '@kppdf/ui/textarea';
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
-import { CompositionPanelComponent } from '../../composition/composition-panel.component';
+import { CompositionPanelComponent } from '@kppdf/features/composition';
 import { RegistryCreateButtonComponent } from '../registry-create-button.component';
 import { MaterialFormFacade, type DimensionGroup } from './material-form.facade';
 

@@ -1,6 +1,6 @@
 import type { DestroyRef, Injector } from '@angular/core';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { onDialogCloseOnce } from './on-dialog-close-once';
 
 /** Prompt before closing a dirty passport dialog (Cancel / backdrop / ESC). */
 export function confirmDirtyClose(

@@ -179,8 +179,12 @@ describe('ModuleFormDialogComponent (Phase 2)', () => {
   });
 
   it('scrolls composition block into view when focusComposition is set', async () => {
+    // Spy on the leaf module directly (not the `@kppdf/features/composition`
+    // barrel) — jest.spyOn cannot redefine a re-exported barrel property
+    // (its `export *` forwarding getter is non-configurable), only the
+    // originating module's own property, which the barrel getter reads live.
     const scrollSpy = jest.spyOn(
-      await import('../../composition/composition-focus-scroll'),
+      await import('@kppdf/features/composition/composition-focus-scroll'),
       'scrollCompositionBlockIntoView',
     );
     TestBed.resetTestingModule();
