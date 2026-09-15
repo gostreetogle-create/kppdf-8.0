@@ -25,8 +25,29 @@
  * `on-dialog-close-once.ts`. The ~15 other registries files that only
  * need these two factories' *types* (not the functions) stayed in the
  * app and just point their `import type` at this barrel instead.
+ *
+ * TZ-NX-REGISTRY-DETAIL-TO-FEATURES (B9, retry after
+ * `TZ-NX-REGISTRY-TYPES-TO-FEATURES` unblocked it): `RegistryDetailPanelFacade`
+ * (lib root) + `RegistryDetailPanelComponent`/`RegistryToolbarPaginationComponent`/
+ * `RegistryRowActionButtonComponent` (`ui/`, the last two were panel-exclusive)
+ * + `registry-action-icons.ts` (`ui/`, pure, row-action-button-exclusive)
+ * moved here in full. Reuses the `RegistryCreateButtonComponent` already in
+ * `ui/` (no new duplicate) — the app's own now-orphaned copy was deleted.
+ * `registry-detail-panel.component.spec.ts` deliberately **stayed in the
+ * app** (`apps/.../pages/registries/`, only its `RegistryDetailPanelComponent`
+ * import updated to this barrel) — its `setup()` helper (used by ~18 of its
+ * ~20 tests) builds fixtures via the real `buildRegistriesCatalogDefault()`
+ * (`apps/.../registries/data/registries.catalog.ts`, the ~40-registry
+ * catalog assembly, itself dependent on live service tokens), not the
+ * synthetic per-test `defineRegistry()` builder its own widget-only tests
+ * use — an app-local integration dependency too large/foundational to
+ * duplicate or drag into this lib, same class of blocker as
+ * `registry.types.ts` before B9's TZ1. The component+facade themselves
+ * carry zero app-local imports; only the spec's own fixture-building
+ * needed the app's real catalog.
  */
 export * from './ui';
+export * from './registry-detail-panel.facade';
 export * from './material-form.facade';
 export * from './module-form.facade';
 export * from './product-form.facade';

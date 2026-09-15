@@ -12,7 +12,7 @@ import { TableComponent, type ColumnDef } from '@kppdf/ui/table';
 import { RegistryToolbarPaginationComponent } from './registry-toolbar-pagination.component';
 import { RegistryRowActionButtonComponent } from './registry-row-action-button.component';
 import { RegistryCreateButtonComponent } from './registry-create-button.component';
-import { RegistryDetailPanelFacade, type RegistryDetailPanelFacadeHost } from './registry-detail-panel.facade';
+import { RegistryDetailPanelFacade, type RegistryDetailPanelFacadeHost } from '../registry-detail-panel.facade';
 import type {
   RegistryDefinition,
   RegistryRow,

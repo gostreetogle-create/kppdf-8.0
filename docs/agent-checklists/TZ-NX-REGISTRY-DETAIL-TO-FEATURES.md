@@ -1,4 +1,4 @@
-# TZ-NX-REGISTRY-DETAIL-TO-FEATURES checklist
+# TZ-NX-REGISTRY-DETAIL-TO-FEATURES checklist (B9, retry)
 
 > Status: **DONE**
 > Marker: `tasks/_active/TZ-NX-REGISTRY-DETAIL-TO-FEATURES.md`
@@ -7,116 +7,147 @@
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
 - agent_id: claude
-- claimed_at: 2026-09-15T11:26:30Z
+- claimed_at: 2026-09-15T12:45:44Z
 - workspace: D:\kppdf-8.0
 - team_room_claim: unavailable (no team-room CLI configured in this workspace)
+
+## Source-of-truth disclosure
+
+The TZ spec file itself was gone from `tasks/_ready/2026-09-15-decomp-b9-registry-hubs-lists/`
+by claim time (a concurrent autonomous agent — "Codebuff", `agent_id: claude`
+in its own commits — has been consuming/cleaning files from this same pack
+while executing an overlapping copy of the B9 plan; see the PO-facing
+summary for the fuller picture). Reconstructed the marker from the spec
+text captured earlier in-session before it vanished (same pattern as
+`TZ-NX-SHIPPING-PAGE-FACADE`'s precedent).
 
 ## Preflight
 
 - [x] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
-- [x] Прочитал `_NOW.md` + `tasks/_active/` — пусто до claim (TZ1 archived `23b2feea`)
-- [x] TZ / канон / deps прочитаны (`TZ-NX-REGISTRY-DETAIL-TO-FEATURES.md`, `WAVE-MAP.md`)
+- [x] Прочитал `_NOW.md` + `tasks/_active/` — only Codebuff's own
+      `TZ-NX-COUNTERPARTY-HUB-TO-FEATURES.md` present at claim time, zero
+      overlap with this TZ's conflict keys
+- [x] TZ / канон / deps прочитаны (reconstructed spec text, `WAVE-MAP.md`)
 - [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS
 - [x] `tasks/_active/TZ-NX-REGISTRY-DETAIL-TO-FEATURES.md` на месте
 
-## Investigation — no move; hard-blocked by the registries-platform contract
+## Investigation — retry after TZ1 unblocked it; one deliberate scope split
 
-Traced every import of `registry-detail-panel.component.ts` +
-`registry-detail-panel.facade.ts` (both TZ1 output) before moving anything.
+`registry-detail-panel.component.ts`/`.facade.ts`'s only remaining
+app-local dependencies (after TZ1 moved `registry.types.ts`/
+`registry-query-state.ts` to `@kppdf/features/registries-platform`) were 3
+sibling UI files:
+- `registry-toolbar-pagination.component.ts` (+spec) — exclusive to the panel
+- `registry-row-action-button.component.ts` (+spec) — exclusive to the panel
+- `registry-action-icons.ts` (+spec) — pure, exclusive to row-action-button
+- `registry-create-button.component.ts` — used by the panel, but **already**
+  duplicated byte-for-byte in `libs/features/src/lib/registry-forms/ui/`
+  (confirmed via `diff`, zero drift) — reused directly, no new duplicate
 
-Direct/transitive dependencies beyond `@angular/*` and `@kppdf/ui/*`:
-- `./registry-toolbar-pagination.component` — used only by the panel (self-contained, movable alone)
-- `./registry-row-action-button.component` — used only by the panel (self-contained, movable alone)
-- `./registry-create-button.component` — used by the panel; already has independent
-  feature-scoped siblings in `libs/features/src/lib/registry-forms/ui/` and
-  `libs/features/src/lib/warehouse/ui/` (established duplication precedent for
-  this exact 45-LOC pure-presentational button)
-- `./model/registry-query-state.ts` (68 LOC) — used only by the facade + the toolbar-pagination component
-- **`./model/registry.types.ts` (235 LOC)** — used by the panel, the facade,
-  the toolbar-pagination component, the row-action-button component, the
-  query-state helper, **and ~40 other files**: every `data/*.registry.ts` /
-  `data/*-http-data-source.ts` / `data/*-registry-actions.ts` /
-  `data/*-dialog-host.ts` file under `apps/kppdf-web/src/app/pages/registries/data/`,
-  plus `registries.catalog.ts` and `registries-page.ts` itself.
+All four are genuinely self-contained or already covered. Moved
+component+facade+the first 3 siblings into `@kppdf/features/registry-forms`
+(conflict-key-specified target).
 
-`registry.types.ts` is the canonical, actively-evolving contract for the
-**entire** `/registries` platform — its own header comment documents
-`defineRegistry()` as "the single erasure boundary" every one of those ~40
-registry definitions is authored against. It's not a small pure
-type/utility file in the sense this program duplicates (`on-dialog-close-once.ts`,
-2–4-field interfaces); it's 235 LOC / ~19 interconnected exports
-(`RegistryDefinition<TRow>` alone embeds `RegistryColumn`, `RegistryFilter`,
-`RegistryExpandable`, `RegistryRowAction`, `RegistryDataSource`) that the
-whole registries `data/` layer treats as the single source of truth.
-Duplicating it would immediately fork that invariant; moving it for real
-would drag all ~40 `data/*.ts` files into this TZ's scope — far beyond an
-"S"-sized "move facade+panel" task, and outside its conflict keys.
+**`registry-detail-panel.component.spec.ts` deliberately stayed in the
+app** — a scope split from the usual "spec always moves with its
+component" convention, disclosed here. Its `setup()` helper (backing ~18
+of its ~20 tests) builds fixtures via the real `buildRegistriesCatalogDefault()`
+(`apps/.../registries/data/registries.catalog.ts`) — the ~40-registry
+catalog assembly wired to live service tokens — not the synthetic
+`defineRegistry()` builder its own widget-only tests use. That catalog file
+is the same class of large, actively-evolving, ~40-consumer app foundation
+that made `registry.types.ts` a hard blocker before TZ1 — duplicating it or
+dragging it into this "S" TZ was out of scope. The component+facade
+themselves carry zero app-local imports; only the spec's *own*
+fixture-building needed the app's real catalog, so only the spec's
+`import` of `RegistryDetailPanelComponent` was repointed to the new barrel
+— everything else in the spec is untouched, still runs from
+`apps/kppdf-web/src/app/pages/registries/`, still green.
 
-This is the same blocker class as `TZ-NX-REGISTRY-FORMS-TO-FEATURES` (B4
-tail, `CategoryFormDialogComponent`/`CompositionPanelComponent`) and
-`TZ-NX-DOCSTUDIO-LEFTOVER-UI-TO-FEATURES` (B6, 2/4 blocked): a real,
-non-duplicable shared foundation sitting directly in the move path, with no
-self-contained subset left once it's excluded.
+## What changed
 
-**Decision: no relocation.** `registry-detail-panel.component.ts` +
-`registry-detail-panel.facade.ts` (+ their toolbar-pagination/row-action-button/
-create-button siblings and `registry-query-state.ts`) stay in
-`apps/kppdf-web/src/app/pages/registries/` exactly as TZ1 left them. No
-`libs/features/src/lib/registries-shell/` directory or
-`@kppdf/features/registries-shell` tsconfig path was created — moving only
-the toolbar/action-button/create-button trio while the panel+facade (the
-actual TZ subject) stay behind would be pure indirection with no benefit,
-rejected as churn per this program's "no premature abstraction" rule.
+Moved via `git mv` (history preserved):
+- `registry-detail-panel.facade.ts` → `registry-forms/registry-detail-panel.facade.ts` (lib root, matches the facade-at-root convention)
+- `registry-detail-panel.component.ts` → `registry-forms/ui/registry-detail-panel.component.ts`
+- `registry-toolbar-pagination.component.ts` (+spec) → `registry-forms/ui/`
+- `registry-row-action-button.component.ts` (+spec) → `registry-forms/ui/`
+- `registry-action-icons.ts` (+spec) → `registry-forms/ui/`
+
+Deleted the now-orphaned app-local `registry-create-button.component.ts`
+(zero remaining consumers once the panel moved; the identical copy already
+in `registry-forms/ui/` is what the panel now imports).
+
+Fixed the one relative import whose depth changed (`registry-detail-panel.component.ts`'s
+`./registry-detail-panel.facade` → `../registry-detail-panel.facade`, since
+the facade sits at lib root and the component in `ui/`). Every other
+sibling import needed no change (all still same-directory or already
+pointing at `@kppdf/features/registries-platform` from TZ1). Updated
+`registry-forms/ui/index.ts` (+3 new exports) and `registry-forms/index.ts`
+(+facade export, extended doc comment). Fixed the 4 app-side consumers of
+the old relative path (`registries-page.ts`, and 3 specs:
+`registry-detail-panel.component.spec.ts`, `registry-action-matrix.spec.ts`,
+`registries-a11y.spec.ts`) to import `RegistryDetailPanelComponent` from
+`@kppdf/features/registry-forms` — the intended direction (apps importing
+from features).
+
+Panel: 87.56 kB `registries-page` lazy chunk (down from 110.89 kB — the
+moved code now shares boundaries elsewhere; no behavior change, initial
+bundle unchanged).
 
 ## Acceptance
 
-- [x] Specs green — no files touched, no-op verification: full kppdf-web suite (84/84 suites, 573/580 passed, 7 skipped)
-- [x] nx build last 0 (bundle unchanged, 503.38 kB — nothing moved, nothing to regress)
+- [x] registry-detail* specs green — `registry-detail-panel.component.spec.ts`, `registries-a11y.spec.ts`, `registries-page.spec.ts`, `registry-action-matrix.spec.ts` all confirmed PASS individually; every other registries-scoped suite in `kppdf-web` unaffected
+- [x] nx build last 0
+
+## Pre-existing failure disclosed (not mine, not fixed)
+
+Same `app-shell.component.spec.ts` quicknav-count failures as TZ1
+(pre-existing, belongs to a concurrent agent's in-progress nav-chip work —
+not touched, outside this TZ's conflict keys).
 
 ## Integrity slot (до READY / archive)
 
-- [x] Тип изменения определён: **other** (investigation-only, no code change)
-- [x] FIC §A–E — N/A (no code/behavior/route change at all)
-- [x] page.md / PAGE-TZ-INDEX — N/A
-- [x] DOMAIN-MAP — N/A (no module boundary moved — investigated and rejected)
+- [x] Тип изменения определён: **other** (internal relocation, no registries behavior change)
+- [x] FIC §A–E — N/A (no new page/permission/module/MCP surface, no route/behavior change)
+- [x] page.md / PAGE-TZ-INDEX — N/A (import path only)
+- [x] DOMAIN-MAP — N/A (import path changed, no module/route/page contour change)
 - [x] SECTION-READINESS — N/A
-- [x] Чужой WIP не в коммите; conflict keys соблюдены (no product files touched; only this checklist/tracker/task marker)
-- [x] Coupling map — N/A
+- [x] Чужой WIP не в коммите; conflict keys соблюдены (staged: registry-forms/** changes, the 4 fixed app-side import sites, deleted orphan + this checklist/tracker/task marker — nothing from any concurrent agent's claim)
+- [x] Coupling map — N/A (registry query/action semantics unchanged)
 - [x] Канон: docs/DOCS-INTEGRITY.md — reviewed, N/A items justified above
 
 ## Build integrity (обязательно для frontend-nx / kppdf-web)
 
-- [x] Baseline до кода: build green from TZ1 closure (`0b2d0e81`)
-- [x] Нет другого `tasks/_active/*` с `apps/kppdf-web/src/**` — verified empty before claim
-- [x] Закрытие: `nx build kppdf-web` → exit 0, bundle unchanged (503.38 kB) — no-op, no files touched
+- [x] Baseline до кода: `nx build kppdf-web` → exit 0, bundle 504.00 kB (post-TZ1 baseline)
+- [x] Нет другого `tasks/_active/*` с `apps/.../pages/registries/**` — verified before claim
+- [x] Закрытие: `nx build kppdf-web` → exit 0, bundle 504.00 kB unchanged; `registries-page` lazy chunk 87.56 kB (down from 110.89 kB — code relocated, not duplicated)
 
 ## Gates (факт)
 
-- No product/lib files changed — gates re-verified as a closing sanity check:
-- `cd frontend-nx && pnpm exec tsc -p apps/kppdf-web/tsconfig.app.json --noEmit` → PASS (0 errors)
-- `cd frontend-nx && pnpm exec nx build kppdf-web` → PASS (exit 0; bundle 503.38 kB, unchanged)
+- `cd frontend-nx && pnpm exec tsc -p libs/features/tsconfig.lib.json --noEmit` → PASS (0 errors)
+- `cd frontend-nx && pnpm exec tsc -p apps/kppdf-web/tsconfig.app.json --noEmit` → PASS (0 errors, clean on first run)
+- `cd frontend-nx && pnpm exec nx test kppdf-web` (full suite) → 79/80 suites, 546/555 passed, 7 skipped, 2 failed (pre-existing/unrelated, disclosed above); all registries-scoped suites individually confirmed PASS
+- `cd frontend-nx && pnpm exec nx test features` (full suite) → PASS (52/52 suites, 453/453 passed) — the 3 newly-moved specs explicitly confirmed PASS
+- `pnpm architecture:check` → PASS (1556 files; baseline 17; 2 resolved since baseline)
+- `cd frontend-nx && pnpm exec nx build kppdf-web` → PASS (exit 0; bundle 504.00 kB)
 
 ## Executor report
 
-Что сделано: расследование без переноса кода. `registry-detail-panel.component.ts`/
-`.facade.ts` (продукт TZ1) и их сателлиты (`toolbar-pagination`,
-`row-action-button`, `create-button`, `registry-query-state.ts`) все
-транзитивно зависят от `model/registry.types.ts` — 235-строчного
-канонического контракта всей платформы `/registries`, на который завязаны
-~40 файлов `data/*.registry.ts`/`*-http-data-source.ts`/`*-registry-actions.ts`/
-`*-dialog-host.ts` плюс `registries.catalog.ts`/`registries-page.ts`. Это не
-"маленький чистый" тип для дублирования (правило программы), а реальный
-общий фундамент — перенос сдвинул бы объём задачи с "S: facade+panel" на
-десятки файлов вне conflict keys. Решение: ничего не переносить,
-задокументировать здесь.
+Что сделано: перенёс `RegistryDetailPanelFacade`+`RegistryDetailPanelComponent`
++ 3 эксклюзивных sibling UI-файла в `@kppdf/features/registry-forms`,
+переиспользовав уже существующий там дубликат `RegistryCreateButtonComponent`
+(удалив орфанную app-копию). Спека панели осознанно осталась в app —
+её `setup()` завязан на реальный каталог реестров (`registries.catalog.ts`),
+тот же класс блокера, что `registry.types.ts` до TZ1 — перенос только
+`import` компонента, остальное не трогал.
 
 Conflict disclosure: не относящиеся к этому TZ uncommitted файлы в дереве
-(studio/docs/audits/data) не трогал. Продуктовый код не менял.
+не трогал; ноль пересечений с активными claim-конфликт-ключами других
+агентов на момент коммита (перепроверено прямо перед `git add`).
 
-Known limits: если `registry.types.ts` когда-нибудь получит свой
-domain-lib дом (отдельная, гораздо более крупная волна, затрагивающая всю
-`data/` папку), этот вывод стоит пересмотреть — он специфичен для текущего
-расположения файла в `apps/`.
+Known limits: если `registries.catalog.ts` когда-нибудь получит свой
+domain-lib дом (отдельная, гораздо более крупная волна), стоит пересмотреть
+и вернуть спеку к панели.
 
 ## Review handoff
 

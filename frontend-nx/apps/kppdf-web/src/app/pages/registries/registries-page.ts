@@ -15,7 +15,7 @@ import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { BadgeComponent } from '@kppdf/ui/badge';
 import { TableComponent, type ColumnDef } from '@kppdf/ui/table';
 import { REGISTRIES_CATALOG, provideRegistriesCatalog } from './data/registries.catalog';
-import { RegistryDetailPanelComponent } from './registry-detail-panel.component';
+import { RegistryDetailPanelComponent } from '@kppdf/features/registry-forms';
 import {
   REGISTRY_DEFAULT_CATEGORY,
   type RegistryDefinition,

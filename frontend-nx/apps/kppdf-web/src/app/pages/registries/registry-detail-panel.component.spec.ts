@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter, type ParamMap } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
-import { RegistryDetailPanelComponent } from './registry-detail-panel.component';
+import { RegistryDetailPanelComponent } from '@kppdf/features/registry-forms';
 import { PiMaterialsService, PiModulesService, PiProductsService, PiUnitsService, type Unit } from '@kppdf/data-access';
 import { buildRegistriesCatalogDefault } from './data/registries.catalog';
 import {

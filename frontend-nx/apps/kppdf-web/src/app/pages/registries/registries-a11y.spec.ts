@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { ActivatedRoute, convertToParamMap, provideRouter, type ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { RegistriesPage } from './registries-page';
-import { RegistryDetailPanelComponent } from './registry-detail-panel.component';
+import { RegistryDetailPanelComponent } from '@kppdf/features/registry-forms';
 import { REGISTRIES_CATALOG } from './data/registries.catalog';
 import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 
