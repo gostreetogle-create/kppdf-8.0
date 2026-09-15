@@ -101,9 +101,6 @@ import { ButtonComponent } from '@kppdf/ui/button';
           {{ cancelling() ? 'Отменяем…' : 'Отменить заказ' }}
         </app-pi-button>
       }
-      <span class="flex-1"></span>
-      <a class="pi-outline-btn" routerLink="/orders" data-test="order-back-to-list">← К списку</a>
-      <a class="pi-outline-btn" routerLink="/home" data-test="order-back-home">На Главную</a>
     </div>
   `,
 })

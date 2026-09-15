@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, output, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { CompositionTreeNode, OrderItem, Product } from '@kppdf/data-access';
 import { CompositionTreeComponent } from '../../composition/ui/composition-tree.component';
@@ -9,8 +9,7 @@ import { ButtonComponent } from '@kppdf/ui/button';
  * TZ-NX-ORDER-WS-COMPOSITION — dumb composition editor: line list (qty/
  * ready/delete inline), lazy per-line composition tree (same
  * `pi-composition-tree` as the order-hub tray, loaded on first expand),
- * dual CTA (focus the inline row controls vs deep-link to the catalog),
- * and the add-line form. No facade injection — every write is an output;
+ * a catalog deep-link, and the add-line form. No facade injection — every write is an output;
  * `OrderWorkspaceFacade` owns the actual PATCH/POST + item-payload
  * reconstruction (see the facade's `toItemPayload` doc comment for why a
  * naive partial payload would silently wipe other item fields).
@@ -52,7 +51,6 @@ import { ButtonComponent } from '@kppdf/ui/button';
               }
             </div>
             <input
-              #qtyInput
               type="number"
               min="1"
               class="pi-input w-full"
@@ -94,14 +92,6 @@ import { ButtonComponent } from '@kppdf/ui/button';
                 <p class="text-xs text-muted-foreground m-0" data-test="composition-tree-empty">Состав недоступен</p>
               }
               <div class="flex items-center gap-3 mt-3">
-                <button
-                  type="button"
-                  class="pi-outline-btn"
-                  data-test="composition-focus-line"
-                  (click)="focusLine(i)"
-                >
-                  Править строки заказа
-                </button>
                 <a class="pi-outline-btn" routerLink="/registries/products" data-test="composition-open-catalog">
                   Открыть в каталоге
                 </a>
@@ -173,8 +163,6 @@ export class OrderWsCompositionComponent {
   readonly newLineQtyChange = output<number>();
   readonly addLine = output<void>();
 
-  private readonly qtyInputs = viewChildren<ElementRef<HTMLInputElement>>('qtyInput');
-
   protected onQtyChange(index: number, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     if (value > 0) this.qtyChange.emit({ index, quantity: value });
@@ -190,12 +178,5 @@ export class OrderWsCompositionComponent {
 
   protected onNewLineQtyChange(event: Event): void {
     this.newLineQtyChange.emit(Number((event.target as HTMLInputElement).value));
-  }
-
-  /** «Править строки заказа» — focuses + scrolls to this line's qty input (dual CTA vs the catalog deep-link). */
-  protected focusLine(index: number): void {
-    const el = this.qtyInputs()[index]?.nativeElement;
-    el?.focus();
-    el?.scrollIntoView({ block: 'center' });
   }
 }
