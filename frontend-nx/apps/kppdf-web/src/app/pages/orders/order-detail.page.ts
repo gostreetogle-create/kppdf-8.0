@@ -3,20 +3,24 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import {
   OrderWorkspaceFacade,
   OrderWsCompositionComponent,
+  OrderWsDocumentsComponent,
   OrderWsExecutionComponent,
   OrderWsHeaderComponent,
   OrderWsLogisticsComponent,
+  OrderWsWorkflowChipsComponent,
 } from '@kppdf/features/order-workspace';
 import { orderStatusLabel } from './order-status';
 
 /**
  * NX order workspace (`TZ-NX-ORDER-WS-FACADE-SHELL`, wave
- * `docs/agent-checklists/WAVE-NX-ORDER-WORKSPACE.md`). Thin glue: loading/
- * routing lives on `OrderWorkspaceFacade` (page-scoped provider, not root);
- * this page only lays out the five workspace sections (Шапка · Состав ·
- * Исполнение · Логистика · Документы) — the latter three are empty hosts
- * until the following chain TZs (HEADER/COMPOSITION already covered by
- * Шапка/Состав below; EXECUTION/LOGISTICS/DOCS-CHIPS populate the rest).
+ * `docs/agent-checklists/WAVE-NX-ORDER-WORKSPACE.md`, closed by
+ * `TZ-NX-ORDER-WS-DOCS-CHIPS`). Thin glue: loading/routing lives on
+ * `OrderWorkspaceFacade` (page-scoped provider, not root); this page lays
+ * out workflow chips + the five workspace sections (Шапка · Состав ·
+ * Исполнение · Логистика · Документы). No shell `setTools` — no live,
+ * non-redundant tool-rail action was identified beyond what the header's
+ * plain links already cover, so the rails stay history-only (the shell's
+ * own default when a page registers nothing, not a placeholder).
  */
 @Component({
   selector: 'pi-order-detail-page',
@@ -25,10 +29,12 @@ import { orderStatusLabel } from './order-status';
   providers: [OrderWorkspaceFacade],
   imports: [
     PiStatusBannerComponent,
+    OrderWsWorkflowChipsComponent,
     OrderWsHeaderComponent,
     OrderWsCompositionComponent,
     OrderWsExecutionComponent,
     OrderWsLogisticsComponent,
+    OrderWsDocumentsComponent,
   ],
   template: `
     <main class="px-panel-inset py-6" data-test="order-detail">
@@ -58,6 +64,8 @@ import { orderStatusLabel } from './order-status';
       }
 
       @if (facade.status() === 'success' && facade.order(); as order) {
+        <pi-order-ws-workflow-chips [orderId]="order._id" />
+
         <div class="space-y-6" data-test="order-body">
           <section data-test="order-ws-header">
             <pi-order-ws-header
@@ -143,6 +151,7 @@ import { orderStatusLabel } from './order-status';
 
           <section data-test="order-ws-documents">
             <h2 class="text-sm font-medium m-0 mb-2">Документы</h2>
+            <pi-order-ws-documents [orderId]="order._id" />
           </section>
         </div>
       }

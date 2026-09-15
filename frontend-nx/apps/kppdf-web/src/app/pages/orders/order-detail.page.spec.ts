@@ -456,6 +456,39 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="logistics-cancel-shipment"]')).toBeNull();
   });
 
+  it('renders workflow chips with correct hrefs (orderId on the ones that need it) and «Заказ» as current', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+
+    const home = fixture.nativeElement.querySelector('[data-test="order-workflow-chip-home"]');
+    const quotation = fixture.nativeElement.querySelector('[data-test="order-workflow-chip-quotation"]');
+    const production = fixture.nativeElement.querySelector('[data-test="order-workflow-chip-production"]');
+    const supply = fixture.nativeElement.querySelector('[data-test="order-workflow-chip-supply"]');
+    const shipping = fixture.nativeElement.querySelector('[data-test="order-workflow-chip-shipping"]');
+    const current = fixture.nativeElement.querySelector('[data-test="order-workflow-chip-order"]');
+
+    expect(home?.getAttribute('href')).toBe('/home');
+    expect(quotation?.getAttribute('href')).toBe('/studio');
+    expect(production?.getAttribute('href')).toContain('orderId=order-1');
+    expect(supply?.getAttribute('href')).toContain('orderId=order-1');
+    expect(shipping?.getAttribute('href')).toContain('orderId=order-1');
+    expect(current?.tagName).toBe('SPAN');
+    expect(current?.getAttribute('aria-current')).toBe('page');
+    expect(current?.textContent).toContain('Заказ');
+  });
+
+  it('renders an honest empty documents state (no fake list) with a working templates deep-link', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+
+    expect(fixture.nativeElement.querySelector('[data-test="documents-empty"]')?.textContent).toContain(
+      'Нет связанных документов',
+    );
+    const link = fixture.nativeElement.querySelector('[data-test="documents-templates-link"]');
+    expect(link?.getAttribute('href')).toContain('source=order');
+    expect(link?.getAttribute('href')).toContain('sourceId=order-1');
+  });
+
   it('renders «Без КП» without any stub-proposal CTA for a direct order', async () => {
     await setup(of({ ok: true, data: directOrder } satisfies SilentResult<Order>));
     await settle();
