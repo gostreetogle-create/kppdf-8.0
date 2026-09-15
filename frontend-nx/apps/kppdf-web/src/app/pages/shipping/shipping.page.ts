@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import type { ShipmentStatus } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { ShippingFacade } from './shipping.facade';
+import { ShippingFacade } from '@kppdf/features/shipping';
 
 /**
  * TZ-NX-SHIP-S1-REGISTRY — live NX `/shipping` registry, ports the legacy

@@ -24,10 +24,10 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { ShipmentCreateDialogComponent, type ShipmentCreateDialogData } from './shipment-create-dialog.component';
-import { ShipmentEditDialogComponent, type ShipmentEditDialogData } from './shipment-edit-dialog.component';
-import { ShipmentDocDialogComponent, type ShipmentDocDialogData, DOC_TYPE_LABELS } from './shipment-doc-dialog.component';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { ShipmentCreateDialogComponent, type ShipmentCreateDialogData } from './ui/shipment-create-dialog.component';
+import { ShipmentEditDialogComponent, type ShipmentEditDialogData } from './ui/shipment-edit-dialog.component';
+import { ShipmentDocDialogComponent, type ShipmentDocDialogData, DOC_TYPE_LABELS } from './ui/shipment-doc-dialog.component';
 
 const STATUS_LABELS: Record<ShipmentStatus, string> = {
   draft: 'Черновик',

@@ -57,6 +57,9 @@
       "@kppdf/features/registry-forms": [
         "libs/features/src/lib/registry-forms/index.ts"
       ],
+      "@kppdf/features/shipping": [
+        "libs/features/src/lib/shipping/index.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],
