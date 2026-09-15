@@ -32,10 +32,7 @@ import { API_BASE_URL } from '@kppdf/util-http';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { ThemeToggleComponent } from './theme-toggle.component';
-import {
-  PairingDialogComponent,
-  type PairingDialogData,
-} from '../pages/desktop/pairing-dialog.component';
+import { PairingDialogComponent, type PairingDialogData } from '@kppdf/features/desktop';
 import { NavHistoryService } from './nav-history.service';
 import { NAV_CATEGORIES, filterNavCategories, matchActiveCategoryId } from './nav-categories';
 import { collectPageRoutePaths } from './route-paths';

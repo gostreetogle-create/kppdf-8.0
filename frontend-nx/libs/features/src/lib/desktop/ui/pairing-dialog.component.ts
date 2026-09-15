@@ -4,8 +4,7 @@ import { LucideAngularModule, Copy, Check } from 'lucide-angular';
 import type { DesktopPairingKeyMeta } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiDialogComponent } from '@kppdf/ui/dialog';
-import { PairingDialogFacade } from './pairing-dialog.facade';
-export type { PairingDialogData } from './pairing-dialog.facade';
+import { PairingDialogFacade } from '../pairing-dialog.facade';
 
 /**
  * TZD-72 — NX port of `frontend/src/app/pages/desktop/pairing-dialog.component.ts`.
