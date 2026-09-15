@@ -1,46 +1,36 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
-  Injector,
   TemplateRef,
   ViewChild,
   inject,
-  signal,
   OnInit,
 } from '@angular/core';
-import { Observable } from 'rxjs';
 import { CapabilitiesService } from '@kppdf/data-access/capabilities';
-import { extractErrorMessage, type SilentResult } from '@kppdf/util-http';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { ADMIN_ENTITY_SECTION_CHIPS, ADMIN_TOC_CHIPS } from './admin-group-chips';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { PiToastService } from '@kppdf/ui/toast';
-import { PiDialogService } from '@kppdf/ui/dialog';
-import { AlertDialogComponent } from '@kppdf/ui/dialog';
-import { TableComponent, PiRowActionsComponent, type ColumnDef } from '@kppdf/ui/table';
-import { PiRolesService, type AdminRole } from '@kppdf/data-access/admin';
-import { onDialogCloseOnce } from './on-dialog-close-once';
-import {
-  RoleFormDialogComponent,
-  type RoleFormData,
-  type RoleFormResult,
-} from '@kppdf/features/admin-roles';
-import { ROLE_FORM_COPY, permissionsSummary, roleLabelRu } from './permission-labels.ru';
+import { TableComponent, PiRowActionsComponent } from '@kppdf/ui/table';
+import type { AdminRole } from '@kppdf/data-access/admin';
+import { AdminRolesPageFacade } from './admin-roles.facade';
+import { ROLE_FORM_COPY } from './permission-labels.ru';
+
+type ClientRole = AdminRole;
 
 /**
  * TZ-256.B — `roles-admin.page` (full CRUD surface).
  * TZ-ADMIN-301 / PO 2026-08-09 — system roles keep badge; site admin
  * (`role:write`) may Edit permissions/pages. DELETE of system roles
  * stays forbidden (BE `SYSTEM_ROLE_FROZEN`). Custom roles unchanged.
+ *
+ * TZ-NX-ADMIN-ROLES-PAGE-FACADE — list/CRUD orchestration moved to
+ * `AdminRolesPageFacade`; this page stays a thin host.
  */
-type ClientRole = AdminRole;
-const PAGE_SIZE = 10;
-
 @Component({
   selector: 'pi-roles-admin-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [AdminRolesPageFacade],
   imports: [PiGroupWorkspaceComponent, ButtonComponent, PiRowActionsComponent, TableComponent],
   template: `
     <app-pi-group-workspace [toc]="toc" tocActiveId="roles" [chips]="chips" activeId="">
@@ -168,217 +158,49 @@ export class RolesAdminPage implements OnInit {
   protected readonly toc = ADMIN_TOC_CHIPS;
   protected readonly chips = ADMIN_ENTITY_SECTION_CHIPS;
   protected readonly copy = ROLE_FORM_COPY;
-
-  private readonly rolesService = inject(PiRolesService);
-  private readonly toast = inject(PiToastService);
-  private readonly dialog = inject(PiDialogService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
   protected readonly caps = inject(CapabilitiesService);
 
-  readonly roles = signal<ClientRole[]>([]);
-  readonly loading = signal(true);
-  readonly error = signal<string | null>(null);
-  readonly loadingRowId = signal<string | null>(null);
-  readonly page = signal(1);
-  readonly total = signal(0);
-  readonly pageSize = PAGE_SIZE;
-  readonly searchQuery = signal('');
-  private requestVersion = 0;
+  private readonly facade = inject(AdminRolesPageFacade);
 
-  protected readonly cols: ColumnDef<ClientRole>[] = [
-    { key: 'name', label: 'Имя', sticky: 'left', cellClass: 'font-mono text-xs' },
-    {
-      key: 'label',
-      label: 'Название',
-      cellClass: 'text-xs',
-      format: (r) => roleLabelRu(r.name, r.label),
-    },
-    {
-      key: 'permissions',
-      label: 'Права',
-      cellClass: 'text-xs text-muted-foreground',
-      format: (r) => permissionsSummary(r.permissions),
-    },
-    {
-      key: 'isSystem',
-      label: 'Тип',
-      cellClass: 'text-xs',
-      format: (r) => (r.isSystem ? ROLE_FORM_COPY.systemBadge : ROLE_FORM_COPY.customBadge),
-    },
-  ];
+  protected readonly roles = this.facade.roles;
+  protected readonly loading = this.facade.loading;
+  protected readonly error = this.facade.error;
+  protected readonly loadingRowId = this.facade.loadingRowId;
+  protected readonly page = this.facade.page;
+  protected readonly total = this.facade.total;
+  protected readonly pageSize = this.facade.pageSize;
+  protected readonly searchQuery = this.facade.searchQuery;
+  protected readonly cols = this.facade.cols;
 
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: ClientRole }>;
   protected rowActionsTplBinding: TemplateRef<{ $implicit: ClientRole }> | null = null;
 
-  constructor() {
-    this.refresh();
-  }
-
   ngOnInit(): void {
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
 
-  private refresh(): void {
-    const version = ++this.requestVersion;
-    this.loading.set(true);
-    this.rolesService
-      .list({ page: this.page(), limit: PAGE_SIZE, search: this.searchQuery() })
-      .subscribe((data) => {
-        if (version !== this.requestVersion) return;
-        this.loading.set(false);
-        if (data.ok) {
-          this.roles.set(data.data.items);
-          this.total.set(data.data.total);
-          this.page.set(data.data.page);
-          this.error.set(null);
-        } else {
-          this.error.set(this.describe(data.error));
-        }
-      });
-  }
-
   protected onSearchInput(event: Event): void {
-    const value = (event.target as HTMLInputElement).value.trim();
-    this.searchQuery.set(value);
-    this.page.set(1);
-    this.refresh();
+    this.facade.onSearchInput(event);
   }
 
   protected onPageChange(nextPage: number): void {
-    if (nextPage === this.page()) return;
-    this.page.set(nextPage);
-    this.refresh();
+    this.facade.onPageChange(nextPage);
   }
 
-  // ── Create ──
   protected onCreate(): void {
-    const ref = this.dialog.open<RoleFormResult>(RoleFormDialogComponent, {
-      data: {
-        mode: 'create',
-        submit: (result) => this.createRole(result),
-      } satisfies RoleFormData,
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, () => {
-      this.toast.success('Роль создана');
-      void this.refresh();
-    });
+    this.facade.onCreate();
   }
 
-  // ── Edit custom ──
   protected onEdit(r: ClientRole): void {
-    const ref = this.dialog.open<RoleFormResult>(RoleFormDialogComponent, {
-      data: {
-        mode: 'edit',
-        role: {
-          id: r.id,
-          name: r.name,
-          label: r.label,
-          description: r.description,
-          permissions: r.permissions,
-          pages: r.pages ?? [],
-        },
-        submit: (result) => this.updateRole(r.id, result),
-      } satisfies RoleFormData,
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, () => {
-      this.toast.success('Роль обновлена');
-      void this.refresh();
-    });
+    this.facade.onEdit(r);
   }
 
-  // ── View (read-only) — system roles always, or custom roles when the
-  //    viewer has neither role:write nor role:admin (T1 fix: previously
-  //    such a viewer had no way to see a custom role's detail at all).
   protected onView(r: ClientRole): void {
-    this.dialog.open<RoleFormResult>(RoleFormDialogComponent, {
-      data: {
-        mode: 'view',
-        role: {
-          id: r.id,
-          name: r.name,
-          label: r.label,
-          description: r.description,
-          permissions: r.permissions,
-          pages: r.pages ?? [],
-          isSystem: r.isSystem,
-        },
-      } satisfies RoleFormData,
-      parentDestroyRef: this.destroyRef,
-    });
+    this.facade.onView(r);
   }
 
-  // ── Delete ──
   protected onDelete(r: ClientRole): void {
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-      data: {
-        title: 'Удалить роль?',
-        description: `Роль «${r.label || r.name}» будет удалена. Пользователи с этой ролью сохранятся, но потеряют связанные права.`,
-        confirmLabel: 'Удалить',
-        variant: 'destructive',
-      },
-      width: 'sm',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (ok) => {
-      if (!ok) return;
-      this.silentRun(this.rolesService.remove(r.id), 'Роль удалена', r.id);
-    });
-  }
-
-  private createRole(result: RoleFormResult): Observable<SilentResult<ClientRole>> {
-    return this.rolesService.create(result);
-  }
-
-  private updateRole(id: string, result: RoleFormResult): Observable<SilentResult<ClientRole>> {
-    const payload = {
-      label: result.label,
-      description: result.description,
-      permissions: result.permissions,
-      pages: result.pages,
-    };
-    return this.rolesService.update(id, payload);
-  }
-
-  private silentRun(
-    obs: Observable<SilentResult<ClientRole | { success: true }>>,
-    successMsg: string,
-    rowId?: string,
-  ): void {
-    if (rowId && this.loadingRowId() === rowId) return;
-    if (rowId) this.loadingRowId.set(rowId);
-    obs.subscribe((res) => {
-      if (rowId) this.loadingRowId.set(null);
-      if (res.ok) {
-        this.toast.success(successMsg);
-        void this.refresh();
-        return;
-      }
-      if (res.error.status === 403) {
-        const body = res.error.error as { code?: string; message?: string } | null;
-        const msg = typeof body?.message === 'string' ? body.message : '';
-        const frozen =
-          body?.code === 'SYSTEM_ROLE_FROZEN' || msg === 'System roles cannot be deleted';
-        const escalation =
-          body?.code === 'SYSTEM_ROLE_ESCALATION' || /Cannot set isSystem/i.test(msg);
-        this.toast.error(
-          frozen
-            ? 'Системные роли нельзя удалить'
-            : escalation
-              ? 'Нельзя сделать роль системной'
-              : extractErrorMessage(res.error),
-        );
-        return;
-      }
-      this.toast.error(extractErrorMessage(res.error));
-    });
-  }
-
-  private describe(err: unknown): string {
-    if (err instanceof Error) return err.message;
-    return String(err);
+    this.facade.onDelete(r);
   }
 }
