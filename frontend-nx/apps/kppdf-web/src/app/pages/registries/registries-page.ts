@@ -4,31 +4,20 @@ import {
   OnInit,
   TemplateRef,
   ViewChild,
-  computed,
   inject,
-  signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs/operators';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { BadgeComponent } from '@kppdf/ui/badge';
-import { TableComponent, type ColumnDef } from '@kppdf/ui/table';
+import { TableComponent } from '@kppdf/ui/table';
 import { REGISTRIES_CATALOG, provideRegistriesCatalog } from './data/registries.catalog';
+import { RegistriesPageFacade } from './registries-page.facade';
+
+export { restoreRegistryScrollPosition } from './registries-page.facade';
 import { RegistryDetailPanelComponent } from '@kppdf/features/registry-forms';
 import {
-  REGISTRY_DEFAULT_CATEGORY,
-  type RegistryDefinition,
   type RegistryMasterRow,
-  type RegistryRow,
-  type RegistrySort,
 } from '@kppdf/features/registries-platform';
-
-/** One `/registries` master-table group — TZ-NX-REGISTRIES-CATEGORY-GROUPS. */
-interface RegistryCategoryGroup {
-  readonly category: string;
-  readonly rows: RegistryMasterRow[];
-}
 
 /**
  * TZ-NX-REGISTRIES-MASTER-TABLE-UX — `/registries` master table +
@@ -43,44 +32,33 @@ interface RegistryCategoryGroup {
  * open row by construction (a single `registryKey` drives the single
  * `expandedRowWhen` predicate).
  */
-/** Restore the shell scrollport after route-driven inline expansion settles. */
-export function restoreRegistryScrollPosition(
-  scrollport: { scrollTop: number } | null,
-  scrollTop: number,
-  schedule?: (callback: () => void) => void,
-): void {
-  if (!scrollport) return;
-  const restore = (): void => {
-    scrollport.scrollTop = scrollTop;
-  };
-  if (schedule) {
-    schedule(() => schedule(restore));
-    return;
-  }
-  if (typeof requestAnimationFrame === 'function') {
-    requestAnimationFrame(() => requestAnimationFrame(restore));
-  } else {
-    queueMicrotask(restore);
-  }
-}
-
 @Component({
   selector: 'pi-registries-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provideRegistriesCatalog()],
+  providers: [
+    provideRegistriesCatalog(),
+    {
+      provide: RegistriesPageFacade,
+      useFactory: () => {
+        const facade = new RegistriesPageFacade();
+        facade.initialize(inject(REGISTRIES_CATALOG));
+        return facade;
+      },
+    },
+  ],
   imports: [RouterLink, PiPageChromeComponent, BadgeComponent, TableComponent, RegistryDetailPanelComponent],
   template: `
     <div class="px-panel-inset" data-test="registries-page-content">
       <app-pi-page-chrome [crumbs]="[{ label: 'Реестры' }]" />
 
-      @if (isUnknown()) {
+      @if (facade.isUnknown()) {
       <div
         class="mb-4 hairline rounded-sm px-4 py-3 text-sm flex items-center justify-between gap-3 flex-wrap"
         role="alert"
         data-test="registry-unknown"
       >
-        <span>Реестр «{{ registryKey() }}» не найден.</span>
+        <span>Реестр «{{ facade.registryKey() }}» не найден.</span>
         <a
           routerLink="/registries"
           class="pi-focus-ring underline decoration-dotted"
@@ -110,20 +88,20 @@ export function restoreRegistryScrollPosition(
       }
     </ng-template>
 
-    @if (groupedRows().length > 0) {
+    @if (facade.groupedRows().length > 0) {
       <div class="flex flex-col gap-8">
-        @for (group of groupedRows(); track group.category) {
+        @for (group of facade.groupedRows(); track group.category) {
           <div data-test="registries-category-group">
             <h2 class="eyebrow mb-2 px-1" data-test="registries-category-label">{{ group.category }}</h2>
             <app-pi-table
               [data]="group.rows"
-              [columns]="masterColumns"
+              [columns]="facade.masterColumns"
               [cellTemplates]="masterCellTemplates"
               [localSort]="false"
               [expandedRow]="panelTplBinding"
-              [expandedRowWhen]="expandedRowWhenFn()"
-              [expandedRowLabel]="expandedRowLabelFn()"
-              (rowClick)="onMasterRowClick($event)"
+              [expandedRowWhen]="facade.expandedRowWhenFn()"
+              [expandedRowLabel]="facade.expandedRowLabelFn()"
+              (rowClick)="facade.onMasterRowClick($event)"
               [ariaLabel]="'Реестры: ' + group.category"
               data-test="registries-master-table"
             />
@@ -152,67 +130,7 @@ export function restoreRegistryScrollPosition(
   `],
 })
 export class RegistriesPage implements OnInit {
-  private readonly catalog = inject(REGISTRIES_CATALOG);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-
-  protected readonly registryKey = toSignal(
-    this.route.paramMap.pipe(map((p) => p.get('registryKey'))),
-    { initialValue: this.route.snapshot.paramMap.get('registryKey') },
-  );
-
-  protected readonly isUnknown = computed(() => {
-    const key = this.registryKey();
-    return key !== null && !this.catalog.some((d) => d.key === key);
-  });
-
-  protected readonly masterRows = signal<RegistryMasterRow[]>(
-    this.catalog.map((def) => ({
-      id: def.key,
-      key: def.key,
-      title: def.title,
-      description: def.description,
-      source: def.source,
-      recordCount: def.recordCount ? def.recordCount() : null,
-      category: def.category ?? REGISTRY_DEFAULT_CATEGORY,
-    })),
-  );
-
-  /**
-   * TZ-NX-REGISTRIES-CATEGORY-GROUPS — rows grouped by `category`, group
-   * order following each category's first appearance in the catalog.
-   */
-  protected readonly groupedRows = computed<RegistryCategoryGroup[]>(() => {
-    const groups = new Map<string, RegistryMasterRow[]>();
-    for (const row of this.masterRows()) {
-      const rows = groups.get(row.category);
-      if (rows) rows.push(row);
-      else groups.set(row.category, [row]);
-    }
-    return Array.from(groups, ([category, rows]) => ({ category, rows }));
-  });
-
-  protected readonly masterColumns: ColumnDef<RegistryMasterRow>[] = [
-    { key: 'title', label: 'Реестр' },
-    { key: 'source', label: 'Источник', width: '8rem' },
-    {
-      key: 'recordCount',
-      label: 'Записей',
-      width: '10rem',
-      align: 'right',
-      numeric: true,
-      format: (r) => recordCountLabel(r.recordCount),
-    },
-  ];
-
-  protected readonly expandedRowWhenFn = computed(() => {
-    const key = this.registryKey();
-    return (row: RegistryMasterRow) => key !== null && row.key === key;
-  });
-
-  protected readonly expandedRowLabelFn = computed(
-    () => (row: RegistryMasterRow) => `Реестр «${row.title}»`,
-  );
+  protected readonly facade = inject(RegistriesPageFacade);
 
   @ViewChild('titleTpl', { static: true })
   private readonly titleTplRef!: TemplateRef<{ $implicit: RegistryMasterRow }>;
@@ -227,68 +145,10 @@ export class RegistriesPage implements OnInit {
   ngOnInit(): void {
     this.masterCellTemplates = { title: this.titleTplRef, source: this.sourceTplRef };
     this.panelTplBinding = this.panelTplRef;
-    void this.loadRecordCounts();
+    this.facade.init();
   }
 
-  private async loadRecordCounts(): Promise<void> {
-    const queryState = { filters: {}, page: 1, pageSize: 1, sort: null as RegistrySort | null };
-    const counts = await Promise.all(
-      this.catalog.map(async (def) => {
-        if (def.recordCount) return def.recordCount();
-        try {
-          const result = await def.dataSource.query({
-            ...queryState,
-            sort: def.defaultSort ?? null,
-            pageSize: def.defaultPageSize ?? 1,
-          });
-          return result.total;
-        } catch {
-          return null;
-        }
-      }),
-    );
-    this.masterRows.update((rows) =>
-      rows.map((row, index) => ({
-        ...row,
-        recordCount: counts[index] ?? row.recordCount,
-      })),
-    );
+  protected definitionFor(key: string): ReturnType<RegistriesPageFacade['definitionFor']> {
+    return this.facade.definitionFor(key);
   }
-
-  protected definitionFor(key: string): RegistryDefinition<RegistryRow> | null {
-    return this.catalog.find((d) => d.key === key) ?? null;
-  }
-
-  protected onMasterRowClick(row: RegistryMasterRow): void {
-    const scrollport = this.registryScrollport();
-    const scrollTop = scrollport?.scrollTop;
-    const target = this.registryKey() === row.key
-      ? ['/registries']
-      : ['/registries', row.key];
-    void this.router.navigate(target).then(() => {
-      if (scrollport && scrollTop !== undefined) {
-        restoreRegistryScrollPosition(scrollport, scrollTop);
-      }
-    });
-  }
-
-  private registryScrollport(): HTMLElement | null {
-    if (typeof document === 'undefined') return null;
-    return document.querySelector<HTMLElement>('.shell-main');
-  }
-}
-
-function recordCountLabel(count: number | null): string {
-  if (count === null) return 'Неизвестно';
-  return pluralizeRecords(count);
-}
-
-/** RU pluralization for «запись/записи/записей» (1 / 2–4 / 0,5+ and the 11–14 exception). */
-function pluralizeRecords(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 14) return `${n} записей`;
-  if (mod10 === 1) return `${n} запись`;
-  if (mod10 >= 2 && mod10 <= 4) return `${n} записи`;
-  return `${n} записей`;
 }

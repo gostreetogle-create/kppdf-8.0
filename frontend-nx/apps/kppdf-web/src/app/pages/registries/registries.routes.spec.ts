@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { PiMaterialsService, PiModulesService, PiProductsService, PiUnitsService, type Unit } from '@kppdf/data-access';
 import { REGISTRIES_ROUTES } from './registries.routes';
 import { RegistriesPage } from './registries-page';
+import { RegistriesPageFacade } from './registries-page.facade';
 import { REGISTRIES_CATALOG, buildRegistriesCatalogDefault } from './data/registries.catalog';
 import {
   mockOrganizationsService,
@@ -95,7 +96,16 @@ describe('Registries routing — master table + inline panel URL sync (TZ-NX-REG
       ],
     });
     TestBed.overrideComponent(RegistriesPage, {
-      set: { providers: [{ provide: REGISTRIES_CATALOG, useValue: testCatalog() }] },
+      set: {
+        providers: [
+          { provide: REGISTRIES_CATALOG, useValue: testCatalog() },
+          { provide: RegistriesPageFacade, useFactory: () => {
+            const facade = new RegistriesPageFacade();
+            facade.initialize(testCatalog());
+            return facade;
+          } },
+        ],
+      },
     });
   });
 
@@ -315,7 +325,16 @@ describe('Registries routing — real catalog smoke (TZ-NX-REGISTRY-UNITS-READ-S
       { openEdit: jest.fn() },
     );
     TestBed.overrideComponent(RegistriesPage, {
-      set: { providers: [{ provide: REGISTRIES_CATALOG, useValue: catalog }] },
+      set: {
+        providers: [
+          { provide: REGISTRIES_CATALOG, useValue: catalog },
+          { provide: RegistriesPageFacade, useFactory: () => {
+            const facade = new RegistriesPageFacade();
+            facade.initialize(catalog);
+            return facade;
+          } },
+        ],
+      },
     });
   });
 

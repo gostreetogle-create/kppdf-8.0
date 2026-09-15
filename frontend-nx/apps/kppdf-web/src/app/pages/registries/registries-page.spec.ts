@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter, type ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { RegistriesPage, restoreRegistryScrollPosition } from './registries-page';
+import { RegistriesPageFacade } from './registries-page.facade';
 import { REGISTRIES_CATALOG } from './data/registries.catalog';
 import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 
@@ -88,7 +89,16 @@ describe('RegistriesPage — master table (TZ-NX-REGISTRIES-MASTER-TABLE-UX)', (
       ],
     });
     TestBed.overrideComponent(RegistriesPage, {
-      set: { providers: [{ provide: REGISTRIES_CATALOG, useValue: catalog }] },
+      set: {
+        providers: [
+          { provide: REGISTRIES_CATALOG, useValue: catalog },
+          { provide: RegistriesPageFacade, useFactory: () => {
+            const facade = new RegistriesPageFacade();
+            facade.initialize(catalog);
+            return facade;
+          } },
+        ],
+      },
     });
     const router = TestBed.inject(Router);
     navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);

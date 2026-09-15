@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { ActivatedRoute, convertToParamMap, provideRouter, type ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { RegistriesPage } from './registries-page';
+import { RegistriesPageFacade } from './registries-page.facade';
 import { RegistryDetailPanelComponent } from '@kppdf/features/registry-forms';
 import { REGISTRIES_CATALOG } from './data/registries.catalog';
 import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
@@ -89,7 +90,16 @@ describe('Registries — accessibility smoke (TZ-NX-REGISTRIES-MASTER-TABLE-UX)'
       ],
     });
     TestBed.overrideComponent(RegistriesPage, {
-      set: { providers: [{ provide: REGISTRIES_CATALOG, useValue: testCatalog() }] },
+      set: {
+        providers: [
+          { provide: REGISTRIES_CATALOG, useValue: testCatalog() },
+          { provide: RegistriesPageFacade, useFactory: () => {
+            const facade = new RegistriesPageFacade();
+            facade.initialize(testCatalog());
+            return facade;
+          } },
+        ],
+      },
     });
     const fixture = TestBed.createComponent(RegistriesPage);
     fixture.detectChanges();
@@ -110,7 +120,16 @@ describe('Registries — accessibility smoke (TZ-NX-REGISTRIES-MASTER-TABLE-UX)'
       ],
     });
     TestBed.overrideComponent(RegistriesPage, {
-      set: { providers: [{ provide: REGISTRIES_CATALOG, useValue: testCatalog() }] },
+      set: {
+        providers: [
+          { provide: REGISTRIES_CATALOG, useValue: testCatalog() },
+          { provide: RegistriesPageFacade, useFactory: () => {
+            const facade = new RegistriesPageFacade();
+            facade.initialize(testCatalog());
+            return facade;
+          } },
+        ],
+      },
     });
     const fixture = TestBed.createComponent(RegistriesPage);
     fixture.detectChanges();
