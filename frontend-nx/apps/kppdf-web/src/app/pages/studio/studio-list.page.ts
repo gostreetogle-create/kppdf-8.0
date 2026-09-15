@@ -1,62 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Injector, OnInit, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { PiToastService } from '@kppdf/ui/toast';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { CheckboxComponent } from '@kppdf/ui/checkbox';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
-import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocType, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
-import { rememberStudioDocument } from '@kppdf/features/doc-studio';
-import {
-  StudioTemplatePickerDialogComponent,
-  type StudioTemplatePickerDialogData,
-  StudioCreateDoctypeDialogComponent,
-  type StudioCreateDoctypeDialogData,
-  type StudioCreateDoctypeResult,
-} from '@kppdf/features/doc-studio';
+import { StudioListFacade } from './studio-list.facade';
 
-/** Row-caption labels for the values actually used by `statusFilter` below (draft/frozen/final). */
-const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {
-  draft: 'Черновик',
-  frozen: 'Заморожен',
-  final: 'В архиве',
-};
-
-/**
- * TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM — the backend `findAll` already
- * hides the internal blank-A4 sentinel, so an empty template list here is
- * genuinely "nothing saved yet", not "picker is broken". Shared with
- * `studio-templates-list.page.ts` so the copy stays identical everywhere
- * this empty state can show.
- */
-export const STUDIO_NO_SAVED_TEMPLATES_MESSAGE =
-  'Нет сохранённых шаблонов — сохраните из студии (Шаблон → Сохранить как шаблон)';
-
-/** RU pluralization for «документ/документа/документов» (mirrors `pluralizeRecords` in registries-page.ts). */
-function pluralizeDocuments(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 14) return `${n} документов`;
-  if (mod10 === 1) return `${n} документ`;
-  if (mod10 >= 2 && mod10 <= 4) return `${n} документа`;
-  return `${n} документов`;
-}
+export { STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from './studio-list.facade';
 
 @Component({
   selector: 'pi-studio-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [StudioListFacade],
   imports: [PiStatusBannerComponent, PiPageChromeComponent, RouterLink, ButtonComponent, CheckboxComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="studio-list">
       <app-pi-page-chrome [crumbs]="[{ label: 'Документы' }]" />
       <div class="flex items-center justify-end gap-2 mb-4">
-        <!-- Native <a> (not app-pi-button): ButtonComponent doesn't forward routerLink's
-             href host binding, which would silently drop hover-URL/open-in-new-tab.
-             Classes mirror <app-pi-button variant="ghost"> exactly (button.component.ts). -->
         <a class="inline-flex items-center justify-center gap-2 font-medium font-mono uppercase tracking-wider rounded-sm transition-all pi-focus-ring bg-transparent text-ink hover:bg-paper-2 h-10 px-4 text-sm" routerLink="/studio/templates" data-test="studio-templates-link">Шаблоны</a>
         <app-pi-button variant="secondary" type="button" data-test="studio-create-from-template" (click)="createFromTemplate()">Из шаблона</app-pi-button>
         <app-pi-button variant="default" type="button" data-test="studio-create" (click)="create()">Создать документ</app-pi-button>
@@ -81,26 +42,13 @@ function pluralizeDocuments(n: number): string {
       @if (status() === 'success' && filteredDocuments().length > 0) {
         <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
           <div class="flex items-center gap-4 px-4 py-2 hairline-bottom bg-paper-2">
-            <app-pi-checkbox
-              size="sm"
-              ariaLabel="Выбрать все документы"
-              data-test="studio-select-all"
-              [checked]="allVisibleSelected()"
-              [indeterminate]="someVisibleSelected()"
-              (checkedChange)="toggleSelectAllVisible($event)"
-            />
+            <app-pi-checkbox size="sm" ariaLabel="Выбрать все документы" data-test="studio-select-all" [checked]="allVisibleSelected()" [indeterminate]="someVisibleSelected()" (checkedChange)="toggleSelectAllVisible($event)" />
             <span class="text-xs text-muted-foreground uppercase tracking-wider">Выбрать все</span>
           </div>
           @for (document of filteredDocuments(); track document._id) {
             <div class="flex items-center justify-between gap-4 px-4 py-3 hairline-bottom" data-test="studio-row">
               <div class="flex items-center gap-4 min-w-0">
-                <app-pi-checkbox
-                  size="sm"
-                  [ariaLabel]="'Выбрать ' + document.name"
-                  data-test="studio-row-select"
-                  [checked]="selectedIds().has(document._id)"
-                  (checkedChange)="toggleRow(document._id, $event)"
-                />
+                <app-pi-checkbox size="sm" [ariaLabel]="'Выбрать ' + document.name" data-test="studio-row-select" [checked]="selectedIds().has(document._id)" (checkedChange)="toggleRow(document._id, $event)" />
                 <button class="text-left pi-focus-ring" type="button" (click)="open(document)">
                   <div class="font-medium">{{ document.name }}</div>
                   <div class="text-xs text-muted-foreground">{{ documentStatusLabel(document.status) }} · {{ formatUpdatedAt(document.updatedAt) }}</div>
@@ -118,209 +66,28 @@ function pluralizeDocuments(n: number): string {
   `,
 })
 export class StudioListPage implements OnInit {
-  private readonly service = inject(PiStudioDocumentsService);
-  private readonly documentTemplates = inject(PiDocumentTemplatesService);
-  private readonly docTypesApi = inject(PiDocTypesService);
-  private readonly router = inject(Router);
-  private readonly dialog = inject(PiDialogService);
-  private readonly toast = inject(PiToastService);
-  private readonly injector = inject(Injector);
-  readonly documents = signal<readonly StudioDocument[]>([]);
-  readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  readonly error = signal('Не удалось загрузить документы.');
-  readonly search = signal('');
-  readonly statusFilter = signal<'all' | 'draft' | 'frozen' | 'final'>('all');
-  readonly filteredDocuments = computed(() => {
-    const query = this.search().trim().toLocaleLowerCase();
-    const filter = this.statusFilter();
-    return this.documents().filter((document) =>
-      (!query || document.name.toLocaleLowerCase().includes(query)) &&
-      (filter === 'all' || document.status === filter),
-    );
-  });
+  private readonly facade = inject(StudioListFacade);
 
-  readonly selectedIds = signal<ReadonlySet<string>>(new Set());
-  readonly allVisibleSelected = computed(() => {
-    const docs = this.filteredDocuments();
-    return docs.length > 0 && docs.every((d) => this.selectedIds().has(d._id));
-  });
-  readonly someVisibleSelected = computed(() => {
-    if (this.allVisibleSelected()) return false;
-    const ids = this.selectedIds();
-    return this.filteredDocuments().some((d) => ids.has(d._id));
-  });
+  readonly documents = this.facade.documents;
+  readonly status = this.facade.status;
+  readonly error = this.facade.error;
+  readonly search = this.facade.search;
+  readonly statusFilter = this.facade.statusFilter;
+  readonly filteredDocuments = this.facade.filteredDocuments;
+  readonly selectedIds = this.facade.selectedIds;
+  readonly allVisibleSelected = this.facade.allVisibleSelected;
+  readonly someVisibleSelected = this.facade.someVisibleSelected;
 
-  ngOnInit(): void { this.load(); }
-  load(): void {
-    this.status.set('loading');
-    this.selectedIds.set(new Set());
-    void firstValueFrom(this.service.list()).then((result) => {
-      if (!result.ok) { this.error.set(String(result.error)); this.status.set('error'); return; }
-      const rows = result.data;
-      this.documents.set(rows);
-
-      // The module landing is always the documents list. Resume behavior is
-      // reserved for explicit editor/create flows, never the nav entry.
-      this.status.set('success');
-    });
-  }
-  toggleRow(id: string, checked: boolean): void {
-    const next = new Set(this.selectedIds());
-    if (checked) next.add(id); else next.delete(id);
-    this.selectedIds.set(next);
-  }
-  toggleSelectAllVisible(checked: boolean): void {
-    const next = new Set(this.selectedIds());
-    for (const d of this.filteredDocuments()) {
-      if (checked) next.add(d._id); else next.delete(d._id);
-    }
-    this.selectedIds.set(next);
-  }
-  /** Same destructive-confirm pattern as single-row `remove()`; deletes go through the existing per-id DELETE endpoint in parallel — no backend bulk-endpoint. */
-  removeSelected(): void {
-    const ids = [...this.selectedIds()];
-    if (ids.length === 0) return;
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-      data: { title: `Удалить ${pluralizeDocuments(ids.length)}?`, confirmLabel: 'Удалить', cancelLabel: 'Отмена', variant: 'destructive' },
-      width: 'sm',
-    });
-    onDialogCloseOnce(ref, this.injector, (ok) => {
-      if (ok !== true) return;
-      void Promise.all(ids.map((id) => firstValueFrom(this.service.remove(id)))).then((results) => {
-        const failed = results.filter((result) => !result.ok).length;
-        if (failed > 0) this.toast.error(`Не удалось удалить ${pluralizeDocuments(failed)} из ${ids.length}`);
-        this.load();
-      });
-    });
-  }
-  createFromTemplate(): void {
-    void this.loadActiveTemplates().then((templates) => {
-      if (templates === null) return;
-      if (templates.length === 0) {
-        this.toast.error(STUDIO_NO_SAVED_TEMPLATES_MESSAGE);
-        return;
-      }
-      this.openTemplatePicker(templates);
-    });
-  }
-
-  /**
-   * TZ-NX-DOCSTUDIO-TEMPLATES-NO-SENTINEL-SPAM — `findAll` on the backend
-   * already excludes the internal blank-A4 sentinel and soft-deleted rows,
-   * so an empty/all-inactive response here genuinely means the operator has
-   * not saved a template yet, not "9 copies of a system placeholder".
-   */
-  private loadActiveTemplates(): Promise<readonly DocumentTemplate[] | null> {
-    return firstValueFrom(this.documentTemplates.list()).then((result) => {
-      if (!result.ok) {
-        this.toast.error(String(result.error));
-        return null;
-      }
-      if (result.data.length === 0) {
-        this.toast.error(STUDIO_NO_SAVED_TEMPLATES_MESSAGE);
-        return null;
-      }
-      return result.data.filter((item) => item.isActive !== false);
-    });
-  }
-
-  private openTemplatePicker(templates: readonly DocumentTemplate[]): void {
-    const ref = this.dialog.open<DocumentTemplate | undefined, StudioTemplatePickerDialogData>(
-      StudioTemplatePickerDialogComponent,
-      {
-        data: {
-          templates,
-          onDeleted: () => {
-            void this.loadActiveTemplates();
-          },
-        },
-      },
-    );
-
-    onDialogCloseOnce(ref, this.injector, (template) => {
-      if (!template) return;
-      void firstValueFrom(this.service.createFromTemplate(template._id)).then((created) => {
-        if (!created.ok) { this.toast.error(String(created.error)); return; }
-        rememberStudioDocument(created.data._id);
-        void this.router.navigate(['/studio', created.data._id]);
-      });
-    });
-  }
-
-
-  duplicate(document: StudioDocument): void {
-    void firstValueFrom(this.service.duplicate(document._id)).then((result) => {
-      if (result.ok) {
-        rememberStudioDocument(result.data._id);
-        void this.router.navigate(['/studio', result.data._id]);
-      } else this.toast.error(String(result.error));
-    });
-  }
-
-  /** «Создать документ» — требует явный выбор типа, чтобы Save-as-template и токены/КП-lifecycle не ломались по смыслу. */
-  create(): void {
-    void firstValueFrom(this.docTypesApi.list()).then((result) => {
-      if (!result.ok) {
-        this.toast.error(String(result.error));
-        return;
-      }
-      if (result.data.length === 0) {
-        this.toast.error('Нет доступных типов документов');
-        return;
-      }
-      this.openCreateDoctypeDialog(result.data);
-    });
-  }
-
-  private openCreateDoctypeDialog(docTypes: readonly DocType[]): void {
-    const ref = this.dialog.open<StudioCreateDoctypeResult | undefined, StudioCreateDoctypeDialogData>(
-      StudioCreateDoctypeDialogComponent,
-      { data: { docTypes, defaultName: this.buildDefaultName('Документ') } },
-    );
-    onDialogCloseOnce(ref, this.injector, (result) => {
-      if (!result) return;
-      this.createDocument(result.name, result.docTypeId);
-    });
-  }
-
-  private buildDefaultName(prefix: string): string {
-    const date = new Date().toLocaleDateString('ru-RU');
-    const sameDay = this.documents().filter((d) => d.name.startsWith(`${prefix} ${date}`)).length;
-    return sameDay === 0 ? `${prefix} ${date}` : `${prefix} ${date} (${sameDay + 1})`;
-  }
-
-  private createDocument(name: string, docTypeId: string): void {
-    void firstValueFrom(this.service.create({ name, orientation: 'portrait', pageSize: 'A4', docTypeId })).then((result) => {
-      if (result.ok) {
-        rememberStudioDocument(result.data._id);
-        void this.router.navigate(['/studio', result.data._id]);
-      } else this.toast.error(String(result.error));
-    });
-  }
-  protected documentStatusLabel(status: string): string {
-    return STUDIO_DOCUMENT_STATUS_LABELS[status] ?? status;
-  }
-  protected formatUpdatedAt(value?: string): string {
-    if (!value) return '—';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return value;
-    return parsed.toLocaleString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-  open(document: StudioDocument): void {
-    rememberStudioDocument(document._id);
-    void this.router.navigate(['/studio', document._id]);
-  }
-  remove(document: StudioDocument): void {
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, { data: { title: `Удалить «${document.name}»?`, confirmLabel: 'Удалить', cancelLabel: 'Отмена', variant: 'destructive' }, width: 'sm' });
-    onDialogCloseOnce(ref, this.injector, (ok) => {
-      if (ok !== true) return;
-      void firstValueFrom(this.service.remove(document._id)).then((result) => { if (result.ok) this.load(); else this.toast.error(String(result.error)); });
-    });
-  }
+  ngOnInit(): void { this.facade.load(); }
+  load(): void { this.facade.load(); }
+  toggleRow(id: string, checked: boolean): void { this.facade.toggleRow(id, checked); }
+  toggleSelectAllVisible(checked: boolean): void { this.facade.toggleSelectAllVisible(checked); }
+  removeSelected(): void { this.facade.removeSelected(); }
+  createFromTemplate(): void { this.facade.createFromTemplate(); }
+  duplicate(document: Parameters<StudioListFacade['duplicate']>[0]): void { this.facade.duplicate(document); }
+  create(): void { this.facade.create(); }
+  documentStatusLabel(status: string): string { return this.facade.documentStatusLabel(status); }
+  formatUpdatedAt(value?: string): string { return this.facade.formatUpdatedAt(value); }
+  open(document: Parameters<StudioListFacade['open']>[0]): void { this.facade.open(document); }
+  remove(document: Parameters<StudioListFacade['remove']>[0]): void { this.facade.remove(document); }
 }
