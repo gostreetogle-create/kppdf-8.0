@@ -1,10 +1,10 @@
-﻿updated_at: 2026-09-15T15:15:00+03:00
+updated_at: 2026-09-15T15:25:00+03:00
 
 ## ACTIVE / LIVE
 
-- **VERIFY PASS:** DECOMP **B5+B6+B7 COMPLETE** (tip wave `0cf20cfb` / feat `928bd75a`)
-- **B8 IN PROGRESS:** TZ1/TZ3/TZ4/TZ5 DONE (`0b2d0e81`/`3ca5721b`/`8e9c2c5b`/`d6ba08ce`), TZ2 investigated/no-move — next: TZ-NX-ADMIN-ROLES-TO-FEATURES (last, STOP after)
-  - `tasks/_ready/2026-09-15-decomp-b8-registries-desktop-admin/`
+- **VERIFY PASS:** DECOMP **B5+B6+B7+B8 COMPLETE** (tip wave `cffd70a0`)
+  - B8: TZ1 `0b2d0e81`, TZ2 investigated/no-move (`registry.types.ts` blocker), TZ3 `3ca5721b`, TZ4 `8e9c2c5b`, TZ5 `d6ba08ce`, TZ6 `cffd70a0`
+- **Claude:** awaiting next wave pack under `tasks/_ready/`
 
 ## PARK
 
