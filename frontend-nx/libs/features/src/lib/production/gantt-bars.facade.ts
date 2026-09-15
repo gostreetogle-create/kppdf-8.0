@@ -19,9 +19,9 @@ import {
   workTypeWash,
   ORDER_STATUS_LABELS,
   type GanttBar,
-} from '../gantt-bar.model';
+} from './util/gantt-bar.model';
 import type { OrderPriority, OrderStatus, Person } from '@kppdf/data-access';
-import type { GanttZoom } from '../production-cockpit.context';
+import type { GanttZoom } from './production-cockpit.context';
 import {
   calculateGanttPxPerDay,
   GANTT_LABEL_COL_PX,
@@ -42,7 +42,7 @@ import {
   type GanttRowKind,
   type GanttStartOffsetCommit,
   type GanttWorkerAssignmentCommit,
-} from './gantt-bars.constants';
+} from './util/gantt-bars.constants';
 
 /** Bound accessors — the host `GanttBarsComponent`'s `input()`/`output()` refs, wired once via `bind()`. */
 export interface GanttBarsFacadeHost {

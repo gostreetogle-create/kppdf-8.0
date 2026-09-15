@@ -8,7 +8,7 @@ import {
   buildWorkerTreeBars,
   isWorkerSummaryBar,
   type GanttBar,
-} from '../gantt-bar.model';
+} from '../util/gantt-bar.model';
 
 /**
  * TZ-NX-GANTT-G4 — zoom/pan/scroll regression:

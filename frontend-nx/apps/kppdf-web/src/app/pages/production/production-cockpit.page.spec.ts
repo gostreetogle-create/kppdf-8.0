@@ -12,8 +12,7 @@ import {
 } from '@kppdf/data-access';
 import { PiToastService } from '@kppdf/ui/toast';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
-import { ProductionReadFacade } from './production-read.facade';
-import { ProductionCockpitContext } from './production-cockpit.context';
+import { ProductionReadFacade, ProductionCockpitContext } from '@kppdf/features/production';
 import { ProductionCockpitPage } from './production-cockpit.page';
 
 /**

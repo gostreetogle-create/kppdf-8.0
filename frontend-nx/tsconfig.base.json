@@ -27,6 +27,12 @@
       "@kppdf/features/doc-studio": [
         "libs/features/src/lib/doc-studio/index.ts"
       ],
+      "@kppdf/features/production": [
+        "libs/features/src/lib/production/index.ts"
+      ],
+      "@kppdf/features/production/production-read.facade": [
+        "libs/features/src/lib/production/production-read.facade.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],

@@ -6,7 +6,7 @@ import {
   filterOrdersForRail,
   NO_COUNTERPARTY_FILTER,
   ORDER_STATUS_LABELS,
-} from '../gantt-bar.model';
+} from '../util/gantt-bar.model';
 import type { Order, OrderPriority, OrderStatus } from '@kppdf/data-access';
 import { ProductionCockpitContext } from '../production-cockpit.context';
 

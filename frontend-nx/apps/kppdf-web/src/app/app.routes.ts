@@ -1,5 +1,8 @@
 import { inject } from '@angular/core';
-import { ProductionReadFacade } from './pages/production/production-read.facade';
+// Narrow subpath (not the `@kppdf/features/production` barrel) — this route
+// config is eagerly bundled, and the barrel's `export * from './ui'` would
+// otherwise drag the whole (route-lazy) Gantt UI into the initial chunk.
+import { ProductionReadFacade } from '@kppdf/features/production/production-read.facade';
 import { CanMatchFn, Router, Route } from '@angular/router';
 import { AuthService, authGuard, publicOnlyGuard } from '@kppdf/data-access/auth';
 import { capabilityRouteGuard } from '@kppdf/data-access/capabilities';

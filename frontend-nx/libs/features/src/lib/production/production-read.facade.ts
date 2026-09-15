@@ -37,7 +37,7 @@ import {
   type ModuleWorkTypeRef,
   type EstimateDayOverrideRef,
   type EstimateStartOffsetRef,
-} from './gantt-bar.model';
+} from './util/gantt-bar.model';
 
 export interface GanttSkipInfo {
   orderId: string;

@@ -22,7 +22,7 @@ import {
   isOrderSummaryBar,
   isProductSummaryBar,
   type GanttBar,
-} from '../gantt-bar.model';
+} from '../util/gantt-bar.model';
 import { personDisplayName, type OrderStatus, type Person } from '@kppdf/data-access';
 import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
 import { ProductionScaleControlsComponent } from './production-scale-controls.component';
@@ -35,7 +35,7 @@ import { ProductionScaleControlsComponent } from './production-scale-controls.co
  * the `Gantt*Commit`/`GanttOrderMetaView` types from `production-cockpit.page.ts`)
  * keep resolving from `./gantt-bars.component` exactly as before.
  */
-export * from './gantt-bars.constants';
+export * from '../util/gantt-bars.constants';
 import {
   calculateCenteredMarkerScrollLeft,
   GANTT_DETAIL_ROW_PX,
@@ -51,8 +51,8 @@ import {
   type GanttRowKind,
   type GanttStartOffsetCommit,
   type GanttWorkerAssignmentCommit,
-} from './gantt-bars.constants';
-import { GanttBarsFacade, type GanttBarsFacadeHost } from './gantt-bars.facade';
+} from '../util/gantt-bars.constants';
+import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade';
 
 @Component({
   selector: 'app-gantt-bars',

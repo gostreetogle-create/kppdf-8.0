@@ -33,19 +33,20 @@ import {
   RefreshCw,
   SlidersHorizontal,
 } from 'lucide-angular';
-import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
 import {
   GanttBarsComponent,
+  OrdersRailComponent,
+  ProductionCockpitContext,
+  ProductionCockpitFacade,
+  ProductionReadFacade,
   type GanttEstimateDaysCommit,
   type GanttOrderMetaCommit,
   type GanttPlannedDateMoveCommit,
   type GanttStartOffsetCommit,
   type GanttWorkerAssignmentCommit,
-} from './blocks/gantt-bars.component';
-import { ProductionCockpitContext } from './production-cockpit.context';
-import { ProductionReadFacade } from './production-read.facade';
-import { ProductionCockpitFacade, type ProductionLeftTool } from './production-cockpit.facade';
+  type ProductionLeftTool,
+} from '@kppdf/features/production';
 
 @Component({
   selector: 'pi-production-cockpit-page',

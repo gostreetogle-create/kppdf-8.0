@@ -15,8 +15,7 @@ import {
 import { PiToastService } from '@kppdf/ui/toast';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
 import { ProductionCockpitPage } from './production-cockpit.page';
-import { ProductionReadFacade } from './production-read.facade';
-import { ProductionCockpitContext } from './production-cockpit.context';
+import { ProductionReadFacade, ProductionCockpitContext } from '@kppdf/features/production';
 
 /**
  * TZ-NX-GANTT-G5 — write path:

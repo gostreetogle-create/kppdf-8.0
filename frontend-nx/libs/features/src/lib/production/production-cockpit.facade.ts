@@ -32,7 +32,7 @@ import type {
   GanttPlannedDateMoveCommit,
   GanttStartOffsetCommit,
   GanttWorkerAssignmentCommit,
-} from './blocks/gantt-bars.component';
+} from './ui/gantt-bars.component';
 import { ProductionCockpitContext, type GanttGroupBy } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import {
@@ -49,7 +49,7 @@ import {
   resolveVisualAnchor,
   summarizeUnassignedGanttWork,
   type GanttBar,
-} from './gantt-bar.model';
+} from './util/gantt-bar.model';
 
 export type ProductionLeftTool = 'orders' | 'filters' | null;
 
