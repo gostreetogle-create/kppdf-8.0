@@ -15,8 +15,8 @@ import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
 import { CompositionPanelComponent, scrollCompositionBlockIntoView } from '@kppdf/features/composition';
-import { RegistryCreateButtonComponent } from '../registry-create-button.component';
-import { ModuleFormFacade, type WorkTypeFormGroup } from './module-form.facade';
+import { RegistryCreateButtonComponent } from './registry-create-button.component';
+import { ModuleFormFacade, type WorkTypeFormGroup } from '../module-form.facade';
 
 export interface ModuleFormDialogData {
   mode: 'create' | 'edit';

@@ -1,7 +1,7 @@
 import { defineRegistry, type RegistryDefinition, type RegistryRow } from '../model/registry.types';
 import { createCategoriesHttpDataSource, categoryTypeLabel, type CategoryRow } from './categories-http-data-source';
 import { buildCategoryCreateAction, buildCategoryRowActions, type CategoryRegistryDeps } from './category-registry-actions';
-import { CATEGORY_TYPE_OPTIONS } from '../dialogs/category-form-dialog.component';
+import { CATEGORY_TYPE_OPTIONS } from '@kppdf/features/registry-forms';
 
 /**
  * TZ-NX-REG-CATEGORIES-CRUD — «Категории» registry (section «Справочники»).

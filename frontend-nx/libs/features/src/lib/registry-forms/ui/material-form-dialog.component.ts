@@ -10,8 +10,8 @@ import { InputComponent } from '@kppdf/ui/input';
 import { TextareaComponent } from '@kppdf/ui/textarea';
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
 import { CompositionPanelComponent } from '@kppdf/features/composition';
-import { RegistryCreateButtonComponent } from '../registry-create-button.component';
-import { MaterialFormFacade, type DimensionGroup } from './material-form.facade';
+import { RegistryCreateButtonComponent } from './registry-create-button.component';
+import { MaterialFormFacade, type DimensionGroup } from '../material-form.facade';
 
 export interface MaterialFormDialogData {
   readonly mode: 'create' | 'edit';

@@ -19,8 +19,7 @@ import type { DialogRef } from '@kppdf/ui/dialog';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import type { SilentResult } from '@kppdf/util-http';
 import { StorageItemsPage } from './storage-items.page';
-import { StorageAdjustDialogComponent } from './storage-adjust-dialog.component';
-import { StoragePutOnStockDialogComponent } from './storage-put-on-stock-dialog.component';
+import { StorageAdjustDialogComponent, StoragePutOnStockDialogComponent } from '@kppdf/features/warehouse';
 
 describe('StorageItemsPage (NX W2)', () => {
   let fixture: ComponentFixture<StorageItemsPage>;

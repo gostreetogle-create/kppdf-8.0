@@ -1,13 +1,17 @@
 /**
  * `@kppdf/features/order-hub` public API.
  *
- * TZ-NX-ORDER-HUB-UI-FEATURES: only the two tray-local, dependency-free
- * dialogs (kit-reserve confirm, ship confirm) moved here. `order-hub-tray.component.ts`
- * and `order-hub.facade.ts` stay in `apps/kppdf-web` — both need the real
- * `CompositionTreeComponent` (a genuine cross-domain shared component, also
- * used by `composition-panel.component.ts`), which this lib cannot import
- * without either duplicating a 170+ LOC component or reaching into the app.
- * Same reasoning DocStudio Editor Decomp Phase 3 used to keep
- * `studio-data-panel`/`studio-properties-panel`/etc. in the app.
+ * TZ-NX-ORDER-HUB-UI-FEATURES (B1) moved only the two tray-local,
+ * dependency-free dialogs (kit-reserve confirm, ship confirm) here —
+ * `order-hub-tray.component.ts`/`order-hub.facade.ts` stayed in the app
+ * because both needed the real `CompositionTreeComponent`, then still an
+ * app-only file.
+ *
+ * TZ-NX-DECOMP-DEBT-CLOSEOUT (C2) finishes the move: `CompositionTreeComponent`
+ * relocated to `@kppdf/features/composition` in C1 (TZ-NX-COMPOSITION-TO-FEATURES),
+ * so `order-hub-tray.component.ts` now imports it as a normal lib-to-lib
+ * dependency instead of an app-only relative one. `order-hub.facade.ts`
+ * (lib root) + `order-hub-tray.component.ts` (`ui/`) moved here in full.
  */
 export * from './ui';
+export * from './order-hub.facade';

@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { type Order, type OrderItem } from '@kppdf/data-access';
 import { CompositionTreeComponent, type CompositionTreeSelectEvent } from '@kppdf/features/composition';
 import { orderStatusLabel } from './order-status';
-import { OrderHubFacade } from './order-hub.facade';
+import { OrderHubFacade } from '../order-hub.facade';
 
 /**
  * Order hub expand — hub-only (TZ-NX-DEALS-D2). Most desk-write controls (confirm,

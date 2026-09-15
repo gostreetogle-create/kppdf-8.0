@@ -54,6 +54,9 @@
       "@kppdf/features/composition/composition-focus-scroll": [
         "libs/features/src/lib/composition/ui/composition-focus-scroll.ts"
       ],
+      "@kppdf/features/registry-forms": [
+        "libs/features/src/lib/registry-forms/index.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],

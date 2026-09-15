@@ -18,12 +18,12 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiDialogService } from '@kppdf/ui/dialog';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { StorageAdjustDialogComponent, type StorageAdjustDialogData } from './storage-adjust-dialog.component';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { StorageAdjustDialogComponent, type StorageAdjustDialogData } from './ui/storage-adjust-dialog.component';
 import {
   StoragePutOnStockDialogComponent,
   type StoragePutOnStockDialogData,
-} from './storage-put-on-stock-dialog.component';
+} from './ui/storage-put-on-stock-dialog.component';
 
 @Injectable()
 export class StorageItemsFacade {

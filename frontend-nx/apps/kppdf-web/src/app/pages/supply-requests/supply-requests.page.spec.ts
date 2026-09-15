@@ -14,7 +14,7 @@ import {
 import { AlertDialogComponent, PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { SupplyRequestsPage } from './supply-requests.page';
-import { SupplyRequestFormDialogComponent } from './supply-request-form-dialog.component';
+import { SupplyRequestFormDialogComponent } from '@kppdf/features/supply';
 import { SupplyRequestReceiveDialogComponent } from '@kppdf/features/supply';
 
 describe('SupplyRequestsPage (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {

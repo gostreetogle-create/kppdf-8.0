@@ -36,10 +36,10 @@ import { normalizePhotoFrame, photoFrameOf, PiPhotoDropzoneComponent, type PiPho
 import { PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { extractErrorMessage } from '@kppdf/util-http';
-import { formatMaterialKind } from '../data/material-formatters';
-import { onDialogCloseOnce } from '../../on-dialog-close-once';
-import { CategoryFormDialogComponent, type CategoryFormDialogData } from './category-form-dialog.component';
-import type { MaterialFormDialogData } from './material-form-dialog.component';
+import { formatMaterialKind } from './ui/material-formatters';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { CategoryFormDialogComponent, type CategoryFormDialogData } from './ui/category-form-dialog.component';
+import type { MaterialFormDialogData } from './ui/material-form-dialog.component';
 
 export const DIMENSION_TYPES: { value: MaterialDimensionType; label: string }[] = [
   { value: 'length', label: 'Длина' },

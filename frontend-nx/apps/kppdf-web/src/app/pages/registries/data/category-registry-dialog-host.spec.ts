@@ -5,7 +5,7 @@ import type { DestroyRef } from '@angular/core';
 import type { PiDialogService } from '@kppdf/ui/dialog';
 import type { PiCategoriesService, Category } from '@kppdf/data-access';
 import { createCategoryRegistryDialogHost } from './category-registry-dialog-host';
-import { CategoryFormDialogComponent } from '../dialogs/category-form-dialog.component';
+import { CategoryFormDialogComponent } from '@kppdf/features/registry-forms';
 import type { RegistryActionContext } from '../model/registry.types';
 
 describe('createCategoryRegistryDialogHost', () => {

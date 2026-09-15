@@ -24,12 +24,9 @@ import {
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiToastService } from '@kppdf/ui/toast';
 import { firstValueFrom } from 'rxjs';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { RegistryCreateButtonComponent } from '../registries/registry-create-button.component';
-import {
-  MaterialFormDialogComponent,
-  type MaterialFormDialogData,
-} from '../registries/dialogs/material-form-dialog.component';
+import { onDialogCloseOnce } from './on-dialog-close-once';
+import { RegistryCreateButtonComponent } from './registry-create-button.component';
+import { MaterialFormDialogComponent, type MaterialFormDialogData } from '@kppdf/features/registry-forms';
 
 /** Mirrors `supply-request-form-dialog.component.ts`'s material typeahead. */
 const MIN_MATERIAL_QUERY = 2;

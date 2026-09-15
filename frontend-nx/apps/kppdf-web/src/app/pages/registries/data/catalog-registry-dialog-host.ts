@@ -12,11 +12,9 @@ import { onDialogCloseOnce } from '../../on-dialog-close-once';
 import {
   ModuleFormDialogComponent,
   type ModuleFormDialogData,
-} from '../dialogs/module-form-dialog.component';
-import {
   ProductFormDialogComponent,
   type ProductFormDialogData,
-} from '../dialogs/product-form-dialog.component';
+} from '@kppdf/features/registry-forms';
 import type { RegistryActionContext } from '../model/registry.types';
 
 export interface CatalogRegistryDialogHost {

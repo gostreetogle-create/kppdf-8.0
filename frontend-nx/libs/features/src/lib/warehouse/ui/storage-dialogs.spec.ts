@@ -15,7 +15,7 @@ import {
   type DialogRef,
 } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import { MaterialFormDialogComponent } from '../registries/dialogs/material-form-dialog.component';
+import { MaterialFormDialogComponent } from '@kppdf/features/registry-forms';
 import { StorageAdjustDialogComponent } from './storage-adjust-dialog.component';
 import {
   StoragePutOnStockDialogComponent,

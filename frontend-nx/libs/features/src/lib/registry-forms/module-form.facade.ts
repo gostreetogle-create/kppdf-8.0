@@ -30,9 +30,9 @@ import { PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { confirmDirtyClose } from '@kppdf/features/composition';
-import { onDialogCloseOnce } from '../../on-dialog-close-once';
-import { CategoryFormDialogComponent, type CategoryFormDialogData } from './category-form-dialog.component';
-import type { ModuleFormDialogData } from './module-form-dialog.component';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { CategoryFormDialogComponent, type CategoryFormDialogData } from './ui/category-form-dialog.component';
+import type { ModuleFormDialogData } from './ui/module-form-dialog.component';
 
 export type WorkTypeFormGroup = FormGroup<{
   workTypeId: FormControl<string>;

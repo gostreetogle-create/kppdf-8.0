@@ -13,7 +13,7 @@ import {
   SupplyRequestFormDialogComponent,
   type SupplyRequestFormDialogData,
 } from './supply-request-form-dialog.component';
-import { MaterialFormDialogComponent } from '../registries/dialogs/material-form-dialog.component';
+import { MaterialFormDialogComponent } from '@kppdf/features/registry-forms';
 
 describe('SupplyRequestFormDialogComponent (TZ-NX-SUPPLY-S3-REQUEST-JOURNAL)', () => {
   let fixture: ComponentFixture<SupplyRequestFormDialogComponent>;

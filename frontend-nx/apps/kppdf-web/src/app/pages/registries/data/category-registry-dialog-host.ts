@@ -3,10 +3,7 @@ import type { DestroyRef, Injector } from '@angular/core';
 import { PiCategoriesService, type Category } from '@kppdf/data-access';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../../on-dialog-close-once';
-import {
-  CategoryFormDialogComponent,
-  type CategoryFormDialogData,
-} from '../dialogs/category-form-dialog.component';
+import { CategoryFormDialogComponent, type CategoryFormDialogData } from '@kppdf/features/registry-forms';
 import type { RegistryActionContext } from '../model/registry.types';
 
 export interface CategoryRegistryDialogHost {

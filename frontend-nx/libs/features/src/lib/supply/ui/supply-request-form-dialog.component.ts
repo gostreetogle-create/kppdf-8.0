@@ -17,12 +17,9 @@ import { PiDialogComponent, PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF, type
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { SUPPLY_REQUEST_STATUS_LABELS } from '../registries/data/supply-request-formatters';
-import {
-  MaterialFormDialogComponent,
-  type MaterialFormDialogData,
-} from '../registries/dialogs/material-form-dialog.component';
+import { onDialogCloseOnce } from './on-dialog-close-once';
+import { SUPPLY_REQUEST_STATUS_LABELS } from './supply-request-formatters';
+import { MaterialFormDialogComponent, type MaterialFormDialogData } from '@kppdf/features/registry-forms';
 
 /** Sentinel `<option>` value — order not found in the list, switch to free-text `orderLabel`. */
 const MANUAL_ORDER_VALUE = '__manual__';

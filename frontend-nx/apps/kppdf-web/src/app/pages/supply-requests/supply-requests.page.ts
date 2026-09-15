@@ -4,7 +4,7 @@ import type { SupplyRequest, SupplyRequestStatus } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { SUPPLY_REQUEST_STATUS_LABELS } from '../registries/data/supply-request-formatters';
-import { SupplyRequestsFacade } from './supply-requests.facade';
+import { SupplyRequestsFacade } from '@kppdf/features/supply';
 
 /**
  * TZ-NX-SUPPLY-S3-REQUEST-JOURNAL — single SoT for `SupplyRequest` (журнал заявок

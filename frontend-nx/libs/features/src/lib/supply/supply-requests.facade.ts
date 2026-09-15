@@ -21,16 +21,16 @@ import {
 import { extractErrorMessage } from '@kppdf/util-http';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { formatSupplyRequestPriority, formatSupplyRequestStatus } from '../registries/data/supply-request-formatters';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { formatSupplyRequestPriority, formatSupplyRequestStatus } from './ui/supply-request-formatters';
 import {
   SupplyRequestFormDialogComponent,
   type SupplyRequestFormDialogData,
-} from './supply-request-form-dialog.component';
+} from './ui/supply-request-form-dialog.component';
 import {
   SupplyRequestReceiveDialogComponent,
   type SupplyRequestReceiveDialogData,
-} from '@kppdf/features/supply';
+} from './ui/supply-request-receive-dialog.component';
 
 const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progress', 'requested', 'ordered']);
 

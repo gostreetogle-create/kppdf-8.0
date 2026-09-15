@@ -11,7 +11,7 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { WAREHOUSE_TOC_CHIPS } from '../warehouse-group-chips';
-import { StorageItemsFacade } from './storage-items.facade';
+import { StorageItemsFacade } from '@kppdf/features/warehouse';
 
 /**
  * TZ-NX-WAREHOUSE-PAGES-FACADE — filter/route-sync signals and every

@@ -8,7 +8,7 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { PiGroupWorkspaceComponent } from '@kppdf/features';
 import { DEALS_TOC_CHIPS } from '../deals-group-chips';
 import { orderStatusLabel } from './order-status';
-import { OrderHubTrayComponent } from './order-hub-tray.component';
+import { OrderHubTrayComponent } from '@kppdf/features/order-hub';
 
 @Component({
   selector: 'pi-orders-list-page',

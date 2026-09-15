@@ -5,10 +5,7 @@ import { PiMaterialsService } from '@kppdf/data-access';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { onDialogCloseOnce } from '../../on-dialog-close-once';
-import {
-  MaterialFormDialogComponent,
-  type MaterialFormDialogData,
-} from '../dialogs/material-form-dialog.component';
+import { MaterialFormDialogComponent, type MaterialFormDialogData } from '@kppdf/features/registry-forms';
 import type { RegistryActionContext } from '../model/registry.types';
 import type { MaterialRegistryDialogConfig } from './material-registry-actions';
 

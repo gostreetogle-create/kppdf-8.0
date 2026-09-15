@@ -31,9 +31,9 @@ import { PiDialogService, PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { confirmDirtyClose } from '@kppdf/features/composition';
-import { onDialogCloseOnce } from '../../on-dialog-close-once';
-import { CategoryFormDialogComponent, type CategoryFormDialogData } from './category-form-dialog.component';
-import type { ProductFormDialogData } from './product-form-dialog.component';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
+import { CategoryFormDialogComponent, type CategoryFormDialogData } from './ui/category-form-dialog.component';
+import type { ProductFormDialogData } from './ui/product-form-dialog.component';
 
 export const KIND_OPTIONS: { value: ProductKind; label: string }[] = [
   { value: 'good', label: 'Товар' },
