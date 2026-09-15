@@ -51,4 +51,14 @@ describe('PiSitesService (TZ-NX-SALES-S32-SITES-ENSURE)', () => {
       address: 'Адрес не указан',
     });
   });
+
+  it('create() POSTs /sites (TZ-NX-ORDER-WS-META-INLINE)', () => {
+    const payload = { counterpartyId, name: 'Склад №2', address: 'ул. Заводская, 5' };
+    service.create(payload).subscribe();
+
+    const request = httpMock.expectOne(`${baseUrl}/sites`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(payload);
+    request.flush({ _id: 'site-2', ...payload });
+  });
 });

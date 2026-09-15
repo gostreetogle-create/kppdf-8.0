@@ -36,6 +36,7 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
     counterpartyId: new Types.ObjectId(COUNTERPARTY),
     siteId: new Types.ObjectId(SITE) as Types.ObjectId | undefined,
     quotationId: undefined as Types.ObjectId | undefined,
+    organizationId: undefined as Types.ObjectId | undefined,
     plannedDate: undefined as Date | undefined,
     date: new Date(),
     status: 'draft',
@@ -828,6 +829,30 @@ describe('OrderService — TZ-ORDERS-301', () => {
         message: 'У заказа нет площадки (siteId) — создайте объект у контрагента',
       });
       expect(doc.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('organizationId PATCH (TZ-NX-ORDER-WS-META-INLINE)', () => {
+    it('applies organizationId — DTO validated it but update() silently ignored it before this fix', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'draft', siteId: new Types.ObjectId(SITE) });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), { organizationId: ORGANIZATION } as never);
+
+      expect(doc.organizationId).toEqual(new Types.ObjectId(ORGANIZATION));
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('leaves organizationId untouched when omitted from the PATCH body', async () => {
+      const { service, model } = createService();
+      const existingOrgId = new Types.ObjectId();
+      const doc = orderDoc({ status: 'draft', siteId: new Types.ObjectId(SITE), organizationId: existingOrgId });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), { notes: 'без смены фирмы' } as never);
+
+      expect(doc.organizationId).toEqual(existingOrgId);
     });
   });
 

@@ -3,11 +3,11 @@
  *
  * Owns: order load/reload, payment fact (optimistic PATCH + revert), КП
  * (studio deep-link) and status/meta label helpers — moved as-is from the
- * page. TZ-NX-ORDER-WS-HEADER adds: organization name lookup, confirm
- * (draft→confirmed PATCH) and cancel (`POST /orders/:id/cancel`), both
- * behind an `AlertDialogComponent` confirm (same pattern as `order-hub`'s
- * ship/cancel-shipment dialogs). Status transition rules unchanged — both
- * write paths reuse existing backend endpoints, no new graph edges.
+ * page. TZ-NX-ORDER-WS-HEADER adds: confirm (draft→confirmed PATCH) and
+ * cancel (`POST /orders/:id/cancel`), both behind an `AlertDialogComponent`
+ * confirm (same pattern as `order-hub`'s ship/cancel-shipment dialogs).
+ * Status transition rules unchanged — both write paths reuse existing
+ * backend endpoints, no new graph edges.
  *
  * TZ-NX-ORDER-WS-COMPOSITION adds: add/qty/remove/ready line writes + a
  * lazy per-line composition tree. Backend `mapItems` maps items **by
@@ -33,6 +33,22 @@
  * shipments key by `order._id`; `activeShipment()` = first non-cancelled;
  * ship/cancel-shipment reuse `ShipConfirmDialogComponent`/`PiOrdersService.ship()`/
  * `PiShipmentsService.cancelShipment()` exactly as the hub tray does.
+ *
+ * TZ-NX-ORDER-WS-META-INLINE adds: editable Наша фирма/Заказчик/Объект —
+ * was a dead-end «—» with no write. `organizationId` needed a one-line
+ * backend fix (`OrderService.update` validated it via the DTO but never
+ * applied it to the document — see the PATCH-graph comment on `setOrganization`).
+ * Changing `counterpartyId` MUST carry a matching `siteId` in the **same**
+ * PATCH — the backend's `sites.assertBelongsTo` check runs on every update
+ * that touches either field, and rejects a stale site left over from the
+ * old counterparty; `setCounterparty` resolves the new counterparty's
+ * default site via `PiSitesService.ensureDefault` first, exactly like
+ * `order-create.page.ts` does at creation time, then PATCHes both fields
+ * together. `createOrganization`/`createCounterparty`/`createSite` open
+ * their dialogs from the *page* (not here) — this facade lives in
+ * `libs/features`, those dialogs live in `apps/kppdf-web`, and NX module
+ * boundaries don't let a lib import an app. This facade only ever
+ * receives the finished payload back.
  */
 import { ActivatedRoute, Router } from '@angular/router';
 import { DestroyRef, Injectable, Injector, inject, signal } from '@angular/core';
@@ -40,19 +56,27 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import {
   PiCompositionService,
+  PiCounterpartiesService,
   PiOrdersService,
   PiOrganizationsService,
+  PiSitesService,
   PiProductsService,
   PiReservationsService,
   PiShipmentsService,
   PiSupplyRequestsService,
   type CompositionTreeNode,
+  type Counterparty,
+  type CreateCounterpartyPayload,
+  type CreateOrganizationPayload,
+  type CreateSitePayload,
   type KitReserveResult,
   type Order,
   type OrderItem,
   type OrderItemPayload,
+  type Organization,
   type Product,
   type Shipment,
+  type Site,
   type SupplyRequest,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
@@ -87,6 +111,8 @@ export const EMPTY_RESERVATION_COUNTERS: ReservationCounters = { active: 0, tota
 export class OrderWorkspaceFacade {
   private readonly ordersApi = inject(PiOrdersService);
   private readonly organizationsApi = inject(PiOrganizationsService);
+  private readonly counterpartiesApi = inject(PiCounterpartiesService);
+  private readonly sitesApi = inject(PiSitesService);
   private readonly productsApi = inject(PiProductsService);
   private readonly compositionApi = inject(PiCompositionService);
   private readonly supplyApi = inject(PiSupplyRequestsService);
@@ -104,9 +130,17 @@ export class OrderWorkspaceFacade {
   readonly paid = signal(false);
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal('Не удалось загрузить заказ.');
-  readonly organizationName = signal<string | null>(null);
   readonly confirming = signal(false);
   readonly cancelling = signal(false);
+
+  /** TZ-NX-ORDER-WS-META-INLINE — Наша фирма/Заказчик/Объект picker options + in-flight flag. */
+  readonly organizations = signal<readonly Organization[]>([]);
+  private organizationsLoaded = false;
+  readonly counterparties = signal<readonly Counterparty[]>([]);
+  private counterpartiesLoaded = false;
+  /** Sites for the order's *current* counterparty — reloaded on every counterparty change. */
+  readonly sites = signal<readonly Site[]>([]);
+  readonly savingMeta = signal(false);
 
   readonly products = signal<readonly Product[]>([]);
   private productsLoaded = false;
@@ -136,7 +170,6 @@ export class OrderWorkspaceFacade {
 
   load(): void {
     this.status.set('loading');
-    this.organizationName.set(null);
     this.expandedLineIndex.set(null);
     this.lineTrees.set({});
     void firstValueFrom(this.ordersApi.getById(this.id())).then((result) => {
@@ -148,12 +181,161 @@ export class OrderWorkspaceFacade {
       this.order.set(result.data ?? null);
       this.paid.set(result.data?.isPaid === true);
       this.status.set('success');
-      this.loadOrganizationName(result.data?.organizationId);
+      this.loadOrganizations();
+      this.loadCounterparties();
+      const currentCounterpartyId = this.counterpartyId();
+      if (currentCounterpartyId) this.loadSites(currentCounterpartyId);
       this.loadProducts();
       this.loadSupply();
       this.loadReservations();
       this.loadShipments();
     });
+  }
+
+  private loadOrganizations(): void {
+    if (this.organizationsLoaded) return;
+    this.organizationsLoaded = true;
+    this.organizationsApi
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (result.ok) this.organizations.set(result.data?.items ?? []);
+      });
+  }
+
+  private loadCounterparties(): void {
+    if (this.counterpartiesLoaded) return;
+    this.counterpartiesLoaded = true;
+    this.counterpartiesApi
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (result.ok) this.counterparties.set(result.data?.items ?? []);
+      });
+  }
+
+  private loadSites(counterpartyId: string): void {
+    this.sitesApi
+      .list(counterpartyId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (result.ok) this.sites.set(result.data ?? []);
+      });
+  }
+
+  /** Current order's organization id — plain string, `Order.organizationId` is never populated. */
+  organizationId(): string {
+    return this.order()?.organizationId ?? '';
+  }
+
+  /** Current order's counterparty id, unwrapped from the populated-or-plain union. */
+  counterpartyId(): string {
+    const c = this.order()?.counterpartyId;
+    if (!c) return '';
+    return typeof c === 'string' ? c : c._id;
+  }
+
+  /** Current order's site id, unwrapped from the populated-or-plain union. */
+  siteId(): string {
+    const s = this.order()?.siteId;
+    if (!s) return '';
+    return typeof s === 'string' ? s : s._id;
+  }
+
+  /**
+   * TZ-NX-ORDER-WS-META-INLINE — needed a one-line backend fix first
+   * (`OrderService.update` validated `organizationId` via the inherited
+   * DTO but never applied it to the document — PATCH returned 200 and
+   * silently did nothing). Unlike `counterpartyId`/`siteId`, org has no
+   * cross-field invariant, so a lone PATCH is safe.
+   */
+  async setOrganization(organizationId: string): Promise<void> {
+    const order = this.order();
+    if (!order || !organizationId) return;
+    this.savingMeta.set(true);
+    const result = await firstValueFrom(this.ordersApi.update(order._id, { organizationId }));
+    this.savingMeta.set(false);
+    if (!result.ok) {
+      this.toast.error('Не удалось назначить фирму', { description: extractErrorMessage(result.error) });
+      return;
+    }
+    if (result.data) this.order.set(result.data);
+  }
+
+  /**
+   * Backend's `sites.assertBelongsTo` runs on every PATCH touching
+   * `counterpartyId` or `siteId` — changing counterparty alone would leave
+   * the order's old site orphaned and get rejected. Resolve the new
+   * counterparty's default site first (same `ensureDefault` call
+   * `order-create.page.ts` makes at creation time) and PATCH both fields
+   * together.
+   */
+  async setCounterparty(counterpartyId: string): Promise<void> {
+    const order = this.order();
+    if (!order || !counterpartyId) return;
+    this.savingMeta.set(true);
+    const site = await firstValueFrom(this.sitesApi.ensureDefault(counterpartyId));
+    if (!site.ok) {
+      this.savingMeta.set(false);
+      this.toast.error('Не удалось определить объект нового заказчика', {
+        description: extractErrorMessage(site.error),
+      });
+      return;
+    }
+    const result = await firstValueFrom(
+      this.ordersApi.update(order._id, { counterpartyId, siteId: site.data._id }),
+    );
+    this.savingMeta.set(false);
+    if (!result.ok) {
+      this.toast.error('Не удалось сменить заказчика', { description: extractErrorMessage(result.error) });
+      return;
+    }
+    if (result.data) this.order.set(result.data);
+    this.loadSites(counterpartyId);
+  }
+
+  /** Site change within the same counterparty — no cross-field invariant to resolve first. */
+  async setSite(siteId: string): Promise<void> {
+    const order = this.order();
+    if (!order || !siteId) return;
+    this.savingMeta.set(true);
+    const result = await firstValueFrom(this.ordersApi.update(order._id, { siteId }));
+    this.savingMeta.set(false);
+    if (!result.ok) {
+      this.toast.error('Не удалось сменить объект', { description: extractErrorMessage(result.error) });
+      return;
+    }
+    if (result.data) this.order.set(result.data);
+  }
+
+  async createOrganization(payload: CreateOrganizationPayload): Promise<void> {
+    const result = await firstValueFrom(this.organizationsApi.create(payload));
+    if (!result.ok) {
+      this.toast.error('Не удалось создать фирму', { description: extractErrorMessage(result.error) });
+      return;
+    }
+    this.organizations.update((list) => [...list, result.data]);
+    await this.setOrganization(result.data._id);
+  }
+
+  async createCounterparty(payload: CreateCounterpartyPayload): Promise<void> {
+    const result = await firstValueFrom(this.counterpartiesApi.create(payload));
+    if (!result.ok) {
+      this.toast.error('Не удалось создать заказчика', { description: extractErrorMessage(result.error) });
+      return;
+    }
+    this.counterparties.update((list) => [...list, result.data]);
+    await this.setCounterparty(result.data._id);
+  }
+
+  async createSite(payload: CreateSitePayload): Promise<void> {
+    const result = await firstValueFrom(this.sitesApi.create(payload));
+    if (!result.ok) {
+      this.toast.error('Не удалось создать объект', { description: extractErrorMessage(result.error) });
+      return;
+    }
+    this.sites.update((list) => [...list, result.data]);
+    await this.setSite(result.data._id);
   }
 
   private loadProducts(): void {
@@ -354,34 +536,10 @@ export class OrderWorkspaceFacade {
     return (this.order()?.items ?? []).length;
   }
 
-  private loadOrganizationName(organizationId: string | undefined): void {
-    if (!organizationId) return;
-    this.organizationsApi
-      .getById(organizationId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (result.ok) this.organizationName.set(result.data?.name ?? null);
-      });
-  }
-
   bannerTone(status?: string): 'warning' | 'info' | 'destructive' | 'neutral' {
     if (status === 'draft') return 'warning';
     if (status === 'cancelled') return 'destructive';
     return 'info';
-  }
-
-  counterpartyName(): string | null {
-    const c = this.order()?.counterpartyId;
-    if (!c) return null;
-    return typeof c === 'string' ? c : (c.name ?? null);
-  }
-
-  siteName(): string | null {
-    const s = this.order()?.siteId;
-    if (!s) return null;
-    if (typeof s === 'string') return s;
-    const parts = [s.name, s.address].filter((p): p is string => !!p);
-    return parts.length > 0 ? parts.join(' · ') : null;
   }
 
   quotationId(): string | null {

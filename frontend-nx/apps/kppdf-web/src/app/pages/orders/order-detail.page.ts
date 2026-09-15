@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, OnInit, computed, inject } from '@angular/core';
+import type { CreateCounterpartyPayload, CreateOrganizationPayload, CreateSitePayload } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiGroupWorkspaceComponent, type GroupChip } from '@kppdf/features';
 import {
   OrderWorkspaceFacade,
@@ -10,6 +12,10 @@ import {
   OrderWsLogisticsComponent,
 } from '@kppdf/features/order-workspace';
 import { orderStatusLabel } from './order-status';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { CounterpartyFormDialogComponent } from '../counterparties/counterparty-form-dialog.component';
+import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
+import { SiteFormDialogComponent, type SiteFormDialogData } from './site-form-dialog.component';
 
 /**
  * NX order workspace (`TZ-NX-ORDER-WS-FACADE-SHELL`, wave
@@ -76,9 +82,13 @@ import { orderStatusLabel } from './order-status';
               <pi-order-ws-header
                 [statusLabel]="statusLabel(order.status)"
                 [bannerTone]="bannerTone(order.status)"
-                [counterpartyName]="facade.counterpartyName()"
-                [siteName]="facade.siteName()"
-                [organizationName]="facade.organizationName()"
+                [organizations]="facade.organizations()"
+                [counterparties]="facade.counterparties()"
+                [sites]="facade.sites()"
+                [organizationId]="facade.organizationId()"
+                [counterpartyId]="facade.counterpartyId()"
+                [siteId]="facade.siteId()"
+                [savingMeta]="facade.savingMeta()"
                 [quotationId]="facade.quotationId()"
                 [quotationNumber]="facade.quotationNumber()"
                 [paid]="facade.paid()"
@@ -91,6 +101,12 @@ import { orderStatusLabel } from './order-status';
                 (openQuotation)="facade.openQuotationInStudio()"
                 (confirmOrder)="facade.confirmOrder()"
                 (cancelOrder)="facade.cancelOrder()"
+                (organizationIdChange)="facade.setOrganization($event)"
+                (counterpartyIdChange)="facade.setCounterparty($event)"
+                (siteIdChange)="facade.setSite($event)"
+                (createOrganization)="openCreateOrganization()"
+                (createCounterparty)="openCreateCounterparty()"
+                (createSite)="openCreateSite()"
               />
             </section>
 
@@ -166,6 +182,9 @@ import { orderStatusLabel } from './order-status';
 })
 export class OrderDetailPage implements OnInit {
   protected readonly facade = inject(OrderWorkspaceFacade);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   protected readonly statusLabel = orderStatusLabel;
 
@@ -202,5 +221,50 @@ export class OrderDetailPage implements OnInit {
   protected onPaidToggle(event: Event): void {
     const target = event.target as HTMLInputElement;
     void this.facade.setPaid(target.checked, target);
+  }
+
+  /**
+   * TZ-NX-ORDER-WS-META-INLINE — the three «+» quick-create flows open
+   * their dialog here (app-level, same app as the dialog components) and
+   * hand the resulting payload to the facade, which owns the actual
+   * POST + order PATCH. `OrderWsHeaderComponent` stays dumb — it only
+   * emits the click.
+   */
+  protected openCreateOrganization(): void {
+    const ref = this.dialog.open<CreateOrganizationPayload | undefined>(OrganizationFormDialogComponent, {
+      width: 'sm',
+      ariaLabel: 'Создать нашу фирму',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (payload) => {
+      if (payload) void this.facade.createOrganization(payload);
+    });
+  }
+
+  protected openCreateCounterparty(): void {
+    const ref = this.dialog.open<CreateCounterpartyPayload | undefined>(CounterpartyFormDialogComponent, {
+      data: {},
+      width: 'sm',
+      ariaLabel: 'Создать заказчика',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (payload) => {
+      if (payload) void this.facade.createCounterparty(payload);
+    });
+  }
+
+  protected openCreateSite(): void {
+    const counterpartyId = this.facade.counterpartyId();
+    if (!counterpartyId) return;
+    const data: SiteFormDialogData = { counterpartyId };
+    const ref = this.dialog.open<CreateSitePayload | undefined>(SiteFormDialogComponent, {
+      data,
+      width: 'sm',
+      ariaLabel: 'Создать объект',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (payload) => {
+      if (payload) void this.facade.createSite(payload);
+    });
   }
 }

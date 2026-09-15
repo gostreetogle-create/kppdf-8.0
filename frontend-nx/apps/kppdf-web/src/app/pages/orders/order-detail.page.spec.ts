@@ -6,8 +6,10 @@ import { of, Subject } from 'rxjs';
 import {
   AuthService,
   PiCompositionService,
+  PiCounterpartiesService,
   PiOrdersService,
   PiOrganizationsService,
+  PiSitesService,
   PiProductsService,
   PiReservationsService,
   PiShipmentsService,
@@ -25,13 +27,75 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   let ordersApi: { getById: jest.Mock; update: jest.Mock; cancel: jest.Mock; setLineReady: jest.Mock; ship: jest.Mock };
   let toast: { error: jest.Mock; success: jest.Mock };
   let router: { navigate: jest.Mock };
-  let organizationsApi: { getById: jest.Mock };
+  let organizationsApi: { getById: jest.Mock; list: jest.Mock; create: jest.Mock };
+  let counterpartiesApi: { list: jest.Mock; create: jest.Mock };
+  let sitesApi: { list: jest.Mock; ensureDefault: jest.Mock; create: jest.Mock };
   let dialog: { open: jest.Mock };
   let productsApi: { list: jest.Mock };
   let compositionApi: { getProductTree: jest.Mock };
   let supplyApi: { list: jest.Mock };
   let reservationsApi: { list: jest.Mock };
   let shipmentsApi: { list: jest.Mock; cancelShipment: jest.Mock };
+
+  /** TZ-NX-ORDER-WS-META-INLINE — two of each so select-change tests have a real option to switch to. */
+  function freshOrganizationsApi() {
+    return {
+      getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })),
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            items: [
+              { _id: 'org-1', name: 'Наша фирма', inn: '7700000001', isOurCompany: true },
+              { _id: 'org-2', name: 'Вторая фирма', inn: '7700000002', isOurCompany: true },
+            ],
+            total: 2,
+            page: 1,
+            limit: 25,
+          },
+        }),
+      ),
+      create: jest.fn(),
+    };
+  }
+
+  function freshCounterpartiesApi() {
+    return {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            items: [
+              { _id: 'cp-1', name: 'ООО Пример', inn: '7707083893', roles: ['customer'], isActive: true },
+              { _id: 'cp-2', name: 'ООО Второй', inn: '7707083894', roles: ['customer'], isActive: true },
+            ],
+            total: 2,
+            page: 1,
+            limit: 200,
+          },
+        }),
+      ),
+      create: jest.fn(),
+    };
+  }
+
+  function freshSitesApi() {
+    return {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: [
+            { _id: 'site-1', counterpartyId: 'cp-1', name: 'Склад №1', address: 'Москва' },
+            { _id: 'site-2', counterpartyId: 'cp-2', name: 'Склад №2', address: 'СПб' },
+          ],
+        }),
+      ),
+      ensureDefault: jest.fn().mockReturnValue(
+        of({ ok: true, data: { _id: 'site-2', counterpartyId: 'cp-2', name: 'Склад №2', address: 'СПб' } }),
+      ),
+      create: jest.fn(),
+    };
+  }
 
   const quotationOrder: Order = {
     _id: 'order-1',
@@ -63,7 +127,9 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   async function setup(result: ReturnType<typeof of> | Subject<SilentResult<Order>>): Promise<void> {
     ordersApi = { getById: jest.fn().mockReturnValue(result), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn(), ship: jest.fn() };
     toast = { error: jest.fn(), success: jest.fn() };
-    organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
+    organizationsApi = freshOrganizationsApi();
+    counterpartiesApi = freshCounterpartiesApi();
+    sitesApi = freshSitesApi();
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
@@ -78,6 +144,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiToastService, useValue: toast },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
         { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiCounterpartiesService, useValue: counterpartiesApi },
+        { provide: PiSitesService, useValue: sitesApi },
         { provide: PiDialogService, useValue: dialog },
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
@@ -118,7 +186,9 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
       error: new HttpErrorResponse({ status: 404, error: { message: 'Order not found' } }),
     };
     ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn(), ship: jest.fn() };
-    organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
+    organizationsApi = freshOrganizationsApi();
+    counterpartiesApi = freshCounterpartiesApi();
+    sitesApi = freshSitesApi();
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
@@ -137,6 +207,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiToastService, useValue: toast },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
         { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiCounterpartiesService, useValue: counterpartiesApi },
+        { provide: PiSitesService, useValue: sitesApi },
         { provide: PiDialogService, useValue: dialog },
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
@@ -531,7 +603,9 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
 
   it('sends PATCH { isPaid } from the paid toggle and reflects the server answer', async () => {
     ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn(), ship: jest.fn() };
-    organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
+    organizationsApi = freshOrganizationsApi();
+    counterpartiesApi = freshCounterpartiesApi();
+    sitesApi = freshSitesApi();
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
@@ -551,6 +625,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiToastService, useValue: toast },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
         { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiCounterpartiesService, useValue: counterpartiesApi },
+        { provide: PiSitesService, useValue: sitesApi },
         { provide: PiDialogService, useValue: dialog },
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
@@ -576,13 +652,13 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  it('shows the org name resolved from organizationId and confirms a draft order via the confirm dialog', async () => {
+  it('shows the assigned org in the «Наша фирма» select and confirms a draft order via the confirm dialog', async () => {
     await setup(of({ ok: true, data: { ...directOrder, organizationId: 'org-1' } } satisfies SilentResult<Order>));
     await settle();
 
-    expect(organizationsApi.getById).toHaveBeenCalledWith('org-1');
-    await settle();
-    expect(fixture.nativeElement.textContent).toContain('Наша фирма');
+    const orgSelect = fixture.nativeElement.querySelector('[data-test="order-meta-organization"]') as HTMLSelectElement;
+    expect(orgSelect.value).toBe('org-1');
+    expect(orgSelect.selectedOptions[0]?.textContent).toContain('Наша фирма');
 
     ordersApi.update.mockReturnValue(
       of({ ok: true, data: { ...directOrder, status: 'confirmed' } } satisfies SilentResult<Order>),
@@ -622,7 +698,9 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
 
   it('does not lie about payment when the PATCH fails: toast + checkbox keeps the old fact', async () => {
     ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn(), ship: jest.fn() };
-    organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
+    organizationsApi = freshOrganizationsApi();
+    counterpartiesApi = freshCounterpartiesApi();
+    sitesApi = freshSitesApi();
     dialog = { open: jest.fn() };
     productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
     compositionApi = { getProductTree: jest.fn() };
@@ -642,6 +720,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: PiToastService, useValue: toast },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
         { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiCounterpartiesService, useValue: counterpartiesApi },
+        { provide: PiSitesService, useValue: sitesApi },
         { provide: PiDialogService, useValue: dialog },
         { provide: PiProductsService, useValue: productsApi },
         { provide: PiCompositionService, useValue: compositionApi },
@@ -664,5 +744,131 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     expect(toast.error).toHaveBeenCalled();
     const after = fixture.nativeElement.querySelector('[data-test="order-paid-toggle"]') as HTMLInputElement;
     expect(after.checked).toBe(true);
+  });
+
+  describe('TZ-NX-ORDER-WS-META-INLINE — Наша фирма/Заказчик/Объект', () => {
+    it('changes Наша фирма via the select — PATCH organizationId', async () => {
+      await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+      await settle();
+      ordersApi.update.mockReturnValue(
+        of({ ok: true, data: { ...quotationOrder, organizationId: 'org-1' } } satisfies SilentResult<Order>),
+      );
+
+      const select = fixture.nativeElement.querySelector('[data-test="order-meta-organization"]') as HTMLSelectElement;
+      select.value = 'org-1';
+      select.dispatchEvent(new Event('change'));
+      await settle();
+
+      expect(ordersApi.update).toHaveBeenCalledWith('order-1', { organizationId: 'org-1' });
+    });
+
+    it('changes Заказчик via the select — ensureDefault site first, then PATCHes counterpartyId+siteId together', async () => {
+      await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+      await settle();
+      ordersApi.update.mockReturnValue(
+        of({
+          ok: true,
+          data: { ...quotationOrder, counterpartyId: 'cp-2', siteId: 'site-2' },
+        } satisfies SilentResult<Order>),
+      );
+
+      const select = fixture.nativeElement.querySelector('[data-test="order-meta-counterparty"]') as HTMLSelectElement;
+      select.value = 'cp-2';
+      select.dispatchEvent(new Event('change'));
+      await settle();
+
+      expect(sitesApi.ensureDefault).toHaveBeenCalledWith('cp-2');
+      expect(ordersApi.update).toHaveBeenCalledWith('order-1', { counterpartyId: 'cp-2', siteId: 'site-2' });
+    });
+
+    it('changes Объект via the select — PATCH siteId alone, no ensureDefault (same counterparty)', async () => {
+      await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+      await settle();
+      ordersApi.update.mockReturnValue(
+        of({ ok: true, data: { ...quotationOrder, siteId: 'site-2' } } satisfies SilentResult<Order>),
+      );
+
+      const select = fixture.nativeElement.querySelector('[data-test="order-meta-site"]') as HTMLSelectElement;
+      select.value = 'site-2';
+      select.dispatchEvent(new Event('change'));
+      await settle();
+
+      expect(sitesApi.ensureDefault).not.toHaveBeenCalled();
+      expect(ordersApi.update).toHaveBeenCalledWith('order-1', { siteId: 'site-2' });
+    });
+
+    it('creates a new фирма via «+» and assigns it to the order', async () => {
+      await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+      await settle();
+      const payload = { name: 'ООО Третья', inn: '7700000003', isOurCompany: true };
+      organizationsApi.create.mockReturnValue(of({ ok: true, data: { _id: 'org-3', ...payload } }));
+      ordersApi.update.mockReturnValue(
+        of({ ok: true, data: { ...quotationOrder, organizationId: 'org-3' } } satisfies SilentResult<Order>),
+      );
+      const closed = signal<typeof payload | undefined>(undefined);
+      dialog.open.mockReturnValue({ closed, close: (v?: typeof payload) => closed.set(v) });
+
+      (fixture.nativeElement.querySelector('[data-test="order-meta-organization-add"] button') as HTMLButtonElement).click();
+      closed.set(payload);
+      await settle();
+
+      expect(dialog.open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ ariaLabel: 'Создать нашу фирму' }));
+      expect(organizationsApi.create).toHaveBeenCalledWith(payload);
+      expect(ordersApi.update).toHaveBeenCalledWith('order-1', { organizationId: 'org-3' });
+    });
+
+    it('creates a new заказчик via «+», resolves its default site, and assigns both to the order', async () => {
+      await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+      await settle();
+      const payload = { name: 'ООО Новый', inn: '7707083895', roles: ['customer'] };
+      counterpartiesApi.create.mockReturnValue(of({ ok: true, data: { _id: 'cp-3', ...payload, isActive: true } }));
+      sitesApi.ensureDefault.mockReturnValue(
+        of({ ok: true, data: { _id: 'site-3', counterpartyId: 'cp-3', name: 'Объект по умолчанию', address: '—' } }),
+      );
+      ordersApi.update.mockReturnValue(
+        of({
+          ok: true,
+          data: { ...quotationOrder, counterpartyId: 'cp-3', siteId: 'site-3' },
+        } satisfies SilentResult<Order>),
+      );
+      const closed = signal<typeof payload | undefined>(undefined);
+      dialog.open.mockReturnValue({ closed, close: (v?: typeof payload) => closed.set(v) });
+
+      (fixture.nativeElement.querySelector('[data-test="order-meta-counterparty-add"] button') as HTMLButtonElement).click();
+      closed.set(payload);
+      // Two settles: createCounterparty()→setCounterparty() chains THREE
+      // sequential firstValueFrom()s (create → ensureDefault → update) behind
+      // the dialog-close effect; one whenStable() only drains the first hop.
+      await settle();
+      await settle();
+
+      expect(dialog.open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ ariaLabel: 'Создать заказчика' }));
+      expect(counterpartiesApi.create).toHaveBeenCalledWith(payload);
+      expect(sitesApi.ensureDefault).toHaveBeenCalledWith('cp-3');
+      expect(ordersApi.update).toHaveBeenCalledWith('order-1', { counterpartyId: 'cp-3', siteId: 'site-3' });
+    });
+
+    it('creates a new объект via «+» for the order\'s current counterparty and assigns it to the order', async () => {
+      await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+      await settle();
+      const payload = { counterpartyId: 'cp-1', name: 'Склад №3', address: 'ул. Новая, 1' };
+      sitesApi.create.mockReturnValue(of({ ok: true, data: { _id: 'site-3', ...payload } }));
+      ordersApi.update.mockReturnValue(
+        of({ ok: true, data: { ...quotationOrder, siteId: 'site-3' } } satisfies SilentResult<Order>),
+      );
+      const closed = signal<typeof payload | undefined>(undefined);
+      dialog.open.mockReturnValue({ closed, close: (v?: typeof payload) => closed.set(v) });
+
+      (fixture.nativeElement.querySelector('[data-test="order-meta-site-add"] button') as HTMLButtonElement).click();
+      closed.set(payload);
+      await settle();
+
+      expect(dialog.open).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ data: { counterpartyId: 'cp-1' }, ariaLabel: 'Создать объект' }),
+      );
+      expect(sitesApi.create).toHaveBeenCalledWith(payload);
+      expect(ordersApi.update).toHaveBeenCalledWith('order-1', { siteId: 'site-3' });
+    });
   });
 });

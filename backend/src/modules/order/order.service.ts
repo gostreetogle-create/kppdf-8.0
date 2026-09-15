@@ -985,6 +985,12 @@ export class OrderService {
     if (dto.plannedDate !== undefined) doc.plannedDate = new Date(dto.plannedDate);
     if (dto.deliveryAddress !== undefined) doc.deliveryAddress = dto.deliveryAddress;
     if (dto.priority !== undefined) doc.priority = dto.priority;
+    // TZ-NX-ORDER-WS-META-INLINE: was validated by the DTO (inherited from
+    // CreateOrderDto) but never applied here — PATCH { organizationId }
+    // returned 200 and silently did nothing. Same cast style as create().
+    if (dto.organizationId !== undefined) {
+      doc.organizationId = dto.organizationId ? new Types.ObjectId(dto.organizationId) : undefined;
+    }
 
     if (dto.siteId === undefined) {
       await this.healMissingSiteId(doc);
