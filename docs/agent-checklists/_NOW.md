@@ -1,11 +1,15 @@
-﻿updated_at: 2026-09-15T18:05:00+03:00
+﻿updated_at: 2026-09-15T18:20:00+03:00
 
 ## ACTIVE / LIVE
 
-- **VERIFY:** B10 2/5 DONE (`3aef071e`→`cc5560cf` registries). **3 PENDING:** editor-thin · supply-residual · cockpit-residual
-- **Claude NEXT:** добить B10 remainder
+- **Freebuff NEXT (срочно, PO):** `TZ-NX-HOME-BREADCRUMB-EDIT-CTA`
+  - Prompt: `tasks/_ready/PROMPT-FREEBUFF-HOME-BREADCRUMB-EDIT-CTA.md`
+  - Старт только если `tasks/_active/` пуст
+- **B9 CLOSED** (Freebuff): registries `3aef071e`→`cc5560cf`
+- **Claude B10 remainder (2 TZ left):** editor-thin DONE (`0687a0ff`) → supply-residual → cockpit-residual
   - Pack: `tasks/_ready/2026-09-15-decomp-b10-residual-thin/`
+  - Не параллелить с Freebuff выше (один `nx build kppdf-web`)
 
 ## PARK
 
-forms/foundations showcase · Deploy/Wipe/SSH
+forms/foundations showcase · Deploy/Wipe/SSH · полный order workspace (ждём макет)
