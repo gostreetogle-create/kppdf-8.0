@@ -38,6 +38,15 @@ import { OrderHubFacade } from '../order-hub.facade';
       role="region"
       [attr.aria-label]="'Сводка заказа: ' + order().number"
     >
+      <div class="px-4 pt-4" data-test="order-hub-actions">
+        <a
+          [routerLink]="['/orders', order()._id]"
+          class="pi-outline-btn pi-focus-ring"
+          data-test="order-hub-edit-cta"
+          (click)="$event.stopPropagation()"
+          >Редактировать заказ</a
+        >
+      </div>
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 p-4" data-test="order-lifecycle-groups">
         <!-- Заказ -->
         <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="order-group-order">
@@ -93,7 +102,7 @@ import { OrderHubFacade } from '../order-hub.facade';
                 [routerLink]="['/orders', order()._id]"
                 class="pi-outline-btn mt-3"
                 (click)="$event.stopPropagation()"
-                >Открыть карточку заказа</a
+                >Редактировать заказ</a
               >
             </div>
           }
@@ -173,7 +182,7 @@ import { OrderHubFacade } from '../order-hub.facade';
                   class="pi-outline-btn ml-auto"
                   data-test="order-readiness-link"
                   (click)="$event.stopPropagation()"
-                  >Открыть заказ</a
+                  >Редактировать заказ</a
                 >
               </div>
               @if ((order().items?.length ?? 0) > 0) {

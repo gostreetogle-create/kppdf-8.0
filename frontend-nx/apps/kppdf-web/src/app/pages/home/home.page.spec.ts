@@ -58,6 +58,7 @@ describe('HomePage (TZ-NX-HOME-HUB-QUEUE)', () => {
     expect(rows[0].textContent).toContain('ORD-001');
     expect(rows[0].textContent).toContain('Подтверждён');
     expect(rows[1].textContent).toContain('Черновик');
+    expect(fixture.nativeElement.querySelector('.eyebrow')?.textContent.trim()).toBe('Главная');
     expect(fixture.nativeElement.querySelector('[data-test="home-queue-placeholder"]')).toBeNull();
   });
 
@@ -125,6 +126,8 @@ describe('HomePage (TZ-NX-HOME-HUB-QUEUE)', () => {
     (rows[0] as HTMLElement).click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('[data-test="home-row-expand"]').length).toBe(1);
+    expect(fixture.nativeElement.querySelector('[data-test="order-hub-edit-cta"]')?.textContent).toContain('Редактировать заказ');
+    expect(fixture.nativeElement.querySelector('[data-test="order-composition-panel"]')).toBeNull();
 
     (fixture.nativeElement.querySelectorAll('[data-test="home-row"]')[1] as HTMLElement).click();
     fixture.detectChanges();
@@ -159,6 +162,8 @@ describe('HomePage (TZ-NX-HOME-HUB-QUEUE)', () => {
   it('provides full registry and order-card deep links', async () => {
     await setup();
     expect((fixture.nativeElement.querySelector('[data-test="home-orders-link"]') as HTMLAnchorElement).getAttribute('href')).toBe('/orders');
-    expect((fixture.nativeElement.querySelector('[data-test="home-row-link"]') as HTMLAnchorElement).getAttribute('href')).toBe('/orders/order-1');
+    const rowLink = fixture.nativeElement.querySelector('[data-test="home-row-link"]') as HTMLAnchorElement;
+    expect(rowLink.getAttribute('href')).toBe('/orders/order-1');
+    expect(rowLink.getAttribute('aria-label')).toBe('Редактировать заказ');
   });
 });

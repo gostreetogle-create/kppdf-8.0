@@ -84,6 +84,16 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     expect(root.querySelector('[data-test="order-group-documents"]')).toBeTruthy();
   });
 
+  it('shows the order edit CTA immediately on expand, without opening composition', async () => {
+    await setup();
+    const root: HTMLElement = fixture.nativeElement;
+    const cta = root.querySelector('[data-test="order-hub-edit-cta"]') as HTMLAnchorElement;
+    expect(cta).toBeTruthy();
+    expect(cta.textContent).toContain('Редактировать заказ');
+    expect(cta.getAttribute('href')).toBe('/orders/order-1');
+    expect(root.querySelector('[data-test="order-composition-panel"]')).toBeFalsy();
+  });
+
   it('loads supply, reservations, and shipments eagerly on init (row-expand budget, not behind a sub-toggle)', async () => {
     await setup();
     expect(supplyApi.list).toHaveBeenCalledWith({ orderId: 'order-1' });
@@ -413,6 +423,14 @@ describe('OrderHubTrayComponent (TZ-NX-DEALS-D2-HUB-TRAY)', () => {
     expect(root.querySelector('[data-test="desk-cancel-shipment-button"]')).toBeFalsy();
     expect(root.querySelector('[data-test="desk-supply-button"]')).toBeFalsy();
     expect(root.querySelector('[data-test="desk-create-document-button"]')).toBeFalsy();
+  });
+
+  it('uses the unified edit label in composition and readiness links', async () => {
+    await setup();
+    (fixture.nativeElement.querySelector('[data-test="order-composition-toggle"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="order-composition-panel"]')?.textContent).toContain('Редактировать заказ');
+    expect(fixture.nativeElement.querySelector('[data-test="order-readiness-link"]')?.textContent).toContain('Редактировать заказ');
   });
 
   it('wires deep-links: supply/production/storage-items/shipping/documents', async () => {

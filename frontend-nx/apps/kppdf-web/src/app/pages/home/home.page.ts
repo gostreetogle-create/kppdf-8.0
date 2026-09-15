@@ -31,7 +31,7 @@ type QueueFilter = 'all' | 'active';
       <main class="py-6" data-test="home-page">
         <div class="flex items-start justify-between gap-4 mb-6">
           <div>
-            <div class="eyebrow">Рабочий день</div>
+            <div class="eyebrow">Главная</div>
             <h1 class="font-display text-2xl m-0">Главная</h1>
             <p class="text-sm text-muted-foreground mt-2 mb-0">
               Очередь заказов и связанные рабочие шаги — в одном месте.
@@ -141,7 +141,7 @@ type QueueFilter = 'all' | 'active';
                   class="pi-icon-btn pi-icon-btn-doc pi-focus-ring justify-self-end"
                   [routerLink]="['/orders', row._id]"
                   role="cell"
-                  aria-label="Открыть карточку заказа"
+                  aria-label="Редактировать заказ"
                   data-test="home-row-link"
                   (click)="$event.stopPropagation()"
                 >
