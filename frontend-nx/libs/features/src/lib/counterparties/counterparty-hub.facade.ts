@@ -7,15 +7,13 @@ import {
   PiSitesService,
   type Contract,
   type ContractStatus,
+  type Counterparty,
   type Order,
   type OrderStatus,
   type Quotation,
   type Site,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
-import { orderStatusLabel } from '../orders/order-status';
-import { contractStatusLabel } from '../contracts/contract-status';
-import type { Counterparty } from '@kppdf/data-access';
 
 const QUOTATION_STATUS_LABELS: Record<string, string> = {
   draft: 'Черновик',
@@ -24,6 +22,26 @@ const QUOTATION_STATUS_LABELS: Record<string, string> = {
   rejected: 'Отклонено',
   converted: 'В заказе',
   cancelled: 'Отменено',
+};
+
+const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  draft: 'Черновик',
+  confirmed: 'Подтверждён',
+  in_production: 'В производстве',
+  ready: 'Готов',
+  shipped: 'Отгружен',
+  delivered: 'Доставлен',
+  cancelled: 'Отменён',
+};
+
+const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
+  draft: 'Черновик',
+  sent: 'Отправлен',
+  signed: 'Подписан',
+  active: 'Действует',
+  completed: 'Завершён',
+  cancelled: 'Отменён',
+  expired: 'Истёк',
 };
 
 const HUB_LIST_LIMIT = 5;
@@ -63,7 +81,7 @@ export class CounterpartyHubFacade {
   }
 
   statusLabel(status?: OrderStatus): string {
-    return orderStatusLabel(status);
+    return status ? (ORDER_STATUS_LABELS[status] ?? status) : '—';
   }
 
   quotationStatus(status?: string): string {
@@ -71,7 +89,7 @@ export class CounterpartyHubFacade {
   }
 
   contractStatus(status?: ContractStatus): string {
-    return contractStatusLabel(status);
+    return status ? (CONTRACT_STATUS_LABELS[status] ?? status) : '—';
   }
 
   private loadSites(counterpartyId: string): void {

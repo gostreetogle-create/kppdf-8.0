@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import {
   type Counterparty,
 } from '@kppdf/data-access';
-import { CounterpartyHubFacade } from './counterparty-hub.facade';
+import { CounterpartyHubFacade } from '@kppdf/features/counterparties';
 
 /**
  * TZ-NX-HUB-01 — counterparty hub expand (mirrors `order-hub-tray.component.ts`
