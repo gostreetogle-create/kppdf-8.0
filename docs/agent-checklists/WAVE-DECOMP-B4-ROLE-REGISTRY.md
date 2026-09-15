@@ -1,0 +1,8 @@
+# WAVE-DECOMP-B4 tracker
+
+| TZ | State | commit |
+|----|-------|--------|
+| TZ-NX-ROLE-FORM-FACADE | DONE | a2859085 |
+| TZ-NX-ROLE-FORM-TO-FEATURES | PENDING | — |
+| TZ-NX-REGISTRY-FORMS-FACADE | PENDING | — |
+| TZ-NX-REGISTRY-FORMS-TO-FEATURES | PENDING | — |
