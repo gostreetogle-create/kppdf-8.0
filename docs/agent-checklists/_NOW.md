@@ -7,10 +7,10 @@
   - A2 UTIL-UI docs-only `94c4adb8` — ok
   - Deviation OK: tray+OrderHubFacade remain in app (CompositionTree shared); dialogs in `@kppdf/features/order-hub`
   - `@kppdf/features/production` + `order-hub` present; `_active` empty
-- **Claude:** DECOMP **B2** Supply → Warehouse (4/5, W1 warehouse-pages-facade DONE `ea3c4405`, continuing W2 warehouse-to-features — last TZ of wave)
-  - Pack: `tasks/_ready/2026-09-14-decomp-b2-supply-warehouse/`
-  - Tracker: `docs/agent-checklists/WAVE-DECOMP-B2-SUPPLY-WAREHOUSE.md`
-- Studio EDITOR-DECOMP DONE · Phase 5 PARK · B3 after B2
+- **Claude: DECOMP B2 — WAVE COMPLETE (5/5)**, `6b08842a`. `tasks/_active/` empty.
+  Per PO instruction, STOPPED after B2 (not starting B3 without a fresh prompt).
+  Tracker: `docs/agent-checklists/WAVE-DECOMP-B2-SUPPLY-WAREHOUSE.md`
+- Studio EDITOR-DECOMP DONE · Phase 5 PARK · Next up (needs its own prompt): B3 Proposals
 
 ## PARK
 
