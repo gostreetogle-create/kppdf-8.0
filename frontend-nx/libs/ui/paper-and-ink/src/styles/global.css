@@ -655,6 +655,19 @@
   border-bottom-width: 1px;
   border-bottom-color: var(--color-rule);
 }
+
+/* Edge-name aliases used by newer NX surfaces; keep the short `-t`/`-b`
+   utilities above for existing consumers. */
+@utility hairline-top {
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: var(--color-rule);
+}
+@utility hairline-bottom {
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-bottom-color: var(--color-rule);
+}
 @utility hairline-r {
   border-right-style: solid;
   border-right-width: 1px;
