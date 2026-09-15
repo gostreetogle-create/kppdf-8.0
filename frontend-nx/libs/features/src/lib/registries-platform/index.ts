@@ -15,3 +15,4 @@
  */
 export * from './registry.types';
 export * from './registry-query-state';
+export * from './registries-page.facade';

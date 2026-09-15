@@ -11,9 +11,9 @@ import { PiPageChromeComponent } from '@kppdf/ui/page';
 import { BadgeComponent } from '@kppdf/ui/badge';
 import { TableComponent } from '@kppdf/ui/table';
 import { REGISTRIES_CATALOG, provideRegistriesCatalog } from './data/registries.catalog';
-import { RegistriesPageFacade } from './registries-page.facade';
+import { RegistriesPageFacade, restoreRegistryScrollPosition } from '@kppdf/features/registries-platform';
 
-export { restoreRegistryScrollPosition } from './registries-page.facade';
+export { restoreRegistryScrollPosition } from '@kppdf/features/registries-platform';
 import { RegistryDetailPanelComponent } from '@kppdf/features/registry-forms';
 import {
   type RegistryMasterRow,

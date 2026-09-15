@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 import { PiMaterialsService, PiModulesService, PiProductsService, PiUnitsService, type Unit } from '@kppdf/data-access';
 import { REGISTRIES_ROUTES } from './registries.routes';
 import { RegistriesPage } from './registries-page';
-import { RegistriesPageFacade } from './registries-page.facade';
+import { RegistriesPageFacade } from '@kppdf/features/registries-platform';
 import { REGISTRIES_CATALOG, buildRegistriesCatalogDefault } from './data/registries.catalog';
 import {
   mockOrganizationsService,

@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
-import { REGISTRY_DEFAULT_CATEGORY, type RegistryDefinition, type RegistryMasterRow, type RegistryRow, type RegistrySort } from '@kppdf/features/registries-platform';
+import { REGISTRY_DEFAULT_CATEGORY, type RegistryDefinition, type RegistryMasterRow, type RegistryRow, type RegistrySort } from './registry.types';
 import type { ColumnDef } from '@kppdf/ui/table';
 
 interface RegistryCategoryGroup {

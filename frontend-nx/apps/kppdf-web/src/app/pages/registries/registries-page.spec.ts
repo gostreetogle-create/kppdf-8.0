@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter, type ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { RegistriesPage, restoreRegistryScrollPosition } from './registries-page';
-import { RegistriesPageFacade } from './registries-page.facade';
+import { RegistriesPageFacade } from '@kppdf/features/registries-platform';
 import { REGISTRIES_CATALOG } from './data/registries.catalog';
 import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 
