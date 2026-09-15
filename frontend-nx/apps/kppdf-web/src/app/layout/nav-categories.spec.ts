@@ -3,6 +3,7 @@ import { NAV_CATEGORIES, NAV_CATEGORY_ORDER, filterNavCategories, matchActiveCat
 describe('NAV_CATEGORIES (ported from legacy frontend/src/app/layout/app-layout.component.ts)', () => {
   it('keeps the legacy left→right category order', () => {
     expect([...NAV_CATEGORY_ORDER]).toEqual([
+      'home',
       'catalog',
       'clients',
       'deals',
@@ -14,6 +15,22 @@ describe('NAV_CATEGORIES (ported from legacy frontend/src/app/layout/app-layout.
       'registries',
       'admin',
     ]);
+  });
+});
+
+describe('home category (TZ-NX-HOME-ROUTE-SHELL)', () => {
+  it('exposes a visible Home entry at the first nav position', () => {
+    expect(NAV_CATEGORIES[0]).toMatchObject({
+      id: 'home',
+      label: 'Главная',
+      entryPath: '/home',
+      items: [{ path: '/home', pageKey: 'home', label: 'Главная' }],
+    });
+  });
+
+  it('keeps Home visible when its route exists and pages are restrictive', () => {
+    const result = filterNavCategories(NAV_CATEGORIES, new Set(['/home']), ['home'], () => true, 'user');
+    expect(result.map((category) => category.id)).toEqual(['home']);
   });
 });
 

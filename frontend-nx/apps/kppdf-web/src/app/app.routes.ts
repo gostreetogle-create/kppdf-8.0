@@ -30,7 +30,12 @@ export const appRoutes: Route[] = [
     canMatch: [authGuard],
     loadComponent: () => import('./layout/app-shell.component').then((m) => m.AppShellComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'admin/devices' },
+      { path: '', pathMatch: 'full', redirectTo: 'home' },
+      {
+        path: 'home',
+        data: { pageKey: 'home' },
+        loadComponent: () => import('./pages/home/home.page').then((m) => m.HomePage),
+      },
       {
         path: 'admin',
         children: [

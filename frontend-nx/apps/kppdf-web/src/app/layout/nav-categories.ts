@@ -9,6 +9,7 @@ import {
   FileText,
   ShieldCheck,
   Table2,
+  Home,
 } from 'lucide-angular';
 import type { PermissionKey } from '@kppdf/data-access/capabilities';
 
@@ -48,6 +49,19 @@ export interface NavCategory {
 }
 
 /**
+ * NX Home is the authenticated operator landing page and intentionally sits
+ * outside the business-category menus.
+ */
+export const HOME_NAV_CATEGORY: NavCategory = {
+  id: 'home',
+  label: 'Главная',
+  shortLabel: 'Главная',
+  icon: Home,
+  entryPath: '/home',
+  items: [{ path: '/home', pageKey: 'home', label: 'Главная' }],
+};
+
+/**
  * TZ-NX-SHELL-operational-shell — ported 1:1 (labels, icons, order, route
  * paths) from legacy `frontend/src/app/layout/app-layout.component.ts`
  * `NAV_CATEGORIES`. Items are rendered ONLY when the target route actually
@@ -56,6 +70,7 @@ export interface NavCategory {
  * yet, so most categories currently resolve to zero visible items.
  */
 export const NAV_CATEGORIES: readonly NavCategory[] = [
+  HOME_NAV_CATEGORY,
   {
     id: 'catalog',
     label: 'Каталог',
