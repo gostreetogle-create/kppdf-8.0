@@ -1,10 +1,9 @@
-﻿updated_at: 2026-09-15T09:10:00+03:00
+﻿updated_at: 2026-09-15T09:20:00+03:00
 
 ## ACTIVE / LIVE
 
 - **VERIFY PASS:** DECOMP batch **B1→B3 COMPLETE** (B3 `104fb059` / `06d0ae27`)
-- **Claude:** DECOMP **B4** Role form → Registry fat forms (3/4, role-form half DONE `0e21bfa1`, F1 registry-forms-facade DONE `20ae8800`, continuing F2 registry-forms-to-features)
-  - Pack: `tasks/_ready/2026-09-15-decomp-b4-role-registry/`
+- **Claude:** DECOMP **B4 COMPLETE** (4/4) — role-form `0e21bfa1`, registry-forms-facade `20ae8800`, registry-forms-to-features `504383d5` (no-op, documented dual blocker: CompositionPanelComponent + CategoryFormDialogComponent — see checklist). STOP, awaiting next instruction.
   - Tracker: `docs/agent-checklists/WAVE-DECOMP-B4-ROLE-REGISTRY.md`
 
 ## PARK
