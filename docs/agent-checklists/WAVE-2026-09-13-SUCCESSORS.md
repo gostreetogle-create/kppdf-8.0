@@ -43,7 +43,7 @@ status: **WAVE3_DONE**
 | 3.2 | `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TOKEN-EDITOR-CHIP.done.md` | DONE (`cc8e029b`) |
 
 Аудит: `docs/audits/2026-09-13-docstudio-table-price-sum.md` · `docs/audits/2026-09-13-docstudio-token-editor-chip.md`  
-Промпт: `tasks/_ready/PROMPT-CLAUDE-SUCCESSORS-WAVE3.md` — **GO** после WAVE2_DONE.
+Промпт: `tasks/_ready/PROMPT-CLAUDE-SUCCESSORS-WAVE3.md` — spent (WAVE3_DONE).
 
 ### Checkpoint
 

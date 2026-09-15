@@ -4,11 +4,11 @@
 > Обновляет исполнитель **после каждого TZ** (не только в конце волны).  
 > Cursor/PO смотрят этот файл = «где агент сейчас».
 
-updated_at: 2026-09-13T16:27:00Z  
+updated_at: 2026-09-13T17:20:00+03:00  
 agent_slot: Claude  
-current_wave: **3**  
-current_tz: — (WAVE3 complete)  
-status: **WAVE3_DONE**
+current_wave: **—**  
+current_tz: —  
+status: **PACK_COMPLETE** (волны 1–3 DONE; SSH remainder out-of-band; 2 successor TZ в `_ready`)
 
 ---
 
@@ -106,6 +106,14 @@ Archive: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-TABLE-NECESSITY-CLEANUP.done.md
 | — | VERIFY-VM52-SSH-REMAINDER | | OUT_OF_BAND (LAN) |
 
 Промпт: `tasks/_ready/2026-09-13-studio-ops/PROMPT-CLAUDE-STUDIO-OPS-WAVE3.md`
+
+### Successors (не Wave 4 — отдельные S/XS, по запросу PO)
+
+| TZ | Status |
+|----|--------|
+| `TZ-NX-MODULE-LIST-POPULATE-PHOTOS.md` | READY |
+| `TZ-NX-CATEGORY-DUPLICATE-SLUG-409.md` | READY |
+| `TZ-VERIFY-VM52-SSH-REMAINDER-2026-09-13.md` | OUT_OF_BAND LAN |
 
 ---
 
