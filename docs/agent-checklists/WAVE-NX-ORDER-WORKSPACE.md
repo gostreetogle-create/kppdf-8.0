@@ -7,7 +7,11 @@
 | TZ-NX-ORDER-WS-COMPOSITION | DONE | `1e6524bb` |
 | TZ-NX-ORDER-WS-EXECUTION | DONE | `1d76170b` |
 | TZ-NX-ORDER-WS-LOGISTICS | DONE | `0af6d942` |
-| TZ-NX-ORDER-WS-DOCS-CHIPS | PENDING | — |
+| TZ-NX-ORDER-WS-DOCS-CHIPS | DONE | `d8fa10d6` |
+
+## WAVE — COMPLETE
+
+All 6 TZs closed. Chain STOP reached per prompt.
 
 Pack: `tasks/_ready/2026-09-15-order-workspace/`  
 Audit: `docs/audits/2026-09-15-order-workspace-mockup-audit.md`
