@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { SupplyTask } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { SupplyFacade } from '@kppdf/features/supply';
+import { SupplyFacade, SupplyCreateFormComponent } from '@kppdf/features/supply';
 
 const GRID_COLS =
   'grid-cols-[1.5rem_minmax(0,1.5fr)_minmax(7rem,0.8fr)_minmax(4.5rem,0.45fr)_minmax(7rem,0.6fr)_minmax(6rem,0.55fr)_minmax(8rem,0.7fr)]';
@@ -22,7 +21,7 @@ const GRID_COLS =
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [SupplyFacade],
-  imports: [FormsModule, RouterLink, PiStatusBannerComponent, ButtonComponent],
+  imports: [RouterLink, PiStatusBannerComponent, ButtonComponent, SupplyCreateFormComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="supply-page">
       <div class="flex items-center justify-between gap-4 mb-6">
@@ -84,87 +83,21 @@ const GRID_COLS =
       </div>
 
       @if (showCreate()) {
-        <form
-          class="pi-dashed-panel p-4 flex flex-col gap-3 mb-4"
-          data-test="supply-create-form"
-          (submit)="onCreate($event)"
-        >
-          <p class="text-sm text-muted-foreground m-0">
-            Выберите заказ, чтобы создать задачи снабжения из его состава.
-          </p>
-          <div class="flex flex-wrap gap-3 items-end">
-            <label class="flex flex-col gap-1 text-xs min-w-[12rem] flex-1">
-              <span class="text-muted-foreground">Разнести состав заказа</span>
-              <select
-                class="pi-input"
-                [(ngModel)]="facade.explodeOrderId"
-                name="explodeOrderId"
-                data-test="supply-explode-order"
-              >
-                <option value="">Выберите заказ…</option>
-                @for (o of orders(); track o._id) {
-                  <option [value]="o._id">{{ o.number }}</option>
-                }
-              </select>
-            </label>
-            <app-pi-button
-              type="button"
-              variant="secondary"
-              (click)="onExplode()"
-              [disabled]="exploding() || !facade.explodeOrderId"
-              data-test="supply-explode-submit"
-            >
-              Создать из заказа
-            </app-pi-button>
-          </div>
-          <div class="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
-            <span class="h-px bg-border flex-1"></span>
-            <span>или вручную</span>
-            <span class="h-px bg-border flex-1"></span>
-          </div>
-          <div class="flex flex-wrap gap-3 items-end">
-            <label class="flex flex-col gap-1 text-xs min-w-[12rem] flex-1">
-              <span class="text-muted-foreground">Заказ</span>
-              <select class="pi-input" [(ngModel)]="facade.createOrderId" name="orderId" data-test="supply-create-order">
-                <option value="">Выберите заказ…</option>
-                @for (o of orders(); track o._id) {
-                  <option [value]="o._id">{{ o.number }}</option>
-                }
-              </select>
-            </label>
-            <label class="flex flex-col gap-1 text-xs min-w-[10rem] flex-1">
-              <span class="text-muted-foreground">Что закупить</span>
-              <input
-                class="pi-input"
-                [(ngModel)]="facade.createTitle"
-                name="title"
-                maxlength="256"
-                placeholder="Материал / модуль"
-                data-test="supply-create-title"
-              />
-            </label>
-            <label class="flex flex-col gap-1 text-xs w-24">
-              <span class="text-muted-foreground">Кол-во</span>
-              <input
-                class="pi-input"
-                type="number"
-                min="0"
-                step="any"
-                [(ngModel)]="facade.createQty"
-                name="qty"
-                data-test="supply-create-qty"
-              />
-            </label>
-            <app-pi-button
-              type="submit"
-              variant="default"
-              [disabled]="creating()"
-              data-test="supply-create-submit"
-            >
-              Создать
-            </app-pi-button>
-          </div>
-        </form>
+        <pi-supply-create-form
+          [orders]="orders()"
+          [exploding]="exploding()"
+          [creating]="creating()"
+          [explodeOrderId]="facade.explodeOrderId"
+          [createOrderId]="facade.createOrderId"
+          [createTitle]="facade.createTitle"
+          [createQty]="facade.createQty"
+          (explodeOrderIdChange)="facade.explodeOrderId = $event"
+          (createOrderIdChange)="facade.createOrderId = $event"
+          (createTitleChange)="facade.createTitle = $event"
+          (createQtyChange)="facade.createQty = $event"
+          (explode)="onExplode()"
+          (create)="onCreate($event)"
+        />
       }
 
       @if (status() === 'loading') {
