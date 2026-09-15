@@ -1,4 +1,4 @@
-import type { RegistryDataSource, RegistryQueryState } from '../model/registry.types';
+import type { RegistryDataSource, RegistryQueryState } from '@kppdf/features/registries-platform';
 
 export interface FixtureRegistryConfig<TRow> {
   /** Thunk (not a snapshot) so row-action mutations are visible on the next query. */

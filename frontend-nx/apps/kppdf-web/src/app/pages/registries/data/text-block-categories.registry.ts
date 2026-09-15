@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 import { createTextBlockCategoriesHttpDataSource, type TextBlockCategoryRow } from './text-block-categories-http-data-source';
 import {
   buildTextBlockCategoryActions,

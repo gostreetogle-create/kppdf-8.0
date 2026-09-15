@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition } from '@kppdf/features/registries-platform';
 import { createProductPassportsHttpDataSource, type ProductPassportRow } from './product-passports-http-data-source';
 import { formatObjectIdRef } from './supply-request-formatters';
 import type { PiProductPassportsService } from '@kppdf/data-access';

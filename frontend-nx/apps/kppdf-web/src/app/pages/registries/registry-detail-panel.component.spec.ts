@@ -15,7 +15,7 @@ import {
   type RegistryQueryResult,
   type RegistryQueryState,
   type RegistryRow,
-} from './model/registry.types';
+} from '@kppdf/features/registries-platform';
 
 interface WidgetRow {
   readonly id: string;

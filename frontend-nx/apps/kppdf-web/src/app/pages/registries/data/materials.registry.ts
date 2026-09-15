@@ -1,5 +1,5 @@
 import type { Router } from '@angular/router';
-import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition } from '@kppdf/features/registries-platform';
 import {
   formatMaterialRef,
   formatMoneyRub,

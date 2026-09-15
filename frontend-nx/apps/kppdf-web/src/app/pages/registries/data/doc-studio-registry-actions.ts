@@ -10,7 +10,7 @@ import {
   TextBlockCategoryFormDialogComponent,
   type TextBlockCategoryFormDialogData,
 } from '../../dictionaries/text-block-category-form-dialog.component';
-import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
+import type { RegistryActionContext, RegistryRowAction } from '@kppdf/features/registries-platform';
 import type { TextBlockRow } from './text-blocks-http-data-source';
 import type { TableTemplateRow } from './table-templates-http-data-source';
 import type { TextBlockCategoryRow } from './text-block-categories-http-data-source';

@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import type { PiCategoriesService } from '@kppdf/data-access';
-import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
+import type { RegistryActionContext, RegistryRowAction } from '@kppdf/features/registries-platform';
 import type { CategoryRegistryDialogHost } from './category-registry-dialog-host';
 import type { CategoryRow } from './categories-http-data-source';
 import { createRegistryCrudActions } from './registry-crud-actions';

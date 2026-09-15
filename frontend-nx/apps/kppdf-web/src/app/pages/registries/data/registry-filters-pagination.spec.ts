@@ -3,7 +3,7 @@ import type { MaterialRegistryDialogHost, CatalogRegistryDialogHost } from '@kpp
 import { PiMaterialsService, PiModulesService, PiOrganizationsService, PiProductPassportsService, PiProductsService, PiUnitsService } from '@kppdf/data-access';
 import { of } from 'rxjs';
 import type { Router } from '@angular/router';
-import type { RegistryFilter } from '../model/registry.types';
+import type { RegistryFilter } from '@kppdf/features/registries-platform';
 
 function mockDialogHost(): MaterialRegistryDialogHost {
   return { openCreate: jest.fn(), openEdit: jest.fn() };

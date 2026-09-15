@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import { PiUnitsService, type Unit } from '@kppdf/data-access';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 import { createUnitsRegistryDefinition } from './units.registry';
 import {
   createUnitsHttpDataSource,

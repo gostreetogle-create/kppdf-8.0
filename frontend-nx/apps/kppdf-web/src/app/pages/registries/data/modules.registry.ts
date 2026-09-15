@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition } from '@kppdf/features/registries-platform';
 import { createModulesHttpDataSource, type ModuleRow } from './modules-http-data-source';
 import { formatMaterialRef } from './material-formatters';
 import { formatModuleDimensions } from './product-formatters';

@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiUnitsService, type Unit } from '@kppdf/data-access';
-import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition } from '@kppdf/features/registries-platform';
 import { createUnitsHttpDataSource, type UnitRow } from './units-http-data-source';
 import { createRegistryCrudActions } from './registry-crud-actions';
 import { createUnitsDialogHost } from './units-dialog-host';

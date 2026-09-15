@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 import { createCategoriesHttpDataSource, categoryTypeLabel, type CategoryRow } from './categories-http-data-source';
 import { buildCategoryCreateAction, buildCategoryRowActions, type CategoryRegistryDeps } from './category-registry-actions';
 import { CATEGORY_TYPE_OPTIONS } from '@kppdf/features/registry-forms';

@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import type { PiPeopleService, Person, PiWorkTypesService } from '@kppdf/data-access';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 import { createWorkersHttpDataSource } from './workers-http-data-source';
 import { createWorkersRegistryDefinition } from './workers.registry';
 

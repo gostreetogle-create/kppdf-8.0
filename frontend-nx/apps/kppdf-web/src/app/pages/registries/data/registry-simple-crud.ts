@@ -3,7 +3,7 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { Injector } from '@angular/core';
 import { onDialogCloseOnce } from '../../on-dialog-close-once';
-import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
+import type { RegistryActionContext, RegistryRowAction } from '@kppdf/features/registries-platform';
 import { createRegistryCrudActions, copyName } from './registry-crud-actions';
 import { SimpleRegistryFormDialogComponent, type SimpleRegistryDialogKind } from '../dialogs/simple-registry-form-dialog.component';
 import type { PiOrganizationsService, PiProductPassportsService } from '@kppdf/data-access';

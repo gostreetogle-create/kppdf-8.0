@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition } from '@kppdf/features/registries-platform';
 import {
   formatMaterialKind,
   formatMaterialRef,

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { PAGE_SIZE_OPTIONS } from './model/registry-query-state';
+import { PAGE_SIZE_OPTIONS } from '@kppdf/features/registries-platform';
 
 type PageItem = { type: 'page'; n: number } | { type: 'gap'; key: string };
 

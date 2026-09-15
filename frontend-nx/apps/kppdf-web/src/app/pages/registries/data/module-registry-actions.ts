@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import type { PiModulesService, ProductModule } from '@kppdf/data-access';
-import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
+import type { RegistryActionContext, RegistryRowAction } from '@kppdf/features/registries-platform';
 import type { ModuleRow } from './modules-http-data-source';
 import type { CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
 import { createRegistryCrudActions, copyName } from './registry-crud-actions';

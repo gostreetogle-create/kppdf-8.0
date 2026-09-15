@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs';
 import { RegistriesPage } from './registries-page';
 import { RegistryDetailPanelComponent } from './registry-detail-panel.component';
 import { REGISTRIES_CATALOG } from './data/registries.catalog';
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from './model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 
 interface Row {
   readonly id: string;

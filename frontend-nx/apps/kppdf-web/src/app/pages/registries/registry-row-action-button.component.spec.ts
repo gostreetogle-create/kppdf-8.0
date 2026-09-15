@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RegistryRowActionButtonComponent } from './registry-row-action-button.component';
-import type { RegistryRowAction } from './model/registry.types';
+import type { RegistryRowAction } from '@kppdf/features/registries-platform';
 
 describe('RegistryRowActionButtonComponent', () => {
   let fixture: ComponentFixture<RegistryRowActionButtonComponent>;

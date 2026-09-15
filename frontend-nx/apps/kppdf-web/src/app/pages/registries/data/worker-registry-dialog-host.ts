@@ -8,7 +8,7 @@ import {
   WorkerFormDialogComponent,
   type WorkerFormDialogData,
 } from '../dialogs/worker-form-dialog.component';
-import type { RegistryActionContext } from '../model/registry.types';
+import type { RegistryActionContext } from '@kppdf/features/registries-platform';
 
 export interface WorkerRegistryDialogHost {
   openCreate(ctx: RegistryActionContext): void;

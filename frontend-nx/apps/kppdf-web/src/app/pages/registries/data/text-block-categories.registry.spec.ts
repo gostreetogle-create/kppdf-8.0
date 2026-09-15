@@ -7,7 +7,7 @@ import type { PiTextBlockCategoriesService, TextBlockCategory } from '@kppdf/dat
 import { createTextBlockCategoriesRegistry } from './text-block-categories.registry';
 import { TextBlockCategoryFormDialogComponent } from '../../dictionaries/text-block-category-form-dialog.component';
 import type { DocStudioDialogDeps } from './doc-studio-registry-actions';
-import type { RegistryActionContext, RegistryRow } from '../model/registry.types';
+import type { RegistryActionContext, RegistryRow } from '@kppdf/features/registries-platform';
 import type { TextBlockCategoryRow } from './text-block-categories-http-data-source';
 
 /**

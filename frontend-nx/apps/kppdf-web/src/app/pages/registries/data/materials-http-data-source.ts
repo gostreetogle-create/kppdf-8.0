@@ -6,7 +6,7 @@ import {
   type Material,
   type MaterialKind,
 } from '@kppdf/data-access';
-import type { RegistryDataSource, RegistryQueryState } from '../model/registry.types';
+import type { RegistryDataSource, RegistryQueryState } from '@kppdf/features/registries-platform';
 import { formatMaterialKind } from './material-formatters';
 
 export type MaterialRow = Material;

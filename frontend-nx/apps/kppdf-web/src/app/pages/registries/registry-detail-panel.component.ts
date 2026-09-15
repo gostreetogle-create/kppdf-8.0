@@ -17,7 +17,7 @@ import type {
   RegistryDefinition,
   RegistryRow,
   RegistryRowAction,
-} from './model/registry.types';
+} from '@kppdf/features/registries-platform';
 
 /**
  * TZ-NX-REGISTRIES-MASTER-TABLE-UX — presentational registry detail engine,

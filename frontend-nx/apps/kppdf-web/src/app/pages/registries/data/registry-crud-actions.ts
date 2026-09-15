@@ -1,7 +1,7 @@
 import type {
   RegistryActionContext,
   RegistryRowAction,
-} from '../model/registry.types';
+} from '@kppdf/features/registries-platform';
 
 export interface RegistryCrudActionOptions<TRow> {
   readonly entityLabel: string;

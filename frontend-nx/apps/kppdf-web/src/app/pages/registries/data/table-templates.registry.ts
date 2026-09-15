@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 import { createTableTemplatesHttpDataSource } from './table-templates-http-data-source';
 import { buildTableTemplateActions, buildTableTemplateCreateAction, type DocStudioDialogDeps } from './doc-studio-registry-actions';
 

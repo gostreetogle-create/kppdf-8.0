@@ -3,7 +3,7 @@ import type { PiCategoriesService, Category } from '@kppdf/data-access';
 import { createCategoriesRegistryDefinition } from './categories.registry';
 import type { CategoryRegistryDeps } from './category-registry-actions';
 import type { CategoryRegistryDialogHost } from './category-registry-dialog-host';
-import type { RegistryActionContext, RegistryRow } from '../model/registry.types';
+import type { RegistryActionContext, RegistryRow } from '@kppdf/features/registries-platform';
 
 describe('createCategoriesRegistryDefinition', () => {
   let removeMock: jest.Mock;

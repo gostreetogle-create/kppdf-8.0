@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiCategoriesService, type Category, type CategoryType } from '@kppdf/data-access';
-import type { RegistryDataSource, RegistryQueryState } from '../model/registry.types';
+import type { RegistryDataSource, RegistryQueryState } from '@kppdf/features/registries-platform';
 
 export type CategoryRow = Category & { readonly parentName: string };
 

@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import type { MaterialKind, PiMaterialsService } from '@kppdf/data-access';
-import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
+import type { RegistryActionContext, RegistryRowAction } from '@kppdf/features/registries-platform';
 import type { MaterialRow } from './materials-http-data-source';
 import type { MaterialRegistryDialogHost } from '@kppdf/features/registry-forms';
 

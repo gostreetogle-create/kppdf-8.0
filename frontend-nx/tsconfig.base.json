@@ -63,6 +63,9 @@
       "@kppdf/features/desktop": [
         "libs/features/src/lib/desktop/index.ts"
       ],
+      "@kppdf/features/registries-platform": [
+        "libs/features/src/lib/registries-platform/index.ts"
+      ],
       "@kppdf/ui": [
         "libs/ui/paper-and-ink/src/index.ts"
       ],

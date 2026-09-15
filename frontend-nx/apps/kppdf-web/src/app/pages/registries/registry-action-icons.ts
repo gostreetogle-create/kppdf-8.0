@@ -1,4 +1,4 @@
-import type { RegistryRowActionIcon, RegistryRowActionTone } from './model/registry.types';
+import type { RegistryRowActionIcon, RegistryRowActionTone } from '@kppdf/features/registries-platform';
 
 /** Default icon per stable action id when registry author omits `icon`. */
 const ACTION_ID_ICON: Readonly<Record<string, RegistryRowActionIcon>> = {

@@ -4,7 +4,7 @@ import { PiCategoriesService, type Category } from '@kppdf/data-access';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../../on-dialog-close-once';
 import { CategoryFormDialogComponent, type CategoryFormDialogData } from '@kppdf/features/registry-forms';
-import type { RegistryActionContext } from '../model/registry.types';
+import type { RegistryActionContext } from '@kppdf/features/registries-platform';
 
 export interface CategoryRegistryDialogHost {
   openCreate(ctx: RegistryActionContext): void;

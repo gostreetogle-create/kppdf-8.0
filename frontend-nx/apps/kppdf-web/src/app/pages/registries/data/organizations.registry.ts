@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition } from '@kppdf/features/registries-platform';
 import { formatOrganizationActive, formatOrganizationTypes, ORGANIZATION_TYPE_LABELS } from './organization-formatters';
 import { createOrganizationsHttpDataSource, type OrganizationRow } from './organizations-http-data-source';
 import type { PiOrganizationsService } from '@kppdf/data-access';

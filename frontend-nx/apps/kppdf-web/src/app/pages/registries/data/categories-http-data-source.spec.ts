@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import type { PiCategoriesService, Category } from '@kppdf/data-access';
 import type { SilentResult } from '@kppdf/util-http';
 import { createCategoriesHttpDataSource, categoryTypeLabel } from './categories-http-data-source';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 
 describe('createCategoriesHttpDataSource', () => {
   const state: RegistryQueryState = { filters: {}, page: 1, pageSize: 20, sort: null };

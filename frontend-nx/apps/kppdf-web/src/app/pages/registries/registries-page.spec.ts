@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter, type ParamMap
 import { BehaviorSubject } from 'rxjs';
 import { RegistriesPage, restoreRegistryScrollPosition } from './registries-page';
 import { REGISTRIES_CATALOG } from './data/registries.catalog';
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from './model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 
 interface TestRow {
   readonly id: string;

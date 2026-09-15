@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import type { PiTextBlockCategoriesService, PiTextBlocksService, TextBlock, TextBlockCategory } from '@kppdf/data-access';
 import type { SilentResult } from '@kppdf/util-http';
 import { createTextBlocksHttpDataSource } from './text-blocks-http-data-source';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 
 /**
  * TZ-NX-TEXT-PICKER-FORM AC #4 — the registry column must show a resolved

@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import type { Organization, PiOrganizationsService } from '@kppdf/data-access';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 import { createOrganizationsHttpDataSource } from './organizations-http-data-source';
 
 const SAMPLE: Organization = {

@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { PiProductPassportsService, type ProductPassport } from '@kppdf/data-access';
-import type { RegistryDataSource, RegistryQueryState } from '../model/registry.types';
+import type { RegistryDataSource, RegistryQueryState } from '@kppdf/features/registries-platform';
 import { sliceClientPage } from './modules-http-data-source';
 
 export type ProductPassportRow = ProductPassport;

@@ -7,7 +7,7 @@ import {
   type ProductStatus,
   type ProductsListParams,
 } from '@kppdf/data-access';
-import type { RegistryDataSource, RegistryQueryState, RegistrySort } from '../model/registry.types';
+import type { RegistryDataSource, RegistryQueryState, RegistrySort } from '@kppdf/features/registries-platform';
 
 /** List rows include derived `isComplex` from `GET /products` (composition product line). */
 export type ProductRow = Product & { isComplex?: boolean };

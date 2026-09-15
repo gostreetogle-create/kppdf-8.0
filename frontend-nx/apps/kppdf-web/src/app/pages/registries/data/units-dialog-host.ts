@@ -5,7 +5,7 @@ import { PiUnitsService } from '@kppdf/data-access';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../../on-dialog-close-once';
 import { UnitFormDialogComponent } from '../dialogs/unit-form-dialog.component';
-import type { RegistryActionContext } from '../model/registry.types';
+import type { RegistryActionContext } from '@kppdf/features/registries-platform';
 
 export interface UnitsDialogHost {
   openEdit: (row: Unit, ctx: RegistryActionContext) => void | Promise<void>;

@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 
 export interface FormulaRegistryRow extends RegistryRow {
   readonly id: string;

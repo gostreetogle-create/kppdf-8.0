@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import type { PiTextBlockCategoriesService, TextBlockCategory } from '@kppdf/data-access';
 import type { SilentResult } from '@kppdf/util-http';
 import { createTextBlockCategoriesHttpDataSource } from './text-block-categories-http-data-source';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 
 /** TZ-NX-REG-TEXT-BLOCK-CATEGORIES — flat registry replacing the master-detail page. */
 describe('createTextBlockCategoriesHttpDataSource', () => {

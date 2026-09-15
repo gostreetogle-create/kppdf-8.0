@@ -13,7 +13,7 @@ import {
   mockProductPassportsService,
 } from './data/registries-catalog-test-mocks';
 import type { MaterialRegistryDialogHost, CatalogRegistryDialogHost } from '@kppdf/features/registry-forms';
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from './model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 
 interface Row {
   readonly id: string;

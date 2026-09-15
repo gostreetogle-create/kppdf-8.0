@@ -1,6 +1,6 @@
 import type { Router } from '@angular/router';
 import type { ProductStatus } from '@kppdf/data-access';
-import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition } from '@kppdf/features/registries-platform';
 import { formatMaterialRef, formatMoneyRub } from './material-formatters';
 import {
   formatComplexBadge,

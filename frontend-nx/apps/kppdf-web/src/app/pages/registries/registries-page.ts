@@ -22,7 +22,7 @@ import {
   type RegistryMasterRow,
   type RegistryRow,
   type RegistrySort,
-} from './model/registry.types';
+} from '@kppdf/features/registries-platform';
 
 /** One `/registries` master-table group — TZ-NX-REGISTRIES-CATEGORY-GROUPS. */
 interface RegistryCategoryGroup {

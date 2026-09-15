@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 import { personDisplayName, type Person } from '@kppdf/data-access';
 import { createWorkersHttpDataSource } from './workers-http-data-source';
 import { buildWorkerCreateAction, buildWorkerRowActions, type WorkerRegistryDeps } from './worker-registry-actions';

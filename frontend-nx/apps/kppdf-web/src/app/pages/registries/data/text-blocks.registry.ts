@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition, type RegistryRow } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition, type RegistryRow } from '@kppdf/features/registries-platform';
 import { createTextBlocksHttpDataSource } from './text-blocks-http-data-source';
 import { buildTextBlockActions, buildTextBlockCreateAction, type DocStudioDialogDeps } from './doc-studio-registry-actions';
 

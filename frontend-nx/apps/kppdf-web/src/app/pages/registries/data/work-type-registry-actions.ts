@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import type { PiWorkTypesService, WorkType } from '@kppdf/data-access';
-import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
+import type { RegistryActionContext, RegistryRowAction } from '@kppdf/features/registries-platform';
 import type { WorkTypeRegistryDialogHost } from './work-type-registry-dialog-host';
 
 export interface WorkTypeRegistryDeps {

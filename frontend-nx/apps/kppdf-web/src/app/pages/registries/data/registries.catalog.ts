@@ -17,7 +17,7 @@ import {
   PiPeopleService,
 } from '@kppdf/data-access';
 import { collectPageRoutePaths } from '../../../layout/route-paths';
-import type { RegistryDefinition, RegistryRow } from '../model/registry.types';
+import type { RegistryDefinition, RegistryRow } from '@kppdf/features/registries-platform';
 import { createCatalogRegistryDialogHost, createMaterialRegistryDialogHost } from '@kppdf/features/registry-forms';
 import { createCategoriesRegistry } from './categories.registry';
 import type { CategoryRegistryDeps } from './category-registry-actions';

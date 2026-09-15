@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import { PiMaterialsService, type Material } from '@kppdf/data-access';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 import {
   createMaterialsHttpDataSource,
   DETAIL_MATERIAL_KINDS,

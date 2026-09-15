@@ -5,7 +5,7 @@ import {
   type Product,
   type ProductModule,
 } from '@kppdf/data-access';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 import { createModulesHttpDataSource, sliceClientPage } from './modules-http-data-source';
 import {
   createProductsHttpDataSource,

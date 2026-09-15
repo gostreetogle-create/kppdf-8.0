@@ -1,4 +1,4 @@
-import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { defineRegistry, type RegistryDefinition } from '@kppdf/features/registries-platform';
 import { createFixtureDataSource } from './fixture-registry-data-source';
 
 export type DepartmentStatus = 'active' | 'archived';

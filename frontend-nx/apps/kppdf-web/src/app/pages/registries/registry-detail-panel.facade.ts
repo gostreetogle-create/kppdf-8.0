@@ -24,15 +24,16 @@ import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import type { ColumnDef } from '@kppdf/ui/table';
-import { parseRegistryQueryState, toRegistryQueryParams } from './model/registry-query-state';
-import type {
-  RegistryActionContext,
-  RegistryDefinition,
-  RegistryPageState,
-  RegistryQueryState,
-  RegistryRow,
-  RegistryRowAction,
-} from './model/registry.types';
+import {
+  parseRegistryQueryState,
+  toRegistryQueryParams,
+  type RegistryActionContext,
+  type RegistryDefinition,
+  type RegistryPageState,
+  type RegistryQueryState,
+  type RegistryRow,
+  type RegistryRowAction,
+} from '@kppdf/features/registries-platform';
 
 /** Bound accessor — the host `RegistryDetailPanelComponent`'s `definition` input, wired once via `bind()`. */
 export interface RegistryDetailPanelFacadeHost {

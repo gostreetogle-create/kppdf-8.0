@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import type { PiWorkTypesService, WorkType } from '@kppdf/data-access';
-import type { RegistryQueryState } from '../model/registry.types';
+import type { RegistryQueryState } from '@kppdf/features/registries-platform';
 import { createWorkTypesHttpDataSource } from './work-types-http-data-source';
 import { createWorkTypesRegistryDefinition } from './work-types.registry';
 

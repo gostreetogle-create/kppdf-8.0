@@ -10,7 +10,7 @@ import {
   X,
   Power,
 } from 'lucide-angular';
-import type { RegistryRowAction, RegistryRow, RegistryRowActionIcon } from './model/registry.types';
+import type { RegistryRowAction, RegistryRow, RegistryRowActionIcon } from '@kppdf/features/registries-platform';
 import {
   registryActionToneClass,
   resolveRegistryActionIcon,
