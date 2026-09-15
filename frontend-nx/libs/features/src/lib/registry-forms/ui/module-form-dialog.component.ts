@@ -119,9 +119,8 @@ export interface ModuleFormDialogData {
           </div>
           <div formArrayName="workTypes" class="space-y-2" data-test="module-work-types">
             @for (group of workTypesArray.controls; track $index; let i = $index) {
-              <div [formGroupName]="i" class="grid grid-cols-12 gap-2 items-end p-2 hairline rounded-sm bg-paper-2/30" [attr.data-test]="'module-work-type-row-' + i">
+              <div [formGroupName]="i" class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper-2/30" [attr.data-test]="'module-work-type-row-' + i">
                 <label class="block col-span-4">
-                  <span class="eyebrow block mb-1.5">Вид работы</span>
                   <select formControlName="workTypeId" (change)="seedDaysFromCatalog(i)" class="pi-input w-full" [attr.aria-label]="'Вид работы ' + (i + 1)" data-test="module-work-type-select">
                     <option value="">— выберите —</option>
                     @for (workType of workTypes(); track workType._id) {
@@ -129,16 +128,16 @@ export interface ModuleFormDialogData {
                     }
                   </select>
                 </label>
-                <app-pi-form-field label="Дней" [htmlFor]="'module-work-type-days-' + i" class="col-span-2">
-                  <app-pi-input [id]="'module-work-type-days-' + i" type="number" formControlName="days" data-test="module-work-type-days" />
-                </app-pi-form-field>
-                <app-pi-form-field label="Норма, ч" [htmlFor]="'module-work-type-hours-' + i" class="col-span-2">
-                  <app-pi-input [id]="'module-work-type-hours-' + i" type="number" formControlName="estimatedHours" data-test="module-work-type-hours" />
-                </app-pi-form-field>
-                <app-pi-form-field label="Порядок" [htmlFor]="'module-work-type-sort-' + i" class="col-span-2">
-                  <app-pi-input [id]="'module-work-type-sort-' + i" type="number" formControlName="sortOrder" data-test="module-work-type-sort" />
-                </app-pi-form-field>
-                <div class="flex gap-1 col-span-2" role="group" [attr.aria-label]="'Порядок строки ' + (i + 1)">
+                <div class="col-span-2">
+                  <app-pi-input type="number" size="sm" formControlName="days" [ariaLabel]="'Дней ' + (i + 1)" data-test="module-work-type-days" />
+                </div>
+                <div class="col-span-2">
+                  <app-pi-input type="number" size="sm" formControlName="estimatedHours" [ariaLabel]="'Норма, ч ' + (i + 1)" data-test="module-work-type-hours" />
+                </div>
+                <div class="col-span-2">
+                  <app-pi-input type="number" size="sm" formControlName="sortOrder" [ariaLabel]="'Порядок ' + (i + 1)" data-test="module-work-type-sort" />
+                </div>
+                <div class="flex items-center gap-1 col-span-2" role="group" [attr.aria-label]="'Порядок строки ' + (i + 1)">
                   <app-pi-button type="button" variant="outline" size="icon" [disabled]="i === 0" (click)="moveWorkType(i, -1)" [attr.aria-label]="'Поднять вид работы ' + (i + 1)" data-test="module-work-type-up">↑</app-pi-button>
                   <app-pi-button type="button" variant="outline" size="icon" [disabled]="i === workTypesArray.length - 1" (click)="moveWorkType(i, 1)" [attr.aria-label]="'Опустить вид работы ' + (i + 1)" data-test="module-work-type-down">↓</app-pi-button>
                   <app-pi-button type="button" variant="destructive" size="icon" (click)="removeWorkType(i)" [attr.aria-label]="'Удалить вид работы ' + (i + 1)" data-test="module-work-type-remove">×</app-pi-button>

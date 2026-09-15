@@ -126,8 +126,15 @@ describe('ModuleFormDialogComponent (Phase 2)', () => {
       sortOrder: 1,
       days: null,
     });
+    const row = fixture.nativeElement.querySelector('[data-test="module-work-type-row-0"]') as HTMLElement;
     expect(fixture.nativeElement.querySelector('[data-test="module-work-types"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="module-work-type-row-0"]')).toBeTruthy();
+    expect(row).toBeTruthy();
+    expect(row.classList.contains('items-center')).toBe(true);
+    expect(row.querySelector('.eyebrow')).toBeNull();
+    expect(row.querySelector('[data-test="module-work-type-select"]')?.getAttribute('aria-label')).toBe('Вид работы 1');
+    expect(row.querySelector('[data-test="module-work-type-days"] input')?.getAttribute('aria-label')).toBe('Дней 1');
+    const workTypes = fixture.nativeElement.querySelector('[data-test="module-work-types"]') as HTMLElement;
+    expect(workTypes.previousElementSibling?.textContent).toContain('Длительность Ганта');
 
     void component.onSubmit();
     return fixture.whenStable().then(() => {
