@@ -13,6 +13,12 @@ import { ButtonComponent } from '@kppdf/ui/button';
  * `OrderWorkspaceFacade` owns the actual PATCH/POST + item-payload
  * reconstruction (see the facade's `toItemPayload` doc comment for why a
  * naive partial payload would silently wipe other item fields).
+ *
+ * TZ-NX-ORDER-WS-PRODUCT-SELECT-ADD — «+» next to «Изделие» opens the
+ * existing `ProductFormDialogComponent` (facade-owned); on save the new
+ * product is selected in this same dropdown, NOT auto-added as a line —
+ * the manager still presses «Добавить позицию» (no second, hidden
+ * write-path for composition).
  */
 @Component({
   selector: 'pi-order-ws-composition',
@@ -106,17 +112,25 @@ import { ButtonComponent } from '@kppdf/ui/button';
       <div class="flex flex-wrap items-end gap-3 mt-4" data-test="composition-add-form">
         <label class="flex flex-col gap-1 text-xs min-w-[12rem] flex-1">
           <span class="text-muted-foreground">Изделие</span>
-          <select
-            class="pi-input"
-            data-test="composition-add-product"
-            [value]="newLineProductId()"
-            (change)="onNewLineProductChange($event)"
-          >
-            <option value="">Выберите изделие…</option>
-            @for (product of products(); track product._id) {
-              <option [value]="product._id">{{ product.name }}</option>
-            }
-          </select>
+          <div class="flex items-center gap-1.5">
+            <select
+              class="pi-input w-full"
+              data-test="composition-add-product"
+              [value]="newLineProductId()"
+              (change)="onNewLineProductChange($event)"
+            >
+              <option value="">Выберите изделие…</option>
+              @for (product of products(); track product._id) {
+                <option [value]="product._id">{{ product.name }}</option>
+              }
+            </select>
+            <app-pi-button
+              variant="ghost"
+              type="button"
+              data-test="composition-add-product-create"
+              (click)="createProduct.emit()"
+            >+</app-pi-button>
+          </div>
         </label>
         <label class="flex flex-col gap-1 text-xs w-24">
           <span class="text-muted-foreground">Кол-во</span>
@@ -162,6 +176,8 @@ export class OrderWsCompositionComponent {
   readonly newLineProductIdChange = output<string>();
   readonly newLineQtyChange = output<number>();
   readonly addLine = output<void>();
+  /** TZ-NX-ORDER-WS-PRODUCT-SELECT-ADD — «+» next to «Изделие»; facade owns opening the dialog (NX boundary-free here, unlike Наша фирма/Заказчик/Объект — the product dialog already lives in this same lib). */
+  readonly createProduct = output<void>();
 
   protected onQtyChange(index: number, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);

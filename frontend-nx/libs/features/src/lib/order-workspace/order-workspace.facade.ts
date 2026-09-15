@@ -75,6 +75,7 @@ import {
   type OrderItemPayload,
   type Organization,
   type Product,
+  type ProductDetail,
   type Shipment,
   type Site,
   type SupplyRequest,
@@ -86,6 +87,10 @@ import {
   KitReserveConfirmDialogComponent,
   type KitReserveConfirmDialogData,
 } from '../order-hub/ui/kit-reserve-confirm-dialog.component';
+import {
+  ProductFormDialogComponent,
+  type ProductFormDialogData,
+} from '../registry-forms/ui/product-form-dialog.component';
 import {
   ShipConfirmDialogComponent,
   type ShipConfirmDialogData,
@@ -347,6 +352,33 @@ export class OrderWorkspaceFacade {
       .subscribe((result) => {
         if (result.ok) this.products.set(result.data?.items ?? []);
       });
+  }
+
+  /**
+   * TZ-NX-ORDER-WS-PRODUCT-SELECT-ADD — reuses the existing
+   * `ProductFormDialogComponent` (registry-forms; already lives in this
+   * same lib, unlike the org/counterparty/site dialogs). It owns its own
+   * create POST internally and closes with the saved `ProductDetail`; on
+   * success the new product is appended to the picker list and selected
+   * — NOT auto-added as a line (the manager still presses «Добавить
+   * позицию», same rule as `createOrganization`/`createCounterparty`/
+   * `createSite` never auto-committing beyond the field they fill).
+   */
+  openCreateProduct(): void {
+    const ref = this.dialog.open<ProductDetail | null | undefined, ProductFormDialogData>(
+      ProductFormDialogComponent,
+      {
+        data: { mode: 'create' },
+        parentDestroyRef: this.destroyRef,
+        dismissOnEscape: false,
+        dismissOnBackdropClick: false,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (product) => {
+      if (!product) return;
+      this.products.update((list) => [...list, product]);
+      this.newLineProductId = product._id;
+    });
   }
 
   loadSupply(): void {

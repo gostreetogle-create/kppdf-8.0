@@ -382,6 +382,24 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     );
   });
 
+  it('creates a new изделие via «+» next to the select and selects it, without auto-adding a line (TZ-NX-ORDER-WS-PRODUCT-SELECT-ADD)', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    const newProduct = { _id: 'p-9', name: 'Новое изделие', unit: 'шт', kind: 'product' };
+    const closed = signal<typeof newProduct | undefined>(undefined);
+    dialog.open.mockReturnValue({ closed, close: (v?: typeof newProduct) => closed.set(v) });
+
+    (fixture.nativeElement.querySelector('[data-test="composition-add-product-create"] button') as HTMLButtonElement).click();
+    closed.set(newProduct);
+    await settle();
+
+    expect(dialog.open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ data: { mode: 'create' } }));
+    const select = fixture.nativeElement.querySelector('[data-test="composition-add-product"]') as HTMLSelectElement;
+    expect(select.value).toBe('p-9');
+    expect(select.textContent).toContain('Новое изделие');
+    expect(ordersApi.update).not.toHaveBeenCalled();
+  });
+
   it('renders live supply counters and a deficit short-list only when pending requests exist', async () => {
     await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     await settle();

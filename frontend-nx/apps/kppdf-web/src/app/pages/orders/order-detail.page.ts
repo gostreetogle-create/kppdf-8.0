@@ -131,6 +131,7 @@ import { SiteFormDialogComponent, type SiteFormDialogData } from './site-form-di
                 (newLineProductIdChange)="facade.newLineProductId = $event"
                 (newLineQtyChange)="facade.newLineQty = $event"
                 (addLine)="facade.addLine()"
+                (createProduct)="facade.openCreateProduct()"
               />
             </section>
 
