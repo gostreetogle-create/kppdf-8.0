@@ -1,49 +1,26 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import {
-  PiOrdersService,
-  PiOrganizationsService,
-  PiSupplyRequestsService,
-  PiWarehousesService,
-  type Order,
-  type Organization,
-  type SupplyRequest,
-  type SupplyRequestStatus,
-  type Warehouse,
-} from '@kppdf/data-access';
-import { extractErrorMessage } from '@kppdf/util-http';
+import type { SupplyRequest, SupplyRequestStatus } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
-import { PiToastService } from '@kppdf/ui/toast';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import {
-  formatSupplyRequestPriority,
-  formatSupplyRequestStatus,
-  SUPPLY_REQUEST_STATUS_LABELS,
-} from '../registries/data/supply-request-formatters';
-import {
-  SupplyRequestFormDialogComponent,
-  type SupplyRequestFormDialogData,
-} from './supply-request-form-dialog.component';
-import {
-  SupplyRequestReceiveDialogComponent,
-  type SupplyRequestReceiveDialogData,
-} from './supply-request-receive-dialog.component';
-
-const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progress', 'requested', 'ordered']);
+import { SUPPLY_REQUEST_STATUS_LABELS } from '../registries/data/supply-request-formatters';
+import { SupplyRequestsFacade } from './supply-requests.facade';
 
 /**
  * TZ-NX-SUPPLY-S3-REQUEST-JOURNAL — single SoT for `SupplyRequest` (журнал заявок
  * как Google Sheets). Replaces the truncated registries generic dialog (title+qty
  * only) — see `docs/audits/2026-09-06-supply-google-sheets-to-nx-audit.md`.
  * `SupplyTask` (заказ-based deficit) stays on `/supply` — separate entity, not this page.
+ *
+ * TZ-NX-SUPPLY-REQUESTS-FACADE — lookups, filtered list, and CRUD/receive/
+ * delete orchestration moved to `SupplyRequestsFacade`; this page stays a
+ * thin host.
  */
 @Component({
   selector: 'pi-supply-requests-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [SupplyRequestsFacade],
   imports: [PiStatusBannerComponent, RouterLink, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="supply-requests-page">
@@ -239,236 +216,107 @@ const RECEIVABLE_STATUSES: ReadonlySet<SupplyRequestStatus> = new Set(['in_progr
   `,
 })
 export class SupplyRequestsPage {
-  private readonly api = inject(PiSupplyRequestsService);
-  private readonly ordersApi = inject(PiOrdersService);
-  private readonly organizationsApi = inject(PiOrganizationsService);
-  private readonly warehousesApi = inject(PiWarehousesService);
-  private readonly dialog = inject(PiDialogService);
-  private readonly toast = inject(PiToastService);
-  private readonly injector = inject(Injector);
-  private readonly destroyRef = inject(DestroyRef);
+  protected readonly facade = inject(SupplyRequestsFacade);
 
   protected readonly statuses: readonly SupplyRequestStatus[] = ['in_progress', 'requested', 'ordered', 'received', 'cancelled'];
   protected readonly statusLabels = SUPPLY_REQUEST_STATUS_LABELS;
 
-  protected readonly rows = signal<readonly SupplyRequest[]>([]);
-  protected readonly orders = signal<readonly Order[]>([]);
-  protected readonly suppliers = signal<readonly Organization[]>([]);
-  protected readonly warehouses = signal<readonly Warehouse[]>([]);
-  protected readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  protected readonly error = signal('Не удалось загрузить заявки.');
-  protected readonly search = signal('');
-  protected readonly statusFilter = signal<SupplyRequestStatus | ''>('');
-  protected readonly paidOnly = signal(false);
-  protected readonly dateFrom = signal('');
-  protected readonly dateTo = signal('');
-  /** Single expand (registry pattern) — reloading the list collapses it. */
-  protected readonly expandedId = signal<string | null>(null);
-
-  protected readonly hasActiveFilters = computed(
-    () =>
-      this.search().trim() !== '' ||
-      this.statusFilter() !== '' ||
-      this.paidOnly() ||
-      this.dateFrom() !== '' ||
-      this.dateTo() !== '',
-  );
-
-  protected readonly filteredRows = computed(() => {
-    const query = this.search().trim().toLowerCase();
-    const status = this.statusFilter();
-    const paidOnly = this.paidOnly();
-    const dateFrom = this.dateFrom();
-    const dateTo = this.dateTo();
-    return this.rows().filter((row) => {
-      if (status && row.status !== status) return false;
-      if (paidOnly && !row.paid) return false;
-      if (dateFrom || dateTo) {
-        const needed = row.neededBy?.slice(0, 10) ?? '';
-        if (!needed) return false;
-        if (dateFrom && needed < dateFrom) return false;
-        if (dateTo && needed > dateTo) return false;
-      }
-      if (!query) return true;
-      return (row.title ?? '').toLowerCase().includes(query) || (row.article ?? '').toLowerCase().includes(query);
-    });
-  });
-
-  constructor() {
-    this.load();
-    void this.loadLookups();
-  }
+  protected readonly rows = this.facade.rows;
+  protected readonly orders = this.facade.orders;
+  protected readonly suppliers = this.facade.suppliers;
+  protected readonly warehouses = this.facade.warehouses;
+  protected readonly status = this.facade.status;
+  protected readonly error = this.facade.error;
+  protected readonly search = this.facade.search;
+  protected readonly statusFilter = this.facade.statusFilter;
+  protected readonly paidOnly = this.facade.paidOnly;
+  protected readonly dateFrom = this.facade.dateFrom;
+  protected readonly dateTo = this.facade.dateTo;
+  protected readonly expandedId = this.facade.expandedId;
+  protected readonly hasActiveFilters = this.facade.hasActiveFilters;
+  protected readonly filteredRows = this.facade.filteredRows;
 
   onSearch(event: Event): void {
-    this.search.set((event.target as HTMLInputElement).value);
+    this.facade.onSearch(event);
   }
 
   onStatusFilterChange(event: Event): void {
-    this.statusFilter.set((event.target as HTMLSelectElement).value as SupplyRequestStatus | '');
+    this.facade.onStatusFilterChange(event);
   }
 
   onPaidOnlyChange(event: Event): void {
-    this.paidOnly.set((event.target as HTMLInputElement).checked);
+    this.facade.onPaidOnlyChange(event);
   }
 
   onDateFromChange(event: Event): void {
-    this.dateFrom.set((event.target as HTMLInputElement).value);
+    this.facade.onDateFromChange(event);
   }
 
   onDateToChange(event: Event): void {
-    this.dateTo.set((event.target as HTMLInputElement).value);
+    this.facade.onDateToChange(event);
   }
 
   resetFilters(): void {
-    this.search.set('');
-    this.statusFilter.set('');
-    this.paidOnly.set(false);
-    this.dateFrom.set('');
-    this.dateTo.set('');
+    this.facade.resetFilters();
   }
 
   load(): void {
-    this.status.set('loading');
-    this.expandedId.set(null);
-    void firstValueFrom(this.api.list()).then((result) => {
-      if (!result.ok) {
-        this.error.set(extractErrorMessage(result.error));
-        this.status.set('error');
-        return;
-      }
-      this.rows.set(result.data ?? []);
-      this.status.set('success');
-    });
+    this.facade.load();
   }
 
   protected statusLabel(status: SupplyRequestStatus): string {
-    return formatSupplyRequestStatus(status);
+    return this.facade.statusLabel(status);
   }
 
   protected priorityLabel(priority: SupplyRequest['priority']): string {
-    return formatSupplyRequestPriority(priority);
+    return this.facade.priorityLabel(priority);
   }
 
   protected fmtDate(value: string): string {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString('ru-RU');
+    return this.facade.fmtDate(value);
   }
 
   protected toggleExpand(requestId: string): void {
-    this.expandedId.update((current) => (current === requestId ? null : requestId));
+    this.facade.toggleExpand(requestId);
   }
 
   protected onRowSpace(event: Event, requestId: string): void {
-    event.preventDefault();
-    this.toggleExpand(requestId);
+    this.facade.onRowSpace(event, requestId);
   }
 
   protected supplierLabel(supplierId?: string): string {
-    if (!supplierId) return '—';
-    return this.suppliers().find((s) => s._id === supplierId)?.name ?? supplierId.slice(-6);
+    return this.facade.supplierLabel(supplierId);
   }
 
-  /** Resolved `Order` when `orderId` matches a known order — renders as a link; otherwise falls back to `orderLabel(row)` text. */
-  protected linkedOrder(row: SupplyRequest): Order | undefined {
-    if (!row.orderId) return undefined;
-    return this.orders().find((o) => o._id === row.orderId);
+  protected linkedOrder(row: SupplyRequest) {
+    return this.facade.linkedOrder(row);
   }
 
   protected orderLabel(row: SupplyRequest): string {
-    if (row.orderId) {
-      return this.orders().find((o) => o._id === row.orderId)?.number ?? row.orderId.slice(-6);
-    }
-    return row.orderLabel || '—';
+    return this.facade.orderLabel(row);
   }
 
-  /** known_limitation: no Users lookup service on NX yet — short id, not a display name. */
   protected createdByLabel(createdBy?: string): string {
-    return createdBy ? createdBy.slice(-6) : '—';
+    return this.facade.createdByLabel(createdBy);
   }
 
   openCreate(): void {
-    this.openForm();
+    this.facade.openCreate();
   }
 
   openEdit(row: SupplyRequest): void {
-    this.openForm(row);
+    this.facade.openEdit(row);
   }
 
   protected isReceivable(row: SupplyRequest): boolean {
-    return RECEIVABLE_STATUSES.has(row.status) && Boolean(row.materialId);
+    return this.facade.isReceivable(row);
   }
 
   openReceive(row: SupplyRequest): void {
-    const ref = this.dialog.open<SupplyRequest | undefined, SupplyRequestReceiveDialogData>(
-      SupplyRequestReceiveDialogComponent,
-      {
-        data: { request: row, warehouses: this.warehouses() },
-        width: 'sm',
-        ariaLabel: 'Подтвердить получение',
-        parentDestroyRef: this.destroyRef,
-      },
-    );
-    onDialogCloseOnce(ref, this.injector, (received) => {
-      if (received) {
-        this.toast.success('Получение проведено — остаток на складе обновлён');
-        this.load();
-      }
-    });
+    this.facade.openReceive(row);
   }
 
   confirmDelete(row: SupplyRequest): void {
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-      data: {
-        title: 'Удалить заявку?',
-        description: `«${row.title || row.article || 'Без названия'}» будет удалена.`,
-        confirmLabel: 'Удалить',
-        cancelLabel: 'Отмена',
-        variant: 'destructive',
-      },
-      width: 'sm',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (confirmed) => {
-      if (confirmed) void this.remove(row._id);
-    });
-  }
-
-  private openForm(request?: SupplyRequest): void {
-    const ref = this.dialog.open<SupplyRequest | undefined, SupplyRequestFormDialogData>(
-      SupplyRequestFormDialogComponent,
-      {
-        data: { request, orders: this.orders(), suppliers: this.suppliers() },
-        width: 'md',
-        ariaLabel: request ? 'Изменить заявку' : 'Создать заявку',
-        parentDestroyRef: this.destroyRef,
-      },
-    );
-    onDialogCloseOnce(ref, this.injector, (saved) => {
-      if (saved) {
-        this.toast.success(request ? 'Заявка сохранена' : 'Заявка создана');
-        this.load();
-      }
-    });
-  }
-
-  private async remove(id: string): Promise<void> {
-    const result = await firstValueFrom(this.api.remove(id));
-    if (!result.ok) {
-      this.toast.error('Не удалось удалить заявку', { description: extractErrorMessage(result.error) });
-      return;
-    }
-    this.toast.success('Заявка удалена');
-    this.load();
-  }
-
-  private async loadLookups(): Promise<void> {
-    const [orders, suppliers, warehouses] = await Promise.all([
-      firstValueFrom(this.ordersApi.list()),
-      firstValueFrom(this.organizationsApi.list({ type: 'supplier', limit: 100 })),
-      firstValueFrom(this.warehousesApi.list()),
-    ]);
-    if (orders.ok) this.orders.set(orders.data ?? []);
-    if (suppliers.ok) this.suppliers.set(suppliers.data.items);
-    if (warehouses.ok) this.warehouses.set(warehouses.data ?? []);
+    this.facade.confirmDelete(row);
   }
 }
