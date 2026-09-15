@@ -1,16 +1,14 @@
-﻿updated_at: 2026-09-15T07:00:00+03:00
+﻿updated_at: 2026-09-15T08:25:00+03:00
 
 ## ACTIVE / LIVE
 
-- **VERIFY PASS (Cursor):** DECOMP **B1 6/6 DONE**
-  - Feat: `0b05d437` → `d8a4aeff` → `01c2b46f` → `8261af25` → `ced1f204` · wave `0379563f`
-  - A2 UTIL-UI docs-only `94c4adb8` — ok
-  - Deviation OK: tray+OrderHubFacade remain in app (CompositionTree shared); dialogs in `@kppdf/features/order-hub`
-  - `@kppdf/features/production` + `order-hub` present; `_active` empty
-- **Claude: DECOMP B2 — WAVE COMPLETE (5/5)**, `6b08842a`. `tasks/_active/` empty.
-  Per PO instruction, STOPPED after B2 (not starting B3 without a fresh prompt).
-  Tracker: `docs/agent-checklists/WAVE-DECOMP-B2-SUPPLY-WAREHOUSE.md`
-- Studio EDITOR-DECOMP DONE · Phase 5 PARK · Next up (needs its own prompt): B3 Proposals
+- **VERIFY PASS (Cursor):** DECOMP **B2 5/5 DONE**
+  - Feat: `7e68240c` → `4533da8b` → `0ab7a507` → `ea3c4405` → `6b08842a` · wave `07e0c2a3`
+  - `@kppdf/features/supply` + `warehouse`; `_active` empty
+- **Claude:** DECOMP **B3** Proposals list (1/2, P1 proposals-list-facade DONE `93eec886`, continuing P2 proposals-to-features — last TZ of batch B1→B3)
+  - Pack: `tasks/_ready/2026-09-14-decomp-b3-proposals/`
+  - Tracker: `docs/agent-checklists/WAVE-DECOMP-B3-PROPOSALS.md`
+- B1 DONE · Studio DONE · Phase 5 PARK
 
 ## PARK
 
