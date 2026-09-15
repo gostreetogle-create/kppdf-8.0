@@ -9,9 +9,9 @@
 | TZ-NX-ORDER-WS-CHROME-TOP | DONE | `e235ba9f` |
 | TZ-NX-ORDER-WS-STRIP-NAV-DUP | DONE | `67487b54` |
 | TZ-NX-ORDER-WS-META-INLINE | DONE | `669b6303` + `92cba112` — also needed a 1-line backend fix (`OrderService.update` never applied `organizationId`) |
-| TZ-NX-ORDER-WS-PRODUCT-SELECT-ADD | DONE | `81bbf969` + docs/archive next |
-| TZ-NX-ORDER-WS-COMPOSITION-DENSITY | PENDING | Claude queue, next |
-| TZ-NX-MODULE-WORKTYPES-ROW-ALIGN | PENDING | |
+| TZ-NX-ORDER-WS-PRODUCT-SELECT-ADD | DONE | `81bbf969` + `70240ef7` |
+| TZ-NX-ORDER-WS-COMPOSITION-DENSITY | DONE | `a2f6d0c1` + docs/archive next; found (not fixed, out of scope) `hairline-bottom`/`hairline-top` aren't real utilities in ~15 files project-wide — worth a follow-up TZ |
+| TZ-NX-MODULE-WORKTYPES-ROW-ALIGN | PENDING | Claude queue, next |
 | TZ-NX-COMPOSITION-TREE-TOGGLE-HIT | PENDING | |
 | TZ-OPS-START-DIAGNOSTICS | DONE | Freebuff, archived |
 
