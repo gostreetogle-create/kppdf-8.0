@@ -5,10 +5,12 @@
 - **VERIFY PASS (Cursor):** DECOMP **B2 5/5 DONE**
   - Feat: `7e68240c` → `4533da8b` → `0ab7a507` → `ea3c4405` → `6b08842a` · wave `07e0c2a3`
   - `@kppdf/features/supply` + `warehouse`; `_active` empty
-- **Claude:** DECOMP **B3** Proposals list (1/2, P1 proposals-list-facade DONE `93eec886`, continuing P2 proposals-to-features — last TZ of batch B1→B3)
-  - Pack: `tasks/_ready/2026-09-14-decomp-b3-proposals/`
+- **Claude: DECOMP BATCH B1→B3 — ALL COMPLETE.** B3 2/2 `104fb059`. `tasks/_active/` empty.
+  - B1 (Production→Order hub) 6/6 `0379563f` · B2 (Supply+Warehouse) 5/5 `07e0c2a3` · B3 (Proposals) 2/2, this wave
+  - `@kppdf/features/production`, `order-hub`, `supply`, `warehouse`, `proposals` all present
   - Tracker: `docs/agent-checklists/WAVE-DECOMP-B3-PROPOSALS.md`
-- B1 DONE · Studio DONE · Phase 5 PARK
+- Studio EDITOR-DECOMP DONE · Phase 5 PARK
+- No further wave queued — next work needs a fresh PO prompt
 
 ## PARK
 
