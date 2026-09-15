@@ -1,43 +1,23 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
-import {
-  PiOrdersService,
-  PiShipmentsService,
-  PiWarehousesService,
-  type Order,
-  type Shipment,
-  type ShipmentStatus,
-  type Warehouse,
-} from '@kppdf/data-access';
-import { extractErrorMessage } from '@kppdf/util-http';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import type { ShipmentStatus } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
-import { PiToastService } from '@kppdf/ui/toast';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-import { ShipmentCreateDialogComponent, type ShipmentCreateDialogData } from './shipment-create-dialog.component';
-import { ShipmentEditDialogComponent, type ShipmentEditDialogData } from './shipment-edit-dialog.component';
-import { ShipmentDocDialogComponent, type ShipmentDocDialogData, DOC_TYPE_LABELS } from './shipment-doc-dialog.component';
-
-const STATUS_LABELS: Record<ShipmentStatus, string> = {
-  draft: 'Черновик',
-  scheduled: 'Запланирована',
-  in_transit: 'В пути',
-  delivered: 'Доставлена',
-  cancelled: 'Отменена',
-};
+import { ShippingFacade } from './shipping.facade';
 
 /**
  * TZ-NX-SHIP-S1-REGISTRY — live NX `/shipping` registry, ports the legacy
  * page's essentials (list/filter/create/dispatch/cancel/edit/doc) with NX
  * dialog density instead of the legacy inline row-expando editors.
+ *
+ * TZ-NX-SHIPPING-PAGE-FACADE — domain signals + every load/create/dispatch/
+ * cancel/edit/doc method moved to `ShippingFacade`; this page stays a
+ * thin host (template + input wiring).
  */
 @Component({
   selector: 'pi-shipping-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [ShippingFacade],
   imports: [PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="shipping-page">
@@ -229,225 +209,82 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
   `,
 })
 export class ShippingPage {
-  private readonly ordersApi = inject(PiOrdersService);
-  private readonly warehousesApi = inject(PiWarehousesService);
-  private readonly shipmentsApi = inject(PiShipmentsService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly injector = inject(Injector);
-  private readonly dialog = inject(PiDialogService);
-  private readonly toast = inject(PiToastService);
-  private readonly destroyRef = inject(DestroyRef);
+  protected readonly facade = inject(ShippingFacade);
 
-  protected readonly statuses: readonly ShipmentStatus[] = ['draft', 'scheduled', 'in_transit', 'delivered', 'cancelled'];
-  protected readonly shipments = signal<readonly Shipment[]>([]);
-  protected readonly orders = signal<readonly Order[]>([]);
-  protected readonly warehouses = signal<readonly Warehouse[]>([]);
-  protected readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  protected readonly error = signal('Не удалось загрузить отгрузки.');
-  protected readonly busy = signal(false);
-  protected readonly statusFilter = signal<ShipmentStatus | ''>('');
-  protected readonly orderFilter = signal('');
-  /** Single expand (registry pattern) — reloading the list collapses it. */
-  protected readonly expandedId = signal<string | null>(null);
-  protected readonly docTypeLabels = DOC_TYPE_LABELS;
-
-  protected readonly orderFilterLabel = computed(() => {
-    const id = this.orderFilter();
-    return id ? this.orderLabel(id) : '';
-  });
-
-  constructor() {
-    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      this.orderFilter.set((params.get('orderId') ?? '').trim());
-      this.load();
-    });
-    void this.loadLookups();
-  }
+  protected readonly statuses = this.facade.statuses;
+  protected readonly shipments = this.facade.shipments;
+  protected readonly orders = this.facade.orders;
+  protected readonly warehouses = this.facade.warehouses;
+  protected readonly status = this.facade.status;
+  protected readonly error = this.facade.error;
+  protected readonly busy = this.facade.busy;
+  protected readonly statusFilter = this.facade.statusFilter;
+  protected readonly orderFilter = this.facade.orderFilter;
+  protected readonly expandedId = this.facade.expandedId;
+  protected readonly docTypeLabels = this.facade.docTypeLabels;
+  protected readonly orderFilterLabel = this.facade.orderFilterLabel;
 
   protected statusLabel(status: ShipmentStatus): string {
-    return STATUS_LABELS[status] ?? status;
+    return this.facade.statusLabel(status);
   }
 
   protected fmtDate(value?: string): string {
-    return value ? new Date(value).toLocaleDateString('ru-RU') : '—';
+    return this.facade.fmtDate(value);
   }
 
-  protected orderLabel(orderId: Shipment['orderId']): string {
-    if (typeof orderId === 'string') {
-      return this.orders().find((order) => order._id === orderId)?.number ?? orderId.slice(-6);
-    }
-    return orderId.number ?? orderId._id.slice(-6);
+  protected orderLabel(orderId: Parameters<ShippingFacade['orderLabel']>[0]): string {
+    return this.facade.orderLabel(orderId);
   }
 
   protected docTypeLabel(type: string): string {
-    return this.docTypeLabels[type] ?? type;
+    return this.facade.docTypeLabel(type);
   }
 
   protected toggleExpand(shipmentId: string): void {
-    this.expandedId.update((current) => (current === shipmentId ? null : shipmentId));
+    this.facade.toggleExpand(shipmentId);
   }
 
   protected onRowSpace(event: Event, shipmentId: string): void {
-    event.preventDefault();
-    this.toggleExpand(shipmentId);
+    this.facade.onRowSpace(event, shipmentId);
   }
 
   protected onStatusFilterChange(event: Event): void {
-    this.statusFilter.set((event.target as HTMLSelectElement).value as ShipmentStatus | '');
-    this.load();
+    this.facade.onStatusFilterChange(event);
   }
 
   protected onOrderFilterChange(event: Event): void {
-    const orderId = (event.target as HTMLSelectElement).value;
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { orderId: orderId || null },
-      queryParamsHandling: 'merge',
-    });
+    this.facade.onOrderFilterChange(event);
   }
 
   protected clearOrderFilter(): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { orderId: null },
-      queryParamsHandling: 'merge',
-    });
+    this.facade.clearOrderFilter();
   }
 
   load(): void {
-    this.status.set('loading');
-    this.expandedId.set(null);
-    void firstValueFrom(
-      this.shipmentsApi.list({ status: this.statusFilter() || undefined, orderId: this.orderFilter() || undefined }),
-    ).then((result) => {
-      if (!result.ok) {
-        this.error.set(extractErrorMessage(result.error));
-        this.status.set('error');
-        return;
-      }
-      this.shipments.set(result.data ?? []);
-      this.status.set('success');
-    });
+    this.facade.load();
   }
 
   openCreate(): void {
-    const ref = this.dialog.open<boolean, ShipmentCreateDialogData>(ShipmentCreateDialogComponent, {
-      data: { orders: this.orders(), warehouses: this.warehouses() },
-      width: 'lg',
-      ariaLabel: 'Новая отгрузка',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (created) => {
-      if (created) {
-        this.toast.success('Отгрузка создана');
-        this.load();
-        void this.loadOrders();
-      }
-    });
+    this.facade.openCreate();
   }
 
-  openEdit(shipment: Shipment): void {
-    const ref = this.dialog.open<boolean, ShipmentEditDialogData>(ShipmentEditDialogComponent, {
-      data: { shipment, warehouses: this.warehouses() },
-      width: 'md',
-      ariaLabel: 'Изменить отгрузку',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (saved) => {
-      if (saved) {
-        this.toast.success('Отгрузка сохранена');
-        this.load();
-      }
-    });
+  openEdit(shipment: Parameters<ShippingFacade['openEdit']>[0]): void {
+    this.facade.openEdit(shipment);
   }
 
-  openDoc(shipment: Shipment): void {
-    const ref = this.dialog.open<boolean, ShipmentDocDialogData>(ShipmentDocDialogComponent, {
-      data: { shipment },
-      width: 'md',
-      ariaLabel: 'Добавить документ',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (saved) => {
-      if (saved) {
-        this.toast.success('Документ добавлен');
-        this.load();
-      }
-    });
+  openDoc(shipment: Parameters<ShippingFacade['openDoc']>[0]): void {
+    this.facade.openDoc(shipment);
   }
 
-  dispatch(shipment: Shipment): void {
-    if (!shipment.warehouseId) {
-      this.toast.error('Сначала укажите склад в редактировании отгрузки');
-      this.openEdit(shipment);
-      return;
-    }
-    this.busy.set(true);
-    void firstValueFrom(this.shipmentsApi.dispatch(shipment._id)).then((result) => {
-      this.busy.set(false);
-      if (!result.ok) {
-        this.toast.error(extractErrorMessage(result.error) || 'Не удалось отправить отгрузку');
-        return;
-      }
-      this.toast.success('Отгрузка отправлена');
-      this.load();
-    });
+  dispatch(shipment: Parameters<ShippingFacade['dispatch']>[0]): void {
+    this.facade.dispatch(shipment);
   }
 
-  /** TZ-SHIP-433 — отмена ошибочной отгрузки, confirm + reload (тот же canon, что hub cancel будет использовать позже). */
-  cancelShipment(shipment: Shipment): void {
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-      data: {
-        title: 'Отменить отгрузку?',
-        description: `Отменить отгрузку «${shipment.number}»? Заказ вернётся в «Готов».`,
-        confirmLabel: 'Отменить',
-        cancelLabel: 'Не отменять',
-        variant: 'destructive',
-      },
-      width: 'sm',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (confirmed) => {
-      if (!confirmed) return;
-      this.busy.set(true);
-      void firstValueFrom(this.shipmentsApi.cancelShipment(shipment._id)).then((result) => {
-        this.busy.set(false);
-        if (!result.ok) {
-          this.toast.error(extractErrorMessage(result.error) || 'Не удалось отменить отгрузку');
-          return;
-        }
-        this.toast.success('Отгрузка отменена — заказ вернулся в «Готов»');
-        this.load();
-        void this.loadOrders();
-      });
-    });
+  cancelShipment(shipment: Parameters<ShippingFacade['cancelShipment']>[0]): void {
+    this.facade.cancelShipment(shipment);
   }
 
-  markDelivered(shipment: Shipment): void {
-    this.busy.set(true);
-    void firstValueFrom(this.shipmentsApi.update(shipment._id, { status: 'delivered' })).then((result) => {
-      this.busy.set(false);
-      if (!result.ok) {
-        this.toast.error(extractErrorMessage(result.error) || 'Не удалось изменить статус');
-        return;
-      }
-      this.load();
-    });
-  }
-
-  private async loadOrders(): Promise<void> {
-    const result = await firstValueFrom(this.ordersApi.list());
-    if (result.ok) this.orders.set(result.data ?? []);
-  }
-
-  private async loadLookups(): Promise<void> {
-    const [orders, warehouses] = await Promise.all([
-      firstValueFrom(this.ordersApi.list()),
-      firstValueFrom(this.warehousesApi.list()),
-    ]);
-    if (orders.ok) this.orders.set(orders.data ?? []);
-    if (warehouses.ok) this.warehouses.set(warehouses.data ?? []);
-    else this.toast.error(extractErrorMessage(warehouses.error) || 'Не удалось загрузить список складов');
+  markDelivered(shipment: Parameters<ShippingFacade['markDelivered']>[0]): void {
+    this.facade.markDelivered(shipment);
   }
 }
