@@ -8,29 +8,10 @@ import {
   Injector,
   OnDestroy,
   computed,
-  effect,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
-import {
-  Archive,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  Database,
-  Eye,
-  File as DocumentIcon,
-  FileDown,
-  FileStack,
-  FileText,
-  Layers,
-  LayoutTemplate,
-  LucideAngularModule,
-  PenLine,
-  Save,
-  Settings2,
-} from 'lucide-angular';
 import type {
   StudioBlock,
   StudioBlockLayout,
@@ -44,6 +25,7 @@ import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
+import { registerStudioShellTools, STUDIO_TOOL_OWNER } from './studio-editor-shell-tools';
 import {
   StudioEditorFacade,
   StudioBlocksCanvasComponent,
@@ -54,11 +36,10 @@ import {
   StudioWorkspaceShellComponent,
   StudioPropertiesPanelComponent,
   StudioDataPanelComponent,
+  StudioPreviewFrameComponent,
   type StudioShowcaseKind,
   type StudioTableRowSource,
 } from '@kppdf/features/doc-studio';
-
-const STUDIO_TOOL_OWNER = 'studio-editor';
 
 @Component({
   selector: 'pi-studio-editor-page',
@@ -72,7 +53,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
     StudioLayersPanelComponent,
     StudioPropertiesPanelComponent,
     StudioTemplatePanelComponent,
-    LucideAngularModule,
+    StudioPreviewFrameComponent,
   ],
   providers: [StudioEditorFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -261,21 +242,14 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
 
         <div kpWsSheet class="studio-canvas-host" #sheetHost>
           @if (viewMode() === 'preview') {
-            @if (previewLoading()) {
-              <p class="preview-state" data-test="studio-preview-loading">Формирование просмотра…</p>
-            } @else if (previewError(); as err) {
-              <p class="preview-state preview-state--error" data-test="studio-preview-error">{{ err }}</p>
-            } @else if (previewSafeHtml(); as html) {
-              <iframe
-                class="studio-preview-frame"
-                data-test="studio-preview-frame"
-                sandbox="allow-same-origin"
-                [srcdoc]="html"
-                [style.width.px]="previewNativeSheetSize().width"
-                [style.height.px]="previewNativeSheetSize().height"
-                [style.transform]="'scale(' + previewZoomScale() + ')'"
-              ></iframe>
-            }
+            <pi-studio-preview-frame
+              [loading]="previewLoading()"
+              [error]="previewError()"
+              [html]="previewSafeHtml()"
+              [width]="previewNativeSheetSize().width"
+              [height]="previewNativeSheetSize().height"
+              [scale]="previewZoomScale()"
+            />
           } @else {
             <pi-studio-blocks-canvas
               [blocks]="pageBlocks()"
@@ -301,123 +275,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
       <div class="studio-loading">Загрузка документа…</div>
     }
   `,
-  styles: [`
-    :host {
-      display: flex;
-      flex-direction: column;
-      min-height: calc(100dvh - var(--header-h));
-      height: calc(100dvh - var(--header-h));
-    }
-    .studio-editor-shell { flex: 1; min-height: 0; }
-    .studio-loading { padding: 24px; color: var(--color-muted-foreground); }
-    .studio-ribbon-extra,
-    .studio-ribbon-crumbs {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1, 4px);
-      flex-shrink: 0;
-      height: 100%;
-    }
-    .studio-ribbon-crumbs {
-      min-width: 0;
-      padding-right: var(--space-1, 4px);
-    }
-    .studio-crumb {
-      font-size: 12px;
-      line-height: 1;
-      color: var(--color-muted-foreground);
-      white-space: nowrap;
-    }
-    .studio-crumb-sep {
-      color: var(--color-muted-foreground);
-      user-select: none;
-    }
-    .studio-crumb--link {
-      background: none;
-      border: none;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      font: inherit;
-      text-decoration: underline dotted;
-      text-underline-offset: 3px;
-    }
-    .studio-crumb--link:hover {
-      color: var(--color-foreground);
-    }
-    .studio-crumb--current {
-      background: none;
-      border: none;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--color-foreground);
-      max-width: 40ch;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .studio-crumb--current:hover {
-      text-decoration: underline;
-    }
-    .page-nav {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1, 4px);
-      height: var(--kp-ribbon-control-h, 26px);
-      padding: 0 var(--space-1, 4px);
-      border: 1px solid var(--color-rule);
-      border-radius: var(--radius-sm, 2px);
-      background: var(--color-paper-raised);
-    }
-    .page-nav__btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: var(--kp-ribbon-control-h, 26px);
-      height: var(--kp-ribbon-control-h, 26px);
-      padding: 0;
-      border: 1px solid var(--color-rule-strong);
-      border-radius: var(--radius-sm, 2px);
-      background: var(--color-paper-2);
-      color: var(--color-ink);
-      cursor: pointer;
-    }
-    .page-nav__btn:disabled { opacity: 0.35; cursor: default; }
-    .page-nav__btn:not(:disabled):hover { background: var(--color-paper-3); }
-    .page-nav__label {
-      font-family: var(--font-mono, ui-monospace, monospace);
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      font-variant-numeric: tabular-nums;
-      color: var(--color-ink);
-      min-width: 6.5rem;
-      text-align: center;
-      line-height: 1;
-    }
-    .page-geometry-control { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--color-muted-foreground); }
-    .page-geometry-control select { max-width:90px; }
-    .studio-canvas-host {
-      position: relative; width: 100%; height: 100%; min-height: 0;
-      overflow: hidden;
-      background: #fff;
-    }
-    .studio-preview-frame {
-      /* TZ-NX-PO-SWEEP-06 — width/height/transform:scale set inline
-         ([style.*] bindings) to the real A4 px size + zoomMode-matching
-         scale factor; this is layout-only (position/origin). */
-      display: block; border: none; background: #fff;
-      position: absolute; top: 0; left: 0;
-      transform-origin: top left;
-    }
-    .preview-state {
-      margin: 0; padding: 24px; font-size: 13px; color: var(--color-muted-foreground);
-    }
-    .preview-state--error { color: var(--color-destructive); }
-  `],
+  styleUrl: './studio-editor.page.css',
 })
 export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly facade = inject(StudioEditorFacade);
@@ -504,9 +362,6 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly statusText = this.facade.statusText;
   readonly pendingDataJump = this.facade.pendingDataJump;
 
-  protected readonly chevronLeft = ChevronLeft;
-  protected readonly chevronRight = ChevronRight;
-
   // ─── DOM-only state: canvas fit-to-viewport. Stays on the page — needs
   // `sheetHostRef` (viewChild), which a plain Injectable facade cannot have. ───
   readonly sheetSize = signal({ width: 800, height: 566 });
@@ -543,68 +398,22 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       this.resizeObserver = new ResizeObserver(() => this.syncSheetSize());
     }
 
-    effect(() => {
-      const section = this.activeSection();
-      const collapsed = this.panelCollapsed();
-      const viewMode = this.viewMode();
-      const doc = this.document();
-      const selectedId = this.selectedId();
-      const selectedBlock = selectedId ? this.blocks().find((b) => b._id === selectedId) : null;
-      // TZ-NX-PO-SWEEP-02: table selected but Свойства not open yet — hint the
-      // rail button (same active/жёлтый style) instead of auto-opening the panel.
-      const propertiesHint =
-        section !== 'properties' && selectedBlock?.type === 'table' && !selectedBlock.locked;
-      this.shellTools.setTools(STUDIO_TOOL_OWNER, {
-        left: [
-          {
-            id: 'data', side: 'left', ariaLabel: 'Данные', title: 'Данные', icon: Database,
-            active: !collapsed && section === 'data', onClick: () => this.onSection('data'),
-          },
-          {
-            id: 'selected', side: 'left', ariaLabel: 'Выбрано', title: 'Выбрано', icon: ClipboardList,
-            badge: this.selectedBufferCount() > 0 ? this.selectedBufferCount() : undefined,
-            active: !collapsed && section === 'selected', onClick: () => this.onSection('selected'),
-          },
-        ],
-        right: [
-          // TZ-NX-PO-SWEEP-07 — one «Документ» category instead of 5 flat
-          // lifecycle icons (mode-editor/mode-preview/save/pdf/archive):
-          // rail slots are categories that open a menu, not one-icon=one-action.
-          {
-            id: 'document', side: 'right', ariaLabel: 'Документ', title: 'Документ', icon: DocumentIcon,
-            items: [
-              {
-                id: 'mode-editor', label: 'Редактор', icon: PenLine,
-                active: viewMode === 'editor', onClick: () => this.setViewMode('editor'),
-              },
-              {
-                id: 'mode-preview', label: 'Просмотр', icon: Eye,
-                active: viewMode === 'preview', onClick: () => this.setViewMode('preview'),
-              },
-              {
-                id: 'save', label: 'Сохранить', icon: Save,
-                disabled: this.saving(), onClick: () => void this.saveDocument(),
-              },
-              {
-                id: 'pdf', label: 'Скачать PDF', icon: FileDown,
-                disabled: this.pdfLoading(), onClick: () => this.onDownloadPdf(),
-              },
-              {
-                id: 'archive',
-                label: doc?.status === 'draft' ? 'В архив' : 'Уже в архиве',
-                icon: Archive,
-                disabled: this.finalizing() || doc?.status !== 'draft',
-                onClick: () => this.onFinalize(),
-              },
-            ],
-          },
-          { id: 'elements', side: 'right', ariaLabel: 'Элементы', title: 'Элементы', icon: FileText, active: !collapsed && section === 'elements', onClick: () => this.onSection('elements') },
-          { id: 'layers', side: 'right', ariaLabel: 'Слои', title: 'Слои', icon: Layers, active: !collapsed && section === 'layers', onClick: () => this.onSection('layers') },
-          { id: 'pages', side: 'right', ariaLabel: 'Страницы', title: 'Страницы', icon: FileStack, active: !collapsed && section === 'pages', onClick: () => this.onSection('pages') },
-          { id: 'properties', side: 'right', ariaLabel: 'Свойства', title: 'Свойства', icon: Settings2, active: !collapsed && (section === 'properties' || propertiesHint), onClick: () => this.onSection('properties') },
-          { id: 'template', side: 'right', ariaLabel: 'Шаблон', title: 'Шаблон', icon: LayoutTemplate, active: !collapsed && section === 'template', onClick: () => this.onSection('template') },
-        ],
-      });
+    registerStudioShellTools(this.shellTools, {
+      activeSection: this.activeSection,
+      panelCollapsed: this.panelCollapsed,
+      viewMode: this.viewMode,
+      document: this.document,
+      selectedId: this.selectedId,
+      blocks: this.blocks,
+      saving: this.saving,
+      pdfLoading: this.pdfLoading,
+      finalizing: this.finalizing,
+      selectedBufferCount: this.selectedBufferCount,
+      onSection: (id) => this.onSection(id),
+      setViewMode: (mode) => this.setViewMode(mode),
+      saveDocument: () => void this.saveDocument(),
+      onDownloadPdf: () => this.onDownloadPdf(),
+      onFinalize: () => this.onFinalize(),
     });
   }
 

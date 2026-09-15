@@ -1,4 +1,5 @@
 export * from './studio-workspace-shell.component';
+export * from './studio-preview-frame.component';
 export * from './studio-blocks-canvas.component';
 export * from './studio-data-panel.component';
 export * from './studio-data-vitrina.component';
