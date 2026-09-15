@@ -4,9 +4,9 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
 import { CheckboxComponent } from '@kppdf/ui/checkbox';
 import { PiPageChromeComponent } from '@kppdf/ui/page';
-import { StudioListFacade } from './studio-list.facade';
+import { StudioListFacade, STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from '@kppdf/features/doc-studio';
 
-export { STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from './studio-list.facade';
+export { STUDIO_NO_SAVED_TEMPLATES_MESSAGE } from '@kppdf/features/doc-studio';
 
 @Component({
   selector: 'pi-studio-list-page',

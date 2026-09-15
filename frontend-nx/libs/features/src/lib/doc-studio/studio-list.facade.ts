@@ -2,7 +2,7 @@ import { Injectable, computed, inject, Injector, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { onDialogCloseOnce } from './ui/on-dialog-close-once';
 import { PiToastService } from '@kppdf/ui/toast';
 import {
   PiDocTypesService,
@@ -12,14 +12,16 @@ import {
   type DocumentTemplate,
   type StudioDocument,
 } from '@kppdf/data-access';
-import { rememberStudioDocument } from '@kppdf/features/doc-studio';
+import { rememberStudioDocument } from './util';
 import {
   StudioTemplatePickerDialogComponent,
   type StudioTemplatePickerDialogData,
+} from './ui/studio-template-picker-dialog.component';
+import {
   StudioCreateDoctypeDialogComponent,
   type StudioCreateDoctypeDialogData,
   type StudioCreateDoctypeResult,
-} from '@kppdf/features/doc-studio';
+} from './ui/studio-create-doctype-dialog.component';
 
 /** Row-caption labels for the values used by the list status filter. */
 export const STUDIO_DOCUMENT_STATUS_LABELS: Record<string, string> = {

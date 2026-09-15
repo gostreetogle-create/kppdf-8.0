@@ -13,3 +13,4 @@
 export * from './util';
 export * from './ui';
 export * from './studio-editor.facade';
+export * from './studio-list.facade';
