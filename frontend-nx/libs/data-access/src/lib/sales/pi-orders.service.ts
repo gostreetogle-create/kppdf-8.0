@@ -65,6 +65,17 @@ export class PiOrdersService {
   }
 
   /**
+   * TZ-NX-ORDER-WS-COMPOSITION — dedicated single-field write, separate from
+   * the general `update()` items PATCH (mirrors backend
+   * `PATCH /orders/:id/items/:lineIndex/ready`, `SetOrderLineReadyDto`).
+   */
+  setLineReady(id: string, lineIndex: number, readyForWork: boolean): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/items/${lineIndex}/ready`, {
+      readyForWork,
+    });
+  }
+
+  /**
    * TZ-NX-GANTT-G2 — order-level estimate days override (never the WorkType
    * catalog). Mirrors legacy OrdersService.patchEstimateDays (TZ-PRODUCTION-309).
    */

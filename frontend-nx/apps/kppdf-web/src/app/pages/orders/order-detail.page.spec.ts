@@ -3,7 +3,13 @@ import { signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
-import { PiOrdersService, PiOrganizationsService, type Order } from '@kppdf/data-access';
+import {
+  PiCompositionService,
+  PiOrdersService,
+  PiOrganizationsService,
+  PiProductsService,
+  type Order,
+} from '@kppdf/data-access';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import type { SilentResult } from '@kppdf/util-http';
@@ -11,11 +17,13 @@ import { OrderDetailPage } from './order-detail.page';
 
 describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   let fixture: ComponentFixture<OrderDetailPage>;
-  let ordersApi: { getById: jest.Mock; update: jest.Mock; cancel: jest.Mock };
+  let ordersApi: { getById: jest.Mock; update: jest.Mock; cancel: jest.Mock; setLineReady: jest.Mock };
   let toast: { error: jest.Mock };
   let router: { navigate: jest.Mock };
   let organizationsApi: { getById: jest.Mock };
   let dialog: { open: jest.Mock };
+  let productsApi: { list: jest.Mock };
+  let compositionApi: { getProductTree: jest.Mock };
 
   const quotationOrder: Order = {
     _id: 'order-1',
@@ -45,10 +53,12 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   }
 
   async function setup(result: ReturnType<typeof of> | Subject<SilentResult<Order>>): Promise<void> {
-    ordersApi = { getById: jest.fn().mockReturnValue(result), update: jest.fn(), cancel: jest.fn() };
+    ordersApi = { getById: jest.fn().mockReturnValue(result), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn() };
     toast = { error: jest.fn() };
     organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
     dialog = { open: jest.fn() };
+    productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
+    compositionApi = { getProductTree: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [OrderDetailPage],
       providers: [
@@ -58,6 +68,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiDialogService, useValue: dialog },
+        { provide: PiProductsService, useValue: productsApi },
+        { provide: PiCompositionService, useValue: compositionApi },
       ],
     }).compileComponents();
 
@@ -90,9 +102,11 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
       ok: false,
       error: new HttpErrorResponse({ status: 404, error: { message: 'Order not found' } }),
     };
-    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn() };
     organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
     dialog = { open: jest.fn() };
+    productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
+    compositionApi = { getProductTree: jest.fn() };
     ordersApi.getById
       .mockReturnValueOnce(of(failure))
       .mockReturnValueOnce(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
@@ -106,6 +120,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiDialogService, useValue: dialog },
+        { provide: PiProductsService, useValue: productsApi },
+        { provide: PiCompositionService, useValue: compositionApi },
       ],
     }).compileComponents();
     await configureRouterSpy();
@@ -135,9 +151,10 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     expect(text).toContain('Стол');
     expect(text).toContain('Стул');
 
-    const itemRows = fixture.nativeElement.querySelectorAll('[data-test="order-item"]');
+    const itemRows = fixture.nativeElement.querySelectorAll('[data-test="composition-line"]');
     expect(itemRows.length).toBe(2);
-    expect(itemRows[0].textContent).toContain('×2');
+    const firstQty = itemRows[0].querySelector('[data-test="composition-qty"]') as HTMLInputElement;
+    expect(firstQty.value).toBe('2');
   });
 
   it('shows an honest empty-items note when the payload has no lines', async () => {
@@ -145,6 +162,130 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
     await settle();
 
     expect(fixture.nativeElement.textContent).toContain('В заказе нет изделий');
+  });
+
+  it('changes a line qty via the composition PATCH, preserving the other line untouched', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    const [line0, line1] = quotationOrder.items ?? [];
+    ordersApi.update.mockReturnValue(
+      of({
+        ok: true,
+        data: { ...quotationOrder, items: [{ ...line0, quantity: 5 }, line1] },
+      } satisfies SilentResult<Order>),
+    );
+
+    const qtyInputs = fixture.nativeElement.querySelectorAll('[data-test="composition-qty"]') as NodeListOf<HTMLInputElement>;
+    qtyInputs[0].value = '5';
+    qtyInputs[0].dispatchEvent(new Event('change'));
+    await settle();
+
+    expect(ordersApi.update).toHaveBeenCalledWith(
+      'order-1',
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({ productId: 'p-1', quantity: 5 }),
+          expect.objectContaining({ productId: 'p-2', productName: 'Стул', quantity: 8 }),
+        ],
+      }),
+    );
+  });
+
+  it('toggles line readiness via the dedicated ready endpoint (not the general items PATCH)', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    ordersApi.setLineReady.mockReturnValue(
+      of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>),
+    );
+
+    const readyToggle = fixture.nativeElement.querySelector('[data-test="composition-ready"]') as HTMLInputElement;
+    readyToggle.click();
+    await settle();
+
+    expect(ordersApi.setLineReady).toHaveBeenCalledWith('order-1', 0, true);
+    expect(ordersApi.update).not.toHaveBeenCalled();
+  });
+
+  it('removes a line via the destructive confirm dialog', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    const [firstLine] = quotationOrder.items ?? [];
+    ordersApi.update.mockReturnValue(
+      of({ ok: true, data: { ...quotationOrder, items: [firstLine] } } satisfies SilentResult<Order>),
+    );
+    const closed = signal<boolean | undefined>(undefined);
+    dialog.open.mockReturnValue({ closed, close: (v?: boolean) => closed.set(v) });
+
+    const removeButtons = fixture.nativeElement.querySelectorAll('[data-test="composition-remove"] button') as NodeListOf<HTMLButtonElement>;
+    removeButtons[1].click();
+    closed.set(true);
+    await settle();
+
+    expect(ordersApi.update).toHaveBeenCalledWith(
+      'order-1',
+      expect.objectContaining({ items: [expect.objectContaining({ productId: 'p-1' })] }),
+    );
+  });
+
+  it('freezes composition editing (disabled inputs + banner) once the order leaves draft/confirmed', async () => {
+    await setup(
+      of({ ok: true, data: { ...quotationOrder, status: 'in_production' } } satisfies SilentResult<Order>),
+    );
+    await settle();
+
+    expect(fixture.nativeElement.querySelector('[data-test="composition-freeze-banner"]')).toBeTruthy();
+    const qty = fixture.nativeElement.querySelector('[data-test="composition-qty"]') as HTMLInputElement;
+    expect(qty.disabled).toBe(true);
+  });
+
+  it('lazily loads and caches the per-line composition tree on first expand', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    compositionApi.getProductTree.mockReturnValue(
+      of({ ok: true, data: { _id: 'p-1', name: 'Стол', kind: 'product', quantity: 1, children: [] } }),
+    );
+
+    const expandBtn = fixture.nativeElement.querySelector('[data-test="composition-line-expand"]') as HTMLButtonElement;
+    expandBtn.click();
+    await settle();
+
+    expect(compositionApi.getProductTree).toHaveBeenCalledWith('p-1');
+    expect(fixture.nativeElement.querySelector('[data-test="composition-tree-panel"]')).toBeTruthy();
+
+    expandBtn.click();
+    expandBtn.click();
+    await settle();
+    expect(compositionApi.getProductTree).toHaveBeenCalledTimes(1);
+  });
+
+  it('adds a line via the composition PATCH with the picked product appended', async () => {
+    await setup(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+    await settle();
+    (fixture.componentInstance as unknown as { facade: { products: { set: (v: unknown[]) => void } } }).facade.products.set([
+      { _id: 'p-3', name: 'Полка', unit: 'шт', kind: 'product' },
+    ]);
+    fixture.detectChanges();
+    ordersApi.update.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
+
+    const productSelect = fixture.nativeElement.querySelector('[data-test="composition-add-product"]') as HTMLSelectElement;
+    productSelect.value = 'p-3';
+    productSelect.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const qtyInput = fixture.nativeElement.querySelector('[data-test="composition-add-qty"]') as HTMLInputElement;
+    qtyInput.value = '3';
+    qtyInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('[data-test="composition-add-submit"] button') as HTMLButtonElement).click();
+    await settle();
+
+    expect(ordersApi.update).toHaveBeenCalledWith(
+      'order-1',
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({ productId: 'p-3', productName: 'Полка', quantity: 3 }),
+        ]),
+      }),
+    );
   });
 
   it('renders «Без КП» without any stub-proposal CTA for a direct order', async () => {
@@ -171,9 +312,11 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   });
 
   it('sends PATCH { isPaid } from the paid toggle and reflects the server answer', async () => {
-    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn() };
     organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
     dialog = { open: jest.fn() };
+    productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
+    compositionApi = { getProductTree: jest.fn() };
     ordersApi.getById.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     ordersApi.update.mockReturnValue(
       of({ ok: true, data: { ...quotationOrder, isPaid: false } } satisfies SilentResult<Order>),
@@ -188,6 +331,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiDialogService, useValue: dialog },
+        { provide: PiProductsService, useValue: productsApi },
+        { provide: PiCompositionService, useValue: compositionApi },
       ],
     }).compileComponents();
     await configureRouterSpy();
@@ -251,9 +396,11 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
   });
 
   it('does not lie about payment when the PATCH fails: toast + checkbox keeps the old fact', async () => {
-    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn() };
+    ordersApi = { getById: jest.fn(), update: jest.fn(), cancel: jest.fn(), setLineReady: jest.fn() };
     organizationsApi = { getById: jest.fn().mockReturnValue(of({ ok: true, data: { name: 'Наша фирма' } })) };
     dialog = { open: jest.fn() };
+    productsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) };
+    compositionApi = { getProductTree: jest.fn() };
     ordersApi.getById.mockReturnValue(of({ ok: true, data: quotationOrder } satisfies SilentResult<Order>));
     ordersApi.update.mockReturnValue(
       of({ ok: false, error: new HttpErrorResponse({ status: 500 }) } satisfies SilentResult<Order>),
@@ -268,6 +415,8 @@ describe('OrderDetailPage (TZ-NX-SALES-S35-ORDER-DETAIL)', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'order-1' } } } },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiDialogService, useValue: dialog },
+        { provide: PiProductsService, useValue: productsApi },
+        { provide: PiCompositionService, useValue: compositionApi },
       ],
     }).compileComponents();
     await configureRouterSpy();

@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
-import { OrderWorkspaceFacade, OrderWsHeaderComponent } from '@kppdf/features/order-workspace';
+import {
+  OrderWorkspaceFacade,
+  OrderWsCompositionComponent,
+  OrderWsHeaderComponent,
+} from '@kppdf/features/order-workspace';
 import { orderStatusLabel } from './order-status';
 
 /**
@@ -17,7 +21,7 @@ import { orderStatusLabel } from './order-status';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [OrderWorkspaceFacade],
-  imports: [PiStatusBannerComponent, OrderWsHeaderComponent],
+  imports: [PiStatusBannerComponent, OrderWsHeaderComponent, OrderWsCompositionComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="order-detail">
       <div class="mb-6">
@@ -71,25 +75,26 @@ import { orderStatusLabel } from './order-status';
 
           <section data-test="order-ws-composition">
             <h2 class="text-sm font-medium m-0 mb-2">Состав</h2>
-            @if (order.items && order.items.length > 0) {
-              <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
-                @for (item of order.items; track item.lineId ?? item.productId) {
-                  <div
-                    class="flex items-center justify-between gap-4 px-4 py-3 hairline-bottom last:border-b-0 text-sm"
-                    data-test="order-item"
-                  >
-                    <span class="font-medium truncate">{{ item.productName ?? item.productId }}</span>
-                    <span class="text-muted-foreground tabular-nums"
-                      >×{{ item.quantity }}{{ item.unit ? ' ' + item.unit : '' }}</span
-                    >
-                  </div>
-                }
-              </div>
-            } @else {
-              <div class="pi-dashed-panel p-8 text-center text-sm text-muted-foreground" data-test="order-items-empty">
-                В заказе нет изделий
-              </div>
-            }
+            <pi-order-ws-composition
+              [items]="order.items ?? []"
+              [editable]="facade.canEditComposition()"
+              [products]="facade.products()"
+              [expandedLineIndex]="facade.expandedLineIndex()"
+              [lineTrees]="facade.lineTrees()"
+              [lineTreeLoading]="facade.lineTreeLoading()"
+              [savingLineIndex]="facade.savingLineIndex()"
+              [removingLineIndex]="facade.removingLineIndex()"
+              [addingLine]="facade.addingLine()"
+              [newLineProductId]="facade.newLineProductId"
+              [newLineQty]="facade.newLineQty"
+              (toggleTree)="facade.toggleLineTree($event)"
+              (qtyChange)="facade.updateQty($event.index, $event.quantity)"
+              (readyChange)="facade.toggleReady($event.index, $event.ready)"
+              (removeLine)="facade.removeLine($event)"
+              (newLineProductIdChange)="facade.newLineProductId = $event"
+              (newLineQtyChange)="facade.newLineQty = $event"
+              (addLine)="facade.addLine()"
+            />
           </section>
 
           <section data-test="order-ws-execution">
