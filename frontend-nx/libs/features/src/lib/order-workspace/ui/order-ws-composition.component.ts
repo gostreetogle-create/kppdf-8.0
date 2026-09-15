@@ -19,6 +19,13 @@ import { ButtonComponent } from '@kppdf/ui/button';
  * product is selected in this same dropdown, NOT auto-added as a line —
  * the manager still presses «Добавить позицию» (no second, hidden
  * write-path for composition).
+ *
+ * TZ-NX-ORDER-WS-COMPOSITION-DENSITY — line list + add-form now render as
+ * ONE bordered card (was two visually disconnected blocks — a table
+ * surface, then a separate flex row below it reading as an unrelated
+ * "Изделие" widget), capped to `max-w-3xl` (was full-bleed with a large
+ * empty gap on wide screens). Qty column is a fixed `w-16`, not a
+ * `minmax(5rem,0.5fr)` grid track eating half the row.
  */
 @Component({
   selector: 'pi-order-ws-composition',
@@ -30,130 +37,132 @@ import { ButtonComponent } from '@kppdf/ui/button';
       <app-pi-status-banner tone="warning" message="Состав заморожен для текущего статуса заказа" data-test="composition-freeze-banner" />
     }
 
-    @if (items().length === 0) {
-      <div class="pi-dashed-panel p-8 text-center text-sm text-muted-foreground" data-test="composition-empty">
-        В заказе нет изделий
-      </div>
-    } @else {
-      <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised" data-test="composition-list">
-        @for (item of items(); track item.lineId ?? $index; let i = $index) {
-          <div
-            class="grid grid-cols-[1.5rem_minmax(0,1.5fr)_minmax(5rem,0.5fr)_minmax(3.5rem,0.35fr)_auto_auto] gap-3 items-center px-4 py-3 hairline-bottom last:border-b-0 text-sm"
-            data-test="composition-line"
-          >
-            <button
-              type="button"
-              class="text-muted-foreground"
-              data-test="composition-line-expand"
-              [attr.aria-expanded]="expandedLineIndex() === i"
-              (click)="toggleTree.emit(i)"
+    <div class="max-w-3xl hairline rounded-sm overflow-hidden bg-paper-raised" data-test="composition-card">
+      @if (items().length === 0) {
+        <div class="p-8 text-center text-sm text-muted-foreground" data-test="composition-empty">
+          В заказе нет изделий
+        </div>
+      } @else {
+        <div data-test="composition-list">
+          @for (item of items(); track item.lineId ?? $index; let i = $index) {
+            <div
+              class="grid grid-cols-[1.5rem_minmax(0,1fr)_4rem_2.5rem_auto_auto] gap-3 items-center px-4 py-3 hairline-bottom last:border-b-0 text-sm"
+              data-test="composition-line"
             >
-              {{ expandedLineIndex() === i ? '▾' : '▸' }}
-            </button>
-            <div class="min-w-0">
-              <div class="font-medium truncate">{{ item.productName ?? item.productId }}</div>
-              @if (item.productSku) {
-                <div class="text-xs text-muted-foreground">{{ item.productSku }}</div>
-              }
+              <button
+                type="button"
+                class="text-muted-foreground"
+                data-test="composition-line-expand"
+                [attr.aria-expanded]="expandedLineIndex() === i"
+                (click)="toggleTree.emit(i)"
+              >
+                {{ expandedLineIndex() === i ? '▾' : '▸' }}
+              </button>
+              <div class="min-w-0">
+                <div class="font-medium truncate">{{ item.productName ?? item.productId }}</div>
+                @if (item.productSku) {
+                  <div class="text-xs text-muted-foreground">{{ item.productSku }}</div>
+                }
+              </div>
+              <input
+                type="number"
+                min="1"
+                class="pi-input w-16"
+                data-test="composition-qty"
+                [value]="item.quantity"
+                [disabled]="!editable() || savingLineIndex() === i"
+                (change)="onQtyChange(i, $event)"
+                aria-label="Количество"
+              />
+              <span class="text-muted-foreground truncate">{{ item.unit }}</span>
+              <label class="flex items-center gap-2 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  class="pi-checkbox"
+                  data-test="composition-ready"
+                  [checked]="item.readyForWork === true"
+                  [disabled]="!editable() || savingLineIndex() === i"
+                  (change)="onReadyChange(i, $event)"
+                />
+                <span class="text-xs">Готово</span>
+              </label>
+              <app-pi-button
+                variant="ghost"
+                type="button"
+                data-test="composition-remove"
+                [disabled]="!editable() || removingLineIndex() === i"
+                (click)="removeLine.emit(i)"
+              >
+                Удалить
+              </app-pi-button>
             </div>
+            @if (expandedLineIndex() === i) {
+              <div class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2" data-test="composition-tree-panel">
+                @if (lineTreeLoading() === i) {
+                  <p class="text-xs text-muted-foreground m-0" data-test="composition-tree-loading">Загрузка состава…</p>
+                } @else if (lineTrees()[i]; as tree) {
+                  <pi-composition-tree [root]="tree" [selectedId]="null" ariaLabel="Состав изделия в заказе" />
+                } @else {
+                  <p class="text-xs text-muted-foreground m-0" data-test="composition-tree-empty">Состав недоступен</p>
+                }
+                <div class="flex items-center gap-3 mt-3">
+                  <a class="pi-outline-btn" routerLink="/registries/products" data-test="composition-open-catalog">
+                    Открыть в каталоге
+                  </a>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      @if (editable()) {
+        <div class="flex flex-wrap items-end gap-3 p-4 hairline-t" data-test="composition-add-form">
+          <label class="flex flex-col gap-1 text-xs min-w-[12rem] flex-1">
+            <span class="text-muted-foreground">Изделие</span>
+            <div class="flex items-center gap-1.5">
+              <select
+                class="pi-input w-full"
+                data-test="composition-add-product"
+                [value]="newLineProductId()"
+                (change)="onNewLineProductChange($event)"
+              >
+                <option value="">Выберите изделие…</option>
+                @for (product of products(); track product._id) {
+                  <option [value]="product._id">{{ product.name }}</option>
+                }
+              </select>
+              <app-pi-button
+                variant="ghost"
+                type="button"
+                data-test="composition-add-product-create"
+                (click)="createProduct.emit()"
+              >+</app-pi-button>
+            </div>
+          </label>
+          <label class="flex flex-col gap-1 text-xs w-20">
+            <span class="text-muted-foreground">Кол-во</span>
             <input
               type="number"
               min="1"
-              class="pi-input w-full"
-              data-test="composition-qty"
-              [value]="item.quantity"
-              [disabled]="!editable() || savingLineIndex() === i"
-              (change)="onQtyChange(i, $event)"
-              aria-label="Количество"
+              class="pi-input"
+              data-test="composition-add-qty"
+              [value]="newLineQty()"
+              (input)="onNewLineQtyChange($event)"
             />
-            <span class="text-muted-foreground">{{ item.unit }}</span>
-            <label class="flex items-center gap-2 whitespace-nowrap">
-              <input
-                type="checkbox"
-                class="pi-checkbox"
-                data-test="composition-ready"
-                [checked]="item.readyForWork === true"
-                [disabled]="!editable() || savingLineIndex() === i"
-                (change)="onReadyChange(i, $event)"
-              />
-              <span class="text-xs">Готово</span>
-            </label>
-            <app-pi-button
-              variant="ghost"
-              type="button"
-              data-test="composition-remove"
-              [disabled]="!editable() || removingLineIndex() === i"
-              (click)="removeLine.emit(i)"
-            >
-              Удалить
-            </app-pi-button>
-          </div>
-          @if (expandedLineIndex() === i) {
-            <div class="px-4 py-4 hairline-bottom last:border-b-0 bg-paper-2" data-test="composition-tree-panel">
-              @if (lineTreeLoading() === i) {
-                <p class="text-xs text-muted-foreground m-0" data-test="composition-tree-loading">Загрузка состава…</p>
-              } @else if (lineTrees()[i]; as tree) {
-                <pi-composition-tree [root]="tree" [selectedId]="null" ariaLabel="Состав изделия в заказе" />
-              } @else {
-                <p class="text-xs text-muted-foreground m-0" data-test="composition-tree-empty">Состав недоступен</p>
-              }
-              <div class="flex items-center gap-3 mt-3">
-                <a class="pi-outline-btn" routerLink="/registries/products" data-test="composition-open-catalog">
-                  Открыть в каталоге
-                </a>
-              </div>
-            </div>
-          }
-        }
-      </div>
-    }
-
-    @if (editable()) {
-      <div class="flex flex-wrap items-end gap-3 mt-4" data-test="composition-add-form">
-        <label class="flex flex-col gap-1 text-xs min-w-[12rem] flex-1">
-          <span class="text-muted-foreground">Изделие</span>
-          <div class="flex items-center gap-1.5">
-            <select
-              class="pi-input w-full"
-              data-test="composition-add-product"
-              [value]="newLineProductId()"
-              (change)="onNewLineProductChange($event)"
-            >
-              <option value="">Выберите изделие…</option>
-              @for (product of products(); track product._id) {
-                <option [value]="product._id">{{ product.name }}</option>
-              }
-            </select>
-            <app-pi-button
-              variant="ghost"
-              type="button"
-              data-test="composition-add-product-create"
-              (click)="createProduct.emit()"
-            >+</app-pi-button>
-          </div>
-        </label>
-        <label class="flex flex-col gap-1 text-xs w-24">
-          <span class="text-muted-foreground">Кол-во</span>
-          <input
-            type="number"
-            min="1"
-            class="pi-input"
-            data-test="composition-add-qty"
-            [value]="newLineQty()"
-            (input)="onNewLineQtyChange($event)"
-          />
-        </label>
-        <app-pi-button
-          type="button"
-          variant="secondary"
-          data-test="composition-add-submit"
-          [disabled]="!newLineProductId() || addingLine()"
-          (click)="addLine.emit()"
-        >
-          {{ addingLine() ? 'Добавление…' : '+ Добавить позицию' }}
-        </app-pi-button>
-      </div>
-    }
+          </label>
+          <app-pi-button
+            type="button"
+            variant="secondary"
+            data-test="composition-add-submit"
+            [disabled]="!newLineProductId() || addingLine()"
+            (click)="addLine.emit()"
+          >
+            {{ addingLine() ? 'Добавление…' : '+ Добавить позицию' }}
+          </app-pi-button>
+        </div>
+      }
+    </div>
   `,
 })
 export class OrderWsCompositionComponent {
