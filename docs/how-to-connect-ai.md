@@ -38,6 +38,11 @@ git status --short                          # посмотреть чужие н
 6. **После CLAIM** прочитай `docs/PROJECT-MEMORY.md` — тонкий склад «где правда / что не потерять»
    (до ARCHITECTURE и page.md).
 
+При зависании локального запуска смотри `.logs/launcher-frontend.log` и строки
+`stage=...` в консоли; `node start.mjs --stop` затем `node start.mjs --nx` безопасно
+перезапускают dev-сервисы. TZ-OPS-START-DIAGNOSTICS также проверяет stale reuse
+порта :4201 и печатает последние 20 строк frontend-лога при timeout.
+
 ## Запреты
 
 - ❌ НЕ создавай самодельный worktree вне explicit Cursor Isolated flow (`claude --worktree` тоже нельзя).

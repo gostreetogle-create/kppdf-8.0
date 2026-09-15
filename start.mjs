@@ -532,11 +532,12 @@ async function checkHealth(url, timeoutMs = 2000) {
  * Wait for HTTP endpoint to be ready, with health body check.
  * Updates state.services[serviceName] when set.
  */
-async function waitFor(url, label, timeoutMs = 90000, serviceName = null, readiness = null) {
+async function waitFor(url, label, timeoutMs = 90000, serviceName = null, readiness = null, onRetry = null) {
   const start = Date.now();
   let attempt = 0;
   while (Date.now() - start < timeoutMs) {
-    if (readiness?.failed) {
+    const currentReadiness = typeof readiness === 'function' ? readiness() : readiness;
+    if (currentReadiness?.failed) {
       log.err(`${label} завершился до готовности: ${readiness.error || 'процесс остановлен'}`);
       if (serviceName && state.services[serviceName]) {
         state.services[serviceName].status = 'failed';
@@ -567,11 +568,42 @@ async function waitFor(url, label, timeoutMs = 90000, serviceName = null, readin
       }
     }
     if (attempt % 5 === 0) {
-      log.dim(`всё ещё ждём ${label}… (${Math.round((Date.now() - start) / 1000)}s)`);
+      const elapsed = Math.round((Date.now() - start) / 1000);
+      if (serviceName === 'frontend') {
+        const portListening = await isPortInUse(PORTS.frontend);
+        const probe = await probeFrontendHttp(HOSTS.frontend, 1000);
+        const probeState = evaluateFrontendProbe(probe);
+        const last = state.services.frontend.log.at(-1) || 'нет вывода';
+        const stage = state.frontendReused
+          ? (!portListening ? 'reuse-stale' : !probeState.httpOk ? 'listening' : !probeState.htmlOk ? 'http-up' : 'ready')
+          : !portListening
+            ? 'spawn'
+            : /Application bundle|bundle generation|webpack|esbuild/i.test(last)
+              ? 'compiling'
+              : !probeState.httpOk
+                ? 'listening'
+                : !probeState.htmlOk
+                  ? 'http-up'
+                  : 'ready';
+        log.dim(`всё ещё ждём ${label}… ${elapsed}s · stage=${stage} · last: ${last}`);
+        if (state.frontendReused && (!portListening || !probeState.htmlOk) && onRetry) {
+          state.frontendReused = false;
+          log.warn(`REUSE INVALID → spawn: port=${portListening ? 'open' : 'closed'}, htmlOk=${probeState.htmlOk}`);
+          onRetry();
+        }
+      } else {
+        log.dim(`всё ещё ждём ${label}… (${elapsed}s)`);
+      }
     }
     await sleep(2000);
   }
   log.err(`${label} НЕ готов после ${Math.round(timeoutMs / 1000)}s`);
+  if (serviceName === 'frontend') {
+    const tail = existsSync(FRONTEND_LOG)
+      ? readFileSync(FRONTEND_LOG, 'utf8').split(/\r?\n/).filter(Boolean).slice(-20)
+      : state.services.frontend.log.slice(-20);
+    log.err(`frontend timeout dump: pid=${readPids()?.frontend ?? 'null'} port=${(await isPortInUse(PORTS.frontend)) ? 'LISTEN' : 'closed'}\n${tail.join('\n') || 'frontend log пуст'}\nHint: node start.mjs --stop затем node start.mjs --nx`);
+  }
   if (serviceName && state.services[serviceName]) {
     state.services[serviceName].status = 'failed';
     if (useTui()) renderStatus();
@@ -1484,6 +1516,7 @@ async function main() {
   // Frontend
   let frontend = null;          // dev mode: child process pnpm start
   let frontendStaticServer = null; // prod mode: inline static server
+  let spawnNxFrontend = null; // allows stale-reuse recovery during waitFor
   if (flags.prod) {
     // Inline static server (blocking server, not child process)
     state.services.frontend.startedAt = Date.now();
@@ -1503,14 +1536,12 @@ async function main() {
     const feDir = activeFrontendDir();
     const feEnv = buildFrontendChildEnv(flags.nx);
     if (flags.nx) {
-      if (state.frontendReused) {
-        log.ok('frontend: существующий dev-server на :4201 (без нового spawn)');
-      } else {
+      // Windows: pnpm.cmd → cmd /c → nx daemon — parent умирает, :4201 пустой.
+      // Прямой node nx.js — один долгоживущий процесс, стабильный pid для taskkill.
+      spawnNxFrontend = () => {
         if (ensureNxIdeNonInteractive()) {
           log.dim('~/.nx/ide.json: auto_install_console=false (non-interactive nx)');
         }
-        // Windows: pnpm.cmd → cmd /c → nx daemon — parent умирает, :4201 пустой.
-        // Прямой node nx.js — один долгоживущий процесс, стабильный pid для taskkill.
         const nxSpawn = buildNxFrontendSpawn(feDir, PORTS.frontend, resolveNxCli);
         if (!nxSpawn.ok) throw new Error(nxSpawn.error);
         log.dim(`frontend spawn: cwd=${feDir}`);
@@ -1523,6 +1554,13 @@ async function main() {
           feEnv,
           { cmd: nxSpawn.display, cwd: nxSpawn.cwd, display: nxSpawn.display },
         );
+        writePids({ backend: backend.pid, frontend: frontend.pid, frontendReused: false, startedAt: new Date().toISOString() });
+        return frontend;
+      };
+      if (state.frontendReused) {
+        log.ok('frontend: существующий dev-server на :4201 (без нового spawn)');
+      } else {
+        spawnNxFrontend();
       }
     } else {
       frontend = spawnDetached('pnpm', ['start'], feDir, 'frontend', feEnv);
@@ -1551,7 +1589,14 @@ async function main() {
   log.step(6, 'Ожидание готовности endpoints');
   const [backendOk, frontendOk] = await Promise.all([
     waitFor(`${HOSTS.backend}/api/health`, 'backend /api/health', 120000, 'backend', backend.startupState),
-    waitFor(HOSTS.frontend, 'frontend', 180000, 'frontend', frontend?.startupState),
+    waitFor(
+      HOSTS.frontend,
+      'frontend',
+      180000,
+      'frontend',
+      () => frontend?.startupState ?? null,
+      () => spawnNxFrontend?.(),
+    ),
   ]);
 
   if (!backendOk || !frontendOk) {
