@@ -210,8 +210,11 @@ describe('SupplyPage (NX S1)', () => {
     ).click();
     fixture.detectChanges();
 
-    const component = fixture.componentInstance as unknown as { explodeOrderId: string; onExplode: () => void };
-    component.explodeOrderId = 'o2';
+    const component = fixture.componentInstance as unknown as {
+      facade: { explodeOrderId: string };
+      onExplode: () => void;
+    };
+    component.facade.explodeOrderId = 'o2';
     component.onExplode();
     await fixture.whenStable();
 
@@ -226,13 +229,11 @@ describe('SupplyPage (NX S1)', () => {
     fixture.detectChanges();
 
     const component = fixture.componentInstance as unknown as {
-      createOrderId: string;
-      createTitle: string;
-      createQty: number;
+      facade: { createOrderId: string; createTitle: string; createQty: number };
     };
-    component.createOrderId = 'o1';
-    component.createTitle = 'Труба 20x20';
-    component.createQty = 3;
+    component.facade.createOrderId = 'o1';
+    component.facade.createTitle = 'Труба 20x20';
+    component.facade.createQty = 3;
     fixture.detectChanges();
 
     (

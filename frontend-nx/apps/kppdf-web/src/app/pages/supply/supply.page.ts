@@ -1,53 +1,27 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  Injector,
-  inject,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import {
-  PiOrdersService,
-  PiSupplyTasksService,
-  type Order,
-  type SupplyTask,
-  type SupplyTaskStatus,
-} from '@kppdf/data-access';
-import { extractErrorMessage } from '@kppdf/util-http';
+import { RouterLink } from '@angular/router';
+import type { SupplyTask } from '@kppdf/data-access';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { ButtonComponent } from '@kppdf/ui/button';
-import { PiToastService } from '@kppdf/ui/toast';
-import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
-import { onDialogCloseOnce } from '../on-dialog-close-once';
-
-const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
-  draft: 'Черновик',
-  confirmed: 'Подтверждено',
-  ordered: 'Заказано',
-  received: 'Получено',
-};
+import { SupplyFacade } from './supply.facade';
 
 const GRID_COLS =
   'grid-cols-[1.5rem_minmax(0,1.5fr)_minmax(7rem,0.8fr)_minmax(4.5rem,0.45fr)_minmax(7rem,0.6fr)_minmax(6rem,0.55fr)_minmax(8rem,0.7fr)]';
-
-/** TZ-NX-HUB-03 — canon H5: never show a raw ObjectId; a free-text line key is fine. */
-function looksLikeObjectId(value: string): boolean {
-  return /^[a-f0-9]{24}$/i.test(value);
-}
 
 /**
  * TZ-NX-SUPPLY-S1 — live SupplyTask registry only. The legacy «Быстрый
  * заказ» mode is an in-memory mock (F5 loses data) and is deliberately NOT
  * ported — this page is the single, live `/supply` mode for NX.
+ *
+ * TZ-NX-SUPPLY-PAGE-FACADE — list/filter/create/status-transition signals
+ * and methods moved to `SupplyFacade`; this page stays a thin host.
  */
 @Component({
   selector: 'pi-supply-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [SupplyFacade],
   imports: [FormsModule, RouterLink, PiStatusBannerComponent, ButtonComponent],
   template: `
     <main class="px-panel-inset py-6" data-test="supply-page">
@@ -123,7 +97,7 @@ function looksLikeObjectId(value: string): boolean {
               <span class="text-muted-foreground">Разнести состав заказа</span>
               <select
                 class="pi-input"
-                [(ngModel)]="explodeOrderId"
+                [(ngModel)]="facade.explodeOrderId"
                 name="explodeOrderId"
                 data-test="supply-explode-order"
               >
@@ -137,7 +111,7 @@ function looksLikeObjectId(value: string): boolean {
               type="button"
               variant="secondary"
               (click)="onExplode()"
-              [disabled]="exploding() || !explodeOrderId"
+              [disabled]="exploding() || !facade.explodeOrderId"
               data-test="supply-explode-submit"
             >
               Создать из заказа
@@ -151,7 +125,7 @@ function looksLikeObjectId(value: string): boolean {
           <div class="flex flex-wrap gap-3 items-end">
             <label class="flex flex-col gap-1 text-xs min-w-[12rem] flex-1">
               <span class="text-muted-foreground">Заказ</span>
-              <select class="pi-input" [(ngModel)]="createOrderId" name="orderId" data-test="supply-create-order">
+              <select class="pi-input" [(ngModel)]="facade.createOrderId" name="orderId" data-test="supply-create-order">
                 <option value="">Выберите заказ…</option>
                 @for (o of orders(); track o._id) {
                   <option [value]="o._id">{{ o.number }}</option>
@@ -162,7 +136,7 @@ function looksLikeObjectId(value: string): boolean {
               <span class="text-muted-foreground">Что закупить</span>
               <input
                 class="pi-input"
-                [(ngModel)]="createTitle"
+                [(ngModel)]="facade.createTitle"
                 name="title"
                 maxlength="256"
                 placeholder="Материал / модуль"
@@ -176,7 +150,7 @@ function looksLikeObjectId(value: string): boolean {
                 type="number"
                 min="0"
                 step="any"
-                [(ngModel)]="createQty"
+                [(ngModel)]="facade.createQty"
                 name="qty"
                 data-test="supply-create-qty"
               />
@@ -380,247 +354,81 @@ function looksLikeObjectId(value: string): boolean {
   `,
 })
 export class SupplyPage {
-  private readonly supplyApi = inject(PiSupplyTasksService);
-  private readonly ordersApi = inject(PiOrdersService);
-  private readonly toast = inject(PiToastService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly dialog = inject(PiDialogService);
-  private readonly injector = inject(Injector);
+  protected readonly facade = inject(SupplyFacade);
 
-  protected readonly statusFilter = signal<SupplyTaskStatus | ''>('');
-  protected readonly orderFilterId = signal<string | null>(null);
-  protected readonly tasks = signal<SupplyTask[]>([]);
-  protected readonly orders = signal<readonly Order[]>([]);
-  protected readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  protected readonly error = signal('');
-  protected readonly busyId = signal<string | null>(null);
-  protected readonly showCreate = signal(false);
-  protected readonly creating = signal(false);
-  protected readonly exploding = signal(false);
-  /** Single expand (registry pattern) — reloading the list collapses it. */
-  protected readonly expandedId = signal<string | null>(null);
-
-  protected createOrderId = '';
-  protected explodeOrderId = '';
-  protected createTitle = '';
-  protected createQty = 1;
-
-  private loadVersion = 0;
-
-  constructor() {
-    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      const orderId = (params.get('orderId') ?? '').trim();
-      this.orderFilterId.set(orderId || null);
-      this.load();
-    });
-    void this.loadOrders();
-  }
+  protected readonly statusFilter = this.facade.statusFilter;
+  protected readonly orderFilterId = this.facade.orderFilterId;
+  protected readonly tasks = this.facade.tasks;
+  protected readonly orders = this.facade.orders;
+  protected readonly status = this.facade.status;
+  protected readonly error = this.facade.error;
+  protected readonly busyId = this.facade.busyId;
+  protected readonly showCreate = this.facade.showCreate;
+  protected readonly creating = this.facade.creating;
+  protected readonly exploding = this.facade.exploding;
+  protected readonly expandedId = this.facade.expandedId;
 
   protected onStatusChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value as SupplyTaskStatus | '';
-    this.statusFilter.set(value);
-    this.load();
+    this.facade.onStatusChange(event);
   }
 
   protected clearOrderFilter(): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { orderId: null },
-      queryParamsHandling: 'merge',
-    });
+    this.facade.clearOrderFilter();
   }
 
-  protected statusLabel(s: SupplyTaskStatus): string {
-    return STATUS_LABELS[s] ?? s;
+  protected statusLabel(s: SupplyTask['status']): string {
+    return this.facade.statusLabel(s);
   }
 
   protected orderLabel(orderId: string): string {
-    const o = this.orders().find((x) => x._id === orderId);
-    return o?.number ?? orderId.slice(-6);
+    return this.facade.orderLabel(orderId);
   }
 
   protected orderFilterLabel(): string {
-    const id = this.orderFilterId();
-    return id ? this.orderLabel(id) : '';
+    return this.facade.orderFilterLabel();
   }
 
-  /** TZ-NX-HUB-03 — full id only when it reads as a business key, not a raw ObjectId (H5). */
   protected orderLineLabel(row: SupplyTask): string {
-    if (!row.orderLineId) return '—';
-    return looksLikeObjectId(row.orderLineId) ? '—' : row.orderLineId;
+    return this.facade.orderLineLabel(row);
   }
 
   protected fmtDate(value: string): string {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString('ru-RU');
+    return this.facade.fmtDate(value);
   }
 
   protected toggleExpand(taskId: string): void {
-    this.expandedId.update((current) => (current === taskId ? null : taskId));
+    this.facade.toggleExpand(taskId);
   }
 
   protected onRowSpace(event: Event, taskId: string): void {
-    event.preventDefault();
-    this.toggleExpand(taskId);
+    this.facade.onRowSpace(event, taskId);
   }
 
   protected load(): void {
-    const version = ++this.loadVersion;
-    this.status.set('loading');
-    this.error.set('');
-    this.expandedId.set(null);
-    const orderId = this.orderFilterId() ?? undefined;
-    const status = this.statusFilter() || undefined;
-    void firstValueFrom(this.supplyApi.list({ orderId, status })).then((res) => {
-      if (version !== this.loadVersion) return;
-      if (!res.ok) {
-        this.error.set(extractErrorMessage(res.error) || 'Не удалось загрузить задачи');
-        this.status.set('error');
-        return;
-      }
-      this.tasks.set(res.data ?? []);
-      this.status.set('success');
-    });
+    this.facade.load();
   }
 
   protected onExplode(): void {
-    const orderId = this.explodeOrderId.trim();
-    if (!orderId) {
-      this.toast.error('Выберите заказ');
-      return;
-    }
-    this.exploding.set(true);
-    this.supplyApi
-      .explode({ orderId })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.exploding.set(false);
-        if (!res.ok) {
-          this.toast.error(extractErrorMessage(res.error) || 'Не удалось создать задачи из заказа');
-          return;
-        }
-        const created = res.data?.created.length ?? 0;
-        const skipped = res.data?.skipped ?? 0;
-        this.toast.success(
-          skipped > 0
-            ? `Создано задач: ${created}; уже существовало: ${skipped}`
-            : `Создано задач: ${created}`,
-        );
-        this.load();
-      });
+    this.facade.onExplode();
   }
 
   protected onCreate(ev: Event): void {
-    ev.preventDefault();
-    const orderId = this.createOrderId.trim();
-    const title = this.createTitle.trim();
-    const qty = Number(this.createQty);
-    if (!orderId || !title || !(qty >= 0)) {
-      this.toast.error('Укажите заказ, название и количество');
-      return;
-    }
-    this.creating.set(true);
-    this.supplyApi
-      .create({ orderId, title, qty })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.creating.set(false);
-        if (!res.ok) {
-          this.toast.error(extractErrorMessage(res.error) || 'Не создано');
-          return;
-        }
-        this.toast.success('Задача создана');
-        this.createTitle = '';
-        this.createQty = 1;
-        this.showCreate.set(false);
-        this.load();
-      });
+    this.facade.onCreate(ev);
   }
 
-  /** TZ-NX-SUPPLY-TASK-UNCONFIRM ШАГ 3 — cheap accidental-click guard, same AlertDialog pattern as `confirmDirtyClose`. */
   protected onConfirm(row: SupplyTask): void {
-    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-      data: {
-        title: 'Подтвердить задачу снабжения?',
-        description: 'После подтверждения задачу можно будет отметить «Заказано».',
-        confirmLabel: 'Подтвердить',
-        cancelLabel: 'Отмена',
-      },
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce(ref, this.injector, (confirmed) => {
-      if (!confirmed) return;
-      this.busyId.set(row._id);
-      this.supplyApi
-        .confirm(row._id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((res) => {
-          this.busyId.set(null);
-          if (!res.ok) {
-            this.toast.error(extractErrorMessage(res.error) || 'Не подтверждено');
-            return;
-          }
-          this.toast.success('Можно заказывать');
-          this.load();
-        });
-    });
+    this.facade.onConfirm(row);
   }
 
-  /** TZ-NX-SUPPLY-TASK-UNCONFIRM — revert an accidental confirm back to draft. */
   protected onUnconfirm(row: SupplyTask): void {
-    this.busyId.set(row._id);
-    this.supplyApi
-      .unconfirm(row._id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.busyId.set(null);
-        if (!res.ok) {
-          this.toast.error(extractErrorMessage(res.error) || 'Не удалось вернуть в черновик');
-          return;
-        }
-        this.toast.success('Возвращено в черновик');
-        this.load();
-      });
+    this.facade.onUnconfirm(row);
   }
 
   protected onOrdered(row: SupplyTask): void {
-    this.busyId.set(row._id);
-    this.supplyApi
-      .markOrdered(row._id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.busyId.set(null);
-        if (!res.ok) {
-          this.toast.error(extractErrorMessage(res.error) || 'Не отмечено');
-          return;
-        }
-        this.toast.success('Отмечено «заказано»');
-        this.load();
-      });
+    this.facade.onOrdered(row);
   }
 
   protected onReceived(row: SupplyTask): void {
-    this.busyId.set(row._id);
-    this.supplyApi
-      .markReceived(row._id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.busyId.set(null);
-        if (!res.ok) {
-          this.toast.error(extractErrorMessage(res.error) || 'Не отмечено');
-          return;
-        }
-        // known_limitation: markReceived does not post a StockMovement (BE
-        // gap, not invented here) — see docs/pages/supply.page.md.
-        this.toast.success('Отмечено «получено»');
-        this.load();
-      });
-  }
-
-  private async loadOrders(): Promise<void> {
-    const result = await firstValueFrom(this.ordersApi.list());
-    if (result.ok) this.orders.set(result.data ?? []);
+    this.facade.onReceived(row);
   }
 }
