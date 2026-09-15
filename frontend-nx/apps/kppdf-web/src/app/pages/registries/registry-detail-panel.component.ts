@@ -1,33 +1,20 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
-  Injector,
   OnInit,
   TemplateRef,
   ViewChild,
-  computed,
-  effect,
   inject,
   input,
-  signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { TableComponent, type ColumnDef } from '@kppdf/ui/table';
 import { RegistryToolbarPaginationComponent } from './registry-toolbar-pagination.component';
 import { RegistryRowActionButtonComponent } from './registry-row-action-button.component';
 import { RegistryCreateButtonComponent } from './registry-create-button.component';
-import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
-import type { DialogRef } from '@kppdf/ui/dialog';
-import { PiToastService } from '@kppdf/ui/toast';
-import { parseRegistryQueryState, toRegistryQueryParams } from './model/registry-query-state';
+import { RegistryDetailPanelFacade, type RegistryDetailPanelFacadeHost } from './registry-detail-panel.facade';
 import type {
-  RegistryActionContext,
   RegistryDefinition,
-  RegistryPageState,
-  RegistryQueryState,
   RegistryRow,
   RegistryRowAction,
 } from './model/registry.types';
@@ -46,11 +33,17 @@ import type {
  * because this component is only ever instantiated while mounted inside the
  * matched `/registries/:registryKey` route (never a separate router-outlet),
  * so it shares that exact `ActivatedRoute` with its host page.
+ *
+ * TZ-NX-REGISTRY-DETAIL-PANEL-FACADE — query-state/load/action orchestration
+ * moved to `RegistryDetailPanelFacade`; this component stays a thin host
+ * (template + the two static `@ViewChild` template refs, which only the
+ * component's own view can resolve).
  */
 @Component({
   selector: 'pi-registry-detail-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [RegistryDetailPanelFacade],
   imports: [
     PiStatusBannerComponent,
     TableComponent,
@@ -204,67 +197,25 @@ import type {
     }
   `,
 })
-export class RegistryDetailPanelComponent implements OnInit {
+export class RegistryDetailPanelComponent implements RegistryDetailPanelFacadeHost, OnInit {
   readonly definition = input.required<RegistryDefinition<RegistryRow>>();
 
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly dialog = inject(PiDialogService);
-  private readonly toast = inject(PiToastService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
+  private readonly facade = inject(RegistryDetailPanelFacade);
 
-  private readonly queryParamMapSig = toSignal(this.route.queryParamMap, {
-    initialValue: this.route.snapshot.queryParamMap,
-  });
+  constructor() {
+    this.facade.bind(this);
+  }
 
-  protected readonly queryState = computed<RegistryQueryState>(() =>
-    parseRegistryQueryState(this.queryParamMapSig(), this.definition()),
-  );
-
-  protected readonly hasRowActions = computed(() => (this.definition().rowActions?.length ?? 0) > 0);
-  protected readonly hasExpandable = computed(() => !!this.definition().expandable);
-
-  protected readonly cols = computed<ColumnDef<RegistryRow>[]>(() =>
-    this.definition().columns.map((c) => ({
-      key: c.key,
-      label: c.header,
-      sortable: c.sortable,
-      align: c.align === 'start' ? 'left' : c.align === 'end' ? 'right' : c.align,
-      width: c.width,
-      numeric: c.numeric,
-      format: c.format,
-    })),
-  );
-
-  protected readonly pageState = signal<RegistryPageState<RegistryRow>>({
-    status: 'loading',
-    rows: [],
-    total: 0,
-    error: null,
-  });
-
-  protected readonly tableRows = computed(() => [...this.pageState().rows]);
-
-  protected readonly toolbarPaginationTotal = computed(() =>
-    this.pageState().status === 'success' ? this.pageState().total : 0,
-  );
-
-  /** Toolbar pager stays visible for single-page result sets (TZ-NX-REGISTRIES-TOOLBAR-FINALIZE). */
-  protected readonly showToolbarPagination = computed(() => this.toolbarPaginationTotal() > 0);
-
-  private readonly expandedRowId = signal<string | null>(null);
-
-  protected readonly expandedRowWhenFn = computed(() => {
-    const def = this.definition();
-    const id = this.expandedRowId();
-    return (row: RegistryRow) => id !== null && def.rowId(row) === id;
-  });
-
-  protected readonly expandedRowLabelFn = computed(() => {
-    const def = this.definition();
-    return (row: RegistryRow) => def.expandable?.ariaLabel(row) ?? null;
-  });
+  protected readonly queryState = this.facade.queryState;
+  protected readonly hasRowActions = this.facade.hasRowActions;
+  protected readonly hasExpandable = this.facade.hasExpandable;
+  protected readonly cols: () => ColumnDef<RegistryRow>[] = this.facade.cols;
+  protected readonly pageState = this.facade.pageState;
+  protected readonly tableRows = this.facade.tableRows;
+  protected readonly toolbarPaginationTotal = this.facade.toolbarPaginationTotal;
+  protected readonly showToolbarPagination = this.facade.showToolbarPagination;
+  protected readonly expandedRowWhenFn = this.facade.expandedRowWhenFn;
+  protected readonly expandedRowLabelFn = this.facade.expandedRowLabelFn;
 
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: RegistryRow }>;
@@ -274,169 +225,67 @@ export class RegistryDetailPanelComponent implements OnInit {
   private readonly expandedTplRef!: TemplateRef<{ $implicit: RegistryRow }>;
   protected expandedTplBinding: TemplateRef<{ $implicit: RegistryRow }> | null = null;
 
-  private requestVersion = 0;
-
-  constructor() {
-    effect(() => {
-      const def = this.definition();
-      const qs = this.queryState();
-      this.expandedRowId.set(null);
-      void this.runQuery(def, qs);
-    });
-  }
-
   ngOnInit(): void {
     this.rowActionsTplBinding = this.rowActionsTplRef;
     this.expandedTplBinding = this.expandedTplRef;
   }
 
   protected inputValue(event: Event): string {
-    return (event.target as HTMLInputElement | HTMLSelectElement).value;
+    return this.facade.inputValue(event);
   }
 
-  /** Resolves a filter control value; absent keys become '' (runtime-safe for Record index). */
   protected filterInputValue(key: string): string {
-    const raw: string | undefined = this.queryState().filters[key];
-    return raw ?? '';
+    return this.facade.filterInputValue(key);
   }
 
   protected filterLabelId(key: string): string {
-    return `registry-filter-label-${this.definition().key}-${key}`;
+    return this.facade.filterLabelId(key);
   }
 
   protected expandableFields(row: RegistryRow): readonly { label: string; value: string }[] {
-    return this.definition().expandable?.fields(row) ?? [];
+    return this.facade.expandableFields(row);
   }
 
   protected isActionDisabled(action: RegistryRowAction<RegistryRow>, row: RegistryRow): boolean {
-    return action.isDisabled?.(row) ?? false;
+    return this.facade.isActionDisabled(action, row);
   }
 
   protected actionDisabledReason(
     action: RegistryRowAction<RegistryRow>,
     row: RegistryRow,
   ): string | null {
-    return this.isActionDisabled(action, row) ? (action.disabledReason?.(row) ?? null) : null;
+    return this.facade.actionDisabledReason(action, row);
   }
 
   protected onFilterChange(key: string, value: string): void {
-    const current = this.queryState();
-    const nextFilters = { ...current.filters };
-    if (value) nextFilters[key] = value;
-    else delete nextFilters[key];
-    this.navigateToState({ ...current, filters: nextFilters, page: 1 });
+    this.facade.onFilterChange(key, value);
   }
 
   protected onPageChange(page: number): void {
-    this.navigateToState({ ...this.queryState(), page });
+    this.facade.onPageChange(page);
   }
 
   protected onPageSizeChange(pageSize: number): void {
-    this.navigateToState({ ...this.queryState(), pageSize, page: 1 });
+    this.facade.onPageSizeChange(pageSize);
   }
 
   protected onSortChange(sort: { key: string; dir: 'asc' | 'desc' | null }): void {
-    this.navigateToState({
-      ...this.queryState(),
-      sort: sort.dir ? { key: sort.key, direction: sort.dir } : null,
-      page: 1,
-    });
+    this.facade.onSortChange(sort);
   }
 
   protected onRowToggleExpand(row: RegistryRow): void {
-    if (!this.definition().expandable) return;
-    const id = this.definition().rowId(row);
-    this.expandedRowId.update((current) => (current === id ? null : id));
+    this.facade.onRowToggleExpand(row);
   }
 
   protected onRowAction(action: RegistryRowAction<RegistryRow>, row: RegistryRow): void {
-    if (this.isActionDisabled(action, row)) return;
-    if (action.confirm) {
-      const ref = this.dialog.open<boolean>(AlertDialogComponent, {
-        data: {
-          title: action.confirm.title,
-          description: action.confirm.description,
-          confirmLabel: action.confirm.confirmLabel,
-          cancelLabel: action.confirm.cancelLabel,
-          variant: action.destructive ? 'destructive' : 'default',
-        },
-        width: 'sm',
-        parentDestroyRef: this.destroyRef,
-      });
-      this.runOnDialogCloseOnce(ref, (ok) => {
-        if (ok) void this.runAction(action, row);
-      });
-      return;
-    }
-    void this.runAction(action, row);
+    this.facade.onRowAction(action, row);
   }
 
   protected reload(): void {
-    void this.runQuery(this.definition(), this.queryState());
+    this.facade.reload();
   }
 
   protected onCreate(): void {
-    const createAction = this.definition().createAction;
-    if (!createAction) return;
-    void this.runActionContext((ctx) => createAction.run(ctx));
-  }
-
-  private actionContext(): RegistryActionContext {
-    return {
-      reload: () => this.reload(),
-      notify: (message, tone) => {
-        if (tone === 'error') this.toast.error(message);
-        else this.toast.success(message);
-      },
-    };
-  }
-
-  private async runActionContext(
-    fn: (ctx: RegistryActionContext) => void | Promise<void>,
-  ): Promise<void> {
-    await fn(this.actionContext());
-  }
-
-  private async runAction(
-    action: RegistryRowAction<RegistryRow>,
-    row: RegistryRow,
-  ): Promise<void> {
-    const ctx: RegistryActionContext = this.actionContext();
-    await action.run(row, ctx);
-  }
-
-  private async runQuery(
-    def: RegistryDefinition<RegistryRow>,
-    qs: RegistryQueryState,
-  ): Promise<void> {
-    const version = ++this.requestVersion;
-    this.pageState.update((s) => ({ ...s, status: 'loading' }));
-    try {
-      const result = await def.dataSource.query(qs);
-      if (version !== this.requestVersion) return;
-      this.pageState.set({ status: 'success', rows: result.rows, total: result.total, error: null });
-    } catch (err) {
-      if (version !== this.requestVersion) return;
-      const message = err instanceof Error ? err.message : 'Не удалось загрузить данные.';
-      this.pageState.set({ status: 'error', rows: [], total: 0, error: message });
-    }
-  }
-
-  private navigateToState(next: RegistryQueryState): void {
-    const params = toRegistryQueryParams(next, this.definition());
-    void this.router.navigate([], { relativeTo: this.route, queryParams: params });
-  }
-
-  private runOnDialogCloseOnce(ref: DialogRef<boolean>, callback: (value: boolean | undefined) => void): void {
-    let called = false;
-    effect(
-      () => {
-        const value = ref.closed();
-        if (value === undefined || called) return;
-        called = true;
-        callback(value);
-      },
-      { injector: this.injector },
-    );
+    this.facade.onCreate();
   }
 }
