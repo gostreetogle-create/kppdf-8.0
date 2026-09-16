@@ -1,6 +1,6 @@
 # Theme canon — Cool Graphite & Gold
 
-> Канон светлой и тёмной темы (2026-08-03). Одна семья: холодный графит (hue ~260) + тёплое золото (hue ~86).
+> Канон светлой и тёмной темы (2026-08-03; Dark Theme Pro alignment 2026-09-16). Одна семья: холодный графит (hue ~260) + тёплое золото (hue ~86). Dark overrides follow the audited HEX ladder and Files Changed typography reference.
 
 ## Wiring (critical)
 
@@ -45,10 +45,13 @@ Dark — только через `--color-*-override` в `@variant dark`.
 
 | Роль | Override | Смысл |
 |------|----------|--------|
-| canvas | L **0.20** hue 260 | Холодный графит |
-| panels | L **0.29** | Lift над void |
-| rule | L 0.46 C 0.045 hue 86 | Quiet gold-whisper |
-| gold | L **0.84** C 0.145 hue 86 | Яркое золото на тёмном |
+| canvas | `#0C0E14` | Холодный графит |
+| surface 1–4 | `#141722` → `#2D344B` | Ровный tonal lift над void |
+| ink / secondary / muted | `#C9D1D9` / `#8B949E` / `#6E7681` | Files Changed reference; UI chrome regular 400 |
+| rule / strong rule | `rgba(255,255,255,.07)` / `.12` | Quiet neutral borders, no yellow wireframe |
+| gold / hover / soft | `#F59E0B` / `#D97706` / `rgba(245,158,11,.12)` | Industrial amber |
+| on-gold | `#0F1117` | Dark text on solid amber |
+| overlay | `rgba(0,0,0,.75)` | Modal/backdrop depth |
 | marble | _(removed)_ | Чистый tonal lift без текстуры |
 
 ## Рамки по ролям (обе темы)
@@ -115,6 +118,10 @@ Dark — только через `--color-*-override` в `@variant dark`.
 - Badge secondary: semantic `success` tokens (с dark override), не raw `green-500/700`
 - Zebra / mute: theme-aware `paper-2` / `muted-foreground/70`, не `bg-black/[0.02]` и не `/50` на tiny text
 
+## Dark Theme Pro mapping (2026-09-16)
+
+Product names stay `paper` / `paper-raised` / `paper-2` / `paper-3` / `paper-4` and `*-override`; Pro names such as `--bg-canvas` are reference-only and must not be added. The visual typography reference is the IDE Files Changed panel: primary ink `#C9D1D9`, secondary `#8B949E`, muted `#6E7681`, body/chrome weight 400, titles no heavier than 500. The four fixed Gantt work-type HEX colors remain out of this palette task; catalog `accentHue` is the source of truth.
+
 ## Глубина в тёмной теме (TZ-UI-THEME-331)
 
 - Ступени поверхностей идут ровным шагом ≈0.04:
@@ -122,8 +129,7 @@ Dark — только через `--color-*-override` в `@variant dark`.
   Неравномерный шаг превращает вложенные уровни в «серую кашу».
 - Тёмная тень на тёмном фоне не читается. Глубину даёт `inset 0 1px 0 oklch(1 0 0 / 0.05)`
   в `--shadow-executive` — светлый блик по верхней грани.
-- Текст: `ink 0.92` (тело) → `muted-foreground-strong 0.86` → `muted-foreground 0.74`
-  → `muted 0.62` (плейсхолдер). Ярче 0.92 давало гало на больших массивах.
+- Текст: Files Changed ladder `#C9D1D9` (primary) → `#8B949E` (secondary) → `#6E7681` (muted). Не использовать pure white / `#F1F5F9` для рядовых dark labels.
 
 ## Золотая заливка (обе темы)
 

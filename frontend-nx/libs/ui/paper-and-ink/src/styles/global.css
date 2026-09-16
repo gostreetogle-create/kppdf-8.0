@@ -230,7 +230,7 @@
   /* Текст/иконка поверх золотой заливки. НАМЕРЕННО без -override: золото светлое
      в обеих темах, поэтому лейбл всегда тёмный. `text-ink` даёт ≈1:1 в dark,
      `text-paper` — ≈2:1 в light. */
-  --color-on-gold: oklch(0.2 0.012 260);
+  --color-on-gold: var(--color-on-gold-override, oklch(0.2 0.012 260));
   --color-muted: var(--color-muted-override, oklch(0.55 0.012 260));
   --color-destructive: var(--color-destructive-override, oklch(0.47 0.19 25));
   --color-accent-warm: var(--color-accent-warm-override, oklch(0.79 0.14 88));
@@ -498,19 +498,19 @@
     @variant dark {
       color-scheme: dark;
 
-      /* Surfaces — cool graphite; panels lifted vs void (no marble texture) */
-      --color-paper-override: oklch(0.175 0.006 260);
-      --color-paper-raised-override: oklch(0.215 0.007 260);
-      --color-paper-2-override: oklch(0.25 0.008 260);
-      --color-paper-3-override: oklch(0.29 0.009 260);
-      --color-paper-4-override: oklch(0.33 0.01 260);
+      /* Surfaces — Dark Theme Pro HEX reference (audit 2026-09-15). */
+      --color-paper-override: #0c0e14;
+      --color-paper-raised-override: #141722;
+      --color-paper-2-override: #1b1f2e;
+      --color-paper-3-override: #242a3e;
+      --color-paper-4-override: #2d344b;
 
-      /* Surface ladder → paper steps (legacy aliases, TZ-UI-COLOR-301) */
-      --color-surface-lowest: oklch(0.175 0.006 260);
-      --color-surface-low: oklch(0.215 0.007 260);
-      --color-surface: oklch(0.25 0.008 260);
-      --color-surface-high: oklch(0.29 0.009 260);
-      --color-surface-highest: oklch(0.33 0.01 260);
+      /* Surface ladder aliases keep legacy consumers on the same Pro steps. */
+      --color-surface-lowest: #0c0e14;
+      --color-surface-low: #141722;
+      --color-surface: #1b1f2e;
+      --color-surface-high: #242a3e;
+      --color-surface-highest: #2d344b;
 
       --pi-marble-noise: none;
       --pi-marble-veins: none;
@@ -520,29 +520,30 @@
       --pi-bg-elevated-blend: normal;
       --pi-marble-image-blend: normal;
 
-      /* Text — нейтрально-светлый, без жёлтого крема */
-      --color-ink-override: oklch(0.92 0.004 260);
-      --color-muted-override: oklch(0.62 0.012 260);
-      --color-muted-foreground-override: oklch(0.74 0.01 260);
-      --color-muted-foreground-strong-override: oklch(0.86 0.008 260);
+      /* Typography — Files Changed reference: soft cool gray, regular weight. */
+      --color-ink-override: #c9d1d9;
+      --color-muted-override: #6e7681;
+      --color-muted-foreground-override: #8b949e;
+      --color-muted-foreground-strong-override: #c9d1d9;
+      --color-on-gold-override: #0f1117;
 
-      /* Quiet frames — graphite + whisper of gold (default hairline) */
-      --color-rule-override: oklch(0.46 0.045 86);
-      --color-rule-strong-override: oklch(0.58 0.03 260);
+      /* Quiet frames — white alpha, not yellow wireframe. */
+      --color-rule-override: rgb(255 255 255 / 0.07);
+      --color-rule-strong-override: rgb(255 255 255 / 0.12);
 
-      /* Real gold — тёплый акцент на холодном графите */
-      --color-gold-override: oklch(0.84 0.145 86);
-      --color-gold-hover: oklch(0.9 0.15 88);
-      --color-gold-soft-override: oklch(0.84 0.145 86 / 0.22);
-      --color-gold-deep-override: oklch(0.84 0.145 86);
-      --color-accent-warm-override: oklch(0.84 0.145 86);
-      --color-accent-cool-override: oklch(0.7 0.05 245);
+      /* Industrial amber — Dark Theme Pro reference. */
+      --color-gold-override: #f59e0b;
+      --color-gold-hover: #d97706;
+      --color-gold-soft-override: rgb(245 158 11 / 0.12);
+      --color-gold-deep-override: #f59e0b;
+      --color-accent-warm-override: #f59e0b;
+      --color-accent-cool-override: #6b8fb3;
 
-      --color-sunrise-override: oklch(0.84 0.145 86);
-      --color-sunrise-warm-override: oklch(0.84 0.145 86);
-      --color-sunrise-glow-override: oklch(0.9 0.12 90);
-      --color-sunrise-soft-override: oklch(0.28 0.035 86);
-      --color-sunrise-mist-override: oklch(0.24 0.02 260);
+      --color-sunrise-override: #f59e0b;
+      --color-sunrise-warm-override: #f59e0b;
+      --color-sunrise-glow-override: #f59e0b;
+      --color-sunrise-soft-override: rgb(245 158 11 / 0.12);
+      --color-sunrise-mist-override: #1b1f2e;
 
       /* Status */
       --color-destructive-override: oklch(0.7 0.17 25);
@@ -551,18 +552,19 @@
       --color-success-soft: oklch(0.74 0.12 155 / 0.14);
       --color-info: oklch(0.74 0.08 230);
       --color-info-soft: oklch(0.74 0.08 230 / 0.14);
-      --color-warning: oklch(0.78 0.12 75);
-      --color-warning-soft: oklch(0.78 0.12 75 / 0.14);
+      --color-warning: #f59e0b;
+      --color-warning-soft: rgb(245 158 11 / 0.12);
 
       /* Depth — нейтральная тень + gold edge на диалогах */
       --dialog-shadow:
-        0 16px 48px oklch(0.1 0.01 260 / 0.55), 0 0 0 1px oklch(0.84 0.145 86 / 0.18);
+        0 16px 48px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(245 158 11 / 0.18);
       --shadow-executive:
         0 12px 40px -6px oklch(0.1 0.01 260 / 0.5), 0 2px 10px -2px oklch(0.1 0.01 260 / 0.35),
         inset 0 1px 0 oklch(1 0 0 / 0.05);
-      --overlay-bg: oklch(0.12 0.01 260 / 0.58);
-      --overlay-bg-fallback: rgb(14 15 18 / 0.58);
-      --focus-ring-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px oklch(0.84 0.145 86 / 0.65);
+      --overlay-bg: rgb(0 0 0 / 0.75);
+      --overlay-bg-fallback: rgb(0 0 0 / 0.75);
+      --studio-desk: #1e222d;
+      --focus-ring-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px rgb(245 158 11 / 0.65);
     }
   }
 }

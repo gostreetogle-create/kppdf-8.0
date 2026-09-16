@@ -5,6 +5,10 @@
 > **Связанный документ:** [`docs/design-spec.md`](./design-spec.md) — design spec (бренд, цвета, типографика, компоненты).
 > Этот файл — **implementation rationale**. Тот — **visual specification**. Оба обязательны к прочтению.
 
+## Dark Theme Pro alignment (2026-09-16)
+
+NX dark remains wired through the existing `--color-*-override` tokens in Paper & Ink. The audited Dark Theme Pro reference supplies the HEX ladder (`#0C0E14` canvas → `#2D344B` elevated surface, `#F59E0B` amber, `#0F1117` on-gold), while the Files Changed panel fixes dark typography at soft cool gray `#C9D1D9` primary / `#8B949E` secondary / `#6E7681` muted and regular UI weight 400. The React zip is reference-only; it does not add parallel Pro variable names or change light theme semantics.
+
 ## OKLCH вместо hex
 
 OKLCH (Oklab light-chroma-hue) — perceptually uniform color space:
