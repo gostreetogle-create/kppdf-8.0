@@ -1,0 +1,8 @@
+{
+  "task": "TZ-VERIFY-2026-09-16-DARK-GANTT-SMOKE",
+  "status": "DONE",
+  "agent_id": "freebuff",
+  "closed_at": "2026-09-16T12:20:00+03:00",
+  "verdict": "WARN",
+  "audit": "docs/audits/2026-09-16-dark-gantt-smoke.md"
+}
