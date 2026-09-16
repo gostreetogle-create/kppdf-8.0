@@ -113,6 +113,16 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
         </div>
       }
 
+      @if (groupByWorkers() && !hasNamedWorkerGroups()) {
+        <div
+          class="shrink-0 px-3 py-1 text-[13px] text-muted-foreground border-b hairline bg-paper"
+          data-test="gantt-workers-empty-hint"
+          role="status"
+        >
+          Нет работ с назначенными рабочими — назначьте навыки в «Люди» или проверьте фильтр заказов.
+        </div>
+      }
+
       @if (warnings().length) {
         <div
           class="shrink-0 px-3 py-1 text-[13px] text-hint-warn border-b hairline bg-paper"
@@ -153,7 +163,7 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
       }
 
       <div #ganttScroll class="flex-1 min-h-0 overflow-auto gantt-scroll">
-        <div class="flex" [style.minWidth.px]="timelineMinWidth()">
+        <div class="flex gantt-calendar-track" [style.minWidth.px]="timelineMinWidth()">
           <div
             class="sticky left-0 z-[3] w-52 shrink-0 border-r hairline bg-paper overflow-visible"
           >
@@ -717,6 +727,11 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
       container-type: inline-size;
       container-name: gantt-scroll;
     }
+    /* Keep the day-grid wash visible below short worker trees (audit void fix). */
+    .gantt-calendar-track,
+    .gantt-calendar-pane {
+      min-height: 100%;
+    }
     /* TZ-NX-GANTT-G8 — cool calendar wash separates timeline from label paper. */
     .gantt-calendar-pane {
       background: var(--color-paper-2);
@@ -1205,6 +1220,7 @@ export class GanttBarsComponent implements AfterViewInit {
   protected readonly dayGrid = this.facade.dayGrid;
   protected readonly treeBars = this.facade.treeBars;
   protected readonly unassignedSummary = this.facade.unassignedSummary;
+  protected readonly hasNamedWorkerGroups = this.facade.hasNamedWorkerGroups;
   protected readonly legendItems = this.facade.legendItems;
   protected readonly scaleTicks = this.facade.scaleTicks;
   protected readonly rows = this.facade.rows;

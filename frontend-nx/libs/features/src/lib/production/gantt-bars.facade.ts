@@ -14,6 +14,7 @@ import {
   isUnassignedWorkerSummaryBar,
   isWorkerSummaryBar,
   summarizeUnassignedGanttWork,
+  UNASSIGNED_WORKER_LABEL,
   workerGroupKeyOf,
   workTypeOklch,
   workTypeWash,
@@ -202,6 +203,13 @@ export class GanttBarsFacade {
   );
 
   readonly unassignedSummary = computed(() => summarizeUnassignedGanttWork(this.bars()));
+
+  /** Honest workers-lens state: no named worker group exists in the loaded work bars. */
+  readonly hasNamedWorkerGroups = computed(() =>
+    this.bars().some(
+      (bar) => !isSummaryBar(bar) && workerGroupKeyOf(bar) !== UNASSIGNED_WORKER_LABEL,
+    ),
+  );
 
   readonly legendItems = computed(() => {
     const seen = new Map<string, { id: string; name: string; color: string }>();

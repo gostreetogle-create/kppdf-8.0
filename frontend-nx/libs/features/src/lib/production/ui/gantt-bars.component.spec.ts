@@ -129,6 +129,18 @@ describe('GanttBarsComponent (TZ-NX-GANTT-G4 pan/zoom)', () => {
     expect(component.canMoveBar(summary)).toBe(false);
   });
 
+  it('shows an honest workers empty hint and keeps the calendar track stretched for unassigned-only work', async () => {
+    const fixture = await setup([makeBar({ workerLabel: '—' })], '2026-09-01', '2026-09-21');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-test="gantt-workers-empty-hint"]')).toBeTruthy();
+    expect(root.querySelector('.gantt-calendar-track')).toBeTruthy();
+    expect(root.querySelector('.gantt-calendar-pane')).toBeTruthy();
+    expect(root.textContent).toContain('назначьте навыки в «Люди»');
+  });
+
   it('TZ-NX-GANTT-G10: renders product and module thumbnails only on tree summary rows', async () => {
     const fixture = await setup([
       makeBar({ productPhotoUrl: '/thumbs/product.jpg', modulePhotoUrl: '/thumbs/module.jpg' }),
