@@ -9,6 +9,7 @@ export type GanttZoom = 'day' | 'month';
 
 /** TZ-GANTT-401 — row grouping mode on the Gantt. */
 export type GanttGroupBy = 'orders' | 'workers';
+export type GanttSortMode = 'orderNumber' | 'startDate';
 
 @Injectable()
 export class ProductionCockpitContext {
@@ -17,6 +18,8 @@ export class ProductionCockpitContext {
   readonly search = signal('');
   readonly activeOnly = signal(true);
   readonly zoom = signal<GanttZoom>('day');
+  /** Default stable order-number rank; planned-date sorting is opt-in. */
+  readonly sortMode = signal<GanttSortMode>('orderNumber');
   readonly workerIdFilter = signal<string | null>(null);
   /** `all` = no priority filter. */
   readonly priorityFilter = signal<OrderPriority | 'all'>('all');
@@ -312,6 +315,10 @@ export class ProductionCockpitContext {
 
   setZoom(zoom: GanttZoom): void {
     this.zoom.set(zoom);
+  }
+
+  setSortMode(mode: GanttSortMode): void {
+    this.sortMode.set(mode);
   }
 
   setPriorityFilter(value: OrderPriority | 'all'): void {

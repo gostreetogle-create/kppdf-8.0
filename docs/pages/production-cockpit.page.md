@@ -223,7 +223,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-332** | DONE: Day zoom ticks = `DD.MM` + RU weekday (ПН…ВС); scale + «Заказ» headers `h-10`; Month ticks unchanged |
 | **TZ-PRODUCTION-333** | DONE: Gantt drag/resize commit = optimistic local bars + silent PATCH; revert + error toast on fail; no success toast / full reload |
 | **TZ-PRODUCTION-334** | DONE: workers list for Gantt labels uses `limit: 100` (BE `@Max(100)`); no `limit=200` 400 |
-| **TZ-PRODUCTION-335** | DONE: Gantt/rail sort by summary startDate (tie orderNumber); meta labels Статус заказа / Важность / Начало плана; auto-save silent optimistic; no obsolete sync hint |
+| **TZ-PRODUCTION-335** | DONE: meta labels Статус заказа / Важность / Начало плана; auto-save silent optimistic; no obsolete sync hint |
+| **TZ-NX-GANTT-SORT-MANUAL** | default order-number rank is stable; compact legend select opts into plan-date sorting; planned-date edits no longer reorder by default |
 | **TZ-PRODUCTION-336** | DONE: skip orders without direct modules/work types on Gantt; rail marker «нет плана»; toast only on select / `?orderId=` |
 | **TZ-PRODUCTION-338** | DONE: Gantt hydrate = parallel product/module prefetch + non-blocking rail thumbs (bars first); estimate math unchanged |
 | **TZ-PRODUCTION-341** | DONE: hydrate `PREFETCH_CONCURRENCY` 8→3 + 429/503 retry (backoff 300/800/1500); no 404 retry; BE throttle untouched |

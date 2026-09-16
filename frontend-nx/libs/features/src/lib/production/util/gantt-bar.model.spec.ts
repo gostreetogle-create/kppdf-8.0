@@ -461,7 +461,7 @@ describe('gantt-bar.model', () => {
     };
   }
 
-  it('TZ-PRODUCTION-335: tree groups sort by summary startDate then orderNumber', () => {
+  it('TZ-NX-GANTT-SORT-MANUAL: date sorting remains available as an explicit opt-in', () => {
     const later = buildGanttBars(
       treeOrderInput('o-late', 'DEMO-001', '2026-08-10'),
       new Date(2026, 7, 6),
@@ -470,7 +470,7 @@ describe('gantt-bar.model', () => {
       treeOrderInput('o-early', 'DEMO-002', '2026-08-05'),
       new Date(2026, 7, 6),
     );
-    const tree = buildGanttTreeBars([...later, ...earlier], new Set());
+    const tree = buildGanttTreeBars([...later, ...earlier], new Set(), new Set(), new Set(), 'startDate');
     expect(tree.map((b) => b.orderId)).toEqual(['o-early', 'o-late']);
   });
 
@@ -485,7 +485,7 @@ describe('gantt-bar.model', () => {
       new Date(2026, 7, 6),
     );
     const work = [...later, ...earlier];
-    expect(buildGanttTreeBars(work, new Set()).map((b) => b.orderId)).toEqual([
+    expect(buildGanttTreeBars(work, new Set(), new Set(), new Set(), 'startDate').map((b) => b.orderId)).toEqual([
       'o-early',
       'o-late',
     ]);
@@ -1051,6 +1051,28 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
       ...overrides,
     };
   }
+
+  it('sorts order groups by order number by default and supports opt-in plan-date sorting', () => {
+    const bars = [
+      workBar({
+        id: 'late',
+        orderId: 'o2',
+        orderNumber: 'ORD-2',
+        startDate: '2026-08-01',
+        endDate: '2026-08-02',
+      }),
+      workBar({
+        id: 'early',
+        orderId: 'o1',
+        orderNumber: 'ORD-1',
+        startDate: '2026-08-03',
+        endDate: '2026-08-04',
+      }),
+    ];
+
+    expect(buildGanttTreeBars(bars, new Set()).map((row) => row.orderId)).toEqual(['o1', 'o2']);
+    expect(buildGanttTreeBars(bars, new Set(), new Set(), new Set(), 'startDate').map((row) => row.orderId)).toEqual(['o2', 'o1']);
+  });
 
   it('maps empty / dash workerLabel to «Не назначен»', () => {
     expect(workerGroupKeyOf(workBar({ workerLabel: '—' }))).toBe(UNASSIGNED_WORKER_LABEL);

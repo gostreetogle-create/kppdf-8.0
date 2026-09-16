@@ -601,16 +601,21 @@ export function buildGanttTreeBars(
   expandedOrderIds: ReadonlySet<string>,
   expandedProductIds: ReadonlySet<string> = new Set(),
   expandedModuleIds: ReadonlySet<string> = new Set(),
+  sortMode: 'orderNumber' | 'startDate' = 'orderNumber',
 ): GanttBar[] {
   const groups = groupBarsByOrder(workBars);
-  // Earlier summary startDate on top; tie-break orderNumber (not priority).
+  // Default rank is stable orderNumber; date sorting is explicit and never uses priority.
   const ranked = groups
     .map((g) => ({ g, summary: buildOrderSummaryBar(g.children) }))
     .filter((row): row is { g: (typeof groups)[number]; summary: GanttBar } => row.summary != null)
     .sort((a, b) => {
-      const byStart = a.summary.startDate.localeCompare(b.summary.startDate);
-      if (byStart !== 0) return byStart;
-      return a.summary.orderNumber.localeCompare(b.summary.orderNumber);
+      if (sortMode === 'startDate') {
+        const byStart = a.summary.startDate.localeCompare(b.summary.startDate);
+        if (byStart !== 0) return byStart;
+      }
+      const byNumber = a.summary.orderNumber.localeCompare(b.summary.orderNumber, 'ru');
+      if (byNumber !== 0) return byNumber;
+      return a.summary.orderId.localeCompare(b.summary.orderId);
     });
   const out: GanttBar[] = [];
   for (const { g, summary } of ranked) {

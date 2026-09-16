@@ -67,6 +67,19 @@ describe('GanttBarsComponent (TZ-NX-GANTT-G4 pan/zoom)', () => {
     expect(root.querySelector('[data-test="gantt-worktype-legend"]')).toBeTruthy();
   });
 
+  it('renders the compact order sort control beside the legend and emits changes', async () => {
+    const fixture = await setup([makeBar({})], '2026-09-01', '2026-09-21');
+    const select = fixture.nativeElement.querySelector<HTMLSelectElement>('[data-test="gantt-sort-mode"]');
+    expect(select).toBeTruthy();
+    expect(select!.value).toBe('orderNumber');
+
+    const emitted: string[] = [];
+    fixture.componentInstance.sortModeChange.subscribe((value) => emitted.push(value));
+    select!.value = 'startDate';
+    select!.dispatchEvent(new Event('change'));
+    expect(emitted).toEqual(['startDate']);
+  });
+
   it('keeps the calendar pane separate from the sticky label pane', async () => {
     const fixture = await setup([makeBar({})], '2026-09-01', '2026-09-21');
     const root = fixture.nativeElement as HTMLElement;

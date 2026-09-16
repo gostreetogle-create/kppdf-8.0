@@ -24,7 +24,7 @@ import {
   type GanttBar,
 } from '../util/gantt-bar.model';
 import { personDisplayName, type OrderStatus, type Person } from '@kppdf/data-access';
-import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
+import type { GanttGroupBy, GanttSortMode, GanttZoom } from '../production-cockpit.context';
 import { ProductionScaleControlsComponent } from './production-scale-controls.component';
 
 /**
@@ -147,6 +147,21 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
               ></span>
               {{ item.name }}
             </span>
+          }
+          @if (!groupByWorkers()) {
+            <label class="inline-flex items-center gap-1 ml-auto text-[11px] text-muted-foreground">
+              <span>Сортировка</span>
+              <select
+                class="pi-input !py-0.5 !text-[11px] w-32"
+                [value]="sortMode()"
+                (change)="onSortModeChange($event)"
+                data-test="gantt-sort-mode"
+                aria-label="Сортировка Ганта"
+              >
+                <option value="orderNumber">№ заказа</option>
+                <option value="startDate">По дате плана</option>
+              </select>
+            </label>
           }
         </div>
       }
@@ -1175,6 +1190,7 @@ export class GanttBarsComponent implements AfterViewInit {
   readonly canEditOrder = input(false);
   /** TZ-GANTT-401 — group rows by workerLabel instead of order (read-only view). */
   readonly groupByWorkers = input(false);
+  readonly sortMode = input<GanttSortMode>('orderNumber');
   /**
    * TZ-PRODUCTION-319/322 — left summary order label only (toggle meta in parent).
    * Child labels and timeline bars do not emit this.
@@ -1186,6 +1202,7 @@ export class GanttBarsComponent implements AfterViewInit {
   /** TZ-PRODUCTION-348 — toolbar zoom / group / fit (parent owns state). */
   readonly zoomChange = output<GanttZoom>();
   readonly groupByChange = output<GanttGroupBy>();
+  readonly sortModeChange = output<GanttSortMode>();
   readonly fit = output<void>();
   /** Child work-type label / ▸ → parent toggles work-detail for this bar.id. */
   readonly toggleWorkDetail = output<string>();
@@ -1247,6 +1264,7 @@ export class GanttBarsComponent implements AfterViewInit {
       orderMeta: this.orderMeta,
       canEditOrder: this.canEditOrder,
       groupByWorkers: this.groupByWorkers,
+      sortMode: this.sortMode,
       orderLabelClick: this.orderLabelClick,
       dismissCanvas: this.dismissCanvas,
       toggleExpand: this.toggleExpand,
@@ -1448,6 +1466,13 @@ export class GanttBarsComponent implements AfterViewInit {
 
   protected unassignedWorkTypeNamesPreview(): string {
     return this.facade.unassignedWorkTypeNamesPreview();
+  }
+
+  protected onSortModeChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement | null)?.value;
+    if (value === 'startDate' || value === 'orderNumber') {
+      this.sortModeChange.emit(value);
+    }
   }
 
   protected onToggleExpand(event: Event, expandId: string, bar: GanttBar): void {

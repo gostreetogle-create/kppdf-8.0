@@ -22,7 +22,7 @@ import {
   type GanttBar,
 } from './util/gantt-bar.model';
 import type { OrderPriority, OrderStatus, Person } from '@kppdf/data-access';
-import type { GanttZoom } from './production-cockpit.context';
+import type { GanttSortMode, GanttZoom } from './production-cockpit.context';
 import {
   calculateGanttPxPerDay,
   GANTT_LABEL_COL_PX,
@@ -66,6 +66,7 @@ export interface GanttBarsFacadeHost {
   orderMeta: Signal<GanttOrderMetaView | null>;
   canEditOrder: Signal<boolean>;
   groupByWorkers: Signal<boolean>;
+  sortMode: Signal<GanttSortMode>;
   orderLabelClick: OutputEmitterRef<string>;
   dismissCanvas: OutputEmitterRef<void>;
   toggleExpand: OutputEmitterRef<string>;
@@ -115,6 +116,7 @@ export class GanttBarsFacade {
   private orderMeta!: Signal<GanttOrderMetaView | null>;
   private canEditOrder!: Signal<boolean>;
   private groupByWorkers!: Signal<boolean>;
+  private sortMode!: Signal<GanttSortMode>;
   private orderLabelClick!: OutputEmitterRef<string>;
   private dismissCanvas!: OutputEmitterRef<void>;
   private toggleExpand!: OutputEmitterRef<string>;
@@ -199,6 +201,7 @@ export class GanttBarsFacade {
           this.expandedOrderIds(),
           this.expandedProductIds(),
           this.expandedModuleIds(),
+          this.sortMode(),
         ),
   );
 
