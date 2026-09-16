@@ -98,8 +98,8 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
           role="status"
         >
           <span>
-            Без исполнителя: {{ unassignedSummary().workTypeNames.length }} видов работ — назначьте
-            в
+            Без исполнителя: {{ unassignedSummary().workTypeNames.length }} видов работ — группа
+            «Не назначен» раскрыта; назначьте в
           </span>
           <a
             routerLink="/registries/workers"

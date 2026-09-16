@@ -162,6 +162,15 @@ export class ProductionCockpitContext {
     });
   }
 
+  setWorkerExpanded(workerLabel: string, expanded: boolean): void {
+    this.expandedWorkerIds.update((prev) => {
+      const next = new Set(prev);
+      if (expanded) next.add(workerLabel);
+      else next.delete(workerLabel);
+      return next;
+    });
+  }
+
   toggleWorkerExpanded(workerLabel: string): void {
     this.expandedWorkerIds.update((prev) => {
       const next = new Set(prev);

@@ -70,6 +70,18 @@ describe('Workers view (TZ-NX-GANTT-G6)', () => {
     expect(workerGroupKeyOf(bar({ workerLabel: 'Иванов' }))).toBe('Иванов');
   });
 
+  it('expanding the unassigned group reveals its module rows immediately', () => {
+    const tree = buildWorkerTreeBars(
+      [bar({ workerLabel: '—' }), bar({ id: 'o1:0:m1:wt2', workerLabel: '—', workTypeId: 'wt2' })],
+      new Set([UNASSIGNED_WORKER_LABEL]),
+      new Set(),
+    );
+
+    expect(tree[0]!.orderNumber).toBe(UNASSIGNED_WORKER_LABEL);
+    expect(tree.some((row) => row.kind === 'module' && row.orderNumber === 'ORD-1')).toBe(true);
+    expect(tree.find((row) => row.kind === 'summary' && row.orderNumber === 'Иванов')).toBeUndefined();
+  });
+
   it('worker summary bars are not work bars (read-only view has no editable target)', () => {
     const bars = [bar({ workerLabel: 'Иванов' })];
     const tree = buildWorkerTreeBars(bars, new Set(), new Set());

@@ -9,7 +9,7 @@
  * separate selection/expand/filter SoT (this facade calls it, does not own
  * or mirror it).
  */
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom, type Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -48,6 +48,7 @@ import {
   isHardFrozenOrderStatus,
   resolveVisualAnchor,
   summarizeUnassignedGanttWork,
+  UNASSIGNED_WORKER_LABEL,
   type GanttBar,
 } from './util/gantt-bar.model';
 
@@ -98,6 +99,8 @@ export class ProductionCockpitFacade {
   private readonly toast = inject(PiToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private previousWorkersMode = false;
+  private previousUnassignedBarCount = 0;
 
   readonly orders = signal<Order[]>([]);
   readonly bars = signal<GanttBar[]>([]);
@@ -181,6 +184,20 @@ export class ProductionCockpitFacade {
     });
     this.destroyRef.onDestroy(() => {
       this.facade.clearCaches();
+    });
+
+    effect(() => {
+      const workersMode = this.groupBy() === 'workers';
+      const unassignedBarCount = this.unassignedGanttWork().barCount;
+      const enteredWorkersMode = workersMode && !this.previousWorkersMode;
+      const unassignedAppeared = workersMode && this.previousUnassignedBarCount === 0 && unassignedBarCount > 0;
+
+      if (enteredWorkersMode || unassignedAppeared) {
+        this.ctx.setWorkerExpanded(UNASSIGNED_WORKER_LABEL, true);
+      }
+
+      this.previousWorkersMode = workersMode;
+      this.previousUnassignedBarCount = workersMode ? unassignedBarCount : 0;
     });
 
     void this.bootstrap();
