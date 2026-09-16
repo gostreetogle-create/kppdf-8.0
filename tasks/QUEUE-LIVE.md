@@ -2,13 +2,13 @@
 
 | Slot | Статус |
 |------|--------|
-| Freebuff | PARK |
-| Claude | READY WAVE-NX-SHIPPING · `PROMPT-CLAUDE-NX-SHIPPING.md` |
+| Freebuff | IDLE |
+| Claude | LIMIT ~19 Sep |
 
 ## NEXT
 
-Claude S0→S3 shipping. Deploy = отдельная команда PO.
+Промптов нет. WAVE-GANTT-DARK CLOSED 2026-09-16.
 
-## DONE
+## DONE (recent)
 
-Warehouse W1–W4 · Supply S0–S2 · Supply OPS · Photos · Deals · deploy prep
+Hotfix PO 2026-09-15 · WAVE-GANTT-DARK (gantt S + palette + contrast)

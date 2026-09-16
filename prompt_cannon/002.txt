@@ -1,0 +1,738 @@
+10 responses ready
+•
+31s
+Smart Poll
+
+Smart Merge
+
+Smart Sort
+
+GPT-4o Mini icon
+GPT-4o Mini (OpenAI)#1
+
+11.0s
+TOP-1 next action = a
+
+PRIORITY ORDER
+a) Wire general.md + normalizeStep baseline (Ollama/remote), eval harness: This is crucial for establishing a foundational workflow that ensures compliance with privacy standards. Failure to wire the structure first creates risks for data integrity and impacts future efforts with No raw data making it hard to gain insights.
+b) Opt-in local HITL→JSONL dataset logging: While still an important task, it is secondary to establishing baseline processes. Having local logs will enhance the validation and tuning of the model but remains predicated on the previous step being completed.
+c) Soup LoRA on Qwen2.5-7B for import JSON: This step can be deferred as it is "too early" with no clear baseline data to train on. The potential risk is high given the current lack of metrics.
+d) Close TZD-76 embedded GGUF runner: The embedding runner does not currently provide sufficient immediate value to justify its prioritization over core functional aspects that directly impact the operator's workflow.
+e) Improve MCP tool-calling reliability via SFT: Improving reliability is beneficial but is not the immediate priority as foundational logging and baseline evaluations are lacking.
+f) Improve column-mapping AI (suggestWithAi) on Ollama without SFT: Prior to enhancements, focus should remain on the primary models and general framework. Improving this without a solid foundation can lead to wasted effort.
+g) Something else you believe is higher ROI: Implement a feedback loop mechanism for import confirmations. This can provide insights on user behavior and quicker adjustments to import functions.
+WHAT NOT TO DO
+Fine-tune “general assistant”: Prematurely refining a model without understanding the operational context and requirements will lead to wasted resources.
+Send client Excel to cloud trainer: This violates 152-FZ regulations. Any data with client PII must remain internal.
+Train before baseline metrics: Without a baseline, training efforts may lead to misguided outcomes that do not reflect user needs or operational metrics.
+SMALLEST USEFUL EXPERIMENT
+Conduct a simple A/B test comparing the effectiveness of the current column mapping against a prompt-based suggestion model (using
+code
+Copy
+suggestWithAi
+).
+Artifacts: Use prompts.ts (for prompt design) and a set of 50 test fixture imports, results written to a metrics.log file.
+Metric: Measure the number of successful mappings out of total attempts, compute as: (successful mappings / total mappings) * 100% accuracy.
+WHEN SOUP BECOMES RATIONAL
+Soup TZ only if baseline parse_ok ≥ 90% on 100 fixtures AND ≥ 200 local gold JSONL lines AND delta expected on format errors is ≤ 5%. These metrics indicate sufficient data quality and volume for effective training.
+TZD-76 RELATIONSHIP
+(ii) Ollama path is enough for baseline + later Soup-exported GGUF; TZD-76 is parallel/optional UX: As stated, the initial focus should remain on establishing functionality through Ollama. The embedded runner works best optionally once primary functions work as planned, supporting smoother integration and workflow.
+DIVERSITY RULE
+Alternative product bet: Focus heavily on deterministic mapping with detailed user profiles. This can quickly allow for an understandable user experience with reduced errors in mapping. This approach benefits in situations where any delay in model training obstructs or slows down workflow efficiency.
+Confidence 4 — The potential for variability in data compliance and user interaction confirms certain risks remain.
+
+Gemini Flash icon
+Gemini 2.5 Flash (Google)#2
+
+12.4s
+TOP-1 next action = a
+
+PRIORITY ORDER (next 2–6 weeks for THIS product, not ML hobby)
+
+a) Wire general.md + normalizeStep baseline (Ollama/remote), eval harness: This is foundational. It enables the core "raw import -> strict JSON" functionality which is currently a stub. Without this, other AI improvements for import are largely moot. It also allows for initial evaluation metrics, crucial for informed future decisions, and avoids 152-FZ risk by keeping PII local with Ollama.
+f) Improve column-mapping AI (suggestWithAi) on Ollama without SFT: This provides immediate, tangible value to the user during the import process by making column mapping more efficient and accurate. It leverages existing working AI surfaces (Ollama) and directly addresses a pain point without complex training. It has no 152-FZ risk.
+b) Opt-in local HITL→JSONL dataset logging: This directly supports the future Soup SFT by building the necessary gold dataset. Making it opt-in manages 152-FZ concerns and user comfort. It's a prerequisite for any meaningful custom model training.
+e) Improve MCP tool-calling reliability via SFT: While valuable for external clients, the immediate operational impact for the 10 users of kppdf-8.0 is lower than core import improvements. This can be addressed later, potentially leveraging insights from general.md wiring. 152-FZ risk is managed as it's for external clients.
+d) Close TZD-76 embedded GGUF runner: This is a UX improvement for embedded GGUF chat. However, Ollama is already a working solution for local models, and the embedded GGUF chat itself is NOT required to use Ollama. Its impact on the core import workflow is minimal in the short term, and it doesn't address 152-FZ directly.
+c) Soup LoRA on Qwen2.5-7B for import JSON: This is explicitly deemed "TOO EARLY" by the project architect and requires a wired general.md scenario and a gold dataset, which do not exist yet. Pursuing this now would be premature and high risk without the necessary prerequisites. It has potential 152-FZ risk if not carefully managed.
+WHAT NOT TO DO
+
+Fine-tune a "general assistant": The chat role is explicitly LIMITED_HELPER. Investing in a general assistant fine-tune deviates from the product's defined scope and immediate operational needs, offering low ROI for a small workshop ERP.
+Send client Excel/CSV to a cloud trainer: 152-FZ strictly prohibits client PII going to foreign APIs without explicit legal TZ. Sending raw data, especially PII-laden Excel/CSV, to an external cloud trainer is a direct violation of this and introduces severe legal risk.
+Attempt Soup LoRA training before establishing baseline metrics and a gold dataset: The FACTS explicitly state "Full Soup SFT TZ right now = TOO EARLY (no wired general.md scenario, no gold raw→JSON dataset)." Training without a clear baseline for improvement and without data to train on is a waste of resources.
+SMALLEST USEFUL EXPERIMENT Experiment: Evaluate the effectiveness of the
+code
+Copy
+general.md
+system prompt and
+code
+Copy
+normalizeStep
+for basic entity extraction from raw text. Metric:
+code
+Copy
+parse_ok
+rate, defined as the percentage of test fixtures where the output from
+code
+Copy
+normalizeStep
+(via Ollama/remote API) perfectly matches the expected strict JSON schema, with no missing fields, extra fields, or format errors. How to compute: Create a set of
+code
+Copy
+N
+test fixtures. Each fixture consists of a
+code
+Copy
+raw
+text input and an
+code
+Copy
+expected_json
+output (strict JSON by entity schema). For each fixture, pass
+code
+Copy
+raw
+through the wired
+code
+Copy
+general.md
+prompt +
+code
+Copy
+normalizeStep
+using Ollama (or remote API). Compare the resulting
+code
+Copy
+actual_json
+with
+code
+Copy
+expected_json
+. Increment
+code
+Copy
+parse_ok
+counter if they are identical.
+code
+Copy
+parse_ok
+rate =
+code
+Copy
+(parse_ok_count / N) * 100
+. Artifacts:
+
+code
+Copy
+desktop/ai/system-prompts/general.md
+(the prompt itself)
+code
+Copy
+test_fixtures/import_json_baseline.jsonl
+(contains
+code
+Copy
+N=50
+lines, each line:
+code
+Copy
+{"raw": "...", "expected_json": {...}}
+)
+code
+Copy
+evaluation_results/general_md_baseline_ollama.json
+(JSON file storing
+code
+Copy
+parse_ok
+rate, total fixtures, and a list of failed cases with
+code
+Copy
+raw
+,
+code
+Copy
+expected_json
+,
+code
+Copy
+actual_json
+, and
+code
+Copy
+error_type
+)
+WHEN SOUP BECOMES RATIONAL Soup TZ only if baseline
+code
+Copy
+parse_ok
+≥ 70% on 50 fixtures AND ≥ 500 local gold JSONL lines AND delta expected on format errors is > 5%.
+
+TZD-76 RELATIONSHIP (ii) Ollama path is enough for baseline + later Soup-exported GGUF; TZD-76 is parallel/optional UX: Ollama is explicitly a "documented provider" and "Working AI surface NOW." It fully supports local model inference, including GGUF. TZD-76 is about enabling an embedded node-llama-cpp + .gguf UI, which is a specific UX choice, not a prerequisite for local model capabilities themselves. The "Embedded GGUF chat is NOT required to use Ollama." Therefore, it is a parallel effort that can improve user experience but does not block fundamental local model integration or training.
+
+DIVERSITY RULE Alternative bet: Double-down on deterministic mapping + profiles for import, complemented by MCP-only for power users. When it wins: This bet wins if the
+code
+Copy
+general.md
++
+code
+Copy
+normalizeStep
+baseline (even after some iteration and dataset logging) shows consistently low
+code
+Copy
+parse_ok
+rates (<50%) for the diverse, messy real-world data kppdf users encounter. If AI-driven parsing proves too unreliable or too costly to maintain for a small ERP, then investing in robust deterministic rules, user-defined profiles, and more sophisticated UI for manual mapping (with
+code
+Copy
+suggestWithAi
+as a lightweight helper) becomes more efficient. MCP-only for power users, allowing them to use external tools like Cursor/LM Studio with carefully curated prompts for complex transformations, offloads the burden of maintaining complex AI pipelines from the core product for niche, high-value scenarios. This strategy embraces the limitations of AI for critical, structured data entry in a small-scale environment and leverages human-in-the-loop strengths.
+
+Confidence: 4 Single fact that most limits my confidence: The vague "DRAFT for 'raw import → strict JSON by entity schema'" for
+code
+Copy
+general.md
+and "pipeline.normalizeStep is a stub" make it difficult to precisely estimate the effort required for priority 'a' and the expected baseline
+code
+Copy
+parse_ok
+rate.
+
+Claude Haiku icon
+Claude 3.5 Haiku (Anthropic)#1
+Failed
+We weren't able to get an answer at this moment. The servers may be overwhelmed. Please try again later.
+GPT-4o Mini icon
+GPT-4o Mini (OpenAI)#2
+
+11.8s
+TOP-1 next action = A
+
+PRIORITY ORDER
+
+(A) Wire general.md + normalizeStep baseline (Ollama/remote), eval harness: Priority due to enhancing the import process and establishing a systematic evaluation mechanism. This development aligns with operator needs and further ensures compliance with 152-FZ by relying on local processing.
+(B) Opt-in local HITL→JSONL dataset logging: Essential for creating a sustainable dataset that complies with regulations. Local logging would facilitate traceability and data protection while still improving the AI capabilities of the system.
+(E) Improve MCP tool-calling reliability via SFT: Enhancing reliability directly impacts user experience and operational efficiency, making it a high but secondary priority.
+(F) Improve column-mapping AI (suggestWithAi) on Ollama without SFT: Valuable for improving import tasks without the added complexity of SFT. This enhancement can boost usability in the short term but lacks the compliance focus of the above items.
+(C) Soup LoRA on Qwen2.5-7B for import JSON: While important, full Soup deployment is currently premature given the existing gaps and the decision to wait for a more mature state of the import process.
+(D) Close TZD-76 embedded GGUF runner: Should be deprioritized since its impact on local model work is less critical compared to the first actions. The current situation can maintain operations without this runner.
+WHAT NOT TO DO
+
+Do not fine-tune a “general assistant” role without a clear definition and dataset. This will confuse functionalities and diverge from specialized tasks.
+Avoid sending client Excel files to cloud trainers, compromising the privacy of client PII and violating 152-FZ requirements.
+Steer clear of training before establishing baseline metrics; doing so would result in wasted resources and potentially misaligned expectations regarding model performance.
+SMALLEST USEFUL EXPERIMENT
+
+Experiment to improve column mapping accuracy using Ollama.
+Artifacts:
+prompt file (column_mapping_prompt.txt) for suggesting mappings.
+Test fixtures count: at least 20 varied Excel sheets with different column arrangements.
+Results logged in a marked section of the application’s analytics dashboard.
+Metric: Measure the accuracy of mappings suggested by Ollama against expected mappings in the input dataset. Compute accuracy as the percentage of correct mappings over total mappings.
+WHEN SOUP BECOMES RATIONAL
+
+Soup TZ only if baseline parse_ok ≥ 90% on 100 fixtures AND ≥ 200 local gold JSONL lines AND delta expected on format errors is ≤ 5%. This would ensure that the quality of the input data and output format has reached an acceptable level before undertaking the complexities of a Soup deployment.
+TZD-76 RELATIONSHIP
+
+(ii) Ollama path is enough for baseline + later Soup-exported GGUF; TZD-76 is parallel/optional UX: The embedded GGUF functionality pursuit can occur in parallel without stalling local-model work. The current architecture allows the use of Ollama while prioritizing pressing implementation needs.
+DIVERSITY RULE
+
+Alternative product bet to double down on deterministic mapping + profiles: By prioritizing enhancements to deterministic mappings and user profiles, the system could deliver tailored experiences to users, streamlining import tasks and aid in segmenting users based on their specific needs. Such a strategy would improve user satisfaction and engagement, resulting in a greater return on investment while concurrently fostering compliance.
+Confidence 4 — The most limiting factor is the unclear status of the ongoing TZD-76 tasks affecting our approach to embedded functionalities.
+
+Gemini Flash icon
+Gemini 2.5 Flash (Google)#3
+
+15.6s
+TOP-1 next action = a)
+
+1) PRIORITY ORDER (next 2–6 weeks for THIS product, not ML hobby)
+a) Wire general.md + normalizeStep baseline (Ollama/remote), eval harness: Highest priority. This directly enables the intended "raw import → strict JSON" feature, providing immediate operator value by automating data extraction and reducing manual input effort. It also establishes a measurable baseline, which is critical for future improvements and aligns with the project architect's decided prerequisite wave.
+
+b) Opt-in local HITL→JSONL dataset logging: Second priority. This is a direct follow-up to (a) and essential for building a valuable, privacy-compliant dataset for eventual fine-tuning. It aligns with the project architect's prerequisite wave (B) and ensures client PII remains local.
+
+f) Improve column-mapping AI (suggestWithAi) on Ollama without SFT: Third priority. This improves an existing, working feature and directly benefits operators by streamlining the initial import step. It leverages current capabilities without requiring significant new infrastructure or data.
+
+d) Close TZD-76 embedded GGUF runner: Fourth priority. While it improves UX for local models, the Ollama path is already available and sufficient for baseline work and later Soup-exported GGUF models. It's not a blocker for core AI functionality.
+
+e) Improve MCP tool-calling reliability via SFT: Fifth priority. MCP tools are for external clients, not the direct operator workflow of kppdf. While valuable, it doesn't directly impact the internal workshop ERP's immediate needs or address the new import feature.
+
+c) Soup LoRA on Qwen2.5-7B for import JSON: Lowest priority. Project architect already decided this is TOO EARLY due to lack of wired general.md scenario and gold dataset. It should only be considered after baseline and dataset generation.
+
+g) Something else you believe is higher ROI: UNKNOWN. Based on the facts, the current focus on structured import seems to be the most critical next step for operator value.
+
+2) WHAT NOT TO DO
+Fine-tune a "general assistant" for kppdf: The chat role is LIMITED_HELPER. Investing in a broad general assistant LLM would divert resources from the specific, high-value tasks like structured data import and would likely exceed the system's defined scope and immediate needs.
+Send client Excel/CSV to a cloud trainer: This directly violates the "client PII must not go to foreign APIs without explicit legal TZ" constraint (152-FZ) and product privacy policy. All data used for training must remain local unless explicitly approved.
+Start Soup SFT before establishing a baseline and collecting gold data: This is explicitly contradicted by the project architect's decision ("Full Soup SFT TZ right now = TOO EARLY"). Training without a clear performance baseline and sufficient quality data leads to wasted effort and unclear results.
+3) SMALLEST USEFUL EXPERIMENT
+Experiment: Evaluate the effectiveness of
+code
+Copy
+general.md
+in extracting structured JSON from raw text using Ollama.
+
+Metric:
+code
+Copy
+parse_ok
+rate (%) – percentage of test fixtures where the model successfully produces valid JSON conforming to the expected
+code
+Copy
+(_questions / _errors / _skipped)
+schema.
+How to compute: Run the
+code
+Copy
+normalizeStep
+(once wired to
+code
+Copy
+general.md
+) against a set of raw text snippets. A simple script would validate the output against a JSON schema and increment a success counter.
+Artifacts:
+Prompt file:
+code
+Copy
+desktop/ai/system-prompts/general.md
+(as is, or with minor adjustments for testing).
+Test fixtures count: 10-20 manually created raw text snippets representing typical import data (e.g., invoices, work orders). These would be simple
+code
+Copy
+.txt
+files.
+Results written to: A simple
+code
+Copy
+.csv
+or
+code
+Copy
+.json
+file containing fixture ID, raw input, model output, and a boolean
+code
+Copy
+parse_ok
+flag, stored locally in a temporary
+code
+Copy
+eval_results/
+directory.
+4) WHEN SOUP BECOMES RATIONAL
+Soup TZ only if baseline
+code
+Copy
+parse_ok
+≥ 70% on 20 fixtures AND ≥ 500 local gold JSONL lines AND delta expected on format errors is >10%.
+
+5) TZD-76 RELATIONSHIP
+(ii) Ollama path is enough for baseline + later Soup-exported GGUF; TZD-76 is parallel/optional UX.
+
+Justification: The FACTS state that "Ollama as documented provider" is a "Working AI surface NOW." This means local model execution is already possible without TZD-76. Furthermore, "Embedded GGUF chat is NOT required to use Ollama." Therefore, TZD-76, while providing a direct embedded GGUF runner, is a UX improvement and not a prerequisite for developing or deploying local model capabilities, including those fine-tuned with Soup and exported as GGUF.
+
+6) DIVERSITY RULE
+Alternative product bet: Double-down on deterministic mapping + profiles for import.
+
+Argument for when this bet wins: This bet wins if the
+code
+Copy
+general.md
+based AI approach (even after wiring and baseline) consistently fails to meet a practical
+code
+Copy
+parse_ok
+threshold (e.g., remaining below 50-60% accuracy on diverse real-world data, or requiring excessive prompt engineering per document type). If operators find the AI-driven extraction unreliable or too slow for common document types, then investing in a robust set of user-definable, deterministic mapping profiles (e.g., regex-based extraction rules, template matching, or advanced CSV parsing with pre-defined schemas) could provide higher immediate value and reliability for structured imports. This approach leverages existing
+code
+Copy
+analyzeTables
+fallback capabilities and allows for user-configurable "recipes" for common import formats, providing predictable results even without advanced AI. It would be particularly effective for recurring suppliers or document types where the structure is somewhat consistent.
+
+Confidence: 4 Single fact that most limits your confidence: The precise definition and scope of "raw import" in
+code
+Copy
+general.md
+(e.g., single document vs. multi-document) is not detailed, which could impact the complexity of the baseline and dataset collection.
+
+Claude Haiku icon
+Claude 3.5 Haiku (Anthropic)#2
+Failed
+We weren't able to get an answer at this moment. The servers may be overwhelmed. Please try again later.
+GPT-4o Mini icon
+GPT-4o Mini (OpenAI)#3
+
+12.8s
+Verdict line: TOP-1 next action = a
+
+1) PRIORITY ORDER
+a) Wire general.md + normalizeStep baseline (Ollama/remote), eval harness
+This step is crucial to establish a functioning AI framework. It directly impacts the company's ability to collect and evaluate performance metrics through prompts. Since PII cannot leave the country, focusing on local models is vital.
+
+b) Opt-in local HITL→JSONL dataset logging
+This option is essential for gathering data for future SFT processes. Creating a robust local dataset will enable iterative improvements while adhering to compliance requirements regarding PII.
+
+e) Improve MCP tool-calling reliability via SFT
+Enhancing MCP reliability should be prioritized to ensure effective tool interaction and reliability, which will reinforce trust in the system among users and stakeholders.
+
+d) Close TZD-76 embedded GGUF runner
+Addressing this will help the project move towards integrating embedded technologies, such as the GGUF runner, as it ties directly into the interaction with local AI workloads, enhancing user experience.
+
+f) Improve column-mapping AI (suggestWithAi) on Ollama without SFT
+Improving existing capabilities is beneficial, especially since it does not require immediate heavier infrastructure like SFT. This could help refine column mapping with respect to the user's workflow.
+
+c) Soup LoRA on Qwen2.5-7B for import JSON
+This should be a lower priority since effective import processes are not yet solidified, and current foundational aspects must be secured to justify undertaking the model training.
+
+2) WHAT NOT TO DO
+Fine-tune “general assistant” without context-specific training: The general model should not be prioritized without a clear application context, risking irrelevant responses.
+
+Send client Excel to cloud trainer: This violates 152-FZ regulations, exposing sensitive PII to potential leakage.
+
+Train before establishing baseline metrics: Without understanding existing data quality and system performance, training may generate misleading or unhelpful models.
+
+3) SMALLEST USEFUL EXPERIMENT
+Experiment: Validate effective column mapping with Ollama's suggestWithAi feature.
+Metric: Measure accuracy of suggested mappings against known correct mappings (Precision = TP / (TP + FP)).
+Artifacts required:
+Prompt file:
+code
+Copy
+suggest_with_ai_prompt.md
+Test fixtures count: Use 50 known column mapping scenarios from previous imports.
+Results location: Store results in
+code
+Copy
+results/column_mapping_accuracy.json
+.
+4) WHEN SOUP BECOMES RATIONAL
+Gate conditions:
+X: Baseline parse_ok ≥ 90% on N = 100 fixtures.
+Y: Gather ≥ 200 local gold JSONL lines post-HITL confirmation.
+Z: delta expected on format errors is ≤ 5% after initial processing.
+5) TZD-76 RELATIONSHIP
+(ii) Ollama path is enough for baseline + later Soup-exported GGUF; TZD-76 is parallel/optional UX
+While TZD-76 is useful for user interaction, Ollama's integration provides essential local capabilities that should be prioritized without waiting for UX strengthening. This aligns with operational needs under 152-FZ.
+6) DIVERSITY RULE
+Alternative product bet: Focus on deterministic mapping + profiles for data ingestion
+This bet could lead to immediate quality improvements, reducing manual effort and speeding up the data process, thereby enhancing user satisfaction and system reliability. If successful, it can serve as a foundational bedrock for local AI functionalities.
+Confidence 4 and the single fact that most limits your confidence is the incomplete state of
+code
+Copy
+general.md
+, which may hinder the effectiveness of the proposed experiments and developments.
+
+DeepSeek icon
+DeepSeek Chat (DeepSeek)#1
+
+28.6s
+Verdict line: TOP-1 next action = a
+
+1) Priority Order
+Ranking:
+
+a) Wire general.md + normalizeStep baseline
+Why: Critical path for any future AI work. Legal compliance (152-FZ) requires local JSON validation before cloud APIs. Unblocks metrics for later SFT.
+b) Opt-in local HITL→JSONL logging
+Why: Creates gold dataset for future SFT/TZs. Low risk (manual confirm already exists).
+f) Improve column-mapping AI (Ollama)
+Why: Directly improves current UX without SFT. Ollama is legal-safe and deployed.
+d) Close TZD-76 (embedded GGUF runner)
+Why: Optional UX polish (Ollama already works); NSIS issues are minor given current priorities.
+c) Soup LoRA on Qwen2.5-7B
+Why: Premature without baseline metrics/gold data. High effort, unclear ROI vs. Ollama prompts.
+e) MCP tool-calling SFT
+Why: Edge case (power users only). Legal risk if tool-calling bypasses HITL.
+g) Something else: N/A (baseline + dataset covers 80%).
+
+2) What NOT to Do
+Anti-pattern 1: Fine-tune a "general assistant" (chat is LIMITED_HELPER; ROI is in structured import).
+Anti-pattern 2: Send client Excel to cloud trainers (152-FZ violation; raw data stays local).
+Anti-pattern 3: Train before baseline metrics (no way to measure Soup’s delta; gold data needed).
+3) Smallest Useful Experiment
+Experiment: Test
+code
+Copy
+general.md
+prompts on 50 real import fixtures (mix of Excel/CSV).
+
+Artifacts:
+code
+Copy
+general.md
+(updated with JSON schema constraints).
+Test fixtures: 50 files from past imports (anonymized).
+Metric:
+code
+Copy
+parse_ok
+rate (% of rows → valid JSON, no
+code
+Copy
+_errors
+).
+Results: Written to
+code
+Copy
+import_task.rows[].proposed_fields
++ console log.
+4) When Soup Becomes Rational
+Hard gates:
+
+Baseline
+code
+Copy
+parse_ok ≥ 70%
+on 200 fixtures.
+code
+Copy
+≥ 500
+local gold JSONL lines (HITL-confirmed).
+Delta: Soup reduces
+code
+Copy
+_errors
+by ≥15% vs. baseline (same fixtures).
+5) TZD-76 Relationship
+Choice (ii): Ollama is enough for baseline + Soup-exported GGUF later.
+
+Justification:
+Embedded GGUF is not required for Ollama (FACT: "Ollama as documented provider").
+TZD-76 is UX-only (NSIS runner fix); no blocker for
+code
+Copy
+general.md
+wiring.
+6) Diversity Rule
+Alternative bet: Double down on deterministic mapping + profiles (no AI).
+
+When this wins:
+If client formats are highly repetitive (e.g., supplier invoices).
+Legal avoids all 152-FZ scrutiny (zero PII to LLMs).
+Faster than waiting for AI maturity.
+Confidence: 4/5
+Limiting fact: UNKNOWN if
+code
+Copy
+general.md
+drafts are complete enough for JSON schema testing (needs architect review).
+
+Gemini Flash icon
+Gemini 2.5 Flash (Google)#1
+
+9.1s
+Verdict line: TOP-1 next action = a
+
+PRIORITY ORDER (next 2–6 weeks for THIS product, not ML hobby)
+
+a) Wire general.md + normalizeStep baseline (Ollama/remote), eval harness: This is the foundational step for any structured data import using AI. It directly addresses a current gap (pipeline.normalizeStep is a stub) and provides a measurable baseline. This is high operator value by enabling a new, more robust import method. It respects 152-FZ by using local (Ollama) as the default and remote with a privacy banner.
+f) Improve column-mapping AI (suggestWithAi) on Ollama without SFT: This improves an existing, working feature and directly benefits the current import process. It offers immediate operator value by reducing manual effort in column mapping. It respects 152-FZ by operating locally.
+b) Opt-in local HITL→JSONL dataset logging: Crucial for future SFT, but dependent on a working
+code
+Copy
+general.md
+pipeline to generate useful data. It's a high-value data generation step that respects 152-FZ by keeping data local.
+e) Improve MCP tool-calling reliability via SFT: This is an important refinement but depends on a solid foundation of data (from
+code
+Copy
+b
+) and a working local SFT pipeline (from
+code
+Copy
+c
+). Operator value is present for specific MCP use cases.
+c) Soup LoRA on Qwen2.5-7B for import JSON: This is explicitly stated as "TOO EARLY" by the project architect due to the lack of wired
+code
+Copy
+general.md
+and gold dataset. High operator value if successful, but high risk without prerequisites. Respects 152-FZ due to local operation.
+d) Close TZD-76 embedded GGUF runner: While beneficial for UX, working AI surfaces already exist (Ollama). This is an infrastructure task, not a direct product feature enhancement or prerequisite for baseline AI work.
+WHAT NOT TO DO
+
+Fine-tune a "general assistant" on client PII: Client PII must not go to foreign APIs without explicit legal TZ, and fine-tuning a general assistant is unlikely to yield specific, high-ROI improvements for ERP tasks.
+Send raw client Excel/CSV to a cloud trainer: 152-FZ explicitly prohibits client PII going to foreign APIs without explicit legal TZ. The system already avoids storing raw Excel/CSV on the journal row.
+Train Soup LoRA before establishing a baseline with
+code
+Copy
+general.md
+and collecting gold JSONL data: The project architect has already decided this is "TOO EARLY," as there is "no wired general.md scenario, no gold raw→JSON dataset."
+SMALLEST USEFUL EXPERIMENT
+
+Experiment: Evaluate the
+code
+Copy
+general.md
+system prompt and
+code
+Copy
+normalizeStep
+(stub implementation) for "raw import → strict JSON by entity schema" using Ollama.
+Metric:
+code
+Copy
+parse_ok
+percentage (fixtures successfully converted to strict JSON without errors or skipped items).
+How to compute: Run the
+code
+Copy
+pipeline.normalizeStep
+with a set of test fixtures and count outputs where
+code
+Copy
+_questions
+,
+code
+Copy
+_errors
+, and
+code
+Copy
+_skipped
+fields are all empty.
+Artifacts:
+code
+Copy
+desktop/ai/system-prompts/general.md
+(the current draft).
+code
+Copy
+test_fixtures/import_json_parse_fixtures.jsonl
+(e.g., 50 lines of synthetic raw import data simulating typical workshop documents).
+Results written to a temporary local file:
+code
+Copy
+/tmp/normalize_eval_results.json
+.
+WHEN SOUP BECOMES RATIONAL Soup TZ only if
+code
+Copy
+parse_ok
+≥ 75% on 50 fixtures AND ≥ 1000 local gold JSONL lines AND delta expected on format errors is 15%.
+
+TZD-76 RELATIONSHIP (ii) Ollama path is enough for baseline + later Soup-exported GGUF; TZD-76 is parallel/optional UX.
+
+Justification: Working AI surfaces NOW include Ollama as a documented provider. The embedded node-llama-cpp + .gguf UI was hidden, and TZD-76 is a separate task with acceptance criteria, but it is "NOT done." Ollama provides the immediate local model capability needed for baseline and future GGUF inference, making TZD-76 a UX enhancement rather than a blocking prerequisite for local model work.
+DIVERSITY RULE Alternative product bet: Double-down on deterministic mapping + profiles for import.
+
+When this bet wins: This bet wins if the effort required to make the AI-driven JSON parsing robust and reliable for diverse, messy input data proves disproportionately high, or if the "raw import → strict JSON" problem space is inherently too complex for the current team's AI capabilities within an acceptable timeframe. It leverages the existing, working "column mapping (headers → fields) via buildMappingPrompt / suggestWithAi, plus deterministic analyzeTables fallback" and allows users to save and reuse specific mapping profiles for recurring import tasks. This approach ensures highly reliable imports for known document structures, potentially reducing the need for complex, error-prone AI parsing for the majority of routine imports and respecting 152-FZ fully.
+Confidence: 4/5 Single fact that most limits my confidence:
+code
+Copy
+pipeline.normalizeStep is a stub
+.
+
+DeepSeek icon
+DeepSeek Chat (DeepSeek)#2
+
+32.1s
+Verdict line:
+TOP-1 next action = (a) Wire general.md + normalizeStep baseline (Ollama/remote), eval harness
+
+1) Priority Order (rationale: operator value, 152-FZ compliance, risk)
+a) Wire general.md + normalizeStep baseline:
+Why: Critical path for JSON parsing UX. Without this, all future SFT is blind (no metrics). Legal-safe (Ollama/remote).
+Why not last: Unwired prompts = untestable AI; blocks HITL logging (b) and Soup (c).
+b) Opt-in local HITL→JSONL logging:
+Why: Prerequisite for gold data. Legal-safe (local). Risk: low (opt-in).
+f) Improve column-mapping (suggestWithAi) on Ollama:
+Why: Quick win for current Import UX. Uses existing Ollama, no SFT needed.
+d) TZD-76 (embedded GGUF runner):
+Why: Optional UX polish. Ollama already works; NSIS runner is convenience, not core.
+e) MCP tool-calling SFT:
+Why: Lower ROI now (MCP users are power users; reliability ≠ core import flow).
+c) Soup LoRA on Qwen2.5-7B:
+Why: Too early (no baseline metrics or gold data). Hardware-ready ≠ value-ready.
+g) Other:
+Add deterministic field profiles: Backup for AI mapping failures. Low effort, high fallback value.
+2) What Not to Do (kppdf anti-patterns)
+Train before baseline metrics: No way to measure Soup impact without wired
+code
+Copy
+general.md
+.
+Send client Excel to cloud trainers: Violates 152-FZ (PII leakage risk). Local only.
+Fine-tune "general assistant": Scope creep. Focus on import/JSON parsing, not chat.
+3) Smallest Useful Experiment
+Experiment: Test
+code
+Copy
+general.md
++
+code
+Copy
+normalizeStep
+with Ollama/Qwen2.5-7B on 10 raw→JSON fixtures.
+
+Artifacts:
+code
+Copy
+desktop/ai/system-prompts/general.md
+(revised, concrete JSON schema examples).
+10 test fixtures (
+code
+Copy
+.csv
++
+code
+Copy
+.json
+gold pairs) in
+code
+Copy
+src/ai/import/fixtures/
+.
+Metric:
+code
+Copy
+parse_ok
+rate (%) = (valid JSON outputs) / (total fixtures).
+Output: Log to
+code
+Copy
+logs/ai-import-baseline-<date>.json
+(raw LLM outputs, diffs).
+4) When Soup Becomes Rational
+Hard gates:
+
+Baseline:
+code
+Copy
+parse_ok ≥ 80%
+on 50 fixtures (20+ schema variants).
+Gold data: ≥500 local JSONL lines (HITL-confirmed pairs) logged.
+Delta: Soup must improve
+code
+Copy
+parse_ok
+by ≥15% (format errors → valid JSON).
+5) TZD-76 Relationship
+Choice: (ii) Ollama path is enough; TZD-76 is parallel/optional UX.
+
+Facts:
+Ollama works today (docs/provider).
+Embedded GGUF is UX sugar (TZD-75 hid it; no user complaints).
+NSIS runner (TZD-76) irrelevant to baseline metrics/HITL logging.
+6) Diversity Rule
+Alternative bet: Deterministic mapping + field profiles.
+
+When it wins: If AI column-mapping is unreliable or Ollama latency is high.
+How:
+Pre-define field regexes/formats (e.g., "invoice_no" =
+code
+Copy
+[A-Z]{2}\d+
+).
+Fallback to exact header matches (current
+code
+Copy
+analyzeTables
+).
+Trade-off: Less "smart", but predictable and 152-FZ-safe.
+Confidence: 4/5
+Limiting factor: UNKNOWN if
+code
+Copy
+general.md
+revisions will suffice for 80%
+code
+Copy
+parse_ok
+baseline.

@@ -1,19 +1,9 @@
-# PROMPT — Freebuff: Home+Order chrome top + composition toggle
+# PROMPT — Freebuff: Order chrome + tree (Home уже DONE)
 
-Ты executor (`agent_id: freebuff`). `D:\kppdf-8.0` main · UNATTENDED.
+Ты executor (`agent_id: freebuff`). `D:\kppdf-8.0` main.
 
-PO visual FAIL:
-1. ~~Главная — дубль eyebrow, чипы не наверху~~ — **DONE** (Claude,
-   `TZ-NX-HOME-CHROME-TOP`, archived `tasks/_archive/2026-09/TZ-NX-HOME-CHROME-TOP.done.md`) — не переделывать.
-2. Заказ — чипы не наверху
-3. Состав — дерево не закрывается 2-м кликом (`selectedId=null` баг) + маленькая зона
+**Не брать** `TZ-NX-HOME-CHROME-TOP` — уже archived.
 
-### Preflight
-`_active` пуст · baseline `nx build kppdf-web`  
-Цепочка → STOP (по одной, claim каждый):
+Старт только когда `_active` пуст **и** drag-coord + print-css-leak archived (или PO сказал стартовать remainder).
 
-1. `tasks/_ready/TZ-NX-ORDER-WS-CHROME-TOP.md`  
-2. `tasks/_ready/TZ-NX-COMPOSITION-TREE-TOGGLE-HIT.md`
-
-Каждая: code → gates из TZ → archive → commit → next.  
-Не deploy. Не order PARK.
+Читай: `tasks/_ready/2026-09-15-po-hotfix-wave/PROMPT-CONTINUOUS-PO-HOTFIX-REMAINDER.md`

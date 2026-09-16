@@ -1,18 +1,21 @@
-# WAVE-PO-HOTFIX-2026-09-15 tracker
+﻿# WAVE-PO-HOTFIX-2026-09-15 tracker
 
 | TZ | State | note |
 |----|-------|------|
 | TZ-NX-HOME-CHROME-TOP | DONE | `98667afa` |
 | TZ-NX-DOCSTUDIO-DRAG-COORD-ROOT | DONE | `4ec82fe8` |
-| TZ-NX-DOCSTUDIO-PRINT-CSS-BODY-LEAK | DONE | `2cd9d100` (Freebuff) |
+| TZ-NX-DOCSTUDIO-PRINT-CSS-BODY-LEAK | DONE | `2cd9d100` |
 | TZ-NX-HOME-DROP-FILLER-SUBTITLE | DONE | `af15868d` |
 | TZ-NX-ORDER-WS-CHROME-TOP | DONE | `e235ba9f` |
 | TZ-NX-ORDER-WS-STRIP-NAV-DUP | DONE | `67487b54` |
-| TZ-NX-ORDER-WS-META-INLINE | DONE | `669b6303` + `92cba112` — also needed a 1-line backend fix (`OrderService.update` never applied `organizationId`) |
-| TZ-NX-ORDER-WS-PRODUCT-SELECT-ADD | DONE | `81bbf969` + `70240ef7` |
-| TZ-NX-ORDER-WS-COMPOSITION-DENSITY | DONE | `a2f6d0c1` + docs/archive next; found (not fixed, out of scope) `hairline-bottom`/`hairline-top` aren't real utilities in ~15 files project-wide — worth a follow-up TZ |
-| TZ-NX-MODULE-WORKTYPES-ROW-ALIGN | PENDING | Claude queue, next |
-| TZ-NX-COMPOSITION-TREE-TOGGLE-HIT | PENDING | |
-| TZ-OPS-START-DIAGNOSTICS | DONE | Freebuff, archived |
+| TZ-NX-ORDER-WS-META-INLINE | DONE | `669b6303` |
+| TZ-NX-ORDER-WS-PRODUCT-SELECT-ADD | DONE | `81bbf969` |
+| TZ-NX-ORDER-WS-COMPOSITION-DENSITY | DONE | `a2f6d0c1` |
+| TZ-OPS-START-DIAGNOSTICS | DONE | `fa969430` |
+| TZ-NX-MODULE-WORKTYPES-ROW-ALIGN | DONE | `9ff1563d` Freebuff |
+| TZ-NX-COMPOSITION-TREE-TOGGLE-HIT | DONE | `ef8ce668` Freebuff |
+| TZ-NX-HAIRLINE-EDGE-UTILS | DONE | `f9eb4cc0` Freebuff |
+
+**WAVE COMPLETE.** Dark/Gantt follow-up = separate pack (also DONE 2026-09-16).
 
 Pack: `tasks/_ready/2026-09-15-po-hotfix-wave/`
