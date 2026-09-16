@@ -142,6 +142,23 @@ describe('GanttBarsComponent (TZ-NX-GANTT-G4 pan/zoom)', () => {
     expect(component.canMoveBar(summary)).toBe(false);
   });
 
+  it('resolves unassigned summary surfaces through theme-aware CSS variables', async () => {
+    const bar = makeBar({ workerLabel: '—' });
+    const fixture = await setup([bar], '2026-09-01', '2026-09-21');
+    const component = fixture.componentInstance as unknown as {
+      workerLabelWash(row: { isWorkerSummary: boolean; bar: GanttBar }): string | null;
+      barFill(row: { bar: GanttBar; isSummary: boolean; rowKind: 'worker' }): string;
+    };
+    const summary = buildWorkerTreeBars([bar])[0]!;
+
+    expect(component.workerLabelWash({ isWorkerSummary: true, bar: summary })).toBe(
+      'var(--gantt-unassigned-wash)',
+    );
+    expect(component.barFill({ bar: summary, isSummary: true, rowKind: 'worker' })).toBe(
+      'var(--gantt-unassigned-bar-fill)',
+    );
+  });
+
   it('shows an honest workers empty hint and keeps the calendar track stretched for unassigned-only work', async () => {
     const fixture = await setup([makeBar({ workerLabel: '—' })], '2026-09-01', '2026-09-21');
     fixture.componentRef.setInput('groupByWorkers', true);

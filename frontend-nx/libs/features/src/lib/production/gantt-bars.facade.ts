@@ -5,8 +5,6 @@ import {
   ganttModuleSummaryId,
   ganttProductSummaryId,
   ganttWorkerModuleSummaryId,
-  GANTT_UNASSIGNED_BAR_FILL,
-  GANTT_UNASSIGNED_WASH,
   isModuleSummaryBar,
   isOrderSummaryBar,
   isProductSummaryBar,
@@ -515,7 +513,7 @@ export class GanttBarsFacade {
           return GANTT_SUMMARY_BAR_FILL.module;
         case 'worker':
           if (isUnassignedWorkerSummaryBar(row.bar)) {
-            return GANTT_UNASSIGNED_BAR_FILL;
+            return 'var(--gantt-unassigned-bar-fill)';
           }
           if (row.bar.accentHue != null) {
             return this.fill('worker-tint', row.bar.accentHue);
@@ -532,7 +530,7 @@ export class GanttBarsFacade {
   /** TZ-PRODUCTION-351 — soft WT wash on worker FIO label when dominant hue known. */
   workerLabelWash(row: { isWorkerSummary: boolean; bar: GanttBar }): string | null {
     if (!row.isWorkerSummary) return null;
-    if (isUnassignedWorkerSummaryBar(row.bar)) return GANTT_UNASSIGNED_WASH;
+    if (isUnassignedWorkerSummaryBar(row.bar)) return 'var(--gantt-unassigned-wash)';
     if (row.bar.accentHue == null) return null;
     return workTypeWash('worker-tint', row.bar.accentHue);
   }

@@ -17,7 +17,9 @@ import { RouterLink } from '@angular/router';
 import {
   ESTIMATE_OVERRIDE_HINT_RU,
   formatDateOnly,
+  GANTT_UNASSIGNED_BAR_FILL,
   GANTT_UNASSIGNED_CHIP_FILL,
+  GANTT_UNASSIGNED_WASH,
   isModuleSummaryBar,
   isOrderSummaryBar,
   isProductSummaryBar,
@@ -278,6 +280,7 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
                     class="gantt-label-btn flex-1 min-w-0 w-full h-full px-1.5 flex items-center gap-1.5 text-left
                            hover:bg-paper-2"
                     [style.background]="workerLabelWash(row)"
+                    [class.gantt-unassigned-text]="isUnassignedWorkerSummary(row.bar)"
                     (click)="onLabelClick($event, row)"
                     [attr.title]="row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)"
                     [attr.aria-label]="
@@ -322,7 +325,7 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
                     } @else if (isUnassignedWorkerSummary(row.bar)) {
                       <span
                         class="w-1.5 h-5 rounded-sm shrink-0 border border-dashed border-amber-700/50 dark:border-amber-400/50"
-                        [style.background]="GANTT_UNASSIGNED_CHIP_FILL"
+                        [style.background]="'var(--gantt-unassigned-chip-fill)'"
                         aria-hidden="true"
                       ></span>
                     } @else if (!row.isSummary) {
@@ -341,7 +344,12 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
                     }
                     <span class="gantt-label-text min-w-0 flex-1 truncate text-xs leading-none">
                       @if (row.isOrderSummary || row.isWorkerSummary) {
-                        <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
+                        <span
+                          class="font-medium"
+                          [class.text-ink]="!isUnassignedWorkerSummary(row.bar)"
+                          [class.gantt-unassigned-text]="isUnassignedWorkerSummary(row.bar)"
+                          >{{ row.bar.orderNumber }}</span
+                        >
                       } @else if (row.isProductSummary) {
                         <span class="font-medium text-ink">{{ row.bar.productName }}</span>
                         @if (row.bar.quantityLabel) {
@@ -621,6 +629,7 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
                   [style.left.px]="displayLeftPx(row)"
                   [style.width.px]="displayWidthPx(row)"
                   [style.background]="barFill(row)"
+                  [class.gantt-unassigned-text]="isUnassignedWorkerSummary(row.bar)"
                   [style.backgroundImage]="
                     row.bar.noTerm
                       ? 'repeating-linear-gradient(135deg, transparent, transparent 4px, oklch(0.7 0.02 250 / 0.35) 4px, oklch(0.7 0.02 250 / 0.35) 8px)'
@@ -715,6 +724,10 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
       --gantt-bar-order: ${GANTT_SUMMARY_BAR_FILL.order};
       --gantt-bar-product: ${GANTT_SUMMARY_BAR_FILL.product};
       --gantt-bar-module: ${GANTT_SUMMARY_BAR_FILL.module};
+      --gantt-unassigned-wash: ${GANTT_UNASSIGNED_WASH};
+      --gantt-unassigned-bar-fill: ${GANTT_UNASSIGNED_BAR_FILL};
+      --gantt-unassigned-chip-fill: ${GANTT_UNASSIGNED_CHIP_FILL};
+      --gantt-unassigned-text: var(--color-on-gold, oklch(0.24 0.03 85));
     }
     :host-context(.dark),
     :host-context([data-theme='dark']) {
@@ -725,6 +738,13 @@ import { GanttBarsFacade, type GanttBarsFacadeHost } from '../gantt-bars.facade'
       --gantt-bar-order: oklch(0.32 0.04 86);
       --gantt-bar-product: oklch(0.31 0.035 84);
       --gantt-bar-module: oklch(0.3 0.03 82);
+      --gantt-unassigned-wash: oklch(0.34 0.07 75);
+      --gantt-unassigned-bar-fill: oklch(0.43 0.11 70);
+      --gantt-unassigned-chip-fill: oklch(0.38 0.08 75);
+      --gantt-unassigned-text: var(--color-on-gold, oklch(0.94 0.02 95));
+    }
+    .gantt-unassigned-text {
+      color: var(--gantt-unassigned-text);
     }
     .gantt-row-h {
       height: ${GANTT_ROW_PX}px;
@@ -1289,8 +1309,6 @@ export class GanttBarsComponent implements AfterViewInit {
       );
     });
   }
-
-  protected readonly GANTT_UNASSIGNED_CHIP_FILL = GANTT_UNASSIGNED_CHIP_FILL;
 
   ngAfterViewInit(): void {
     const scroll = this.ganttScroll()?.nativeElement;
