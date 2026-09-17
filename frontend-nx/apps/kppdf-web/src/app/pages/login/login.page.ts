@@ -6,6 +6,8 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { InputComponent } from '@kppdf/ui/input';
 
+const DEMO_PASSWORD = 'admin123';
+
 /**
  * Полная документация страницы: docs/pages/login.page.md
  *
@@ -119,7 +121,7 @@ import { InputComponent } from '@kppdf/ui/input';
               (click)="fillDemoCredentials()"
               data-test="fill-demo-button"
               [attr.aria-label]="'Заполнить демо-данные для входа'"
-              title="Заполнит поля: admin / AdminPass123"
+              title="Заполнит поля: admin / {{ demoPassword }}"
               class="w-full inline-flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-ink py-1 transition-colors pi-focus-ring"
             >
               <lucide-angular [img]="keyIcon" [size]="12" aria-hidden="true" />
@@ -141,6 +143,7 @@ export class LoginPage {
   protected readonly eyeIcon = Eye;
   protected readonly eyeOffIcon = EyeOff;
   protected readonly keyIcon = KeyRound;
+  protected readonly demoPassword = DEMO_PASSWORD;
 
   /**
    * Dev-only flag (Angular's `isDevMode()`): the autofill button is only
@@ -159,8 +162,8 @@ export class LoginPage {
    */
   protected fillDemoCredentials(): void {
     this.username = 'admin';
-    // Must match backend/.env ADMIN_PASSWORD (local seed). Not AdminPass123.
-    this.password = 'admin123';
+    // Must match backend/.env ADMIN_PASSWORD (local seed).
+    this.password = DEMO_PASSWORD;
   }
 
   /**
