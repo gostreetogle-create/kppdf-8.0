@@ -32,6 +32,17 @@ master-строка раскрыта. Вложен в `AppShellComponent`
 у `departments`, ни у самого `'registries'` нет backend-seeded permission
 key, задача явно запрещает его придумывать.
 
+## CANON: fixture-only platform boundary
+
+`/registries` и `/registries/:registryKey` — намеренная NX fixture/demo-платформа
+с отдельными API-backed data sources внутри каталога, а не единый backend registry
+модуль. Shell `authGuard` защищает страницу как часть приложения; отдельный
+`capabilityRouteGuard`, `registries:*` permission и page-ACL seed **не добавляются**.
+`departments` остаётся in-memory demo, а API-backed rows используют только свои
+существующие data sources. Это продуктовое решение и известная граница, не
+«забытый RBAC» и не незакрытый backend-gap. Полноценная permission/RBAC
+интеграция регистров — отдельная команда PO/TZ; текущая волна её не создаёт.
+
 **`REGISTRIES_ROUTES` — один `UrlMatcher`-route, не два `path`-route
 (TZ-NX-REGISTRIES-EXPAND-SCROLL-STABLE):** до этой TZ здесь были ДВА разных
 объекта `Route` (`path: ''` и `path: ':registryKey'`), оба резолвящих в тот же

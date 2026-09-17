@@ -80,8 +80,8 @@
 | `/admin` → `/admin/devices` | V | redirect + guarded target in `app.routes.ts` |
 | `/admin/devices` | V | `admin-devices.page.ts` → `PiDeviceEnrollmentService` → `devices-admin.controller.ts` |
 | `/admin/roles` | V | `admin-roles.page.ts` → `AdminRolesPageFacade` → `roles-admin.controller.ts` |
-| `/registries` | B | fixture/platform route; no backend/permission contract in `registries.routes.ts` |
-| `/registries/:registryKey` | B | same fixture platform; dynamic key is not a backend vertical slice |
+| `/registries` | B intentional fixture | `registries.routes.ts` + `nav-categories.ts` explicitly keep this authenticated fixture platform; no backend permission/RBAC invented |
+| `/registries/:registryKey` | B intentional fixture | same fixture platform; dynamic key is not a backend vertical slice; successor requires separate PO/TZ |
 | `/studio` | V | studio list → `PiStudioDocumentsService` → `studio-document.controller.ts` |
 | `/studio/templates` | V | templates list → `PiStudioDocumentsService` / template client → `document-template.controller.ts` |
 | `/studio/:id` | B | editor route and service wiring exist; render/runtime acceptance remains manual |
@@ -198,7 +198,7 @@ Each inventory module is explicitly classified below. `V` is a code-level consum
 - `quotation` — B: proposals/create redirects to studio; quotation output gap remains.
 - `rate-limit` — B: infrastructure; no NX consumer.
 - `reconciliation-act` — B: finance surface absent from NX inventory.
-- `registry` — B: registries page is fixture-only; no backend permission/data chain.
+- `registry` — B intentional fixture: `/registries` is an authenticated fixture platform; no `registries:*` permission or backend RBAC is defined or invented.
 - `role-counterparty` — B: RBAC relation support; no audited NX leaf.
 - `role-org` — B: RBAC relation support; no audited NX leaf.
 - `routing-step` — B: production routing support; no complete NX consumer.

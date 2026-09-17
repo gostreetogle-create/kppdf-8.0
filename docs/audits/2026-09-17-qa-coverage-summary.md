@@ -37,7 +37,7 @@
 ## Top follow-up TZ candidates after full audit
 
 1. ~~Redirect post-login… / privacy / kit~~ → **DONE** WAVE-AUTH-SMELLS (`eb661214`…`0b7509c8`)
-2. Complete `/registries` backend/permission/data chain or explicitly keep it fixture-only.
+2. `/registries` is intentionally **fixture-only**; no RBAC gap is claimed. A full permission/data integration requires a separate PO/TZ decision.
 3. Finish quotation/proposals create/output chain (`quotation`, `generated-document`).
 4. Add authenticated runtime smoke for `/orders/:id`, `/shipping`, `/production`, `/studio/:id`.
 5. Desktop pairing + import/MCP OS round-trip with a real paired device.
