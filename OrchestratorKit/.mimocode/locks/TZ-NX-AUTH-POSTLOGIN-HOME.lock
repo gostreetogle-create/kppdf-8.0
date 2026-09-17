@@ -1,0 +1,6 @@
+task_id: TZ-NX-AUTH-POSTLOGIN-HOME
+status: DONE
+closed_at: 2026-09-17
+closed_by: freebuff
+scope: frontend auth redirect
+build: PASS

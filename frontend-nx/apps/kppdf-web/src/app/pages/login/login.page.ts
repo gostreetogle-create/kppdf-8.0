@@ -12,11 +12,10 @@ import { InputComponent } from '@kppdf/ui/input';
  * TZ-NEW LoginPage — the public entry point of the KPPDF site.
  *
  * Editorial form (Paper & Ink). Username + password, submits via
- * AuthService.login(). On success → / which the router resolves to
- * /dashboard (Обзор, home stats) — не /materials (TZ-SWEEP-401).
+ * AuthService.login(). On success → /home, the operational queue.
  *
  * `publicOnlyGuard` is wired on the route, so already-authed users
- * who hit /login are bounced to / immediately.
+ * who hit /login are bounced to /home immediately.
  */
 @Component({
   selector: 'app-login-page',
@@ -200,7 +199,7 @@ export class LoginPage {
     this.error.set(null);
     try {
       await this.auth.login(u, p);
-      await this.router.navigateByUrl('/admin/devices');
+      await this.router.navigateByUrl('/home');
     } catch (err) {
       const e = err as { error?: { message?: string }; message?: string };
       this.error.set(e?.error?.message ?? e?.message ?? 'Не удалось войти.');

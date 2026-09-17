@@ -35,7 +35,7 @@
 - **Editorial form** — Paper & Ink дизайн (minimal, centered card)
 - **Password visibility toggle** — Eye/EyeOff icons
 - **Dev helper** — «Заполнить демо-данные» (admin / admin123), только в dev mode
-- **publicOnlyGuard** — already-authed users redirect to /
+- **publicOnlyGuard** — already-authed users redirect to `/home`
 - **Guard** — `authGuard` не нужен (public page)
 - **No httpResource** — использует `AuthService.login()` (async/await, не Observable)
 - **Personal-project notice (TZ-AUTH-301, optional):** мягкий текст «личный проект для обучения и тестирования» для приглашённых. **Не** access control и не юридический щит — см. `docs/ops/home-host-access.md`. `robots noindex` только для поисковиков.
