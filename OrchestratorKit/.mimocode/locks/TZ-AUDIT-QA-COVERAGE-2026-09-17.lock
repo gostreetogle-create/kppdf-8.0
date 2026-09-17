@@ -1,0 +1,8 @@
+task_id: TZ-AUDIT-QA-COVERAGE-2026-09-17
+status: DONE
+closed_at: 2026-09-17
+closed_by: freebuff
+scope: docs-only
+nx_route_rows: 35/35
+backend_modules: 93/93
+product_code_changed: 0
