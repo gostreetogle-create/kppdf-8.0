@@ -7,14 +7,14 @@
 
 ## Auth / Shell / Home (находки этого среза)
 
-- **Auth → Login → post-login navigation target**  
-  **[ПРИЧИНА]** Нужна проверка человеком / product smell: после успеха `navigateByUrl('/admin/devices')` (`login.page.ts`), а не `/home`. Комментарий в файле всё ещё упоминает dashboard/materials. `publicOnlyGuard` тоже шлёт на `/admin/devices`. Для оператора цеха ожидаемый лендинг — `/home` (WAVE-NX-HOME).
+- **CLOSED — Auth → Login → post-login navigation target**  
+  **Evidence:** `LoginPage.onSubmit` and `publicOnlyGuard` now target `/home`; fixed in `eb661214` (`fix(auth): land users on NX home after login`).
 
-- **Auth → Login → link «Политика ПДн»**  
-  **[ПРИЧИНА]** Отсутствует часть кода (маршрут): `routerLink="/legal/privacy"` в `login.page.ts`, в `app.routes.ts` path `legal` **нет** → 404/redirect `**`.
+- **CLOSED — Auth → Login/enroll → link «Политика ПДн»**  
+  **Evidence:** dead `/legal/privacy` links and unused `RouterLink` imports removed; fixed in `e20cfaa0` (`fix(auth): remove dead privacy links`). No legal stub or invented text added.
 
-- **Auth → Login → demo autofill title vs password**  
-  **[ПРИЧИНА]** Нужна проверка человеком: `title` кнопки пишет `AdminPass123`, код `fillDemoCredentials` ставит `admin123` (`login.page.ts`).
+- **CLOSED — Auth → Login → demo autofill title vs password**  
+  **Evidence:** one `DEMO_PASSWORD = 'admin123'` drives title and `fillDemoCredentials`; fixed in `0d22fb33` (`fix(auth): align demo password title with autofill`).
 
 - **Auth → Login / production smoke**  
   **[ПРИЧИНА]** Не хватает доступа: live login требовал backend на `:3000` (VERIFY 2026-09-16 WARN HTTP 500). Цепочка в коде Verified; runtime — Manual.
@@ -25,8 +25,8 @@
 - **Home → Order hub tray deep actions (ship/cancel/kit)**  
   **[ПРИЧИНА]** Домен Orders ещё не закрыт этим срезом — временно здесь как «не проаудировано в Фазе 1 Auth»; переклассифицировать в №1/№2 после среза Orders.
 
-- **Kit layout → no authGuard on `/kit` parent**  
-  **[ПРИЧИНА]** Нужна проверка человеком / security review: `/kit/*` вне shell `authGuard` (`app.routes.ts`). Возможно намеренно (design kit); статус не Verified без подтверждения PO.
+- **CLOSED — Kit layout → authGuard on `/kit` parent**  
+  **Evidence:** existing `authGuard` added to `/kit` parent; children inherit it; fixed in `0b7509c8` (`fix(auth): protect kit routes with auth guard`). Kit remains a design-kit surface without ERP API.
 
 ---
 
@@ -102,13 +102,13 @@
 | `/counterparties` | V | counterparty list → counterparty controller |
 | `/contracts` | V | contract list → contract controller |
 | `/contracts/:id` | V | contract detail → contract controller |
-| `/kit` → `/kit/overview` | B | kit parent is outside `authGuard`; security/design review required |
-| `/kit/overview` | B | design-kit surface, no ERP API chain |
-| `/kit/foundations` | B | design-kit surface, no ERP API chain |
-| `/kit/forms` | B | design-kit surface, no ERP API chain |
-| `/kit/overlays` | B | design-kit surface, no ERP API chain |
+| `/kit` → `/kit/overview` | V | `app.routes.ts` `canMatch: [authGuard]`; fixed in `0b7509c8`; design-kit surface, no ERP API |
+| `/kit/overview` | V | inherits parent `/kit` `authGuard`; design-kit surface, no ERP API chain |
+| `/kit/foundations` | V | inherits parent `/kit` `authGuard`; design-kit surface, no ERP API chain |
+| `/kit/forms` | V | inherits parent `/kit` `authGuard`; design-kit surface, no ERP API chain |
+| `/kit/overlays` | V | inherits parent `/kit` `authGuard`; design-kit surface, no ERP API chain |
 
-Route closure: **35 / 35 classified; 0 missing**. Wildcard `**` is a fallback redirect and is not an inventory leaf.
+Route closure: **35 / 35 classified; 0 missing**. Auth smell closeout reclassified all `/kit*` rows to V; wildcard `**` is a fallback redirect and is not an inventory leaf.
 
 ---
 

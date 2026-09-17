@@ -12,7 +12,7 @@
   Evidence: `frontend-nx/apps/kppdf-web/src/app/pages/login/login.page.ts` `onSubmit` → `AuthService.login` (`frontend-nx/libs/data-access/src/lib/auth/auth.service.ts` ~195, `POST ${baseUrl}/auth/login`) → `backend/src/modules/auth/auth.controller.ts` `@Post('login')` + `LoginDto`.
 
 - **Auth → Login → publicOnlyGuard**  
-  Evidence: route `path: 'login'` `canMatch: [publicOnlyGuard]` in `app.routes.ts`; guard in `frontend-nx/libs/data-access/src/lib/auth/auth.guard.ts` — authenticated → `parseUrl('/admin/devices')`.
+  Evidence: route `path: 'login'` `canMatch: [publicOnlyGuard]` in `app.routes.ts`; guard in `frontend-nx/libs/data-access/src/lib/auth/auth.guard.ts` — authenticated → `parseUrl('/home')` (fixed `eb661214`).
 
 - **Auth → Shell gate → authGuard**  
   Evidence: shell `path: ''` `canMatch: [authGuard]` in `app.routes.ts`; `auth.guard.ts` — unauthenticated → `/login`.

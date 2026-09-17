@@ -36,24 +36,20 @@
 
 ## Top follow-up TZ candidates after full audit
 
-1. Redirect post-login and `publicOnlyGuard` to `/home`; remove dead `/legal/privacy` link.
+1. ~~Redirect post-login… / privacy / kit~~ → **DONE** WAVE-AUTH-SMELLS (`eb661214`…`0b7509c8`)
 2. Complete `/registries` backend/permission/data chain or explicitly keep it fixture-only.
 3. Finish quotation/proposals create/output chain (`quotation`, `generated-document`).
 4. Add authenticated runtime smoke for `/orders/:id`, `/shipping`, `/production`, `/studio/:id`.
-5. Security decision for `/kit/*` parent outside `authGuard`.
-6. Desktop pairing + import/MCP OS round-trip with a real paired device.
-7. Catalog/product/module/photo vertical slice for the currently orphaned catalog modules.
-8. Production write/assignment acceptance beyond read facades.
-9. Document render/table/text-block end-to-end acceptance.
-10. Finance/report/invoice/tender surfaces or explicit product-scope decisions.
+5. Desktop pairing + import/MCP OS round-trip with a real paired device.
+6. Catalog/product/module/photo vertical slice for the currently orphaned catalog modules.
+7. Production write/assignment acceptance beyond read facades.
+8. Document render/table/text-block end-to-end acceptance.
+9. Finance/report/invoice/tender surfaces or explicit product-scope decisions.
 
-## Top gaps to TZ (from this slice)
+## Auth-smell closeout
 
-1. Post-login landing `/admin/devices` vs `/home`  
-2. Dead `/legal/privacy` link on login  
-3. Demo password title mismatch  
-4. Confirm whether `/kit` must be behind `authGuard`
+The four findings from the Auth smells wave are closed in product and in Checklist №2: `/home` landing (`eb661214`), dead privacy links removed (`e20cfaa0`), demo password/title unified (`0d22fb33`), and `/kit` protected by the existing `authGuard` (`0b7509c8`). They are no longer open QA gaps.
 
-## Next UNATTENDED domain
+## Next
 
-**Orders** (`/orders`, `/orders/:id` workspace, hub tray ship/cancel) — затем Production → Supply/Warehouse → Studio.
+Промптов из этой волны нет. Следующая волна TZ — по пунктам 2–9 выше (Cursor пишет pack по команде PO).
