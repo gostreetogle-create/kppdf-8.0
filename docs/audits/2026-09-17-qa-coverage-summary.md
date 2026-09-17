@@ -18,11 +18,11 @@
 | Bucket | N |
 |---|---:|
 | NX inventory route rows classified | **35 / 35** |
-| NX rows in Checklist №1 (code-Verified) | **23** |
-| NX rows in Checklist №2 (blocked/manual/fixture) | **12** |
+| NX rows in Checklist №1 (code-Verified) | **26** |
+| NX rows in Checklist №2 (blocked/manual/fixture) | **9** |
 | Backend modules classified | **93 / 93** |
-| Backend modules with Verified consumer evidence | **30** |
-| Backend modules blocked/orphan/manual | **63** |
+| Backend modules with Verified consumer evidence | **31** |
+| Backend modules blocked/orphan/manual | **62** |
 | Missing NX route rows | **0** |
 | Missing backend modules | **0** |
 | Product-code files changed by this TZ | **0** |
@@ -38,7 +38,7 @@
 
 1. ~~Redirect post-login… / privacy / kit~~ → **DONE** WAVE-AUTH-SMELLS (`eb661214`…`0b7509c8`)
 2. `/registries` is intentionally **fixture-only**; no RBAC gap is claimed. A full permission/data integration requires a separate PO/TZ decision.
-3. Finish quotation/proposals create/output chain (`quotation`, `generated-document`).
+3. Finish the isolated `generated-document` / PDF-output path; proposals list, convert, and Studio bridge are Verified.
 4. Add authenticated runtime smoke for `/orders/:id`, `/shipping`, `/production`, `/studio/:id`.
 5. Desktop pairing + import/MCP OS round-trip with a real paired device.
 6. Catalog/product/module/photo vertical slice for the currently orphaned catalog modules.

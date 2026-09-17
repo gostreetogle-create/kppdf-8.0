@@ -85,9 +85,9 @@
 | `/studio` | V | studio list → `PiStudioDocumentsService` → `studio-document.controller.ts` |
 | `/studio/templates` | V | templates list → `PiStudioDocumentsService` / template client → `document-template.controller.ts` |
 | `/studio/:id` | B | editor route and service wiring exist; render/runtime acceptance remains manual |
-| `/proposals` | B | route is thin proposal list; quotation output gap remains |
-| `/proposals/list` | B | alias of proposal list; same quotation gap |
-| `/proposals/create` → `/studio` | B | redirect exists, but no dedicated quotation create chain |
+| `/proposals` | V | `ProposalsListPage` → `ProposalsListFacade` → `PiQuotationsService.list`; output gap is isolated to generated-document/PDF path |
+| `/proposals/list` | V | same list component/route alias; output gap is isolated to generated-document/PDF path |
+| `/proposals/create` → `/studio` | V | intentional redirect in `app.routes.ts`; `ProposalsListFacade.createInStudio` owns the live studio create bridge |
 | `/dictionaries/text-block-categories` → registries | B | redirect is real; target registry is fixture-only |
 | `/supply` | V | `SupplyPage` → `SupplyFacade` → supply task controller |
 | `/supply-requests` | V | `SupplyRequestsPage` → `SupplyRequestsFacade` → supply request controller |
@@ -177,7 +177,7 @@ Each inventory module is explicitly classified below. `V` is a code-level consum
 - `feature-flag` — B: infrastructure/admin support; no audited NX leaf.
 - `financial-report` — B: report surface absent from NX route inventory.
 - `form-profiles` — B: form infrastructure; no audited NX leaf.
-- `generated-document` — B: quotation/document output gap; no verified proposal chain.
+- `generated-document` — B precise output gap: no verified NX consumer for generated PDF/output in the proposals list slice; product PDF pipeline is out of this TZ.
 - `import-jobs` — B: Desktop/manual import pipeline; no web leaf.
 - `import-mapping-profile` — B: Desktop/manual import pipeline; no web leaf.
 - `import-task` — B: Desktop/manual import pipeline; no web leaf.
@@ -195,7 +195,7 @@ Each inventory module is explicitly classified below. `V` is a code-level consum
 - `product-module-photo` — B: catalog media support; no audited NX leaf.
 - `product-passport` — B: catalog support; no audited NX leaf.
 - `product-photo` — B: catalog media support; no audited NX leaf.
-- `quotation` — B: proposals/create redirects to studio; quotation output gap remains.
+- `quotation` — V: `ProposalsListPage` → `ProposalsListFacade` → `PiQuotationsService` list/convert/family/attach paths; create intentionally bridges to Studio.
 - `rate-limit` — B: infrastructure; no NX consumer.
 - `reconciliation-act` — B: finance surface absent from NX inventory.
 - `registry` — B intentional fixture: `/registries` is an authenticated fixture platform; no `registries:*` permission or backend RBAC is defined or invented.
