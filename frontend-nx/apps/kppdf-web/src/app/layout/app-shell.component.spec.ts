@@ -105,13 +105,11 @@ describe('AppShellComponent (TZ-NX-SHELL-RAILS-ALWAYS)', () => {
 
   it('shows only existing-route header chips (admin, registries, docs, deals, production, clients, supply, warehouse) — no dead links', async () => {
     await setup('/admin/devices');
-    // TZD-72 cleanup: W1 (warehouse) + S1 (supply) added chips without updating this pin (6 -> 8).
-    // TZ-NX-REG-TEXT-BLOCK-CATEGORIES (2026-09-11): `/dictionaries/text-block-categories`
-    // is now a `redirectTo` (no `loadComponent`) — the dead-link filter drops
-    // `reference`'s only live item again, so the whole group's chip is gone
-    // (was briefly 9 under TZ-NX-TEXT-CAT-NX-CRUD; back to 8). `reference` is
-    // fully deleted from NAV_CATEGORIES next, in TZ-NX-NAV-DROP-REFERENCE.
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(8);
+    // Live filtered categories are: home, clients, deals, supply, production,
+    // warehouse, docs, registries, admin. The pin is 9; redirects without a
+    // loadComponent (for example `/dictionaries/text-block-categories`) do
+    // not create an additional category chip.
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(9);
     expect(adminQuickNav()).toBeTruthy();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();
@@ -365,11 +363,10 @@ describe('AppShellComponent (TZ-NX-SHELL-RAILS-ALWAYS)', () => {
     await setup('/admin/devices');
     userSig.set({ role: 'user' });
     fixture.detectChanges();
-    // `registries`, `docs`, `clients` and `reference` deliberately carry no `systemRoles`/`capabilities`.
-    // TZD-72 cleanup: warehouse + supply chips remain for user (6 + 2 wave chips -> 7).
-    // TZ-NX-REG-TEXT-BLOCK-CATEGORIES (2026-09-11): `reference`'s chip is gone
-    // again (dead-link filter, see the previous test) — back to 7.
-    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(7);
+    // With the admin role gate removed, the live filtered categories are:
+    // home, clients, deals, supply, production, warehouse, docs, registries.
+    // `registries` remains visible by route existence (`skipPageAcl`), not RBAC.
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(8);
     expect(adminQuickNav()).toBeNull();
     expect(registriesQuickNav()).toBeTruthy();
     expect(docsQuickNav()).toBeTruthy();

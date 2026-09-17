@@ -1,0 +1,7 @@
+task_id: TZ-NX-SHELL-QUICKNAV-COUNT-PIN
+status: DONE
+closed_at: 2026-09-17
+closed_by: freebuff
+scope: frontend test-only
+focused_app_shell_spec: 29/29
+build: PASS
