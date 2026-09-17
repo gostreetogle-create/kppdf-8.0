@@ -1,6 +1,7 @@
 import type { Route } from '@angular/router';
 import { collectPageRoutePaths } from './route-paths';
 import { appRoutes } from '../app.routes';
+import { authGuard } from '@kppdf/data-access/auth';
 
 describe('collectPageRoutePaths', () => {
   it('collects leaf loadComponent routes with their full nested path', () => {
@@ -61,6 +62,7 @@ describe('collectPageRoutePaths', () => {
     const kit = appRoutes.find((r) => r.path === 'kit');
     expect(shell?.children?.some((c) => c.path === 'kit')).toBe(false);
     expect(kit?.loadComponent).toBeTruthy();
+    expect(kit?.canMatch).toContain(authGuard);
     expect(shell?.loadComponent).toBeTruthy();
   });
 });

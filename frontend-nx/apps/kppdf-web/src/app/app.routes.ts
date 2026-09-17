@@ -152,7 +152,9 @@ export const appRoutes: Route[] = [
       },
     ],
   },
-  { path: 'kit',
+  {
+    path: 'kit',
+    canMatch: [authGuard],
     loadComponent: () =>
       import('./layout/kit-layout.component').then((m) => m.KitLayoutComponent),
     children: [
