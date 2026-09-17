@@ -34,6 +34,11 @@ export class PiQuotationsService {
     return silentPatch<Quotation>(this.http, `${this.baseUrl}/quotations/${id}`, payload);
   }
 
+  /** Raw PDF blob from the quotation output endpoint; callers handle download/errors. */
+  downloadPdf(id: string): Observable<Blob> {
+    return this.http.post(`${this.baseUrl}/quotations/${id}/pdf`, {}, { responseType: 'blob' });
+  }
+
   /** Convert an accepted quotation into an order (S37) — backend guards `status === 'accepted'`. */
   convertToOrder(id: string): Observable<SilentResult<{ orderId: string }>> {
     return silentPost<{ orderId: string }>(this.http, `${this.baseUrl}/quotations/${id}/convert-to-order`, undefined);
