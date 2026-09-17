@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { LucideAngularModule, MonitorUp } from 'lucide-angular';
 import { AuthService } from '@kppdf/data-access/auth';
@@ -25,7 +25,7 @@ import { InputComponent } from '@kppdf/ui/input';
   selector: 'app-enroll-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent, FormFieldComponent, InputComponent, RouterLink],
+  imports: [LucideAngularModule, ButtonComponent, FormFieldComponent, InputComponent],
   template: `
     <div
       class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-page-x"
@@ -84,10 +84,6 @@ import { InputComponent } from '@kppdf/ui/input';
           <p class="text-xs text-muted-foreground text-center mt-4">
             Чтобы подключить этот компьютер, сохраняем его имя и технический cookie доступа. Не для
             рекламы.
-            <br />
-            <a routerLink="/legal/privacy" class="underline hover:text-ink transition-colors"
-              >Политика обработки персональных данных</a
-            >
           </p>
         </form>
 

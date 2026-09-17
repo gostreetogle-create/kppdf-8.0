@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, isDevMode, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { LucideAngularModule, LogIn, Eye, EyeOff, KeyRound } from 'lucide-angular';
 import { AuthService } from '@kppdf/data-access/auth';
 import { ButtonComponent } from '@kppdf/ui/button';
@@ -20,7 +20,7 @@ import { InputComponent } from '@kppdf/ui/input';
 @Component({
   selector: 'app-login-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent, FormFieldComponent, InputComponent, RouterLink],
+  imports: [LucideAngularModule, ButtonComponent, FormFieldComponent, InputComponent],
   template: `
     <div
       class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-page-x"
@@ -55,12 +55,6 @@ import { InputComponent } from '@kppdf/ui/input';
           <p>
             Внутренняя информационная система. Доступ только уполномоченным лицам по приглашению
             администратора. Не публичный сервис и не рекламная площадка.
-            <br />
-            <a
-              routerLink="/legal/privacy"
-              class="underline hover:text-ink transition-colors mt-1 inline-block"
-              >Политика обработки персональных данных</a
-            >
           </p>
         </aside>
 
