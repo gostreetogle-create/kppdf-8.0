@@ -76,6 +76,15 @@ import { ProposalsListFacade } from '@kppdf/features/proposals';
                   <app-pi-button
                     variant="secondary"
                     type="button"
+                    data-test="proposal-download-pdf"
+                    (click)="downloadPdf(row)"
+                    [disabled]="pdfLoadingId() === row._id"
+                  >
+                    {{ pdfLoadingId() === row._id ? 'PDF…' : 'PDF' }}
+                  </app-pi-button>
+                  <app-pi-button
+                    variant="secondary"
+                    type="button"
                     data-test="proposal-attach-orgs"
                     (click)="openAttachOrgs(row)"
                   >
@@ -145,6 +154,7 @@ export class ProposalsListPage {
   protected readonly status = this.facade.status;
   protected readonly error = this.facade.error;
   protected readonly convertingId = this.facade.convertingId;
+  protected readonly pdfLoadingId = this.facade.pdfLoadingId;
   protected readonly expandedFamilyId = this.facade.expandedFamilyId;
   protected readonly familyByRow = this.facade.familyByRow;
   protected readonly familyLoadingId = this.facade.familyLoadingId;
@@ -189,6 +199,10 @@ export class ProposalsListPage {
 
   openInStudio(quotation: Quotation): void {
     this.facade.openInStudio(quotation);
+  }
+
+  downloadPdf(quotation: Quotation): void {
+    void this.facade.downloadPdf(quotation);
   }
 
   openVariantInStudio(member: QuotationFamilyMemberSummary): void {

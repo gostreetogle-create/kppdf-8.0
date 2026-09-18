@@ -26,7 +26,7 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from './ui/on-dialog-close-once';
-import { findKpDocType, rememberStudioDocument } from '@kppdf/features/doc-studio';
+import { findKpDocType, rememberStudioDocument } from '../doc-studio';
 import {
   ProposalAttachOrgsDialogComponent,
   type AttachOrgsDialogData,
@@ -62,6 +62,7 @@ export class ProposalsListFacade {
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal('Не удалось загрузить КП.');
   readonly convertingId = signal<string | null>(null);
+  readonly pdfLoadingId = signal<string | null>(null);
 
   /** KP family expand (S43) — one open panel at a time, per-row cache. */
   readonly expandedFamilyId = signal<string | null>(null);
@@ -252,6 +253,29 @@ export class ProposalsListFacade {
 
   openInStudio(quotation: Quotation): void {
     this.openQuotationInStudio(quotation._id, quotation.studioDocumentId);
+  }
+
+  async downloadPdf(quotation: Quotation): Promise<void> {
+    if (this.pdfLoadingId() !== null) return;
+    this.pdfLoadingId.set(quotation._id);
+    try {
+      const blob = await firstValueFrom(this.quotationsApi.downloadPdf(quotation._id));
+      if (!blob.size) throw new Error('Сервер вернул пустой PDF');
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${quotation.number || 'КП'}.pdf`;
+      anchor.rel = 'noopener';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      this.toast.success('PDF скачан');
+    } catch (error) {
+      this.toast.error(extractErrorMessage(error as Parameters<typeof extractErrorMessage>[0]));
+    } finally {
+      this.pdfLoadingId.set(null);
+    }
   }
 
   /** S46 — variant rows in the family panel open the studio for their own quotation id. */

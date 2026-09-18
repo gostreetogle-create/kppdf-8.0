@@ -21,7 +21,7 @@
 | `/proposals/demo-workspace` | **Wave 0 PASS** | Геометрия + placeholders; эталон layout (тонкий wrapper над shell, TZ-KP-WS-401) |
 | `/proposals/workspace` | **TZ-KP-WS-404 DONE** | Left (каталог/шаблон/клиент) + right (параметры/таблица/условия/вывод) panels; hydration + autosave + preview; catalog review |
 | `/proposals/create` | **TZ-KP-WS-408 DONE** | **Тот же компонент, что workspace** (query params id/new/source/sourceId/templateDraft/action=print сохраняются) — god-page `ProposalCreatePage` удалена в 409 |
-| `/proposals` | list | Lifecycle (статус, копия, заказ) — **не** в workspace ribbon (канон 367) |
+| `/proposals` | list | Lifecycle (статус, копия, заказ) + строковое действие **PDF** через `POST /quotations/:id/pdf` — **не** в workspace ribbon (канон 367) |
 
 `pageKey` / ACL: как у create (`proposals`, adminOnly до решения PO).
 

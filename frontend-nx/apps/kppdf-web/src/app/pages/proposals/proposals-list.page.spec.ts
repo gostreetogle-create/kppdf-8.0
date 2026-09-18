@@ -21,11 +21,11 @@ import { ProposalsListPage } from './proposals-list.page';
 
 describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
   let fixture: ComponentFixture<ProposalsListPage>;
-  let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock };
+  let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock; downloadPdf?: jest.Mock };
   let studioApi: { list: jest.Mock };
   let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
-  let toast: { error: jest.Mock };
+  let toast: { error: jest.Mock; success?: jest.Mock };
   let router: { navigate: jest.Mock };
 
   const quotations: Quotation[] = [
@@ -35,13 +35,18 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
   ];
 
   async function setup(): Promise<void> {
-    quotationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: quotations })), convertToOrder: jest.fn(), getFamily: jest.fn() };
+    quotationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: quotations })),
+      convertToOrder: jest.fn(),
+      getFamily: jest.fn(),
+      downloadPdf: jest.fn(),
+    };
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
     docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
     };
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [ProposalsListPage],
       providers: [
@@ -92,7 +97,7 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
     };
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [ProposalsListPage],
       providers: [
@@ -147,13 +152,51 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
       of({ ok: false, error: new HttpErrorResponse({ status: 400, error: { message: 'Status must be accepted' } }) }),
     );
 
-
     (fixture.nativeElement.querySelector('[data-test="proposal-convert-order"]') as HTMLButtonElement).click();
     await settle();
 
     expect(quotationsApi.convertToOrder).toHaveBeenCalledWith('q-accepted');
     expect(toast.error).toHaveBeenCalled();
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('downloads the quotation PDF from the row action and confirms success', async () => {
+    await setup();
+    await settle();
+    const pdf = new Blob(['pdf'], { type: 'application/pdf' });
+    quotationsApi.downloadPdf!.mockReturnValue(of(pdf));
+    const createObjectUrl = jest.fn().mockReturnValue('blob:pdf');
+    const revokeObjectUrl = jest.fn();
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectUrl });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectUrl });
+    const click = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+
+    const button = fixture.nativeElement.querySelector('[data-test="proposal-download-pdf"]') as HTMLButtonElement;
+    button.click();
+    await settle();
+
+    expect(quotationsApi.downloadPdf).toHaveBeenCalledWith('q-accepted');
+    expect(click).toHaveBeenCalled();
+    expect(toast.success).toHaveBeenCalledWith('PDF скачан');
+    expect(createObjectUrl).toHaveBeenCalledWith(pdf);
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:pdf');
+    click.mockRestore();
+    delete (URL as unknown as { createObjectURL?: unknown }).createObjectURL;
+    delete (URL as unknown as { revokeObjectURL?: unknown }).revokeObjectURL;
+  });
+
+  it('toasts and clears busy state when PDF generation fails', async () => {
+    await setup();
+    await settle();
+    quotationsApi.downloadPdf!.mockReturnValue(
+      new Observable<Blob>((subscriber) => subscriber.error(new HttpErrorResponse({ status: 503, error: { message: 'Печать недоступна' } }))),
+    );
+
+    (fixture.nativeElement.querySelector('[data-test="proposal-download-pdf"]') as HTMLButtonElement).click();
+    await settle();
+
+    expect(toast.error).toHaveBeenCalled();
+    expect(fixture.componentInstance.pdfLoadingId()).toBeNull();
   });
 });
 
@@ -163,7 +206,7 @@ describe('ProposalsListPage — create in studio (TZ-NX-DOCSTUDIO-S33-CREATE-KP-
   let studioApi: { list: jest.Mock; create: jest.Mock };
   let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
-  let toast: { error: jest.Mock };
+  let toast: { error: jest.Mock; success?: jest.Mock };
   let router: { navigate: jest.Mock };
 
   async function setup(): Promise<void> {
@@ -176,7 +219,7 @@ describe('ProposalsListPage — create in studio (TZ-NX-DOCSTUDIO-S33-CREATE-KP-
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
     };
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [ProposalsListPage],
       providers: [
@@ -246,11 +289,11 @@ describe('ProposalsListPage — create in studio (TZ-NX-DOCSTUDIO-S33-CREATE-KP-
 
 describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VARIANTS)', () => {
   let fixture: ComponentFixture<ProposalsListPage>;
-  let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock };
+  let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock; downloadPdf?: jest.Mock };
   let studioApi: { list: jest.Mock };
   let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
-  let toast: { error: jest.Mock };
+  let toast: { error: jest.Mock; success?: jest.Mock };
 
   const familyRows: Quotation[] = [
     { _id: 'q-master', number: 'KP-010', status: 'sent', familyRole: 'master', familyVersion: 3 },
@@ -265,7 +308,7 @@ describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VA
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
     };
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [ProposalsListPage],
       providers: [
@@ -317,11 +360,11 @@ describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VA
 
 describe('ProposalsListPage — family expand (TZ-NX-KP-FAMILY-S43-EXPAND)', () => {
   let fixture: ComponentFixture<ProposalsListPage>;
-  let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock };
+  let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock; downloadPdf?: jest.Mock };
   let studioApi: { list: jest.Mock };
   let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
-  let toast: { error: jest.Mock };
+  let toast: { error: jest.Mock; success?: jest.Mock };
 
   const masterRow: Quotation = {
     _id: 'q-master',
@@ -382,7 +425,7 @@ describe('ProposalsListPage — family expand (TZ-NX-KP-FAMILY-S43-EXPAND)', () 
         }),
       ),
     };
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       imports: [ProposalsListPage],
       providers: [
@@ -1130,7 +1173,7 @@ describe('ProposalsListPage — convert guard (TZ-NX-KP-FAMILY-S47-CONVERT-GUARD
   let studioApi: { list: jest.Mock };
   let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
-  let toast: { error: jest.Mock };
+  let toast: { error: jest.Mock; success?: jest.Mock };
   let router: { navigate: jest.Mock };
 
   const rows: Quotation[] = [
@@ -1149,7 +1192,7 @@ describe('ProposalsListPage — convert guard (TZ-NX-KP-FAMILY-S47-CONVERT-GUARD
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
     };
-    toast = { error: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
 
     await TestBed.configureTestingModule({
       imports: [ProposalsListPage],
