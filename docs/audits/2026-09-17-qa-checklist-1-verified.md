@@ -92,6 +92,9 @@
 - **Deals → proposals list / convert / studio bridge**  
   Evidence: `app.routes.ts` `path: 'proposals'` and alias `path: 'list'` → `frontend-nx/apps/kppdf-web/src/app/pages/proposals/proposals-list.page.ts` `ProposalsListPage` → `frontend-nx/libs/features/src/lib/proposals/proposals-list.facade.ts` `load`, `openInStudio`, `createInStudio`, `convertToOrder` → `frontend-nx/libs/data-access/src/lib/sales/pi-quotations.service.ts` `PiQuotationsService.list` / `convertToOrder`; accepted conversion navigates to `/orders/:id`, studio bridge navigates to linked studio document or `/studio?quotationId=`. The `/proposals/create` route is an intentional redirect to `/studio`.
 
+- **Deals → proposals list → PDF download**  
+  Evidence: `proposals-list.page.ts` `data-test="proposal-download-pdf"` → `ProposalsListFacade.downloadPdf` → `PiQuotationsService.downloadPdf` (`POST …/quotations/:id/pdf` blob) → `backend/src/modules/generated-document/quotation-output.controller.ts` `QuotationOutputController.pdf` (`a2295b7f` / `2f64a5e0`).
+
 - **Admin → devices / roles**  
   Evidence: `app.routes.ts` capability + owner guards → `admin-devices.page.ts` `DevicesAdminPage` → `PiDeviceEnrollmentService` → `backend/src/modules/device-enrollment/devices-admin.controller.ts`; roles: `admin-roles.page.ts` `RolesAdminPage` → `AdminRolesPageFacade` → `backend/src/modules/admin/roles-admin.controller.ts`.
 

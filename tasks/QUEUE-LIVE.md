@@ -7,7 +7,9 @@
 
 ## NEXT
 
-Промптов нет. WAVE-GANTT-DARK CLOSED 2026-09-16.
+**DEPLOY-READY = READY.** PO: «сделай деплой по документации»  
+→ `deploy/synology/README.md` + `docs/agent-checklists/DEPLOY-READY.md`  
+Warm, no `-Wipe`. Target ancestor `a2295b7f`.
 
 ## DONE (recent)
 

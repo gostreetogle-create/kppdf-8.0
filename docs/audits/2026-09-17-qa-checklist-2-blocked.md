@@ -85,8 +85,8 @@
 | `/studio` | V | studio list → `PiStudioDocumentsService` → `studio-document.controller.ts` |
 | `/studio/templates` | V | templates list → `PiStudioDocumentsService` / template client → `document-template.controller.ts` |
 | `/studio/:id` | B | editor route and service wiring exist; render/runtime acceptance remains manual |
-| `/proposals` | V | `ProposalsListPage` → `ProposalsListFacade` → `PiQuotationsService.list`; output gap is isolated to generated-document/PDF path |
-| `/proposals/list` | V | same list component/route alias; output gap is isolated to generated-document/PDF path |
+| `/proposals` | V | `ProposalsListPage` → `ProposalsListFacade` → `PiQuotationsService` (list + `downloadPdf`) → `QuotationOutputController.pdf` |
+| `/proposals/list` | V | same list component/route alias; PDF wired |
 | `/proposals/create` → `/studio` | V | intentional redirect in `app.routes.ts`; `ProposalsListFacade.createInStudio` owns the live studio create bridge |
 | `/dictionaries/text-block-categories` → registries | B | redirect is real; target registry is fixture-only |
 | `/supply` | V | `SupplyPage` → `SupplyFacade` → supply task controller |
@@ -177,7 +177,7 @@ Each inventory module is explicitly classified below. `V` is a code-level consum
 - `feature-flag` — B: infrastructure/admin support; no audited NX leaf.
 - `financial-report` — B: report surface absent from NX route inventory.
 - `form-profiles` — B: form infrastructure; no audited NX leaf.
-- `generated-document` — B precise output gap: no verified NX consumer for generated PDF/output in the proposals list slice; product PDF pipeline is out of this TZ.
+- `generated-document` — V for `POST /quotations/:id/pdf` (NX list consumer); B Manual for `POST :id/generated-document` archive if NX never calls it.
 - `import-jobs` — B: Desktop/manual import pipeline; no web leaf.
 - `import-mapping-profile` — B: Desktop/manual import pipeline; no web leaf.
 - `import-task` — B: Desktop/manual import pipeline; no web leaf.

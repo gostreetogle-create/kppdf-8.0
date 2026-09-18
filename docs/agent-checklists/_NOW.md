@@ -1,12 +1,13 @@
-﻿updated_at: 2026-09-16T12:20:00+03:00
+﻿updated_at: 2026-09-18T06:20:00+03:00
 
 ## ACTIVE / LIVE
 
-- **Freebuff DONE:** VERIFY dark+gantt smoke — WARN (local `/api/auth/login` HTTP 500 blocked authenticated routes)  
-  Audit: `docs/audits/2026-09-16-dark-gantt-smoke.md`  
-  Archive: `tasks/_archive/2026-09/TZ-VERIFY-2026-09-16-DARK-GANTT-SMOKE.done.md`
-- Claude: limit ~19 Sep
+- **DEPLOY-READY: READY** (NX warm) — tip product `a2295b7f`  
+  Evidence: `docs/agent-checklists/PRE-DEPLOY-2026-09-18-NX.md`  
+  PO → любому агенту: **«сделай деплой по документации»**
+- Freebuff/Claude: IDLE (очередь продукта пуста до деплоя)
+- Claude weekly limit: ~19 Sep (if still)
 
 ## PARK
 
-forms · Deploy/Wipe
+forms · Deploy executed only after PO phrase above

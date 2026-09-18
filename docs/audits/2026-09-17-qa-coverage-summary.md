@@ -38,7 +38,7 @@
 
 1. ~~Redirect post-login… / privacy / kit~~ → **DONE** WAVE-AUTH-SMELLS (`eb661214`…`0b7509c8`)
 2. `/registries` is intentionally **fixture-only**; no RBAC gap is claimed. A full permission/data integration requires a separate PO/TZ decision.
-3. Finish the isolated `generated-document` / PDF-output path; proposals list, convert, and Studio bridge are Verified.
+3. ~~Finish the isolated `generated-document` / PDF-output path~~ → **DONE** list PDF via `POST /quotations/:id/pdf` (`2f64a5e0` + `a2295b7f`). Archive endpoint `POST :id/generated-document` remains optional/Manual.
 4. Add authenticated runtime smoke for `/orders/:id`, `/shipping`, `/production`, `/studio/:id`.
 5. Desktop pairing + import/MCP OS round-trip with a real paired device.
 6. Catalog/product/module/photo vertical slice for the currently orphaned catalog modules.
