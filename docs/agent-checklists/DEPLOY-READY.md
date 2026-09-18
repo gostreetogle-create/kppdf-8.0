@@ -4,14 +4,15 @@
 > Пишет подготовка («подготовь к деплою» / NX prep).  
 > Читает любой ИИ по `deploy/synology/README.md` → «сделай деплой по документации».
 >
-> Prod last warm: `9e1802fe` 2026-09-13 (enroll). Prior historic: `4d55d0ea` 2026-08-27.  
+> Prod last warm: `a2295b7f` 2026-09-18 (PDF proposals). Prior: `9e1802fe` 2026-09-13 (enroll); historic `4d55d0ea` 2026-08-27.  
 > **NX cutover:** канон `docs/ops/DEPLOY-NX-PROD.md`. `TZ-OPS-DEPLOY-NX-STATIC` closed.
 
 ```yaml
-status: READY
+status: INVALID
+why_invalid: deployed a2295b7f 2026-09-18 (tip HEAD 440187fa; warm NX deploy via deploy.ps1; Deploy complete + Auth OK + Frontend 200; health ok on VM + https://kppdf-crm.ru; tunnel active; bundle main-RQG2YNR6.js; root = device-gate 401)
 frontend_target: nx
 wipe_default: false
-wipe_reason: "same Nest API; additive schemas since 9e1802fe / 4d55d0ea — keep Mongo/uploads (warm)"
+wipe_reason: "same Nest API; additive schemas since a2295b7f / 4d55d0ea — keep Mongo/uploads (warm)"
 deploy_sha_target: a2295b7f
 prepared_at: 2026-09-18T06:20:00+03:00
 prepared_by: cursor-architect
